@@ -29,7 +29,7 @@ Browser aus `file://` heraus keine Nachbardateien lesen darf.
 | `manifest.webmanifest` | Name und Symbol beim Ablegen im Dock |
 
 Nicht im Repository, nur im Arbeitsordner: die beiden Änderungslogs, der Ordner
-`Sicherungskopien/` mit den früheren Ständen und `Preisliste veröffentlichen.command`
+`Sicherungskopien/` mit den früheren Ständen und `Preisliste abgleichen.command`
 (Doppelklick-Helfer, siehe unten) — interne Arbeitsunterlagen (siehe `.gitignore`).
 
 ## Preisliste aktualisieren
@@ -37,18 +37,30 @@ Nicht im Repository, nur im Arbeitsordner: die beiden Änderungslogs, der Ordner
 1. `Angebotsdaten.xlsx` in Excel ändern und in diesem Ordner speichern.
 2. Örtlich prüfen (siehe oben): Startseite zeigt den neuen Stand, die Werkzeuge zeigen
    die geänderten Preise und Termine.
-3. Veröffentlichen — entweder per Doppelklick auf `Preisliste veröffentlichen.command`
+3. Veröffentlichen — entweder per Doppelklick auf `Preisliste abgleichen.command`
    (liegt im Arbeitsordner, nicht im Repository), oder von Hand:
 
    ```bash
    git add Angebotsdaten.xlsx && git commit -m "Preisliste aktualisiert" && git push
    ```
 
-   Wer keinen Zugriff auf den Arbeitsordner hat, kann die Datei auch über die
-   GitHub-Seite ersetzen: „Add file" → „Upload files", gleicher Dateiname.
-
 Ohne diesen dritten Schritt ändert sich nur der eigene Rechner — die veröffentlichte
 Seite liefert weiter die alte Preisliste aus.
+
+### Von einem anderen Rechner aus
+
+Ohne Arbeitskopie geht es über die GitHub-Seite, nur im Browser:
+
+1. Im Repository `Angebotsdaten.xlsx` anklicken, „Download raw file".
+2. In Excel ändern und speichern — **der Dateiname muss unverändert bleiben.** Ein von
+   Windows angehängtes `(1)` würde beim Hochladen eine zweite Datei anlegen, statt die
+   Preisliste zu ersetzen; die Werkzeuge läsen weiter die alte.
+3. „Add file" → „Upload files", Datei hineinziehen, „Commit changes".
+
+Der Arbeitsordner auf dem Mac kennt diese Änderung dann noch nicht. Der nächste
+Doppelklick auf `Preisliste abgleichen.command` holt sie und meldet es. Nur wenn
+auf **beiden** Seiten geändert wurde, bricht das Skript ab — dann muss von Hand
+entschieden werden, welche Fassung gilt.
 
 Der auf der Startseite angezeigte Stand kommt aus dem Zeitstempel der Datei und muss
 nicht gepflegt werden.
