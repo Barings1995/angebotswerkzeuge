@@ -1,0 +1,2490 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>OpenSlots &ndash; Angebotsplaner</title>
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%2300285a'/%3E%3Crect x='6' y='6' width='8.5' height='8.5' rx='2' fill='%23e6eaf0'/%3E%3Crect x='17.5' y='6' width='8.5' height='8.5' rx='2' fill='%23e6eaf0'/%3E%3Crect x='6' y='17.5' width='8.5' height='8.5' rx='2' fill='%23e6eaf0'/%3E%3Crect x='17.5' y='17.5' width='8.5' height='8.5' rx='2' fill='%23ee7d11'/%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700&family=Source+Sans+3:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+/* === SPRINGER MEDIZIN DESIGN SYSTEM === */
+:root {
+  --sm-navy:    #00285a;
+  --sm-navy-90: #1a3d6b;
+  --sm-navy-10: #e6eaf0;
+  --sm-navy-05: #f2f4f8;
+  --sm-orange:  #ee7d11;
+  --sm-orange-l:#fef3e8;
+  --sm-white:   #ffffff;
+  --sm-border:  #d6dbe8;
+  --sm-text:    #1a2340;
+  --sm-muted:   #6b7a99;
+  --sm-muted-l: #9aa3b8;
+  --sm-red:     #c0392b;
+  --sm-green:   #0f6e56;
+  --sm-green-l: #e1f5ee;
+  --sm-bg:      #f4f6fa;
+  --radius-sm:  4px;
+  --radius-md:  6px;
+  --radius-lg:  10px;
+  --shadow-sm:  0 1px 3px rgba(0,40,90,.08);
+  --shadow-md:  0 2px 8px rgba(0,40,90,.10);
+  /* Ebenen-Skala: klebende Matrix-Zellen unten, Klappmenüs oben.
+     Die Zahlen entsprechen genau den zuvor direkt notierten Werten. */
+  --z-mx-cell:    2;  /* klebende Platzierungsspalte (linke Spalte) */
+  --z-mx-head:    3;  /* klebende Kopfzeile der Ausgaben */
+  --z-mx-corner:  4;  /* Schnittpunkt beider – muss über beiden liegen */
+  --z-menu-top:   1;  /* klebender Suchkopf innerhalb des Kongressmenüs */
+  --z-menu:      60;  /* Kongressmenü über dem übrigen Inhalt */
+  --z-dialog:   300;  /* Rückfragefenster über allem */
+}
+
+*{box-sizing:border-box;margin:0;padding:0}
+
+/* Ziffern in gleicher Breite setzen, damit Beträge, Datumsangaben und Zähler
+   sauber untereinander stehen. Wirkt nur auf die Bildschirmdarstellung – der
+   Kopiertext für Outlook wird an anderer Stelle erzeugt und bleibt unverändert. */
+.opt-num,
+.year-sel,
+.iss-head input,
+.badge,
+.cat-badge,
+.kg-cnt,
+#pv-wrap { font-variant-numeric: tabular-nums; }
+
+/* Hintergrund am Wurzelelement, damit er bei kurzem Inhalt bis zum unteren
+   Fensterrand durchläuft – ersetzt das frühere min-height:100vh am body.
+   Grund: zoom wirkte auch auf 100vh, die Seite wurde dadurch höher als das
+   Fenster und zeigte einen Rollbalken, obwohl unten alles frei war. Bleibt
+   auch ohne Zoom so – ist die robustere Lösung. */
+html { background: var(--sm-bg); }
+
+body {
+  font-family:'Source Sans 3',system-ui,sans-serif;
+  background: var(--sm-bg);
+  color: var(--sm-text);
+  font-size:14px;
+  zoom: 1; /* Grunddarstellung in Originalgröße (kein eingebauter Zoom) */
+}
+
+/* ── HERO STRIP (mit integriertem Logo) ── */
+.sm-hero {
+  background: linear-gradient(135deg, #002050 0%, var(--sm-navy) 60%, #004080 100%);
+  padding: 1.1rem 0 1rem;
+  border-bottom: 3px solid var(--sm-orange);
+}
+.sm-hero-inner {
+  max-width: none;
+  margin: 0 auto;
+  padding: 0 1.5rem;
+}
+.sm-hero h1 {
+  font-family: 'Playfair Display', Georgia, serif;
+  font-size: 25px;
+  font-weight: 700;
+  color: #fff;
+  line-height: 1.2;
+  margin-bottom: 2px;
+  letter-spacing: -.01em;
+}
+.sm-hero h1 .sm-hero-mark { color: var(--sm-orange); }
+.sm-hero-head {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  margin-bottom: 8px;
+}
+.sm-hero-head svg { flex: none; }
+.sm-hero-div {
+  width: 1px;
+  align-self: stretch;
+  background: rgba(255,255,255,.28);
+  flex: none;
+}
+.sm-hero-sub {
+  font-size: 12px;
+  font-weight: 600;
+  color: rgba(255,255,255,.72);
+  letter-spacing: .16em;
+  text-transform: uppercase;
+  margin-bottom: 0;
+}
+.sm-hero p {
+  font-size: 12.5px;
+  color: rgba(255,255,255,.72);
+  font-weight: 400;
+  line-height: 1.4;
+}
+.sm-hero p strong { color: rgba(255,255,255,.9); font-weight: 600; }
+
+/* ── MAIN LAYOUT ── */
+.app {
+  max-width: none;
+  margin: 0 auto;
+  padding: .6rem 1.5rem 3rem;
+}
+
+/* ── WORKSPACE: TITEL-SIDEBAR (links) + ARBEITSBEREICH (rechts) ── */
+.workspace {
+  display: flex;
+  align-items: flex-start;
+  gap: 1.4rem;
+  margin-top: .5rem;
+}
+.sidebar {
+  flex: 0 0 244px;
+  width: 244px;
+  position: sticky;
+  top: 12px;
+  align-self: flex-start;
+  max-height: calc(100vh - 24px);
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+.main {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+.sidebar > .sec-label:first-child,
+.main > .sec-label:first-child { margin-top: 0; }
+.sidebar .title-search { max-width: none; }
+@media (max-width: 820px) {
+  .workspace { flex-direction: column; gap: 0; }
+  .sidebar {
+    position: static;
+    flex-basis: auto;
+    width: 100%;
+    max-height: none;
+  }
+  .sidebar .tabs { flex-direction: row; flex-wrap: wrap; overflow: visible; }
+  .sidebar .tab { width: auto; }
+  .sidebar .tabgrp { flex-basis: 100%; }
+}
+
+/* ── DATA BAR (Excel-Import) ── */
+.data-bar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  background: var(--sm-white);
+  border: 1px solid var(--sm-border);
+  border-radius: var(--radius-md);
+  padding: 7px 12px;
+  margin: .4rem 0 .1rem;
+  box-shadow: var(--shadow-sm);
+}
+.data-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 12px;
+  border: 1.5px solid var(--sm-navy);
+  border-radius: var(--radius-md);
+  background: var(--sm-navy);
+  color: #fff;
+  font-family: 'Source Sans 3', sans-serif;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all .15s;
+}
+.data-btn:hover { background: #013a7a; border-color: #013a7a; }
+.data-btn.danger { background: var(--sm-red); border-color: var(--sm-red); color: #fff; }
+.data-btn.danger:hover { background: #9c2e22; border-color: #9c2e22; color: #fff; }
+.data-yr {
+  font-size: 11.5px;
+  color: var(--sm-muted);
+  font-weight: 600;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+.year-sel {
+  font-family: 'Source Sans 3', sans-serif;
+  font-size: 12px;
+  font-weight: 600;
+  padding: 4px 7px;
+  border: 1.5px solid var(--sm-border);
+  border-radius: var(--radius-sm);
+  color: var(--sm-text);
+  background: var(--sm-white);
+  cursor: pointer;
+}
+.year-sel:focus { outline: none; border-color: var(--sm-navy); }
+.data-btn.subtle { background: var(--sm-navy-10); border-color: var(--sm-navy); color: var(--sm-navy); }
+.data-btn.subtle:hover { background: var(--sm-navy); border-color: var(--sm-navy); color: #fff; }
+.data-status { font-size: 11.5px; color: var(--sm-muted); flex: 1; min-width: 120px; }
+
+/* ── ANGEBOT SPEICHERN / ÖFFNEN ──
+   Die Leiste enthält dreierlei: Daten holen (Excel, Jahrgang), im Raster arbeiten
+   („Nach Kongress") und mit Dateien umgehen (die beiden Knöpfe hier). Damit die
+   dritte Gruppe als solche erkennbar ist, bekommt sie eine ruhigere Form – weißer
+   Grund mit grauer Kante wie beim Jahrgang-Auswahlfeld – und einen feinen
+   Trennstrich davor. Bewusst ohne weitere Farbe: Orange ist im Werkzeug bereits
+   für den Hauptknopf „Als Tabelle kopieren" und die Akzentkanten vergeben. */
+.ang-wrap {
+  display: inline-flex;
+  gap: 8px;
+  padding-left: 10px;
+  border-left: 1px solid var(--sm-border);
+}
+.data-btn.ang-btn { background: var(--sm-white); border-color: var(--sm-border); color: var(--sm-navy); }
+.data-btn.ang-btn:hover { background: var(--sm-navy); border-color: var(--sm-navy); color: #fff; }
+/* Hinweis auf die geöffnete Angebotsdatei. Er nennt auch den Speicherzeitpunkt,
+   weil ein älteres Angebot die Preise von damals enthält und nicht die heutigen. */
+.ang-status {
+  font-size: 11.5px;
+  color: var(--sm-navy);
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  display: none;
+  align-items: center;
+  gap: 5px;
+  padding: 3px 9px;
+  border-radius: var(--radius-sm);
+  background: var(--sm-navy-10);
+  white-space: nowrap;
+}
+.ang-status.on { display: inline-flex; }
+.ang-status .ang-time { font-weight: 400; color: var(--sm-muted); }
+
+/* ── RÜCKFRAGEFENSTER (welcher Datenstand gilt) ──
+   Bewusst ohne Klick-daneben-schließt: die Frage soll beantwortet und nicht
+   versehentlich weggeklickt werden. Escape bleibt als Ausweg. */
+.dlg-back {
+  position: fixed; inset: 0; z-index: var(--z-dialog);
+  background: rgba(0,40,90,.32);
+  display: flex; align-items: center; justify-content: center;
+  padding: 20px;
+}
+.dlg-box {
+  background: var(--sm-white);
+  border: 1px solid var(--sm-border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-md);
+  max-width: 520px; width: 100%;
+  padding: 1.15rem 1.35rem 1.1rem;
+}
+.dlg-hd { font-size: 14.5px; font-weight: 700; color: var(--sm-navy); margin-bottom: 9px; }
+.dlg-tx { font-size: 12.5px; color: var(--sm-text); line-height: 1.55; }
+.dlg-tx p { margin-bottom: 8px; }
+.dlg-tx p:last-child { margin-bottom: 0; }
+.dlg-tx b { font-weight: 600; }
+.dlg-row { display: flex; gap: 8px; justify-content: flex-end; margin-top: 16px; flex-wrap: wrap; }
+
+/* ── KONGRESS-AUSWAHL ── */
+.kg-wrap { position: relative; display: inline-flex; }
+/* Klapppfeil wie im Schwesterwerkzeug „Jahresvorschau": das Zeichen ▼ statt eines
+   eigenen SVG. Es dreht sich um 180°, sobald das Menü offen ist – die Richtung
+   hängt am Zustand `aria-expanded` des Knopfes, den das Menü ohnehin pflegen sollte. */
+.kg-chev { font-size: .58rem; opacity: .8; transition: transform .15s; }
+#kgBtn[aria-expanded="true"] .kg-chev { transform: rotate(180deg); }
+.kg-menu {
+  position: absolute;
+  top: calc(100% + 6px);
+  left: 0;
+  z-index: var(--z-menu);
+  min-width: 310px;
+  max-height: 400px;
+  overflow-y: auto;
+  background: var(--sm-white);
+  border: 1px solid var(--sm-border);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-md);
+  /* kein padding-top: sonst bleibt über dem klebenden .kg-menu-top ein Streifen,
+     in dem die Liste beim Scrollen ungedeckt durchläuft (die 5px sitzen dort) */
+  padding: 0 0 5px;
+}
+.kg-menu-top {
+  position: sticky;
+  top: 0;
+  z-index: var(--z-menu-top);
+  background: var(--sm-white);
+  border-bottom: 1px solid var(--sm-border);
+  padding: 5px 10px 8px;
+}
+.kg-menu-hd { font-size: 10.5px; color: var(--sm-muted); padding: 5px 2px 7px; letter-spacing: .03em; }
+.kg-search-wrap { position: relative; }
+.kg-search-wrap svg { position: absolute; left: 8px; top: 50%; transform: translateY(-50%); color: var(--sm-muted-l); pointer-events: none; }
+.kg-search {
+  width: 100%;
+  font-family: 'Source Sans 3', sans-serif;
+  font-size: 12.5px;
+  padding: 5px 9px 5px 27px;
+  border: 1.5px solid var(--sm-border);
+  border-radius: var(--radius-md);
+  color: var(--sm-text);
+  background: var(--sm-white);
+  transition: border-color .12s;
+}
+.kg-search:focus { outline: none; border-color: var(--sm-navy); box-shadow: 0 0 0 2px rgba(0,40,90,.08); }
+.kg-empty { font-size: 12px; color: var(--sm-muted-l); padding: 10px 12px; }
+.kg-item {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  width: 100%;
+  padding: 6px 12px;
+  border: 0;
+  background: none;
+  font-family: 'Source Sans 3', sans-serif;
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--sm-text);
+  text-align: left;
+  cursor: pointer;
+}
+.kg-item:hover { background: var(--sm-navy-10); }
+.kg-item .kg-cnt { font-size: 11px; font-weight: 400; color: var(--sm-muted); white-space: nowrap; }
+
+/* ── SECTION LABEL ── */
+.sec-label {
+  font-size: 10px;
+  font-weight: 700;
+  color: var(--sm-muted);
+  letter-spacing: .1em;
+  text-transform: uppercase;
+  margin: .75rem 0 .6rem;
+  padding-bottom: 5px;
+  border-bottom: 1px solid var(--sm-border);
+}
+
+/* ── FACHBEREICHS-GRUPPEN (Kopfzeilen in der Titel-Sidebar) ── */
+.tabgrp {
+  display: flex;
+  align-items: center;
+  width: 100%;
+  margin: .5rem 0 .1rem;
+  padding: 2px 2px 4px;
+  font-family: 'Source Sans 3', sans-serif;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: .09em;
+  text-transform: uppercase;
+  color: var(--sm-navy);
+  background: none;
+  border: 0;
+  border-bottom: 1px solid var(--sm-border);
+  text-align: left;
+  cursor: pointer;
+  user-select: none;
+}
+.tabgrp:first-child { margin-top: 0; }
+.tabgrp:hover { border-bottom-color: var(--sm-navy); }
+.tabgrp .fb-toggle {
+  display: inline-block;
+  margin-right: 6px;
+  font-size: 8px;
+  transition: transform .18s;
+}
+.tabgrp.collapsed .fb-toggle { transform: rotate(-90deg); }
+.tabgrp .fb-lbl { flex: 1 1 auto; min-width: 0; }
+/* Gleiche Bildsprache wie beim Titel: oranger Balken = da fehlt noch etwas. */
+.tabgrp.has-iss { border-left: 3px solid var(--sm-orange); padding-left: 5px; }
+.tabgrp.hidden, .tab.hidden { display: none; }
+
+/* ── TABS (Titel-Sidebar, vertikale Liste) ── */
+.tabs {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-bottom: 0;
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  padding-right: 2px;
+}
+.tab {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
+  width: 100%;
+  text-align: left;
+  padding: 7px 11px;
+  border: 1.5px solid var(--sm-border);
+  border-radius: var(--radius-md);
+  background: var(--sm-white);
+  color: var(--sm-muted);
+  font-family: 'Source Sans 3', sans-serif;
+  font-size: 12px;
+  font-weight: 500;
+  line-height: 1.25;
+  cursor: pointer;
+  transition: all .15s;
+  white-space: normal;
+  box-shadow: var(--shadow-sm);
+}
+.tab:hover {
+  border-color: var(--sm-navy);
+  color: var(--sm-navy);
+  background: var(--sm-navy-05);
+}
+.tab.on {
+  border-color: var(--sm-navy);
+  background: var(--sm-navy);
+  color: #fff;
+  font-weight: 600;
+  box-shadow: 0 2px 6px rgba(0,40,90,.22);
+}
+/* Ausgabe(n) angelegt, aber noch keine Platzierung angekreuzt.
+   Muss nach .tab:hover und .tab.on stehen – gleiche Spezifität, die spätere Regel gewinnt. */
+.tab.has-iss {
+  border-left: 4px solid var(--sm-orange);
+  padding-left: 8px;
+}
+.badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--sm-orange);
+  color: #fff;
+  border-radius: 9px;
+  font-size: 9px;
+  padding: 0 5px;
+  margin-left: 5px;
+  min-width: 16px;
+  height: 14px;
+  vertical-align: middle;
+  font-weight: 700;
+}
+
+/* ── ADD ISSUE BUTTON ── */
+.add-iss {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  width: 100%;
+  padding: 8px 14px;
+  border: 1.5px dashed var(--sm-border);
+  border-radius: var(--radius-md);
+  background: transparent;
+  color: var(--sm-muted);
+  font-family: 'Source Sans 3', sans-serif;
+  font-size: 12.5px;
+  font-weight: 500;
+  cursor: pointer;
+  margin-bottom: .85rem;
+  transition: all .15s;
+}
+.add-iss:hover {
+  border-color: var(--sm-orange);
+  color: var(--sm-orange);
+  background: var(--sm-orange-l);
+}
+
+/* ── TABLE WRAPPER ── */
+.mx-outer {
+  overflow-x: auto;
+  border: 1px solid var(--sm-border);
+  border-radius: var(--radius-lg);
+  margin-bottom: 1.25rem;
+  background: var(--sm-white);
+  box-shadow: var(--shadow-md);
+}
+/* Getrennte statt zusammengelegter Rahmen (border-collapse: separate).
+   Grund: Bei zusammengelegten Rahmen gehoert die Trennlinie der Tabelle, nicht der
+   einzelnen Zelle, und sie sitzt mittig auf der Zellkante. Die klebende Platzierungs-
+   spalte wird beim Scrollen als eigene Ebene verschoben - ihr Hintergrund wandert mit,
+   die Linie nicht. Uebrig blieb ein 0,5 px schmaler Streifen, in dem die durchscrollenden
+   Ausgabenspalten sichtbar wurden (das bekannte Durchblitzen an der linken Kante).
+   Mit getrennten Rahmen gehoert die Linie zur Zelle und wandert mit ihr.
+   Je Zelle nur rechts + unten, damit sich benachbarte Linien nicht zu 2 px addieren;
+   die Aussenkanten links und oben kommen aus den beiden Regeln darunter. */
+table.mx {
+  border-collapse: separate;
+  border-spacing: 0;
+  table-layout: fixed;
+  min-width: 100%;
+}
+.mx th, .mx td {
+  border-right: 1px solid #e8ecf3;
+  border-bottom: 1px solid #e8ecf3;
+}
+.mx thead th { border-top: 1px solid #e8ecf3; }
+.mx th.pl-hd, .mx td.pl-cell { border-left: 1px solid #e8ecf3; }
+.mx td.empty-st { border: 1px solid #e8ecf3; }
+
+th.pl-hd, td.pl-cell {
+  position: sticky;
+  left: 0;
+  z-index: var(--z-mx-cell);
+  background: var(--sm-white);
+  width: 185px;
+  min-width: 185px;
+}
+/* Preisanzeige („Preise anzeigen"): Der Preis steht in derselben Zeile hinter dem Namen.
+   Damit er ihm keinen Platz wegnimmt, wächst die Platzierungsspalte um 78 px — sonst
+   brächen die meisten Namen zweizeilig um. Ohne Häkchen bleibt alles wie zuvor. */
+body.preise-an th.pl-hd, body.preise-an td.pl-cell {
+  width: 263px;
+  min-width: 263px;
+}
+.pr-tag {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--sm-muted);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+th.pl-hd {
+  position: sticky;
+  top: 0;
+  z-index: var(--z-mx-corner);
+  padding: 7px 12px;
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--sm-muted);
+  letter-spacing: .07em;
+  text-transform: uppercase;
+  vertical-align: bottom;
+  background: var(--sm-navy-05);
+  border-bottom: 2px solid var(--sm-border);
+}
+th.iss-th {
+  position: sticky;
+  top: 0;
+  z-index: var(--z-mx-head);
+  min-width: 130px;
+  vertical-align: top;
+  padding: 0;
+  background: var(--sm-navy-05);
+  border-bottom: 2px solid var(--sm-border);
+}
+.iss-head {
+  padding: 7px 7px 5px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.iss-sel {
+  width: 100%;
+  font-size: 10px;
+  font-family: 'Source Sans 3', sans-serif;
+  padding: 3px 6px;
+  border: 1.5px solid var(--sm-orange);
+  border-radius: var(--radius-sm);
+  color: var(--sm-text);
+  background: var(--sm-white);
+  cursor: pointer;
+  margin-bottom: 2px;
+}
+.iss-sel:focus { outline: none; box-shadow: 0 0 0 2px rgba(238,125,17,.18); }
+.iss-head input {
+  width: 100%;
+  font-size: 10px;
+  font-family: 'Source Sans 3', sans-serif;
+  padding: 3px 6px;
+  border: 1px solid var(--sm-border);
+  border-radius: var(--radius-sm);
+  color: var(--sm-text);
+  background: var(--sm-white);
+  transition: border-color .12s;
+}
+.iss-head input:focus {
+  outline: none;
+  border-color: var(--sm-navy);
+  box-shadow: 0 0 0 2px rgba(0,40,90,.08);
+}
+.rm-iss {
+  padding: 2px 6px;
+  border: 1px solid var(--sm-border);
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--sm-muted-l);
+  font-size: 14px;
+  cursor: pointer;
+  align-self: flex-end;
+  line-height: 1.3;
+  transition: all .15s;
+  font-family: 'Source Sans 3', sans-serif;
+}
+.rm-iss:hover {
+  border-color: var(--sm-red);
+  color: var(--sm-red);
+  background: #fdf0ef;
+}
+.pl-inner {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  padding: 4px 6px 4px 12px;
+}
+.pl-nm {
+  flex: 1;
+  font-size: 12.5px;
+  color: var(--sm-text);
+  line-height: 1.3;
+  font-weight: 400;
+}
+.alle {
+  padding: 2px 6px;
+  border: 1px solid var(--sm-border);
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--sm-muted-l);
+  font-size: 9px;
+  font-weight: 600;
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: all .15s;
+  font-family: 'Source Sans 3', sans-serif;
+  letter-spacing: .03em;
+}
+.alle:hover, .alle.full {
+  border-color: var(--sm-orange);
+  color: var(--sm-orange);
+  background: var(--sm-orange-l);
+}
+td.cb {
+  text-align: center;
+  padding: 0;
+}
+td.cb label {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
+  min-height: 30px;
+  margin: 0;
+  padding: 5px;
+  cursor: pointer;
+  user-select: none;
+}
+td.cb input[type=checkbox] {
+  accent-color: var(--sm-orange);
+  width: 14px;
+  height: 14px;
+  cursor: pointer;
+  display: block;
+  margin: 0;
+}
+tr.cat td {
+  background: var(--sm-navy-10);
+  padding: 4px 12px;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: .09em;
+  text-transform: uppercase;
+  color: var(--sm-navy);
+  cursor: pointer;
+  user-select: none;
+}
+tr.cat td.pl-cell {
+  background: var(--sm-navy-10);
+  padding: 0;
+}
+/* Kategorie-Label klebt beim horizontalen Scrollen am linken Rand (colspan-Zelle selbst kann nicht kleben) */
+tr.cat td.pl-cell .cat-lbl {
+  position: sticky;
+  left: 0;
+  display: inline-block;
+  padding: 4px 12px;
+}
+tr.cat td .cat-toggle {
+  display: inline-block;
+  margin-right: 5px;
+  font-size: 8px;
+  transition: transform .18s;
+  color: var(--sm-navy);
+}
+tr.cat.collapsed td .cat-toggle {
+  transform: rotate(-90deg);
+}
+tr.cat:hover td.pl-cell {
+  background: #d8dee9;
+}
+tr.pl-row.hidden {
+  display: none;
+}
+tr.pl-row.alt td:not(.pl-cell) {
+  background: #fbfcfe;
+}
+/* ── HOVER-FADENKREUZ (Zeile + Spalte hervorheben) ── */
+#mx td.col-hl,
+#mx th.iss-th.col-hl { background: var(--sm-navy-10); }
+#mx tr.row-hl td:not(.pl-cell) { background: var(--sm-navy-05); }
+#mx tr.row-hl td.pl-cell { background: var(--sm-navy-10); }
+#mx tr.row-hl td.col-hl {
+  background: var(--sm-orange-l);
+  box-shadow: inset 0 0 0 1px var(--sm-orange);
+}
+.empty-st {
+  padding: 2.5rem;
+  text-align: center;
+  color: var(--sm-muted-l);
+  font-size: 13px;
+}
+
+/* ── OPTIONS PANEL ── */
+.options-panel {
+  background: var(--sm-white);
+  border: 1px solid var(--sm-border);
+  border-radius: var(--radius-lg);
+  padding: 1rem 1.25rem;
+  margin-bottom: 1rem;
+  box-shadow: var(--shadow-sm);
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 8px 2.25rem;
+  align-items: start;
+}
+.options-panel .tog { margin-bottom: 0; align-items: flex-start; }
+/* Häkchen bündig zur ersten Textzeile halten, auch bei umbrechendem Label / Zahlenfeld */
+.options-panel .tog input[type=checkbox] { margin-top: 1px; }
+/* Die Mediadaten-Zeile ist mit Abstand die längste Beschriftung (265 px gegenüber
+   höchstens 142 px bei allen übrigen). Über zwei Spalten bleibt sie einzeilig, und
+   die sieben Optionen füllen genau zwei Reihen à vier Feldern. */
+.options-panel .o-r { grid-column: span 2; }
+/* Reservierungs-Textbox über die volle Breite unter den Spalten */
+.options-panel #rv-w { grid-column: 1 / -1; margin-top: 2px; }
+/* Spaltenzahl richtet sich nach der Panelbreite (Container-Abfrage), nicht nach dem
+   Fenster: breit = 4 Spalten, darunter 3, 2 und 1. Die Doppelbreite der Mediadaten-Zeile
+   gilt auch bei drei Spalten – sie bleibt dadurch einzeilig. Ab zwei Spalten läuft sie
+   über die volle Breite („1 / -1" = erste bis letzte Rasterlinie). Das passt sich der
+   Spaltenzahl von selbst an: bei zwei Spalten volle Breite und einzeilig, bei einer
+   Spalte automatisch nur eine Spalte breit, ohne das Raster zu sprengen.
+   Der Reservierungshinweis bleibt über die DOM-Reihenfolge immer der letzte Punkt,
+   die Textbox ganz unten. */
+.options-container { container-type: inline-size; }
+@container (max-width: 720px) {
+  .options-panel { grid-template-columns: 1fr 1fr 1fr; }
+}
+@container (max-width: 540px) {
+  .options-panel { grid-template-columns: 1fr 1fr; }
+  .options-panel .o-r { grid-column: 1 / -1; }
+}
+@container (max-width: 400px) {
+  .options-panel { grid-template-columns: 1fr; }
+}
+.tog {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  margin-bottom: 8px;
+}
+.tog:last-of-type { margin-bottom: 0; }
+.tog input[type=checkbox] {
+  accent-color: var(--sm-navy);
+  width: 15px;
+  height: 15px;
+  flex-shrink: 0;
+  cursor: pointer;
+}
+.tog label {
+  font-size: 12.5px;
+  color: var(--sm-text);
+  cursor: pointer;
+  font-weight: 400;
+}
+.tog .opt-num {
+  width: 54px;
+  font-family: 'Source Sans 3', sans-serif;
+  font-size: 12.5px;
+  font-weight: 600;
+  text-align: right;
+  padding: 3px 6px;
+  border: 1.5px solid var(--sm-border);
+  border-radius: var(--radius-sm);
+  color: var(--sm-text);
+  background: var(--sm-white);
+}
+.tog .opt-num:focus { outline: none; border-color: var(--sm-navy); box-shadow: 0 0 0 2px rgba(0,40,90,.08); }
+.tog .opt-suffix { font-size: 12.5px; color: var(--sm-text); }
+.tog .opt-hint { font-size: 11.5px; color: var(--sm-muted); }
+#rv-w { margin-top: 8px; }
+#rv-w textarea {
+  width: 100%;
+  font-size: 12px;
+  font-family: 'Source Sans 3', sans-serif;
+  padding: 7px 10px;
+  border: 1.5px solid var(--sm-border);
+  border-radius: var(--radius-md);
+  resize: none;          /* Höhe wächst automatisch mit, siehe rvGrow() */
+  overflow-y: hidden;
+  min-height: 54px;
+  color: var(--sm-text);
+  transition: border-color .12s;
+}
+#rv-w textarea:focus {
+  outline: none;
+  border-color: var(--sm-navy);
+  box-shadow: 0 0 0 2px rgba(0,40,90,.08);
+}
+
+/* ── PREVIEW BOX ── */
+.prev-box {
+  background: var(--sm-white);
+  border: 1px solid var(--sm-border);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  box-shadow: var(--shadow-md);
+  margin-top: .5rem;
+}
+.prev-hdr {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: .75rem 1.25rem;
+  background: var(--sm-navy-05);
+  border-bottom: 1px solid var(--sm-border);
+}
+.prev-lbl {
+  font-size: 10px;
+  font-weight: 700;
+  color: var(--sm-navy);
+  text-transform: uppercase;
+  letter-spacing: .09em;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.prev-lbl::before {
+  content: '';
+  display: inline-block;
+  width: 3px;
+  height: 14px;
+  background: var(--sm-orange);
+  border-radius: 2px;
+}
+.btn-row { display: flex; gap: 7px; }
+.copy-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 5px 13px;
+  border-radius: var(--radius-md);
+  font-family: 'Source Sans 3', sans-serif;
+  font-size: 11.5px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all .15s;
+  border: 1.5px solid var(--sm-border);
+  background: var(--sm-white);
+  color: var(--sm-muted);
+}
+.copy-btn:hover {
+  border-color: var(--sm-navy);
+  color: var(--sm-navy);
+  background: var(--sm-navy-05);
+}
+.copy-btn.primary {
+  background: var(--sm-orange);
+  border-color: var(--sm-orange);
+  color: #fff;
+  box-shadow: 0 2px 5px rgba(238,125,17,.30);
+}
+.copy-btn.primary:hover {
+  background: #d4700f;
+  border-color: #d4700f;
+  color: #fff;
+}
+.copy-btn.done {
+  border-color: var(--sm-green);
+  color: var(--sm-green);
+  background: var(--sm-green-l);
+}
+.copy-hint {
+  font-size: 11px;
+  color: var(--sm-muted-l);
+  padding: .4rem 1.25rem .5rem;
+  border-bottom: 1px solid var(--sm-border);
+  background: #fafbfd;
+}
+#pv-wrap {
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--sm-text);
+  padding: 1rem 1.25rem;
+}
+
+/* ── TITELSUCHE ── */
+.title-search-wrap { position: relative; margin: 0 0 .6rem; }
+.title-search-wrap svg { position: absolute; left: 9px; top: 50%; transform: translateY(-50%); color: var(--sm-muted-l); pointer-events: none; }
+.title-search {
+  width: 100%;
+  max-width: 320px;
+  font-family: 'Source Sans 3', sans-serif;
+  font-size: 12.5px;
+  padding: 6px 10px 6px 29px;
+  border: 1.5px solid var(--sm-border);
+  border-radius: var(--radius-md);
+  color: var(--sm-text);
+  background: var(--sm-white);
+  transition: border-color .12s;
+}
+.title-search:focus { outline: none; border-color: var(--sm-navy); box-shadow: 0 0 0 2px rgba(0,40,90,.08); }
+
+/* ── MATRIX-TOOLBAR ── */
+.mx-tools { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin: 0 0 .5rem; }
+.mx-tool-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 4px 11px;
+  border: 1.5px solid var(--sm-border);
+  border-radius: var(--radius-md);
+  background: var(--sm-white);
+  color: var(--sm-muted);
+  font-family: 'Source Sans 3', sans-serif;
+  font-size: 11.5px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all .15s;
+}
+.mx-tool-btn:hover { border-color: var(--sm-navy); color: var(--sm-navy); background: var(--sm-navy-05); }
+.mx-tool-spacer { flex: 1; }
+.mx-tool-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11.5px;
+  font-weight: 600;
+  color: var(--sm-muted);
+  cursor: pointer;
+  user-select: none;
+}
+.mx-tool-toggle input { accent-color: var(--sm-orange); width: 14px; height: 14px; cursor: pointer; }
+
+/* ── DRUCKPUNKT (sichtbare Rückmeldung beim Klicken) ──
+   Die Schaltfläche sinkt beim Drücken um 1 px ab und federt beim Loslassen
+   zurück. Bewusst nur außerhalb der Belegungsmatrix: eine Verschiebung
+   innerhalb der klebenden Tabellenzellen würde deren Ebenenaufbau verändern. */
+.data-btn:active,
+.copy-btn:active,
+.tab:active,
+.add-iss:active,
+.mx-tool-btn:active { transform: translateY(1px); }
+
+/* ── KATEGORIE-ZÄHLER ── */
+.cat-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--sm-orange);
+  color: #fff;
+  border-radius: 9px;
+  font-size: 9px;
+  font-weight: 700;
+  padding: 0 6px;
+  margin-left: 7px;
+  min-width: 16px;
+  height: 14px;
+  vertical-align: middle;
+}
+
+</style>
+</head>
+<body>
+
+<!-- HERO STRIP (Logo + Titel in einer Zeile) -->
+<div class="sm-hero">
+  <div class="sm-hero-inner">
+  <div class="sm-hero-head">
+  <svg id="sm-logo-svg" style="display:block;height:28px;width:auto" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 157.207 26.299"><defs><style>.cls-1{fill:#fff;stroke-width:0px;}</style></defs><path class="cls-1" d="M20.733,20.18H3.744v-1.044h1.44c.252-3.384,3.491-4.644,5.291-7.379h-2.087c-1.008.36-2.52,2.591-2.52,3.887h-2.627l.036-1.08-.864.72L.108,12.621s-.108-.144-.108-.252.036-.18.036-.18l3.636-4.931.647-1.944.972-.36,1.008-1.404-.36-2.448c.972-.36,1.908-.036,2.375.432.036-.72-.036-1.512-.036-1.512,1.728-.18,2.339.756,2.627,1.8.468.036.9.108,1.296.18.072-.216.288-.396.54-.396.324,0,.539.252.539.54v.144c.756.252,1.476.612,2.124,1.008.108-.144.252-.216.432-.216.324,0,.54.252.54.54,0,.144-.036.252-.108.324.612.504,1.116,1.116,1.584,1.764.072-.036.18-.072.252-.072.324,0,.576.252.576.54,0,.216-.108.396-.288.468.36.648.647,1.368.864,2.124.036-.036.108-.036.144-.036.324,0,.54.252.54.54s-.18.504-.395.54c.143.756.252,1.512.324,2.304.324,0,.576.252.576.54,0,.324-.252.539-.539.576,0,.756-.036,1.584-.108,2.376.288.036.504.288.504.576s-.252.54-.576.54h-.036c-.143.792-.288,1.583-.468,2.412h1.512v1.044ZM18.142,19.172c2.088-8.603-.36-15.442-7.019-16.234.036.36.036.648.036.936,0,.432-.036.792-.036.792l-1.043-.18c.036-.36.108-2.808-.756-3.347,0,0,0,1.295-.288,2.591l-.972-.18c0-.9-.396-1.26-.936-1.512l.252,1.764-.612.9.288.828-1.908.648-.54,1.548-3.348,4.608,1.26,1.512,1.404-1.188.324.216v1.764h.756c.324-1.26,1.368-2.736,2.34-3.456l-.54-.648.792-.684.756.936s2.7,0,2.7-.036c.396-.864.648-1.908.648-3.131h1.044c0,4.104-2.052,5.723-4.607,8.243-.936.936-1.764,1.943-1.872,3.311h11.878ZM3.132,11.217c.036.468-.036,1.188-.288,1.548l-.756-.288c.252-.36.396-.864.396-1.296l.648.036ZM7.271,7.221l-1.62.864-.108-1.332,1.692-.18.036.648Z"/><path class="cls-1" d="M20.733,25.507H3.744v-2.088h16.99v2.088Z"/><path class="cls-1" d="M32.399,20.468c-1.368,0-2.448-.324-3.492-.792-.216-.936-.288-2.196-.36-3.492l.828-.144c.468,1.764,1.116,3.492,3.275,3.492,1.512,0,2.412-.936,2.412-2.34,0-3.708-6.155-2.879-6.155-7.163,0-1.944,1.584-3.708,4.392-3.708.936,0,1.944.252,2.952.612.072.756.144,1.62.18,3.132l-.756.036c-.36-1.26-.935-2.808-2.771-2.808-1.368,0-2.052.936-2.052,2.052,0,3.42,6.263,2.7,6.263,7.163,0,2.124-1.908,3.96-4.715,3.96ZM42.658,20.324c-.576-.036-1.044-.144-1.332-.252v3.383c0,1.224.144,1.332,1.8,1.476v.684h-5.075v-.684c1.296-.144,1.404-.252,1.404-1.476v-9.611c0-1.26-.036-1.296-1.26-1.404v-.612c1.08-.216,2.087-.54,3.131-.9v1.368l1.944-1.008c.252-.144.504-.18.756-.18,2.232,0,3.492,1.943,3.492,3.815,0,3.024-2.16,5.075-4.859,5.4ZM43.125,12.441c-.576,0-1.332.396-1.8.684v5.327c.396.432,1.044.756,1.836.756,1.044,0,2.412-.792,2.412-3.491,0-2.268-1.08-3.276-2.448-3.276ZM54.356,13.341c-.216-.288-.504-.36-.864-.36-.468,0-1.044.54-1.44,1.656v3.348c0,1.224.144,1.332,1.692,1.44v.72h-4.895v-.72c1.224-.108,1.368-.216,1.368-1.44v-4.067c0-1.224-.108-1.224-1.224-1.44v-.612c1.08-.216,2.124-.432,3.059-.792v2.16h.036c.648-1.188,1.548-2.124,2.375-2.124.72,0,1.224.54,1.224,1.116,0,.828-.864,1.548-1.332,1.116ZM61.231,20.144h-4.607v-.72c1.224-.108,1.404-.216,1.404-1.512v-3.888c0-1.404-.108-1.404-1.296-1.548v-.612c1.116-.216,2.231-.468,3.131-.792v6.839c0,1.296.108,1.404,1.368,1.512v.72ZM58.855,9.165c-.684,0-1.224-.54-1.224-1.224,0-.72.54-1.26,1.224-1.26.72,0,1.26.54,1.26,1.26,0,.684-.539,1.224-1.26,1.224ZM72.246,20.144h-4.248v-.72c1.008-.108,1.152-.216,1.152-1.368v-3.527c0-1.296-.576-2.088-1.656-2.088-.684,0-1.476.504-2.016,1.008v4.607c0,1.152.108,1.26,1.116,1.368v.72h-4.392v-.72c1.224-.108,1.404-.216,1.404-1.368v-4.139c0-1.224-.072-1.296-1.152-1.44v-.612c1.08-.216,2.088-.432,3.023-.792v1.44c.468-.396,1.836-1.404,2.88-1.404,1.62,0,2.627,1.116,2.627,2.772v4.175c0,1.152.18,1.26,1.26,1.368v.72ZM82.504,11.577c-.144.324-.54.936-.864,1.116l-1.044-.108c.288.396.504,1.188.504,1.8,0,2.196-1.979,3.384-3.779,3.384-.108,0-.396-.036-.648-.036-.432.144-.792.648-.792.972s.324.72,1.188.72h2.16c1.26,0,2.952.612,2.952,2.627,0,2.304-2.412,4.248-5.219,4.248-2.448,0-3.744-1.512-3.744-2.736,0-.792.396-1.404,2.088-2.7-.612-.216-1.692-.828-1.62-1.98.828-.36,1.584-1.008,1.908-1.404-.972-.324-1.872-1.476-1.872-2.771,0-2.34,2.088-3.6,3.815-3.6.756,0,1.476.18,2.088.504.936-.036,1.872-.144,2.736-.252l.144.216ZM79.661,21.224c-.504-.18-1.188-.216-2.304-.216-1.548,0-2.232,1.152-2.232,2.016,0,1.224,1.08,2.16,2.7,2.16,1.8,0,2.808-1.188,2.808-2.376,0-.756-.432-1.368-.972-1.583ZM77.357,11.973c-.756,0-1.62.792-1.62,2.304s.792,2.592,1.872,2.592c.791,0,1.548-.684,1.548-2.34,0-1.404-.684-2.556-1.8-2.556ZM90.063,15.14c-.324.036-2.808.216-5.075.288.072,2.375,1.476,3.383,2.88,3.383.791,0,1.368-.216,2.087-.936l.468.648c-1.188,1.476-2.592,1.835-3.24,1.835-2.556,0-4.032-1.943-4.032-4.247,0-2.808,2.124-5.003,4.248-5.003,1.764,0,3.167,1.512,3.167,3.204,0,.54-.108.756-.504.828ZM87.004,12.009c-.828,0-1.692.9-1.908,2.447l3.096-.072c.396,0,.468-.108.468-.468,0-.972-.684-1.908-1.656-1.908ZM97.371,13.341c-.252-.252-.576-.36-.864-.36-.468,0-1.08.54-1.476,1.656v3.348c0,1.224.144,1.332,1.691,1.44v.72h-4.931v-.72c1.26-.108,1.368-.216,1.368-1.44v-4.067c0-1.224-.072-1.224-1.224-1.44v-.612c1.152-.216,2.16-.432,3.096-.792v2.16h.036c.612-1.188,1.512-2.124,2.376-2.124.684,0,1.224.54,1.224,1.116,0,.828-.9,1.548-1.296,1.116Z"/><path class="cls-1" d="M113.758,20.144l-.396-6.083c-.144-1.908-.288-4.068-.216-5.759-.54,1.62-1.009,3.06-1.692,4.895l-2.628,6.947h-.647l-2.448-6.731c-.684-1.872-1.224-3.384-1.655-5.039-.036,1.764-.144,3.815-.288,5.831l-.36,5.939h-.971l.936-12.814h1.115l2.664,7.127c.611,1.656,1.008,2.88,1.403,4.284.324-1.368.756-2.556,1.404-4.248l2.699-7.163h1.188l.863,12.814h-.972Z"/><path class="cls-1" d="M117.72,15.573c.035,2.987,1.547,3.923,3.239,3.923,1.116,0,1.764-.216,2.304-.504l.216.756c-.432.252-1.332.54-2.664.54-2.556,0-4.067-1.872-4.067-4.427,0-2.916,1.62-4.752,3.888-4.752,2.771,0,3.311,2.556,3.311,3.887,0,.216,0,.396-.036.576h-6.19ZM117.791,14.817h5.147c0-1.476-.684-2.952-2.447-2.952-1.728,0-2.556,1.584-2.7,2.952Z"/><path class="cls-1" d="M131.974,20.144l-.036-1.512c-.504.936-1.512,1.692-2.987,1.692-2.052,0-3.708-1.692-3.708-4.5,0-3.024,1.8-4.751,3.851-4.751,1.26,0,2.196.612,2.7,1.44v-5.363h.972v10.979c0,.576.036,1.44.072,2.016h-.864ZM131.794,14.744c0-.216-.036-.504-.072-.756-.288-1.152-1.26-2.088-2.556-2.088-1.836,0-2.916,1.692-2.916,3.852,0,1.98.9,3.816,2.844,3.816,1.08,0,2.196-.684,2.628-2.232.036-.216.072-.396.072-.648v-1.944Z"/><path class="cls-1" d="M135.683,9.669c-.396,0-.72-.36-.72-.792s.323-.792.791-.792c.396,0,.721.36.721.792s-.324.792-.756.792h-.036ZM135.215,20.144v-8.855h.972v8.855h-.972Z"/><path class="cls-1" d="M137.842,20.144v-.576l4.608-6.299c.287-.396.611-.756.971-1.188h-5.147v-.792h6.299v.612l-4.607,6.264c-.288.395-.576.791-.9,1.224h5.507v.756h-6.731Z"/><path class="cls-1" d="M147.274,9.669c-.396,0-.721-.36-.721-.792s.324-.792.791-.792c.396,0,.721.36.721.792s-.324.792-.756.792h-.035ZM146.805,20.144v-8.855h.973v8.855h-.973Z"/><path class="cls-1" d="M156.237,20.144v-5.363c0-1.512-.541-2.844-2.268-2.844-1.152,0-2.16.792-2.449,1.908-.07.216-.107.504-.107.792v5.507h-1.008v-6.731c0-.864-.035-1.368-.072-2.124h.936l.037,1.404c.504-.9,1.584-1.584,2.879-1.584,1.008,0,3.023.504,3.023,3.491v5.543h-.971Z"/></svg>
+    <div class="sm-hero-div"></div>
+    <div>
+      <h1>Open<span class="sm-hero-mark">Slots</span></h1>
+      <div class="sm-hero-sub">Angebotsplaner &middot; v2</div>
+    </div>
+  </div>
+  <p>Titel-Tab w&auml;hlen &rarr; Ausgabe hinzuf&uuml;gen &rarr; Platzierungen ankreuzen. <strong>&bdquo;Alle&ldquo;</strong> &uuml;bertr&auml;gt eine Zeile auf alle Ausgaben des Titels.</p>
+  </div>
+</div>
+
+<!-- MAIN -->
+<div class="app">
+
+  <div class="data-bar">
+    <button class="data-btn" onclick="document.getElementById('dataFile').click()" title="Preis- und Termindaten aus Excel laden (Bl&auml;tter &bdquo;Preise&ldquo; + &bdquo;Termine&ldquo;)">
+      <svg width="13" height="13" viewBox="0 0 20 20" fill="currentColor"><path d="M3 5a2 2 0 012-2h3.586a1 1 0 01.707.293l1.414 1.414A1 1 0 0011.414 5H15a2 2 0 012 2v1H3V5z"/><path d="M3 9h14v5a2 2 0 01-2 2H5a2 2 0 01-2-2V9zm7 1a1 1 0 00-1 1v1.586l-.293-.293a1 1 0 10-1.414 1.414l2 2a1 1 0 001.414 0l2-2a1 1 0 00-1.414-1.414l-.293.293V11a1 1 0 00-1-1z"/></svg>
+      Daten laden
+    </button>
+    <span class="data-yr" id="yearWrap" style="display:none">Jahrgang
+      <select id="yearSel" class="year-sel" onchange="onYearSel(this.value)"></select>
+    </span>
+    <span class="kg-wrap" id="kgWrap" style="display:none">
+      <button class="data-btn subtle" id="kgBtn" aria-haspopup="true" aria-expanded="false" onclick="toggleKgMenu(event)" title="Ausgaben, die zu einem Kongress geh&ouml;ren, &uuml;ber alle Titel als Heftzeilen anlegen">
+        <svg width="13" height="13" viewBox="0 0 20 20" fill="currentColor"><path d="M9.5 2.1a1 1 0 011 0l6 3.4A1 1 0 0117 6.4V8H3V6.4a1 1 0 01.5-.9l6-3.4z"/><path d="M4 9.5h2.2v6H4v-6zm4.9 0h2.2v6H8.9v-6zm4.9 0H16v6h-2.2v-6zM3 17a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1z"/></svg>
+        Nach Kongress
+        <span class="kg-chev" aria-hidden="true">&#9660;</span>
+      </button>
+      <div class="kg-menu" id="kgMenu" style="display:none">
+        <div class="kg-menu-top">
+          <div class="kg-menu-hd">Ausgaben &uuml;ber alle Titel anlegen</div>
+          <div class="kg-search-wrap">
+            <svg width="13" height="13" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true"><path fill-rule="evenodd" d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z" clip-rule="evenodd"/></svg>
+            <input type="text" class="kg-search" id="kgSearch" placeholder="Kongress suchen &hellip;" autocomplete="off" oninput="filterKgMenu(this.value)">
+          </div>
+        </div>
+        <div id="kgList"></div>
+      </div>
+    </span>
+    <span class="ang-wrap" id="angWrap" style="display:none">
+      <button class="data-btn ang-btn" id="angOpenBtn" onclick="openAngebot()" title="Ein gespeichertes Angebot &ouml;ffnen und weiterbearbeiten">
+        <svg width="13" height="13" viewBox="0 0 20 20" fill="currentColor"><path d="M2 6a2 2 0 012-2h4l2 2h6a2 2 0 012 2v6a2 2 0 01-2 2H4a2 2 0 01-2-2V6z"/></svg>
+        Angebot &ouml;ffnen
+      </button>
+      <button class="data-btn ang-btn" id="angSaveBtn" onclick="saveAngebot()" title="Diesen Angebotsstand als Datei speichern (beim erneuten Speichern wird dieselbe Datei &uuml;berschrieben)">
+        <svg width="13" height="13" viewBox="0 0 20 20" fill="currentColor"><path d="M3 4a1 1 0 011-1h9.586a1 1 0 01.707.293l2.414 2.414a1 1 0 01.293.707V16a1 1 0 01-1 1h-1v-5a1 1 0 00-1-1H6a1 1 0 00-1 1v5H4a1 1 0 01-1-1V4zm4 1v2h5V5H7zm0 8h6v4H7v-4z"/></svg>
+        Angebot speichern
+      </button>
+    </span>
+    <span class="ang-status" id="angStatus"></span>
+    <span class="data-status" id="dataStatus">Keine Daten geladen &ndash; bitte Angebotsdaten.xlsx laden</span>
+    <button class="data-btn danger" id="resetBtn" onclick="resetAll()" title="Alle angekreuzten Platzierungen und Ausgaben f&uuml;r alle Titel entfernen" style="display:none">
+      <svg width="13" height="13" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M4 2a1 1 0 011 1v2.101a7.002 7.002 0 0111.601 2.566 1 1 0 11-1.885.666A5.002 5.002 0 005.999 7H9a1 1 0 010 2H4a1 1 0 01-1-1V3a1 1 0 011-1zm.008 9.057a1 1 0 011.276.61A5.002 5.002 0 0014.001 13H11a1 1 0 110-2h5a1 1 0 011 1v5a1 1 0 11-2 0v-2.101a7.002 7.002 0 01-11.601-2.566 1 1 0 01.61-1.276z" clip-rule="evenodd"/></svg>
+      Auswahl zur&uuml;cksetzen
+    </button>
+    <input type="file" id="dataFile" accept=".xlsx" style="display:none" onchange="onDataFileChosen(event)">
+    <input type="file" id="angebotFile" accept=".json,application/json" style="display:none" onchange="onAngebotFileChosen(event)">
+  </div>
+
+  <div class="workspace">
+  <aside class="sidebar">
+  <div class="sec-label">Titel</div>
+  <div class="title-search-wrap" id="titleSearchWrap" style="display:none">
+    <svg width="14" height="14" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true"><path fill-rule="evenodd" d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z" clip-rule="evenodd"/></svg>
+    <input type="text" class="title-search" id="titleSearch" placeholder="Titel suchen &hellip;" oninput="filterTabs(this.value)">
+  </div>
+  <div class="tabs" id="tabs"></div>
+  </aside>
+
+  <div class="main">
+  <div class="sec-label">Ausgaben</div>
+  <div style="display:flex;gap:8px;margin-bottom:.85rem">
+  <button class="add-iss" style="flex:1;margin-bottom:0" onclick="addIssue()">
+    <svg width="13" height="13" viewBox="0 0 13 13" fill="none"><circle cx="6.5" cy="6.5" r="6" stroke="currentColor" stroke-width="1.3"/><line x1="6.5" y1="3.5" x2="6.5" y2="9.5" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/><line x1="3.5" y1="6.5" x2="9.5" y2="6.5" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>
+    Ausgabe hinzuf&uuml;gen
+  </button>
+  <button class="add-iss" style="flex:1;margin-bottom:0;border-style:solid;border-color:var(--sm-navy);color:var(--sm-navy)" onclick="addAllIssues()">
+    <svg width="13" height="13" viewBox="0 0 13 13" fill="none"><circle cx="6.5" cy="6.5" r="6" stroke="currentColor" stroke-width="1.3"/><line x1="4" y1="6.5" x2="9" y2="6.5" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/><line x1="4" y1="4.5" x2="9" y2="4.5" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/><line x1="4" y1="8.5" x2="9" y2="8.5" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>
+    Alle Ausgaben
+  </button>
+  </div>
+
+  <div class="mx-tools" id="mxTools" style="display:none">
+    <button class="mx-tool-btn" id="toggleAll" onclick="toggleAllCats()">Alle einklappen</button>
+    <span class="mx-tool-spacer"></span>
+    <label class="mx-tool-toggle"><input type="checkbox" id="ck-preis" onchange="tPreis()"> Preise anzeigen</label>
+    <label class="mx-tool-toggle"><input type="checkbox" id="ck-only" onchange="tOnly()"> Nur belegte Platzierungen anzeigen</label>
+  </div>
+
+  <div class="mx-outer">
+    <table class="mx" id="mx">
+      <tbody><tr><td class="empty-st" colspan="20">Noch keine Ausgaben &mdash; oben auf &ldquo;Ausgabe hinzuf&uuml;gen&rdquo; klicken.</td></tr></tbody>
+    </table>
+  </div>
+
+  <div class="sec-label">Optionen</div>
+  <div class="options-container">
+  <div class="options-panel">
+    <div class="tog o-r">
+      <input type="checkbox" id="ck-r" onchange="render()">
+      <label for="ck-r">Rabatt gem. Mediadaten&thinsp;/&thinsp;AE:&thinsp;10&thinsp;%&thinsp;/&thinsp;zzgl. MwSt.</label>
+    </div>
+    <div class="tog o-disc">
+      <input type="checkbox" id="ck-disc" onchange="render()">
+      <label for="ck-disc">Rabatt</label>
+      <input type="number" id="disc-val" value="0" min="0" max="100" step="1" class="opt-num" oninput="render()">
+      <span class="opt-suffix">%</span>
+    </div>
+    <div class="tog o-ae">
+      <input type="checkbox" id="ck-ae" onchange="render()">
+      <label for="ck-ae">10&thinsp;% AE</label>
+    </div>
+    <div class="tog o-ts">
+      <input type="checkbox" id="ck-ts" onchange="render()">
+      <label for="ck-ts">Themenschwerpunkte</label>
+    </div>
+    <div class="tog o-kg">
+      <input type="checkbox" id="ck-kg" onchange="render()">
+      <label for="ck-kg">Kongresse</label>
+    </div>
+    <div class="tog o-du">
+      <input type="checkbox" id="ck-du" onchange="render()">
+      <label for="ck-du">DU&thinsp;/&thinsp;Anlieferung</label>
+    </div>
+    <div class="tog o-rv">
+      <input type="checkbox" id="ck-rv" onchange="tRv()">
+      <label for="ck-rv">Reservierungshinweis</label>
+    </div>
+    <div id="rv-w" style="display:none">
+      <textarea id="rv-t" placeholder="Reservierungshinweis &hellip;" oninput="rvGrow();render()" style="min-height:72px">Reservierungen können nach Ihrer Rückmeldung bis xx.xx.xxxx vorgenommen werden.
+Bitte beachten Sie, dass die vorgenannten Platzierungen bis zu Ihrer Rückmeldung weiter angeboten werden.
+Bitte reservieren Sie nur budget- und planungsrelevante Platzierungen.</textarea>
+    </div>
+  </div>
+  </div>
+
+  <div class="prev-box" id="pw">
+    <div class="prev-hdr">
+      <span class="prev-lbl">Vorschau &amp; Kopiervorlage</span>
+      <div class="btn-row">
+        <button class="copy-btn primary" id="cb-html" onclick="cpHtml()" title="Als formatierte Tabelle kopieren (f&uuml;r Outlook)">&#x2398;&nbsp;Als Tabelle kopieren</button>
+        <button class="copy-btn" id="cb-txt" onclick="cpTxt()" title="Als einfachen Text kopieren">Nur Text</button>
+      </div>
+    </div>
+    <p class="copy-hint">&bdquo;Als Tabelle kopieren&ldquo; &rarr; direkt in Outlook einf&uuml;gen. &nbsp;&bdquo;Nur Text&ldquo; f&uuml;r einfache Mails ohne Formatierung.</p>
+    <div id="pv-wrap"></div>
+  </div>
+  </div>
+  </div>
+
+</div>
+
+<div class="dlg-back" id="dlgBack" style="display:none">
+  <div class="dlg-box" role="dialog" aria-modal="true" aria-labelledby="dlgHd">
+    <div class="dlg-hd" id="dlgHd">Welche Angebotsdaten sollen gelten?</div>
+    <div class="dlg-tx" id="dlgTx"></div>
+    <div class="dlg-row">
+      <button class="data-btn ang-btn" id="dlgBtnNeu">Geladene Daten verwenden</button>
+      <button class="data-btn" id="dlgBtnAlt">Daten aus dem Angebot</button>
+    </div>
+  </div>
+</div>
+
+<script>
+
+const fmt=n=>n.toLocaleString('de-DE',{minimumFractionDigits:2,maximumFractionDigits:2})+'\u202f\u20ac';
+let J=[];
+let ISSUES=[];
+let ST=J.map(()=>({issues:[],nid:1}));
+let cJ=0;
+
+function pOf(ji,n){for(const g of J[ji].g)for(const[nm,p]of g.i)if(nm===n)return p;return null;}
+function entryOf(ji,n){for(const g of J[ji].g)for(const e of g.i)if(e[0]===n)return e;return null;}
+/* ── Welcher Termin gilt? ──
+   Kommt ausschließlich aus der Spalte „Termin (DU/EH)" der Preisliste:
+   »DU« = Druckunterlagenschluss (der Verlag druckt), »EH« = Anliefertermin
+   (fertige Ware in der Druckerei). Steht dort nichts oder etwas anderes,
+   wird für dieses Format bewusst gar kein Produktionstermin ausgegeben.
+   Dieselbe Lesart steckt in beiden Angebotsvorlagen. */
+function terminArt(ji,n){
+  const j=J[ji];if(!j)return '';
+  for(const g of j.g)for(const e of g.i)if(e[0]===n){
+    const flag=(typeof e[4]==='string')?e[4].trim().toUpperCase():'';
+    return (flag==='DU'||flag==='EH')?flag:'';
+  }
+  return '';
+}
+function fmtP(p){if(!Array.isArray(p))return fmt(p);return `<span style='white-space:nowrap'>${fmt(p[0])} s/w + ${fmt(p[1])} 4c-Zuschl.</span>`;}
+function fmtPtxt(p){if(!Array.isArray(p))return fmt(p);return `${fmt(p[0])} s/w (zzgl. ${fmt(p[1])} 4c-Zuschlag)`;}
+function esc(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
+function escNl(s){return esc(s).replace(/\r?\n/g,'<br>');}
+function flatNl(s){return String(s).replace(/\r?\n/g,'; ').trim();}
+
+function buildCollapsed(){
+  const s=new Set();
+  J.forEach((j,ji)=>j.g.forEach((g,gi)=>{s.add(ji+'_'+gi);}));
+  return s;
+}
+let collapsedCats=buildCollapsed();
+
+/* ===== EXCEL-DATENIMPORT (Blätter „Preise" + „Termine", wie Angebotsvorlage) ===== */
+let DATASET={}, isCustomData=false, loadedFileName='', currentYear='';
+/* v6: Datensatz enthält jetzt die Auflage je Titel (Feld „a"). Der hochgezählte
+   Schlüssel sorgt dafür, dass ein älterer Zwischenspeicher ohne Auflage nicht
+   weiterverwendet wird – die Excel wird dann einmal neu geladen. */
+const CACHE_KEY='belegungsplaner_data_v6';
+const STATE_KEY='belegungsplaner_state_v1';
+
+function years(){return Object.keys(DATASET).sort();}
+/* Voreingestellter Jahrgang: das laufende Kalenderjahr, sofern die Excel es kennt –
+   sonst der neueste vorhandene Jahrgang. Ab dem 01.01.2027 steht also 2027 vorn. */
+function defaultYear(){
+  const ys=years();if(!ys.length)return '';
+  const heuer=String(new Date().getFullYear());
+  return ys.includes(heuer)?heuer:ys[ys.length-1];
+}
+
+function ensureExcelJS(){
+  if(window.ExcelJS)return Promise.resolve();
+  return new Promise((res,rej)=>{
+    const s=document.createElement('script');
+    s.src='https://cdn.jsdelivr.net/npm/exceljs@4.3.0/dist/exceljs.min.js';
+    s.onload=res;s.onerror=()=>rej(new Error('ExcelJS konnte nicht geladen werden (Internetverbindung?).'));
+    document.head.appendChild(s);
+  });
+}
+function cellStr(cell){
+  const v=cell?cell.value:null;
+  if(v===null||v===undefined)return '';
+  if(typeof v==='object'){
+    if(v instanceof Date)return ('0'+v.getDate()).slice(-2)+'.'+('0'+(v.getMonth()+1)).slice(-2)+'.';
+    if('text' in v)return String(v.text).trim();
+    if('result' in v)return String(v.result).trim();
+    if('richText' in v)return v.richText.map(r=>r.text).join('').trim();
+  }
+  return String(v).trim();
+}
+function cellNum(cell){
+  const v=cell?cell.value:null;
+  if(v===null||v===undefined||v==='')return 0;
+  if(typeof v==='object'&&'result' in v)return Number(v.result)||0;
+  const n=Number(v);return isNaN(n)?0:n;
+}
+function dateY(s,year){s=(s||'').trim();return /^\d{1,2}\.\d{1,2}\.$/.test(s)?s+year:s;}
+
+// Excel-Arbeitsmappe -> { jahr: { J:[...], ISSUES:[...] } }
+function parseWorkbookToDataset(wb){
+  const wsP=wb.getWorksheet('Preise');
+  if(!wsP)throw new Error('Im Excel fehlt das Tabellenblatt „Preise".');
+  const Y={};
+  wsP.eachRow((row,rn)=>{
+    if(rn===1)return;
+    const year=cellStr(row.getCell(1)),titel=cellStr(row.getCell(2)),fmt=cellStr(row.getCell(5));
+    if(!year||!titel||!fmt)return;
+    const kat=cellStr(row.getCell(4))||'Sonstige';
+    const gp=cellNum(row.getCell(6)),z4c=cellNum(row.getCell(7));
+    const price=z4c>0?[gp,z4c]:gp;
+    const rabOk=/^ja$/i.test(cellStr(row.getCell(8)));
+    const aeOk=/^ja$/i.test(cellStr(row.getCell(9)));
+    /* Spalte 3 „Auflage": je Titel und Jahrgang ein fester Wert, steht in jeder
+       Preiszeile erneut. Der erste brauchbare Wert je Titel wird übernommen. */
+    const aufl=cellNum(row.getCell(3));
+    /* Spalte 11 „Fachbereich": wie die Auflage je Titel ein fester Wert, der in jeder
+       Preiszeile erneut steht. Fehlt die Spalte, bleibt das Feld leer und die Titelliste
+       sieht aus wie bisher. */
+    const fach=cellStr(row.getCell(11));
+    if(!Y[year])Y[year]={order:[],t:{}};
+    if(!Y[year].t[titel]){Y[year].t[titel]={order:[],c:{},a:0,f:''};Y[year].order.push(titel);}
+    const T=Y[year].t[titel];
+    if(!T.a&&aufl>0)T.a=aufl;
+    if(!T.f&&fach)T.f=fach;
+    if(!T.c[kat]){T.c[kat]=[];T.order.push(kat);}
+    /* Spalte 10 „Termin" ist freiwillig: DU oder EH. Sie wird nur angehängt, wenn sie
+       gefüllt ist – so bleiben Angebotsdateien ohne diese Spalte unverändert. */
+    const tArt=cellStr(row.getCell(10));
+    const eintrag=[fmt,price,rabOk,aeOk];
+    if(tArt)eintrag.push(tArt);
+    T.c[kat].push(eintrag);
+  });
+  const wsT=wb.getWorksheet('Termine');
+  const TM={};
+  if(wsT)wsT.eachRow((row,rn)=>{
+    if(rn===1)return;
+    const year=cellStr(row.getCell(1)),titel=cellStr(row.getCell(2));
+    if(!year||!titel)return;
+    const heft=cellStr(row.getCell(3)),monat=cellStr(row.getCell(4));
+    const label=(heft&&monat)?(heft+' – '+monat):(heft||monat);
+    const et=dateY(cellStr(row.getCell(5)),year),asch=dateY(cellStr(row.getCell(6)),year);
+    /* Spalte 7 = DU-Schluss (Verlag druckt), Spalte 8 = EH-Termin (fertige Ware
+       wird in der Druckerei angeliefert). Welcher gilt, entscheidet das Format. */
+    const duS=dateY(cellStr(row.getCell(7)),year),ehT=dateY(cellStr(row.getCell(8)),year);
+    const ts=cellStr(row.getCell(9)),kg=cellStr(row.getCell(10));
+    if(!TM[year])TM[year]={};
+    if(!TM[year][titel])TM[year][titel]=[];
+    TM[year][titel].push([label,et,asch,ts,kg,duS,ehT]);
+  });
+  const DS={};
+  Object.keys(Y).forEach(year=>{
+    DS[year]={
+      J:Y[year].order.map(titel=>({n:titel,a:Y[year].t[titel].a||0,f:Y[year].t[titel].f||'',g:Y[year].t[titel].order.map(kat=>({l:kat,i:Y[year].t[titel].c[kat]}))})),
+      ISSUES:Y[year].order.map(titel=>(TM[year]&&TM[year][titel])?TM[year][titel]:[])
+    };
+  });
+  if(!Object.keys(DS).length)throw new Error('Es wurden keine Datenzeilen gefunden.');
+  return DS;
+}
+
+async function onDataFileChosen(ev){
+  const file=ev.target.files[0];if(!file)return;
+  const st=document.getElementById('dataStatus');if(st)st.textContent='lädt …';
+  try{
+    await ensureExcelJS();
+    const wb=new ExcelJS.Workbook();
+    await wb.xlsx.load(await file.arrayBuffer());
+    const ds=parseWorkbookToDataset(wb);
+    DATASET=ds;isCustomData=true;loadedFileName=file.name;
+    /* Neue Preisgrundlage: Die Verknüpfung zu einer offenen Angebotsdatei wird
+       gelöst, damit „Speichern" nicht ungefragt in die alte Datei schreibt. */
+    clearAngebotDatei();
+    currentYear=defaultYear();
+    saveCache();
+    /* Vor applyYear: der Abgleich schreibt in den Zwischenspeicher, aus dem
+       restoreState() gleich darauf liest. */
+    const abgleich=refreshTermineImStand(DATASET);
+    applyYear(currentYear);
+    meldeTerminAbgleich(abgleich);
+  }catch(e){
+    console.error(e);
+    alert('Die Datei konnte nicht gelesen werden:\n'+(e.message||e)+'\n\nBitte ein Excel mit den Blättern „Preise" und „Termine" verwenden (z. B. die Angebotsdaten der Angebotsvorlage).');
+    syncDataUI();
+  }finally{ev.target.value='';}
+}
+
+/* ===== PREISLISTE VON DER ADRESSE HOLEN =====
+   Liegt dieses Werkzeug unter einer Adresse (https://…), steht die Angebotsdaten.xlsx
+   daneben und wird beim Start selbst geholt – niemand muss sie mehr auswählen. Per
+   Doppelklick geöffnet (file://) verbietet der Browser das Lesen von Nachbardateien;
+   dann bleibt es bei der Dateiauswahl wie bisher. Ein Fehlschlag ist deshalb kein
+   Fehler, sondern der zweite vorgesehene Weg – gemeldet wird er nur in der Statuszeile.
+   Der Ablauf entspricht dem Laden von Hand: erst der Terminabgleich am gespeicherten
+   Arbeitsstand, dann der Aufbau. Dadurch bleiben Ankreuzungen erhalten. */
+const DATEN_DATEI='Angebotsdaten.xlsx';
+let datenStand='';
+function standAusKopf(r){
+  const lm=r.headers.get('last-modified');
+  if(!lm)return '';
+  const d=new Date(lm);
+  return isNaN(d)?'':('0'+d.getDate()).slice(-2)+'.'+('0'+(d.getMonth()+1)).slice(-2)+'.'+d.getFullYear();
+}
+async function ladePreislisteVonServer(){
+  if(location.protocol==='file:')return false;
+  const st=document.getElementById('dataStatus');
+  if(st&&!isCustomData)st.textContent='Preisliste wird geladen …';
+  try{
+    const r=await fetch(DATEN_DATEI,{cache:'no-cache'});
+    if(!r.ok)throw new Error('HTTP '+r.status);
+    const buf=await r.arrayBuffer();
+    await ensureExcelJS();
+    const wb=new ExcelJS.Workbook();
+    await wb.xlsx.load(buf);
+    const ds=parseWorkbookToDataset(wb);
+    if(!ds||!Object.keys(ds).length)throw new Error('Keine Jahrgänge in der Datei.');
+    datenStand=standAusKopf(r);
+    DATASET=ds;isCustomData=true;loadedFileName=DATEN_DATEI;
+    /* Der gemerkte Jahrgang bleibt stehen, solange die Preisliste ihn kennt. */
+    if(!currentYear||!DATASET[currentYear])currentYear=defaultYear();
+    saveCache();
+    const abgleich=refreshTermineImStand(DATASET);
+    applyYear(currentYear);
+    meldeTerminAbgleich(abgleich);
+    return true;
+  }catch(e){
+    console.warn('Preisliste nicht von der Adresse geholt:',e);
+    if(st&&!isCustomData)st.textContent='Preisliste nicht erreichbar – bitte Angebotsdaten.xlsx laden';
+    return false;
+  }
+}
+
+function saveCache(){
+  if(!isCustomData)return;
+  try{localStorage.setItem(CACHE_KEY,JSON.stringify({ds:DATASET,year:currentYear,file:loadedFileName,yearSetIn:String(new Date().getFullYear())}));}catch(e){}
+}
+function saveCacheYear(){
+  if(!isCustomData||!currentYear)return;
+  try{
+    const raw=localStorage.getItem(CACHE_KEY);if(!raw)return;
+    const o=JSON.parse(raw);if(!o||!o.ds)return;
+    o.year=currentYear;
+    o.yearSetIn=String(new Date().getFullYear());
+    localStorage.setItem(CACHE_KEY,JSON.stringify(o));
+  }catch(e){}
+}
+function loadCache(){
+  try{
+    const raw=localStorage.getItem(CACHE_KEY);if(!raw)return;
+    const o=JSON.parse(raw);
+    if(o&&o.ds&&Object.keys(o.ds).length){
+      DATASET=o.ds;isCustomData=true;loadedFileName=o.file||'';
+      /* Der zuletzt gewählte Jahrgang wird gemerkt, aber nur innerhalb desselben
+         Kalenderjahres. Beim ersten Start im neuen Jahr gilt wieder die Voreinstellung. */
+      const gemerkt=(o.year&&o.ds[o.year]&&o.yearSetIn===String(new Date().getFullYear()))?o.year:'';
+      yearFromMemory=!!gemerkt;
+      currentYear=gemerkt||defaultYear();
+    }
+  }catch(e){}
+}
+
+/* ===== AUTOSAVE ARBEITSSTAND (Ankreuzungen/Ausgaben je Jahrgang) ===== */
+function titleSig(){return J.map(j=>j.n).join('|');}
+function serializeST(){
+  return ST.map(s=>({
+    nid:s.nid,
+    issues:s.issues.map(i=>({id:i.id,ausgabe:i.ausgabe,et:i.et,ds:i.ds,du:i.du||'',eh:i.eh||'',themen:i.themen||'',kongress:i.kongress||'',issIdx:i.issIdx,sel:[...i.sel]}))
+  }));
+}
+function saveState(){
+  if(!isCustomData||!currentYear)return;
+  try{
+    const raw=localStorage.getItem(STATE_KEY);
+    const all=raw?JSON.parse(raw):{};
+    /* „opt": die Häkchen unter der Matrix. Sie gehören zum Angebotsstand und
+       standen nach jedem Neuladen wieder auf Anfang. Ältere Einträge ohne
+       dieses Feld bleiben lesbar – dann bleiben die Häkchen eben, wie sie sind. */
+    all[currentYear]={sig:titleSig(),st:serializeST(),opt:collectOptionen()};
+    localStorage.setItem(STATE_KEY,JSON.stringify(all));
+  }catch(e){}
+}
+/* Termine im gespeicherten Arbeitsstand an eine neu geladene Preisliste angleichen.
+   Hintergrund: ET, AS, DU/EH, Themen und Kongresse werden beim Auswaehlen einer Ausgabe
+   einmalig in den Stand kopiert (selIss). Wird spaeter eine korrigierte Angebotsdaten.xlsx
+   geladen, sind die Preise sofort aktuell, diese Kopien aber nicht - der alte Anzeigen-
+   schluss stuende weiter im Kundenangebot. Deshalb wird der Stand hier direkt im
+   Zwischenspeicher nachgezogen, bevor applyYear() ihn ueber restoreState() einliest.
+   Bewusst fuer ALLE Jahrgaenge der neuen Datei, nicht nur den gerade gewaehlten -
+   sonst bliebe der Fehler im anderen Jahrgang bis zum naechsten Wechsel stehen.
+   Die Zuordnung laeuft ueber die Heftbezeichnung (findIssIdx), nicht ueber die
+   gespeicherte Position: ein eingeschobenes Heft verschiebt sonst alles.
+   Nicht betroffen ist das Oeffnen einer Angebotsdatei - dort wandert der Datenstand
+   bewusst mit und es gibt dafuer die eigene Rueckfrage (frageDatenstand). */
+function refreshTermineImStand(neuDs){
+  const bericht={geaendert:[],entfallen:[]};
+  let raw;
+  try{raw=localStorage.getItem(STATE_KEY);}catch(e){return bericht;}
+  if(!raw)return bericht;
+  let all;
+  try{all=JSON.parse(raw);}catch(e){return bericht;}
+  if(!all||typeof all!=='object')return bericht;
+
+  Object.keys(all).forEach(year=>{
+    const rec=all[year];
+    if(!rec||!Array.isArray(rec.st))return;
+    const sv=sortedYear(neuDs,year);
+    /* Jahrgang steckt nicht mehr in der Datei, oder die Titelliste passt nicht mehr:
+       In beiden Faellen verwirft restoreState() den Stand ohnehin (Signaturpruefung). */
+    if(!sv.J.length)return;
+    if(rec.sig!==sv.J.map(j=>j.n).join('|'))return;
+    if(rec.st.length!==sv.J.length)return;
+
+    rec.st.forEach((titelStand,ji)=>{
+      if(!titelStand||!Array.isArray(titelStand.issues))return;
+      /* Der Jahrgang gehoert in die Meldung: abgeglichen werden alle Jahrgaenge der
+         Datei, und "Heft 2" allein waere zwischen 2026 und 2027 nicht zu unterscheiden. */
+      const titelName=sv.J[ji].n+' '+year;
+      titelStand.issues.forEach(i=>{
+        if(!i||!i.ausgabe)return;                 // leere Spalte: nichts nachzuziehen
+        const idx=findIssIdx(sv.ISSUES[ji],i.ausgabe);
+        if(idx==null){
+          /* Die Ausgabe gibt es in der neuen Preisliste nicht mehr. Die alten Termine
+             stehen zu lassen waere still falsch, deshalb wird die Heftzuordnung geleert.
+             Angekreuzte Platzierungen bleiben erhalten; der Titelreiter bekommt dadurch
+             seine Kante (has-iss), die auf die offene Heftzuordnung hinweist. */
+          bericht.entfallen.push(titelName+': '+i.ausgabe);
+          i.issIdx=null;i.ausgabe='';i.et='';i.ds='';i.du='';i.eh='';i.themen='';i.kongress='';
+          return;
+        }
+        const row=sv.ISSUES[ji][idx];
+        const alt=[i.et||'',i.ds||'',i.du||'',i.eh||'',i.themen||'',i.kongress||''];
+        const neu=[row[1]||'',row[2]||'',row[5]||'',row[6]||'',row[3]||'',row[4]||''];
+        i.issIdx=idx;
+        i.et=neu[0];i.ds=neu[1];i.du=neu[2];i.eh=neu[3];i.themen=neu[4];i.kongress=neu[5];
+        /* Nur echte Abweichungen melden - der Regelfall ist, dass sich nichts geaendert
+           hat, und dann soll das Laden kommentarlos durchlaufen. */
+        if(alt.some((v,k)=>v!==neu[k]))bericht.geaendert.push(titelName+': '+i.ausgabe);
+      });
+    });
+  });
+
+  if(bericht.geaendert.length||bericht.entfallen.length){
+    try{localStorage.setItem(STATE_KEY,JSON.stringify(all));}catch(e){}
+  }
+  return bericht;
+}
+
+/* Meldung nach dem Laden einer neuen Preisliste. Erscheint nur, wenn sich am
+   Arbeitsstand tatsaechlich etwas geaendert hat. */
+function meldeTerminAbgleich(b){
+  if(!b||(!b.geaendert.length&&!b.entfallen.length))return;
+  const liste=a=>a.slice(0,12).join('\n')+(a.length>12?'\n… und '+(a.length-12)+' weitere':'');
+  let t='';
+  if(b.geaendert.length){
+    t+='In '+b.geaendert.length+' Ausgabe(n) wurden die Termine an die neu geladene '+
+       'Preisliste angepasst:\n'+liste(b.geaendert);
+  }
+  if(b.entfallen.length){
+    if(t)t+='\n\n';
+    t+=b.entfallen.length+' Ausgabe(n) aus dem Arbeitsstand gibt es in der neuen '+
+       'Preisliste nicht mehr. Die Heftzuordnung wurde geleert, die angekreuzten '+
+       'Platzierungen bleiben stehen:\n'+liste(b.entfallen);
+  }
+  alert(t);
+}
+
+function restoreState(){
+  try{
+    const raw=localStorage.getItem(STATE_KEY);if(!raw)return false;
+    const rec=JSON.parse(raw)[currentYear];
+    if(!rec||rec.sig!==titleSig()||!Array.isArray(rec.st)||rec.st.length!==J.length)return false;
+    ST=rec.st.map(s=>({
+      nid:s.nid||1,
+      issues:(s.issues||[]).map(i=>({id:i.id,ausgabe:i.ausgabe||'',et:i.et||'',ds:i.ds||'',du:i.du||'',eh:i.eh||'',themen:i.themen||'',kongress:i.kongress||'',issIdx:(i.issIdx==null?null:i.issIdx),sel:new Set(i.sel||[])}))
+    }));
+    if(rec.opt)applyOptionen(rec.opt);
+    return true;
+  }catch(e){return false;}
+}
+/* ===== ANGEBOT SPEICHERN / ÖFFNEN (eigenständige .json-Datei) =====
+   Der Zwischenspeicher oben merkt immer nur einen Stand je Jahrgang und hängt
+   an diesem Browser. Eine Angebotsdatei ist davon unabhängig: Sie hält mehrere
+   Angebote nebeneinander, überdauert den Rechner und lässt sich weitergeben.
+   Die Preis- und Termindaten des Jahrgangs wandern bewusst mit in die Datei –
+   damit rechnet ein altes Angebot auch später noch mit den Preisen von damals.
+   Chrome und Edge schreiben beim erneuten Speichern in dieselbe Datei zurück;
+   andere Browser (u. a. Safari) legen stattdessen eine neue Datei im
+   Download-Ordner ab. */
+const ANGEBOT_APP='OpenSlots-Angebotsplaner';
+const ANGEBOT_VERSION=1;
+let angebotFileHandle=null;   // Datei-Handle (Chrome/Edge) zum Überschreiben
+let angebotFileName='';       // zuletzt verwendeter Dateiname
+let angebotSavedAt='';        // Speicherzeitpunkt der geöffneten Datei
+
+/* Die Optionen unter der Matrix – sie gehören zum Angebot, nicht zur Ansicht */
+function collectOptionen(){
+  const g=id=>document.getElementById(id);
+  return {
+    r:      !!(g('ck-r')&&g('ck-r').checked),
+    disc:   !!(g('ck-disc')&&g('ck-disc').checked),
+    discVal:(g('disc-val')?g('disc-val').value:'0'),
+    ae:     !!(g('ck-ae')&&g('ck-ae').checked),
+    ts:     !!(g('ck-ts')&&g('ck-ts').checked),
+    kg:     !!(g('ck-kg')&&g('ck-kg').checked),
+    du:     !!(g('ck-du')&&g('ck-du').checked),
+    kgPick: kgPick?[...kgPick]:null,
+    rv:     !!(g('ck-rv')&&g('ck-rv').checked),
+    rvText: (g('rv-t')?g('rv-t').value:'')
+  };
+}
+/* Ausgangszustand des Optionsblocks – so, wie die Seite frisch geladen aussieht.
+   `rvText:''` lässt den Reservierungstext stehen: er ist eine Vorlage, keine Auswahl. */
+const OPTIONEN_LEER={r:false,disc:false,discVal:'0',ae:false,ts:false,kg:false,du:false,rv:false,rvText:''};
+function applyOptionen(o){
+  if(!o)return;
+  const set=(id,v)=>{const el=document.getElementById(id);if(el)el.checked=!!v;};
+  set('ck-r',o.r);set('ck-disc',o.disc);set('ck-ae',o.ae);
+  set('ck-ts',o.ts);set('ck-kg',o.kg);set('ck-du',o.du);set('ck-rv',o.rv);
+  /* Ältere Angebote/Zwischenstände kennen kgPick nicht – dort bleibt es bei „alle" */
+  kgPick=Array.isArray(o.kgPick)?new Set(o.kgPick):null;
+  const dv=document.getElementById('disc-val');if(dv&&o.discVal!==undefined)dv.value=o.discVal;
+  const rt=document.getElementById('rv-t');if(rt&&typeof o.rvText==='string'&&o.rvText!=='')rt.value=o.rvText;
+  const rw=document.getElementById('rv-w');if(rw)rw.style.display=o.rv?'block':'none';
+  rvGrow();   /* geladener Text kann länger sein als der zuletzt gezeigte */
+}
+
+/* Aktuellen Stand einsammeln. Titel und Platzierungen stehen als Klartext in
+   der Datei, nicht als Nummern – so bleibt sie lesbar und übersteht es, wenn
+   die Excel später um einen Titel wächst. */
+function collectAngebot(){
+  return {
+    app:ANGEBOT_APP,
+    version:ANGEBOT_VERSION,
+    savedAt:new Date().toISOString(),
+    jahrgang:currentYear,
+    loadedFileName:loadedFileName,
+    dataset:(currentYear&&DATASET[currentYear])?{[currentYear]:DATASET[currentYear]}:{},
+    optionen:collectOptionen(),
+    titel:J.map((j,ji)=>({
+      n:j.n,
+      issues:(ST[ji]?ST[ji].issues:[]).map(i=>({
+        ausgabe:i.ausgabe,et:i.et,ds:i.ds,du:i.du||'',eh:i.eh||'',
+        themen:i.themen||'',kongress:i.kongress||'',
+        issIdx:i.issIdx,sel:[...i.sel]
+      }))
+    }))
+  };
+}
+
+/* Namensvorschlag für den Speichern-Dialog: „OS" steht für OpenSlots und trennt
+   die Datei auf einen Blick von den Angeboten aus der Angebotsvorlage. Das Wort
+   „Kunde" ist ein Platzhalter zum Überschreiben. Der Jahrgang steht bewusst
+   nicht mehr darin – er ergibt sich aus dem Angebot selbst. */
+function angebotDateiname(){
+  const d=new Date(),p=n=>('0'+n).slice(-2);
+  const datum=d.getFullYear()+'-'+p(d.getMonth()+1)+'-'+p(d.getDate());
+  return 'OS_Angebot_Kunde_'+datum+'.json';
+}
+
+async function saveAngebot(){
+  if(!isCustomData){alert('Es sind noch keine Daten geladen.');return;}
+  const json=JSON.stringify(collectAngebot(),null,2);
+  if(window.showSaveFilePicker){
+    try{
+      if(!angebotFileHandle){
+        angebotFileHandle=await window.showSaveFilePicker({
+          suggestedName:angebotDateiname(),
+          types:[{description:'Angebot',accept:{'application/json':['.json']}}]
+        });
+      }
+      const w=await angebotFileHandle.createWritable();
+      await w.write(json);await w.close();
+      angebotFileName=angebotFileHandle.name||'';
+      angebotSavedAt=new Date().toISOString();
+      updAngStatus();flash('angSaveBtn','✓ Gespeichert');
+      return;
+    }catch(e){
+      if(e&&e.name==='AbortError')return;   // Dialog abgebrochen
+      angebotFileHandle=null;               // sonst: Rückfall auf Download
+    }
+  }
+  const name=angebotFileName||angebotDateiname();
+  const a=Object.assign(document.createElement('a'),{
+    href:URL.createObjectURL(new Blob([json],{type:'application/json'})),download:name});
+  document.body.appendChild(a);a.click();
+  setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove();},100);
+  angebotFileName=name;angebotSavedAt=new Date().toISOString();
+  updAngStatus();flash('angSaveBtn','✓ Gespeichert');
+}
+
+async function openAngebot(){
+  if(window.showOpenFilePicker){
+    try{
+      const [handle]=await window.showOpenFilePicker({
+        types:[{description:'Angebot',accept:{'application/json':['.json']}}],multiple:false});
+      const file=await handle.getFile();
+      if(await applyAngebot(JSON.parse(await file.text()))){
+        angebotFileHandle=handle;           // „Speichern" schreibt ab jetzt hierhin
+        angebotFileName=handle.name||'';
+        updAngStatus();
+      }
+      return;
+    }catch(e){
+      if(e&&e.name==='AbortError')return;
+      if(e instanceof SyntaxError){alert('Die Datei ist keine gültige Angebotsdatei.');return;}
+      // sonst: Rückfall auf das versteckte Dateifeld
+    }
+  }
+  document.getElementById('angebotFile').click();
+}
+
+function onAngebotFileChosen(ev){
+  const file=ev.target.files&&ev.target.files[0];
+  ev.target.value='';                        // erlaubt erneutes Öffnen derselben Datei
+  if(!file)return;
+  const r=new FileReader();
+  r.onload=async()=>{
+    try{
+      if(await applyAngebot(JSON.parse(r.result))){
+        angebotFileHandle=null;              // dieser Weg kann nicht zurückschreiben
+        angebotFileName=file.name;
+        updAngStatus();
+      }
+    }catch(e){alert('Die Datei konnte nicht gelesen werden. Ist es eine gespeicherte Angebotsdatei?');}
+  };
+  r.readAsText(file);
+}
+
+/* Rückfrage, welcher Datenstand gelten soll. Rückgabe: true = Daten aus der
+   Angebotsdatei, false = aktuell geladene Daten, null = abgebrochen. */
+function frageDatenstand(savedAt,dateiName){
+  return new Promise(res=>{
+    const back=document.getElementById('dlgBack');
+    const bAlt=document.getElementById('dlgBtnAlt'),bNeu=document.getElementById('dlgBtnNeu');
+    let stand='';
+    if(savedAt){
+      const d=new Date(savedAt),p=n=>('0'+n).slice(-2);
+      if(!isNaN(d))stand=' (gespeichert am '+p(d.getDate())+'.'+p(d.getMonth()+1)+'.'+d.getFullYear()+')';
+    }
+    document.getElementById('dlgTx').innerHTML=
+      '<p>Das Angebot bringt seine eigenen Preise und Termine mit'+esc(stand)+'. Die aktuell geladenen '+
+      'Angebotsdaten'+(dateiName?' aus <b>'+esc(dateiName)+'</b>':'')+' weichen davon ab.</p>'+
+      '<p><b>Daten aus dem Angebot:</b> alles bleibt so, wie es beim Speichern war.</p>'+
+      '<p><b>Geladene Daten verwenden:</b> es gelten die heutigen Titel, Platzierungen, Preise und Termine. '+
+      'Platzierungen, die es nicht mehr gibt, fallen weg.</p>';
+    const zu=w=>{
+      back.style.display='none';
+      document.removeEventListener('keydown',esc2,true);
+      bAlt.onclick=bNeu.onclick=null;
+      res(w);
+    };
+    function esc2(e){if(e.key==='Escape'){e.stopPropagation();zu(null);}}
+    bAlt.onclick=()=>zu(true);
+    bNeu.onclick=()=>zu(false);
+    document.addEventListener('keydown',esc2,true);
+    back.style.display='';
+    bAlt.focus();
+  });
+}
+
+/* Die Ausgabe wird im geltenden Datenstand über ihre Bezeichnung wiedergefunden.
+   Die Platznummer aus der Angebotsdatei stimmt nur, solange die Terminliste des
+   Titels unverändert ist – ein nachträglich eingeschobenes Heft verschiebt sie. */
+function findIssIdx(rows,ausgabe){
+  const lbl=String(ausgabe||'').replace(/^Heft\s+/,'').trim();
+  if(!lbl)return null;
+  const k=(rows||[]).findIndex(r=>String(r[0]).trim()===lbl);
+  return k>-1?k:null;
+}
+
+/* Gespeichertes Angebot wiederherstellen. Rückgabe: true, wenn es geklappt hat. */
+async function applyAngebot(data){
+  if(!data||typeof data!=='object'){
+    alert('Diese Datei ist keine gültige Angebotsdatei.');return false;
+  }
+  /* Herkunft zuerst prüfen: Eine Datei aus der Angebotsvorlage soll die
+     zutreffende Meldung bekommen und nicht die allgemeine. */
+  if(data.app!==ANGEBOT_APP){
+    alert(data.app==='Angebotsvorlage'
+      ? 'Diese Datei stammt aus der Angebotsvorlage und kann hier nicht geöffnet werden.'
+      : 'Diese Datei stammt nicht aus dem Angebotsplaner.');
+    return false;
+  }
+  if(!Array.isArray(data.titel)){
+    alert('Diese Angebotsdatei ist unvollständig – die Titelliste fehlt.');return false;
+  }
+  const jahr=data.jahrgang||'';
+  const ausDatei=data.dataset&&data.dataset[jahr];
+  /* Nur fragen, wenn für diesen Jahrgang etwas anderes geladen ist als in der Datei
+     steckt. Im Regelfall sind beide gleich – dann läuft alles wie bisher durch. */
+  let nimmDatei=true;
+  if(ausDatei&&DATASET[jahr]&&JSON.stringify(ausDatei)!==JSON.stringify(DATASET[jahr])){
+    nimmDatei=await frageDatenstand(data.savedAt,loadedFileName);
+    if(nimmDatei===null)return false;                 // abgebrochen: nichts ändern
+  }
+  if(ausDatei&&nimmDatei){
+    DATASET=Object.assign({},DATASET,data.dataset);   // andere Jahrgänge bleiben erhalten
+    isCustomData=true;
+    if(data.loadedFileName)loadedFileName=data.loadedFileName;
+    saveCache();
+  }
+  if(!DATASET[jahr]){alert('Der Jahrgang '+jahr+' steckt weder in der Datei noch in den geladenen Daten.');return false;}
+
+  currentYear=jahr;
+  applyYear(jahr);            // baut Titel + Ausgabenraster auf (holt den Zwischenspeicher)
+  /* Der Zwischenspeicher wird jetzt durch den Stand aus der Datei ersetzt.
+     Die Zuordnung läuft über den Titelnamen, nicht über die Reihenfolge. */
+  const byName={};
+  data.titel.forEach(t=>{byName[t.n]=t;});
+  let fehlend=0;
+  ST=J.map((j,ji)=>{
+    const t=byName[j.n];
+    if(!t)return {issues:[],nid:1};
+    const namen=new Set();
+    j.g.forEach(g=>g.i.forEach(e=>namen.add(e[0])));
+    let nid=1;
+    const issues=(t.issues||[]).map(i=>{
+      const sel=(i.sel||[]).filter(n=>{
+        if(namen.has(n))return true;
+        fehlend++;return false;            // Platzierung gibt es in dieser Preisliste nicht mehr
+      });
+      return {id:nid++,ausgabe:i.ausgabe||'',et:i.et||'',ds:i.ds||'',du:i.du||'',eh:i.eh||'',
+              themen:i.themen||'',kongress:i.kongress||'',
+              issIdx:findIssIdx(ISSUES[ji],i.ausgabe),sel:new Set(sel)};
+    });
+    return {issues:issues,nid:nid};
+  });
+  applyOptionen(data.optionen);
+  angebotSavedAt=data.savedAt||'';
+  collapsedCats=buildCollapsed();
+  buildTabs();
+  setJ(0);                    // zeichnet Matrix + Vorschau und sichert den Stand
+  syncDataUI();
+  if(fehlend)alert(fehlend+' Platzierung(en) aus dem gespeicherten Angebot gibt es in der aktuellen Preisliste nicht mehr und wurden weggelassen.');
+  return true;
+}
+
+/* Hinweiszeile zur geöffneten Angebotsdatei */
+function updAngStatus(){
+  const el=document.getElementById('angStatus');if(!el)return;
+  if(!angebotFileName){el.classList.remove('on');el.textContent='';return;}
+  let zeit='';
+  if(angebotSavedAt){
+    const d=new Date(angebotSavedAt);
+    if(!isNaN(d)){
+      const p=n=>('0'+n).slice(-2);
+      zeit=' <span class="ang-time">· Stand '+p(d.getDate())+'.'+p(d.getMonth()+1)+'.'+d.getFullYear()+'</span>';
+    }
+  }
+  el.innerHTML='Angebot: '+esc(angebotFileName)+zeit;
+  el.classList.add('on');
+}
+/* Verknüpfung zur Datei lösen – der nächste „Speichern"-Klick fragt neu nach */
+function clearAngebotDatei(){
+  angebotFileHandle=null;angebotFileName='';angebotSavedAt='';
+  updAngStatus();
+}
+/* Jahrgangswechsel von Hand: Das geöffnete Angebot gilt nur für seinen Jahrgang */
+function onYearSel(y){
+  clearAngebotDatei();
+  applyYear(y);
+}
+
+/* Jahrgang hat gespeicherte Platzierungen/Ausgaben, die sich auch wiederherstellen lassen */
+function yearHasEntries(y){
+  try{
+    if(!DATASET[y])return false;
+    const raw=localStorage.getItem(STATE_KEY);if(!raw)return false;
+    const rec=JSON.parse(raw)[y];
+    if(!rec||!Array.isArray(rec.st))return false;
+    const names=DATASET[y].J.map(j=>j.n).sort((a,b)=>a.localeCompare(b,'de',{numeric:true,sensitivity:'base'})).join('|');
+    if(rec.sig!==names||rec.st.length!==DATASET[y].J.length)return false;
+    return rec.st.some(s=>(s.issues||[]).some(i=>(i.sel&&i.sel.length>0)||i.ausgabe));
+  }catch(e){return false;}
+}
+/* Startjahr: zuletzt gewähltes Jahr; ist es leer, ein Jahrgang mit Platzierungen */
+let yearFromMemory=false;
+function pickStartYear(){
+  const ys=years();if(!ys.length)return '';
+  /* Ohne gemerkten Jahrgang zählt die Voreinstellung. Sie darf nicht davon übergangen
+     werden, dass in einem anderen Jahrgang noch Ankreuzungen liegen. */
+  if(!yearFromMemory)return (currentYear&&DATASET[currentYear])?currentYear:defaultYear();
+  const last=(currentYear&&DATASET[currentYear])?currentYear:ys[0];
+  if(yearHasEntries(last))return last;
+  return ys.find(y=>yearHasEntries(y))||last;
+}
+
+const FB_OHNE='Ohne Fachbereich';
+/* Zugeklappte Fachbereiche, als Nummer der Gruppe. Bewusst leer – beim Start ist alles
+   offen, sonst wäre die Titelliste zunächst unsichtbar. Wird nicht gespeichert. */
+let collapsedFb=new Set(), fbGroups=[];
+
+/* Fachbereiche in Anzeigereihenfolge: alphabetisch, „Ohne Fachbereich" immer zuletzt.
+   Liefert eine leere Liste, solange es weniger als zwei Bereiche gibt – dann bleibt die
+   Titelliste flach wie bisher. Die Reihenfolge von J bleibt unangetastet, weil der
+   gespeicherte Arbeitsstand an ihr hängt (siehe sortedYear). */
+function fachbereiche(){
+  const m=new Map();
+  J.forEach((j,i)=>{
+    const k=((j.f||'').trim())||FB_OHNE;
+    if(!m.has(k))m.set(k,[]);
+    m.get(k).push(i);
+  });
+  if(m.size<2)return [];
+  const ls=[...m.keys()].filter(k=>k!==FB_OHNE).sort((a,b)=>a.localeCompare(b,'de',{numeric:true,sensitivity:'base'}));
+  if(m.has(FB_OHNE))ls.push(FB_OHNE);
+  return ls.map(l=>({l,idx:m.get(l)}));
+}
+function tabHtml(ji,gi){
+  const g=(gi==null)?'':` data-fb="${gi}"`;
+  return `<button class="tab${ji===cJ?' on':''}" data-ji="${ji}"${g} onclick="setJ(${ji})">${esc(J[ji].n)}</button>`;
+}
+function buildTabs(){
+  fbGroups=fachbereiche();
+  collapsedFb=new Set();
+  const el=document.getElementById('tabs');
+  if(!J.length)el.innerHTML='';
+  else if(!fbGroups.length)el.innerHTML=J.map((j,i)=>tabHtml(i,null)).join('');
+  else el.innerHTML=fbGroups.map((g,gi)=>
+    `<div class="tabgrp" id="fb_${gi}" onclick="toggleFb(${gi})"><span class="fb-toggle">&#9660;</span><span class="fb-lbl">${esc(g.l)}</span><span class="cat-badge" id="fbbadge_${gi}" style="display:none" title="belegte Platzierungen"></span></div>`
+    +g.idx.map(ji=>tabHtml(ji,gi)).join('')).join('');
+  const sw=document.getElementById('titleSearchWrap');if(sw)sw.style.display=J.length>1?'':'none';
+  const si=document.getElementById('titleSearch');filterTabs(si?si.value:'');
+}
+function toggleFb(gi){
+  if(collapsedFb.has(gi))collapsedFb.delete(gi);else collapsedFb.add(gi);
+  filterTabs(document.getElementById('titleSearch')?.value||'');
+}
+/* Sucheingabe und Klappzustand greifen auf dieselben Zeilen zu, deshalb entscheidet eine
+   einzige Stelle über die Sichtbarkeit. Während gesucht wird, zählt nur der Treffer:
+   alle Bereiche gelten dann als offen, Köpfe ohne Treffer verschwinden. */
+function filterTabs(q){
+  q=(q||'').trim().toLowerCase();
+  const suchen=!!q, treffer=fbGroups.map(()=>false);
+  document.querySelectorAll('#tabs .tab').forEach(t=>{
+    const ji=+t.dataset.ji;
+    const gi=(t.dataset.fb===undefined)?null:+t.dataset.fb;
+    const passt=!suchen||(J[ji]?J[ji].n:t.textContent).toLowerCase().indexOf(q)>-1;
+    /* Der gerade gewählte Titel bleibt auch in einem zugeklappten Bereich stehen –
+       sonst wüsste man nicht mehr, woran man arbeitet. */
+    const zu=!suchen&&gi!=null&&collapsedFb.has(gi)&&ji!==cJ;
+    t.classList.toggle('hidden',!passt||zu);
+    if(passt&&gi!=null)treffer[gi]=true;
+  });
+  fbGroups.forEach((g,gi)=>{
+    const h=document.getElementById('fb_'+gi);
+    if(!h)return;
+    h.classList.toggle('hidden',suchen&&!treffer[gi]);
+    h.classList.toggle('collapsed',!suchen&&collapsedFb.has(gi));
+  });
+}
+function syncDataUI(){
+  const ys=years();
+  const sel=document.getElementById('yearSel');
+  if(sel)sel.innerHTML=ys.map(y=>`<option value="${y}"${y===currentYear?' selected':''}>${y}</option>`).join('');
+  const yw=document.getElementById('yearWrap');if(yw)yw.style.display=ys.length>1?'':'none';
+  const kw=document.getElementById('kgWrap');
+  if(kw){closeKgMenu();kw.style.display=(isCustomData&&kgIndex().size)?'':'none';}
+  const aw=document.getElementById('angWrap');if(aw)aw.style.display=isCustomData?'':'none';
+  updAngStatus();
+  const st=document.getElementById('dataStatus');if(st)st.textContent=isCustomData?('geladen: '+loadedFileName+' · '+ys.join('/')+(datenStand?' · Stand '+datenStand:'')):'Keine Daten geladen – bitte Angebotsdaten.xlsx laden';
+}
+/* Titel eines Jahrgangs in Anzeigereihenfolge (alphabetisch). Der gespeicherte
+   Arbeitsstand ist nach dieser Reihenfolge abgelegt - deshalb steht die Sortierung
+   an einer Stelle und wird von applyYear() und vom Nachziehen der Termine benutzt. */
+function sortedYear(ds,year){
+  const y=ds&&ds[year];
+  if(!y)return {J:[],ISSUES:[]};
+  const ord=y.J.map((j,i)=>i).sort((a,b)=>y.J[a].n.localeCompare(y.J[b].n,'de',{numeric:true,sensitivity:'base'}));
+  return {J:ord.map(i=>y.J[i]),ISSUES:ord.map(i=>y.ISSUES[i])};
+}
+
+function applyYear(year){
+  const ys=years();
+  if(ys.length){
+    if(!DATASET[year])year=ys.includes(currentYear)?currentYear:ys[0];
+    currentYear=year;
+    const sv=sortedYear(DATASET,year);
+    J=sv.J;ISSUES=sv.ISSUES;
+  }else{
+    currentYear='';J=[];ISSUES=[];
+  }
+  saveCacheYear();
+  ST=J.map(()=>({issues:[],nid:1}));
+  kgPick=null;                    /* gilt nur für seinen Jahrgang; restoreState() setzt ihn ggf. neu */
+  cJ=0;
+  restoreState();
+  collapsedCats=buildCollapsed();
+  buildTabs();
+  rMx();
+  syncDataUI();
+}
+function onlyFilledOn(){const c=document.getElementById('ck-only');return !!(c&&c.checked);}
+/* „Preise anzeigen" ist eine reine Ansichtssache und wandert deshalb NICHT in die
+   Angebotsdatei, sondern in einen eigenen Schlüssel im Zwischenspeicher. Anders als der
+   Nachbarschalter „Nur belegte Platzierungen anzeigen" wird er über das Neuladen hinweg
+   gemerkt – ob Preise sichtbar sein sollen, ist eine Gewohnheit, keine Momententscheidung. */
+const PREIS_KEY='belegungsplaner_preise_v1';
+function preisOn(){const c=document.getElementById('ck-preis');return !!(c&&c.checked);}
+function preisTag(p){const g=Array.isArray(p)?p[0]+p[1]:p;return nf(Math.round(g))+' €';}
+function applyPreisKlasse(){document.body.classList.toggle('preise-an',preisOn());}
+function tPreis(){
+  applyPreisKlasse();
+  try{localStorage.setItem(PREIS_KEY,preisOn()?'1':'0');}catch(e){}
+  rMx();
+}
+function restorePreis(){
+  let an=false;
+  try{an=localStorage.getItem(PREIS_KEY)==='1';}catch(e){}
+  const c=document.getElementById('ck-preis');if(c)c.checked=an;
+  applyPreisKlasse();
+}
+function catCount(gi){
+  if(!J[cJ]||!J[cJ].g[gi]||!ST[cJ])return 0;
+  const names=new Set(J[cJ].g[gi].i.map(x=>x[0]));
+  let c=0;
+  ST[cJ].issues.forEach(s=>s.sel.forEach(n=>{if(names.has(n))c++;}));
+  return c;
+}
+function toggleCat(ji,gi){
+  if(onlyFilledOn())return;
+  const key=ji+'_'+gi;
+  if(collapsedCats.has(key))collapsedCats.delete(key);else collapsedCats.add(key);
+  applyVisibility();
+  updMxTools();
+}
+function applyVisibility(){
+  const j=J[cJ];if(!j)return;
+  const filt=onlyFilledOn();
+  j.g.forEach((g,gi)=>{
+    const key=cJ+'_'+gi;
+    const collapsed=collapsedCats.has(key);
+    const belegt=catCount(gi)>0;
+    const hdr=document.getElementById('cat_'+key);
+    if(hdr){
+      hdr.classList.toggle('hidden',filt&&!belegt);
+      hdr.classList.toggle('collapsed',!filt&&collapsed);
+    }
+    document.querySelectorAll('.pl-row[data-cat="'+key+'"]').forEach((r,ii)=>{
+      const nm=g.i[ii][0];
+      const show=filt?ST[cJ].issues.some(s=>s.sel.has(nm)):!collapsed;
+      r.classList.toggle('hidden',!show);
+    });
+  });
+}
+function toggleAllCats(){
+  const j=J[cJ];if(!j||onlyFilledOn())return;
+  const keys=j.g.map((_,gi)=>cJ+'_'+gi);
+  const anyCollapsed=keys.some(k=>collapsedCats.has(k));
+  keys.forEach(k=>anyCollapsed?collapsedCats.delete(k):collapsedCats.add(k));
+  applyVisibility();
+  updMxTools();
+}
+function tOnly(){applyVisibility();updMxTools();}
+function updMxTools(){
+  const j=J[cJ],hasMx=!!j&&!!ST[cJ]&&ST[cJ].issues.length>0;
+  const bar=document.getElementById('mxTools');if(bar)bar.style.display=hasMx?'flex':'none';
+  const tb=document.getElementById('toggleAll');
+  if(tb){
+    tb.style.display=onlyFilledOn()?'none':'inline-flex';
+    if(j){
+      const anyCollapsed=j.g.map((_,gi)=>cJ+'_'+gi).some(k=>collapsedCats.has(k));
+      tb.textContent=anyCollapsed?'Alle ausklappen':'Alle einklappen';
+    }
+  }
+}
+function updCatBadges(){
+  const j=J[cJ];if(!j)return;
+  j.g.forEach((g,gi)=>{
+    const b=document.getElementById('catbadge_'+cJ+'_'+gi);
+    if(!b)return;
+    const c=catCount(gi);
+    if(c>0){b.textContent=c;b.style.display='inline-flex';}
+    else b.style.display='none';
+  });
+}
+function addIssue(){const s=ST[cJ];if(!s)return;s.issues.push({id:s.nid++,ausgabe:'',et:'',ds:'',du:'',eh:'',themen:'',issIdx:null,sel:new Set()});rMx();}
+function addAllIssues(){
+  const s=ST[cJ];if(!s)return;
+  const existing=new Set(s.issues.map(i=>i.issIdx).filter(x=>x!=null));
+  ISSUES[cJ].forEach((row,idx)=>{
+    if(existing.has(idx))return;
+    s.issues.push({id:s.nid++,ausgabe:'Heft '+row[0],et:row[1],ds:row[2],du:row[5]||'',eh:row[6]||'',themen:row[3]||'',kongress:row[4]||'',issIdx:idx,sel:new Set()});
+  });
+  rMx();
+}
+/* ===== KONGRESS-VORAUSWAHL (legt Heftzeilen über alle Titel an) ===== */
+let KG_LIST=[], kgStatusTmr=null;
+/* Kongressname = Text vor dem ersten Komma; Ort/Datum variieren im Excel je Zeile */
+function kgIndex(){
+  const m=new Map();
+  ISSUES.forEach((rows,ji)=>{
+    (rows||[]).forEach((row,idx)=>{
+      if(!row[4])return;
+      String(row[4]).split('\n').forEach(part=>{
+        const nm=part.split(',')[0].trim();
+        if(!nm)return;
+        if(!m.has(nm))m.set(nm,[]);
+        const hits=m.get(nm);
+        if(!hits.some(h=>h.ji===ji&&h.idx===idx))hits.push({ji,idx});
+      });
+    });
+  });
+  return m;
+}
+function renderKgMenu(){
+  const list=document.getElementById('kgList');if(!list)return;
+  KG_LIST=[...kgIndex().entries()].sort((a,b)=>b[1].length-a[1].length||a[0].localeCompare(b[0],'de',{numeric:true,sensitivity:'base'}));
+  list.innerHTML=KG_LIST.map(([nm,hits],i)=>{
+    const tc=new Set(hits.map(x=>x.ji)).size;
+    /* Titelzahl nur zeigen, wenn ein Titel mit mehreren Ausgaben vertreten ist – sonst doppelt sie die Ausgabenzahl */
+    const cnt=`${hits.length} Ausgabe${hits.length===1?'':'n'}`+(hits.length===tc?'':` &middot; ${tc} Titel`);
+    return `<button class="kg-item" data-nm="${esc(nm.toLowerCase())}" onclick="applyKongress(${i})"><span>${esc(nm)}</span><span class="kg-cnt">${cnt}</span></button>`;
+  }).join('')+'<div class="kg-empty" id="kgEmpty" style="display:none">Kein Kongress gefunden.</div>';
+}
+function filterKgMenu(q){
+  q=(q||'').trim().toLowerCase();
+  let hits=0;
+  document.querySelectorAll('#kgList .kg-item').forEach(b=>{
+    const on=!q||b.getAttribute('data-nm').indexOf(q)>-1;
+    b.style.display=on?'':'none';
+    if(on)hits++;
+  });
+  const em=document.getElementById('kgEmpty');if(em)em.style.display=hits?'none':'';
+}
+/* Der Klapppfeil richtet sich nach `aria-expanded`; beide Wege (auf/zu) müssen den
+   Zustand setzen, sonst zeigt der Pfeil in die falsche Richtung. */
+function setKgExpanded(on){
+  const b=document.getElementById('kgBtn');
+  if(b)b.setAttribute('aria-expanded',on?'true':'false');
+}
+function toggleKgMenu(ev){
+  if(ev)ev.stopPropagation();
+  const menu=document.getElementById('kgMenu');if(!menu)return;
+  if(menu.style.display==='none'){
+    renderKgMenu();
+    menu.style.display='';
+    setKgExpanded(true);
+    const s=document.getElementById('kgSearch');
+    if(s){s.value='';filterKgMenu('');s.focus();}
+    menu.scrollTop=0;
+  }else{menu.style.display='none';setKgExpanded(false);}
+}
+function closeKgMenu(){const m=document.getElementById('kgMenu');if(m)m.style.display='none';setKgExpanded(false);}
+function kgStatus(msg){
+  const el=document.getElementById('dataStatus');if(!el)return;
+  el.textContent=msg;el.style.color='var(--sm-green)';
+  if(kgStatusTmr)clearTimeout(kgStatusTmr);
+  kgStatusTmr=setTimeout(()=>{el.style.color='';syncDataUI();},6000);
+}
+function applyKongress(i){
+  const rec=KG_LIST[i];if(!rec)return;
+  const nm=rec[0],hits=rec[1];
+  let added=0;const titles=new Set();
+  hits.forEach(({ji,idx})=>{
+    const s=ST[ji],row=ISSUES[ji]&&ISSUES[ji][idx];
+    if(!s||!row)return;
+    if(s.issues.some(x=>x.issIdx===idx))return;
+    s.issues.push({id:s.nid++,ausgabe:'Heft '+row[0],et:row[1],ds:row[2],du:row[5]||'',eh:row[6]||'',themen:row[3]||'',kongress:row[4]||'',issIdx:idx,sel:new Set()});
+    added++;titles.add(ji);
+  });
+  const kgEl=document.getElementById('ck-kg');
+  if(kgEl)kgEl.checked=true;
+  /* Der gewählte Kongress ist zugleich der einzige, der in der Kopiervorlage steht.
+     Ein weiterer Klick auf einen anderen Kongress nimmt ihn hinzu. */
+  if(kgPick===null)kgPick=new Set([nm]);else kgPick.add(nm);
+  closeKgMenu();
+  rMx();
+  kgStatus(added?`${nm}: ${added} Ausgabe${added===1?'':'n'} in ${titles.size} Titel${titles.size===1?'':'n'} angelegt – jetzt Platzierungen ankreuzen`:`${nm}: alle Ausgaben waren bereits angelegt`);
+}
+/* ===== WELCHE KONGRESSE IN DER KOPIERVORLAGE STEHEN =====
+   Eine Ausgabe kann mehrere Kongresse nennen (Excel, Spalte 10, je Zeile einer).
+   Wer über „Nach Kongress" plant, will aber nur den gefragten im Angebot lesen –
+   die übrigen sind Beiwerk der Ausgabe, nicht Gegenstand des Angebots.
+     kgPick === null  → alle Kongresse (von Hand geplant, wie bisher)
+     kgPick = Menge   → nur diese Namen (über „Nach Kongress" angelegt)         */
+let kgPick=null;
+function kgLines(txt){return String(txt||'').split('\n').map(t=>t.trim()).filter(Boolean);}
+/* Name = Text vor dem ersten Komma – dieselbe Lesart wie in kgIndex() */
+function kgName(line){return line.split(',')[0].trim();}
+function kgOnList(txt){
+  const lines=kgLines(txt);
+  if(kgPick===null)return lines.join('\n');
+  return lines.filter(l=>kgPick.has(kgName(l))).join('\n');
+}
+document.addEventListener('click',e=>{const w=document.getElementById('kgWrap');if(w&&!w.contains(e.target))closeKgMenu();});
+document.addEventListener('keydown',e=>{if(e.key==='Escape')closeKgMenu();});
+
+function remIss(id){ST[cJ].issues=ST[cJ].issues.filter(i=>i.id!==id);rMx();}
+function updI(id,f,v){const i=ST[cJ].issues.find(i=>i.id===id);if(i)i[f]=v;render();}
+function selIss(id,raw){
+  const s=ST[cJ].issues.find(i=>i.id===id);
+  if(!s)return;
+  if(raw===''){s.issIdx=null;s.ausgabe='';s.et='';s.ds='';s.du='';s.eh='';s.themen='';s.kongress='';rMx();return;}
+  const idx=parseInt(raw,10),row=ISSUES[cJ][idx];
+  if(!row)return;
+  s.issIdx=idx;s.ausgabe='Heft '+row[0];s.et=row[1];s.ds=row[2];s.du=row[5]||'';s.eh=row[6]||'';s.themen=row[3]||'';s.kongress=row[4]||'';
+  rMx();
+}
+
+function tPl(iid,gi,ii,chk){
+  const nm=J[cJ].g[gi].i[ii][0];
+  const iss=ST[cJ].issues.find(i=>i.id===iid);
+  if(!iss)return;
+  chk?iss.sel.add(nm):iss.sel.delete(nm);
+  const allOn=ST[cJ].issues.length>0&&ST[cJ].issues.every(i=>i.sel.has(nm));
+  const ab=document.getElementById('ab_'+gi+'_'+ii);
+  if(ab){ab.className='alle'+(allOn?' full':'');ab.textContent=allOn?'\u2713 Alle':'Alle';}
+  render();
+}
+
+function tAll(gi,ii){
+  const nm=J[cJ].g[gi].i[ii][0];
+  const iss=ST[cJ].issues;
+  if(!iss.length)return;
+  const on=iss.every(i=>i.sel.has(nm));
+  iss.forEach(i=>on?i.sel.delete(nm):i.sel.add(nm));
+  rMx();
+}
+
+function setJ(ji){
+  cJ=ji;
+  /* Nicht über die Reihenfolge im Dokument gehen: bei gruppierter Anzeige stimmt sie
+     nicht mehr mit der Reihenfolge in J überein. */
+  document.querySelectorAll('#tabs .tab').forEach(t=>t.classList.toggle('on',+t.dataset.ji===ji));
+  filterTabs(document.getElementById('titleSearch')?.value||'');
+  rMx();
+}
+
+function rBadges(){
+  document.querySelectorAll('#tabs .tab').forEach(tab=>{
+    const ji=+tab.dataset.ji;
+    const s=ST[ji];if(!s)return;
+    const c=s.issues.reduce((a,i)=>a+i.sel.size,0);
+    let b=tab.querySelector('.badge');
+    if(c>0){if(!b){b=document.createElement('span');b.className='badge';tab.appendChild(b);}b.textContent=c;}
+    else if(b)b.remove();
+    tab.classList.toggle('has-iss',s.issues.some(i=>i.sel.size===0||i.issIdx==null));
+  });
+  /* Zugeklappte Bereiche dürfen nichts verstecken: der Kopf trägt die Summe des
+     Fachbereichs und übernimmt die Warnung, sobald ein Titel darin unvollständig ist. */
+  fbGroups.forEach((g,gi)=>{
+    const h=document.getElementById('fb_'+gi);if(!h)return;
+    let sum=0, warn=false;
+    g.idx.forEach(ji=>{
+      const s=ST[ji];if(!s)return;
+      sum+=s.issues.reduce((a,i)=>a+i.sel.size,0);
+      if(s.issues.some(i=>i.sel.size===0||i.issIdx==null))warn=true;
+    });
+    const b=document.getElementById('fbbadge_'+gi);
+    if(b){if(sum>0){b.textContent=sum;b.style.display='inline-flex';}else b.style.display='none';}
+    h.classList.toggle('has-iss',warn);
+  });
+}
+
+function rMx(){
+  const ji=cJ,j=J[ji],iss=ST[ji]?ST[ji].issues:[];
+  const mx=document.getElementById('mx');
+  updMxTools();
+  if(!j){mx.innerHTML='<tbody><tr><td class="empty-st" colspan="20">Keine Daten geladen &mdash; bitte oben &bdquo;Daten laden&ldquo; und die Angebotsdaten.xlsx wählen.</td></tr></tbody>';render();return;}
+  if(!iss.length){
+    mx.innerHTML='<tbody><tr><td class="empty-st" colspan="20">Noch keine Ausgaben &mdash; oben auf &ldquo;Ausgabe hinzuf\u00fcgen&rdquo; klicken.</td></tr></tbody>';
+    render();return;
+  }
+  let h='<thead><tr><th class="pl-hd">Platzierung</th>';
+  iss.forEach((s,ci)=>{
+    const opts=ISSUES[ji].map(([l],i)=>`<option value="${i}"${s.issIdx===i?' selected':''}>Heft ${esc(l)}</option>`).join('');
+    h+=`<th class="iss-th" data-col="${ci}"><div class="iss-head">`;
+    h+=`<select class="iss-sel" onchange="selIss(${s.id},this.value)"><option value="">Heft wählen …</option>${opts}</select>`;
+    h+=`<input type="text" value="${esc(s.et)}" placeholder="ET" oninput="updI(${s.id},'et',this.value)">`;
+    h+=`<input type="text" value="${esc(s.ds)}" placeholder="AS" oninput="updI(${s.id},'ds',this.value)">`;
+    h+=`<button class="rm-iss" onclick="remIss(${s.id})" title="Ausgabe entfernen">&times;</button>`;
+    h+=`</div></th>`;
+  });
+  h+='</tr></thead><tbody>';
+  j.g.forEach((g,gi)=>{
+    h+=`<tr class="cat" id="cat_${ji}_${gi}" onclick="toggleCat(${ji},${gi})"><td class="pl-cell" colspan="${1+iss.length}"><span class="cat-lbl"><span class="cat-toggle">&#9660;</span>${esc(g.l)}<span class="cat-badge" id="catbadge_${ji}_${gi}" style="display:none" title="belegte Platzierungen"></span></span></td></tr>`;
+    g.i.forEach(([nm,pr],ii)=>{
+      const allOn=iss.length>0&&iss.every(i=>i.sel.has(nm));
+      h+=`<tr class="pl-row${ii%2?' alt':''}" data-cat="${ji}_${gi}"><td class="pl-cell"><div class="pl-inner"><span class="pl-nm">${esc(nm)}</span>`;
+      if(preisOn())h+=`<span class="pr-tag">${preisTag(pr)}</span>`;
+      if(iss.length>1)h+=`<button class="alle${allOn?' full':''}" id="ab_${gi}_${ii}" onclick="tAll(${gi},${ii})">${allOn?'\u2713 Alle':'Alle'}</button>`;
+      h+=`</div></td>`;
+      iss.forEach((s,ci)=>{
+        h+=`<td class="cb" data-col="${ci}"><label><input type="checkbox" ${s.sel.has(nm)?'checked':''} onchange="tPl(${s.id},${gi},${ii},this.checked)"></label></td>`;
+      });
+      h+='</tr>';
+    });
+  });
+  mx.innerHTML=h+'</tbody>';
+  applyVisibility();
+  updCatBadges();
+  render();
+}
+
+const nf=n=>n.toLocaleString('de-DE');
+const r2=n=>Math.round(n*100)/100; /* auf Cent (2 Nachkommastellen) runden */
+function discPct(){const el=document.getElementById('disc-val');const v=el?parseFloat(el.value):NaN;return isNaN(v)?0:Math.max(0,Math.min(100,v));}
+function posCalc(e,discOn,aeOn,pct){
+  const p=e[1],rabOk=e[2]!==false,aeOk=e[3]!==false;
+  let sw,c4;
+  if(Array.isArray(p)){sw=p[0];c4=p[1];}else{sw=p;c4=0;}
+  const preis=sw+c4;
+  const rabatt=(discOn&&rabOk)?r2(sw*pct/100):0;
+  const ae=(aeOn&&aeOk)?r2((preis-rabatt)*0.10):0;
+  return {sw,c4,preis,rabatt,ae,netto:preis-rabatt-ae};
+}
+function sumTitle(ji,iss,discOn,aeOn,pct){
+  let preis=0,rabatt=0,ae=0;
+  iss.forEach(s=>s.sel.forEach(n=>{
+    const e=entryOf(ji,n);if(!e)return;
+    const c=posCalc(e,discOn,aeOn,pct);
+    preis+=c.preis;rabatt+=c.rabatt;ae+=c.ae;
+  }));
+  return {preis,rabatt,ae,netto:preis-rabatt-ae};
+}
+function buildHtml(){
+  const act=J.map((j,ji)=>({ji,j,iss:ST[ji].issues.filter(s=>s.sel.size>0||s.ausgabe)})).filter(({iss})=>iss.length);
+  if(!act.length)return '';
+  const thS='background:#f2f4f8;font-weight:600;text-align:left;padding:6px 10px;border:1px solid #d6dbe8;font-size:12px;color:#00285a;font-family:Arial,sans-serif';
+  const tdS='padding:5px 9px;border:1px solid #e4e7ef;vertical-align:top;font-size:12px;font-family:Arial,sans-serif;color:#1a2340';
+  const tdAltS=tdS+';background:#fafbfd';
+  const tableS='border-collapse:collapse;width:100%;margin-bottom:8px;font-family:Arial,sans-serif';
+  const de=document.getElementById('ck-disc'),aeEl=document.getElementById('ck-ae');
+  const discOn=!!(de&&de.checked),aeOn=!!(aeEl&&aeEl.checked),pct=discPct();
+  const tsEl=document.getElementById('ck-ts');const tsOn=!!(tsEl&&tsEl.checked);
+  const kgEl=document.getElementById('ck-kg');const kgOn=!!(kgEl&&kgEl.checked);
+  const duEl=document.getElementById('ck-du');const duOn=!!(duEl&&duEl.checked);
+  const negH=v=>v>0?'&#8722;'+fmt(v):'&ndash;';
+  let h='';
+  const showRabatt=document.getElementById('ck-r').checked;
+  const showResv=document.getElementById('ck-rv').checked;
+  const resvTxt=(document.getElementById('rv-t').value||'').trim();
+  act.forEach(({ji,j,iss})=>{
+    /* Auflage an die Titelzeile anhängen – normal gewichtet und gedämpft, damit der
+       Titel selbst die Betonung behält. Sie ist titelbezogen und steht daher nur hier. */
+    const auflH=j.a>0?` <span style="font-weight:400;color:#6b7899;white-space:nowrap">&middot; Auflage ${nf(j.a)} Expl.</span>`:'';
+    h+=`<p style="font-weight:700;font-size:13px;color:#00285a;margin:0 0 6px;font-family:Arial,sans-serif;border-left:3px solid #ee7d11;padding-left:8px">${esc(j.n)}${auflH}</p>`;
+    h+=`<table style="${tableS}"><thead><tr>`;
+    const thR='background:#f2f4f8;font-weight:600;text-align:right;padding:6px 10px;border:1px solid #d6dbe8;font-size:12px;color:#00285a;font-family:Arial,sans-serif';
+    const tdR='padding:5px 9px;border:1px solid #e4e7ef;vertical-align:top;font-size:12px;font-family:Arial,sans-serif;color:#1a2340;text-align:right;white-space:nowrap';
+    const tdRalt=tdR+';background:#fafbfd';
+    h+=`<th style="${thS}">Ausgabe</th>`;
+    if(tsOn)h+=`<th style="${thS}">Themenschwerpunkte</th>`;
+    if(kgOn)h+=`<th style="${thS}">Kongresse</th>`;
+    h+=`<th style="${thS}">ET</th><th style="${thS}">AS</th>`;
+    if(duOn)h+=`<th style="${thS}">DU&thinsp;/&thinsp;Anlieferung</th>`;
+    h+=`<th style="${thS}">Platzierungen</th><th style="${thR}">Preise</th>`;
+    if(discOn)h+=`<th style="${thR}">Rabatt ${nf(pct)}&thinsp;%</th>`;
+    if(aeOn)h+=`<th style="${thR}">AE 10&thinsp;%</th>`;
+    h+=`</tr></thead><tbody>`;
+    iss.forEach((s,ri)=>{
+      const td=ri%2===0?tdS:tdAltS;
+      const tdr=ri%2===0?tdR:tdRalt;
+      /* Termine und Platzierungsnamen nie umbrechen: Platzierungen, Termine, Preise,
+         Rabatt und AE stehen je Ausgabe untereinander in EINER Zelle; die Zuordnung
+         entsteht allein dadurch, dass jede Zeile gleich hoch ist. Bräche ein langer
+         Name um, rutschte alles darunter gegen die Nachbarspalten. */
+      const tdN=td+';white-space:nowrap';
+      const names=s.sel.size>0?[...s.sel]:[];
+      const cells=names.map(n=>{const e=entryOf(ji,n);return e?posCalc(e,discOn,aeOn,pct):null;});
+      const pl=names.length?names.map(esc).join('<br>'):'&ndash;';
+      const priceLines=names.length?names.map(n=>{const p=pOf(ji,n);return p!=null?fmtP(p):'&ndash;';}).join('<br>'):'&ndash;';
+      h+=`<tr><td style="${td}">${esc(s.ausgabe)||'&ndash;'}</td>`;
+      if(tsOn)h+=`<td style="${td}">${escNl(s.themen)||'&ndash;'}</td>`;
+      if(kgOn)h+=`<td style="${td}">${escNl(kgOnList(s.kongress))||'&ndash;'}</td>`;
+      /* Je Platzierung genau ein Termin: DU-Schluss oder Anlieferung – Zeile für Zeile
+         passend zu den Platzierungen und Preisen daneben. */
+      const terminLines=names.length?names.map(n=>{
+        const art=terminArt(ji,n),d=(art==='EH')?s.eh:((art==='DU')?s.du:'');
+        if(!d)return '&ndash;';
+        return (art==='EH')?(esc(d)+' Anlieferung'):esc(d);
+      }).join('<br>'):'&ndash;';
+      h+=`<td style="${td}">${esc(s.et)||'&ndash;'}</td><td style="${td}">${esc(s.ds)||'&ndash;'}</td>`;
+      if(duOn)h+=`<td style="${tdN}">${terminLines}</td>`;
+      h+=`<td style="${tdN}">${pl}</td><td style="${tdr}">${priceLines}</td>`;
+      if(discOn)h+=`<td style="${tdr}">${names.length?cells.map(c=>c?negH(c.rabatt):'&ndash;').join('<br>'):'&ndash;'}</td>`;
+      if(aeOn)h+=`<td style="${tdr}">${names.length?cells.map(c=>c?negH(c.ae):'&ndash;').join('<br>'):'&ndash;'}</td>`;
+      h+=`</tr>`;
+    });
+    if(discOn||aeOn){
+      const T=sumTitle(ji,iss,discOn,aeOn,pct);
+      if(T.preis>0){
+        const cols=5+(tsOn?1:0)+(kgOn?1:0)+(duOn?1:0)+(discOn?1:0)+(aeOn?1:0);
+        const sumC='padding:6px 10px;border:1px solid #d6dbe8;border-top:2px solid #00285a;font-size:12px;font-family:Arial,sans-serif;color:#00285a;font-weight:700;text-align:right;white-space:nowrap;background:#f2f4f8';
+        h+=`<tr><td style="${sumC}" colspan="${4+(tsOn?1:0)+(kgOn?1:0)+(duOn?1:0)}">Summe</td><td style="${sumC}">${fmt(T.preis)}</td>`;
+        if(discOn)h+=`<td style="${sumC}">${negH(T.rabatt)}</td>`;
+        if(aeOn)h+=`<td style="${sumC}">${negH(T.ae)}</td>`;
+        h+=`</tr>`;
+        const totC='padding:7px 10px;border:1px solid #d6dbe8;font-size:12.5px;font-family:Arial,sans-serif;color:#00285a;font-weight:700;text-align:right;background:#eaf0f7';
+        h+=`<tr><td style="${totC}" colspan="${cols}">Gesamt (netto, zzgl. MwSt.):&ensp;${fmt(T.netto)}</td></tr>`;
+      }
+    }
+    h+='</tbody></table>';
+    h+='<p style="margin:0 0 14px"></p>';
+  });
+  if(discOn||aeOn){
+    const gTot=act.map(({ji,iss})=>sumTitle(ji,iss,discOn,aeOn,pct)).filter(T=>T.preis>0);
+    if(gTot.length>1){
+      const gNetto=gTot.reduce((a,T)=>a+T.netto,0);
+      const gLbl='padding:8px 12px;border:1px solid #d6dbe8;border-top:3px solid #ee7d11;background:#eaf0f7;color:#00285a;font-size:13px;font-weight:700;font-family:Arial,sans-serif';
+      const gAmt='padding:8px 12px;border:1px solid #d6dbe8;border-top:3px solid #ee7d11;background:#eaf0f7;color:#00285a;font-size:14px;font-weight:700;text-align:right;white-space:nowrap;font-family:Arial,sans-serif';
+      h+=`<table style="border-collapse:collapse;width:100%;margin:2px 0 12px;font-family:Arial,sans-serif"><tr><td style="${gLbl}">Gesamt über alle Titel (netto, zzgl. MwSt.)</td><td style="${gAmt}">${fmt(gNetto)}</td></tr></table>`;
+    }
+  }
+  if(showRabatt)h+=`<p style="font-size:12px;color:#6b7899;margin:4px 0;font-family:Arial,sans-serif">Rabatt gem. Mediadaten\u202f/\u202fAE:\u202f10\u202f%\u202f/\u202fzzgl.\u202fMwSt.</p>`;
+  if(showResv&&resvTxt)h+=`<p style="font-size:12px;color:#c0392b;font-weight:600;margin:6px 0 0;font-family:Arial,sans-serif">${esc(resvTxt)}</p>`;
+  return h;
+}
+
+function buildTxt(){
+  const act=J.map((j,ji)=>({ji,j,iss:ST[ji].issues.filter(s=>s.sel.size>0||s.ausgabe)})).filter(({iss})=>iss.length);
+  if(!act.length)return '';
+  const de=document.getElementById('ck-disc'),aeEl=document.getElementById('ck-ae');
+  const discOn=!!(de&&de.checked),aeOn=!!(aeEl&&aeEl.checked),pct=discPct();
+  const tsEl=document.getElementById('ck-ts');const tsOn=!!(tsEl&&tsEl.checked);
+  const kgEl=document.getElementById('ck-kg');const kgOn=!!(kgEl&&kgEl.checked);
+  const duEl=document.getElementById('ck-du');const duOn=!!(duEl&&duEl.checked);
+  const L=[];
+  act.forEach(({ji,j,iss},ai)=>{
+    if(ai>0)L.push('');
+    /* Mit Auflage entfällt der Doppelpunkt: „… Expl.:" wäre zwei Satzzeichen
+       hintereinander; der Mittelpunkt trennt die Zeile schon deutlich genug. */
+    L.push(j.a>0?(j.n+' · Auflage '+nf(j.a)+' Expl.'):(j.n+':'));
+    iss.forEach(s=>{
+      let hdr=s.ausgabe?`Ausgabe ${s.ausgabe}`:'(Ausgabe)';
+      const inf=[];if(s.et)inf.push('ET: '+s.et);if(s.ds)inf.push('AS: '+s.ds);
+      /* DU nur nennen, wenn ihn überhaupt eine Platzierung braucht; die Anlieferung
+         steht stattdessen hinter der einzelnen Platzierung. */
+      if(duOn&&s.du&&[...s.sel].some(n=>terminArt(ji,n)==='DU'))inf.push('DU: '+s.du);
+      if(tsOn&&s.themen)inf.push('Themenschwerpunkte: '+flatNl(s.themen));
+      if(kgOn){const kgT=kgOnList(s.kongress);if(kgT)inf.push('Kongresse: '+flatNl(kgT));}
+      if(inf.length)hdr+=` (${inf.join(', ')})`;
+      L.push(hdr);
+      if(!s.sel.size)L.push('  \u2013');
+      else s.sel.forEach(n=>{
+        const art=terminArt(ji,n);
+        L.push('  '+n+((duOn&&art==='EH'&&s.eh)?(' (Anlieferung '+s.eh+')'):''));
+      });
+    });
+    const pm=new Map();
+    iss.forEach(s=>s.sel.forEach(n=>{if(!pm.has(n)){const p=pOf(ji,n);if(p!=null)pm.set(n,p);}}));
+    if(pm.size){L.push('','PREISE:');pm.forEach((p,n)=>L.push(`${n}: ${fmtPtxt(p)}`));}
+    const T=sumTitle(ji,iss,discOn,aeOn,pct);
+    if((discOn||aeOn)&&T.preis>0){
+      L.push('','SUMME:');
+      L.push('Preis: '+fmt(T.preis));
+      if(discOn)L.push('Rabatt ('+nf(pct)+' % auf s/w): -'+fmt(T.rabatt));
+      if(aeOn)L.push('AE (10 % auf Betrag nach Rabatt): -'+fmt(T.ae));
+      L.push('Gesamt (netto, zzgl. MwSt.): '+fmt(T.netto));
+    }
+  });
+  if(discOn||aeOn){
+    const gTot=act.map(({ji,iss})=>sumTitle(ji,iss,discOn,aeOn,pct)).filter(T=>T.preis>0);
+    if(gTot.length>1)L.push('','GESAMT ÜBER ALLE TITEL','Gesamt (netto, zzgl. MwSt.): '+fmt(gTot.reduce((a,T)=>a+T.netto,0)));
+  }
+  L.push('');
+  if(document.getElementById('ck-r').checked)L.push('Rabatt gem. Mediadaten\u202f/\u202fAE:\u202f10\u202f%\u202f/\u202fzzgl.\u202fMwSt.');
+  const showResv=document.getElementById('ck-rv').checked;
+  const resvTxt=(document.getElementById('rv-t').value||'').trim();
+  if(showResv&&resvTxt)L.push('',resvTxt);
+  return L.join('\n');
+}
+
+function updResetBtn(){
+  const btn=document.getElementById('resetBtn');if(!btn)return;
+  const any=isCustomData&&ST.some(s=>s.issues.length>0);
+  btn.style.display=any?'inline-flex':'none';
+}
+function resetAll(){
+  if(!ST.some(s=>s.issues.length>0))return;
+  if(!confirm('Wirklich alle Platzierungen, Ausgaben und Optionen für alle Titel entfernen?\n\nDer aktuelle Angebotsstand wird gelöscht.'))return;
+  ST=J.map(()=>({issues:[],nid:1}));
+  /* setzt zugleich kgPick auf „alle Kongresse" zurück */
+  applyOptionen(OPTIONEN_LEER);
+  /* Die Verknüpfung zur geöffneten Angebotsdatei wird mit gelöst, damit ein
+     späteres „Speichern" nicht das alte Angebot durch ein leeres ersetzt.
+     Die Datei selbst bleibt unangetastet. */
+  clearAngebotDatei();
+  collapsedCats=buildCollapsed();
+  setJ(0);
+}
+
+function render(){
+  rBadges();
+  updCatBadges();
+  if(onlyFilledOn())applyVisibility();
+  const html=buildHtml();
+  document.getElementById('pv-wrap').innerHTML=html||'<p style="color:var(--sm-muted-l);font-size:12.5px;margin:0">Sobald Platzierungen angekreuzt sind, erscheint hier die Angebotsvorschau zum Kopieren.</p>';
+  updResetBtn();
+  saveState();
+}
+
+function tRv(){document.getElementById('rv-w').style.display=document.getElementById('ck-rv').checked?'block':'none';rvGrow();render();}
+/* Das Reservierungsfeld wächst mit dem Inhalt mit, damit nichts von Hand aufgezogen
+   werden muss: Höhe zurücksetzen, dann auf die Inhaltshöhe setzen. box-sizing ist
+   border-box, deshalb kommen die beiden Rahmenstärken noch dazu. */
+function rvGrow(){
+  const t=document.getElementById('rv-t');
+  if(!t||t.offsetParent===null)return;   /* eingeklappt: scrollHeight wäre 0 */
+  const cs=getComputedStyle(t);
+  const rahmen=parseFloat(cs.borderTopWidth)+parseFloat(cs.borderBottomWidth);
+  t.style.height='auto';
+  t.style.height=(t.scrollHeight+rahmen)+'px';
+}
+/* Schmaleres Fenster heißt mehr Zeilenumbrüche – sonst würde Text unsichtbar abgeschnitten. */
+window.addEventListener('resize',rvGrow);
+
+async function cpHtml(){
+  const html=buildHtml(),txt=buildTxt();
+  try{
+    await navigator.clipboard.write([new ClipboardItem({'text/html':new Blob([html],{type:'text/html'}),'text/plain':new Blob([txt],{type:'text/plain'})})]);
+    flash('cb-html','\u2713 Kopiert');
+  }catch(e){await navigator.clipboard.writeText(txt);flash('cb-html','\u2713 Kopiert (Text)');}
+}
+
+async function cpTxt(){await navigator.clipboard.writeText(buildTxt());flash('cb-txt','\u2713 Kopiert');}
+
+function flash(id,msg){
+  const b=document.getElementById(id),orig=b.innerHTML;
+  b.classList.add('done');b.innerHTML=msg;
+  setTimeout(()=>{b.classList.remove('done');b.innerHTML=orig;},2000);
+}
+
+/* ===== HOVER-FADENKREUZ: Zeile + Spalte in der Belegungsmatrix hervorheben ===== */
+function mxClearHl(){
+  document.querySelectorAll('#mx .col-hl').forEach(c=>c.classList.remove('col-hl'));
+  document.querySelectorAll('#mx .row-hl').forEach(c=>c.classList.remove('row-hl'));
+}
+function mxHover(e){
+  mxClearHl();
+  const cell=e.target.closest('td,th');
+  if(!cell)return;
+  const col=cell.getAttribute('data-col');
+  if(col!==null)document.querySelectorAll('#mx [data-col="'+col+'"]').forEach(c=>c.classList.add('col-hl'));
+  const row=cell.closest('tr.pl-row');
+  if(row)row.classList.add('row-hl');
+}
+(function initMxHover(){
+  const mxEl=document.getElementById('mx');
+  if(!mxEl)return;
+  mxEl.addEventListener('mouseover',mxHover);
+  mxEl.addEventListener('mouseleave',mxClearHl);
+})();
+
+loadCache();
+restorePreis();
+applyYear(pickStartYear());
+/* Zuletzt: Der Zwischenspeicher ist sofort da, die Preisliste von der Adresse holt
+   sich die Seite danach nach und baut mit ihr neu auf. */
+ladePreislisteVonServer();
+</script>
+</body>
+</html>

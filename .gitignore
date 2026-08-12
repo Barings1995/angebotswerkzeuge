@@ -1,0 +1,14 @@
+.DS_Store
+
+# Sicherungskopien bleiben örtlich – sie gehören nicht in ein öffentliches Repository.
+Sicherungskopien/
+
+# Die Änderungslogs ebenso: interne Arbeitsnotizen, nicht für die Veröffentlichung.
+Änderungslog_*.md
+
+# Angebotsdateien, falls eine versehentlich hier landet: enthalten Kundenangaben.
+OS_Angebot_*.json
+AV_Angebot_*.json
+
+# Achtung: Angebotsdaten.xlsx ist hier ausdrücklich NICHT ausgeschlossen –
+# sie ist die Preisliste, aus der die Werkzeuge lesen. Ohne sie starten sie leer.
