@@ -6,6 +6,10 @@ Sicherungskopien/
 # Die Änderungslogs ebenso: interne Arbeitsnotizen, nicht für die Veröffentlichung.
 Änderungslog_*.md
 
+# Der Doppelklick-Helfer zum Veröffentlichen bleibt örtlich – ein öffentlich
+# abrufbares Shell-Skript hat auf der Seite nichts zu suchen.
+Preisliste veröffentlichen.command
+
 # Angebotsdateien, falls eine versehentlich hier landet: enthalten Kundenangaben.
 OS_Angebot_*.json
 AV_Angebot_*.json

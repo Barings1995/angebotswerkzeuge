@@ -28,20 +28,27 @@ Browser aus `file://` heraus keine Nachbardateien lesen darf.
 | `Angebotsdaten.xlsx` | die gemeinsame Preisliste (Blätter „Preise", „Termine", „Info") |
 | `manifest.webmanifest` | Name und Symbol beim Ablegen im Dock |
 
-Nicht im Repository, nur im Arbeitsordner: die beiden Änderungslogs und der Ordner
-`Sicherungskopien/` mit den früheren Ständen — beides sind interne Arbeitsunterlagen
-(siehe `.gitignore`).
+Nicht im Repository, nur im Arbeitsordner: die beiden Änderungslogs, der Ordner
+`Sicherungskopien/` mit den früheren Ständen und `Preisliste veröffentlichen.command`
+(Doppelklick-Helfer, siehe unten) — interne Arbeitsunterlagen (siehe `.gitignore`).
 
 ## Preisliste aktualisieren
 
 1. `Angebotsdaten.xlsx` in Excel ändern und in diesem Ordner speichern.
 2. Örtlich prüfen (siehe oben): Startseite zeigt den neuen Stand, die Werkzeuge zeigen
    die geänderten Preise und Termine.
-3. Veröffentlichen:
+3. Veröffentlichen — entweder per Doppelklick auf `Preisliste veröffentlichen.command`
+   (liegt im Arbeitsordner, nicht im Repository), oder von Hand:
 
    ```bash
    git add Angebotsdaten.xlsx && git commit -m "Preisliste aktualisiert" && git push
    ```
+
+   Wer keinen Zugriff auf den Arbeitsordner hat, kann die Datei auch über die
+   GitHub-Seite ersetzen: „Add file" → „Upload files", gleicher Dateiname.
+
+Ohne diesen dritten Schritt ändert sich nur der eigene Rechner — die veröffentlichte
+Seite liefert weiter die alte Preisliste aus.
 
 Der auf der Startseite angezeigte Stand kommt aus dem Zeitstempel der Datei und muss
 nicht gepflegt werden.
