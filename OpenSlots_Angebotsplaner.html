@@ -1303,6 +1303,7 @@ async function onDataFileChosen(ev){
     const wb=new ExcelJS.Workbook();
     await wb.xlsx.load(await file.arrayBuffer());
     const ds=parseWorkbookToDataset(wb);
+    datenStand=standAusMappe(wb);
     DATASET=ds;isCustomData=true;loadedFileName=file.name;
     /* Neue Preisgrundlage: Die Verknüpfung zu einer offenen Angebotsdatei wird
        gelöst, damit „Speichern" nicht ungefragt in die alte Datei schreibt. */
@@ -1331,11 +1332,14 @@ async function onDataFileChosen(ev){
    Arbeitsstand, dann der Aufbau. Dadurch bleiben Ankreuzungen erhalten. */
 const DATEN_DATEI='Angebotsdaten.xlsx';
 let datenStand='';
-function standAusKopf(r){
-  const lm=r.headers.get('last-modified');
-  if(!lm)return '';
-  const d=new Date(lm);
-  return isNaN(d)?'':('0'+d.getDate()).slice(-2)+'.'+('0'+(d.getMonth()+1)).slice(-2)+'.'+d.getFullYear();
+/* Der Stand kommt aus der Preisliste selbst: jede xlsx-Datei führt intern Buch
+   darüber, wann sie zuletzt gespeichert wurde. Der Zeitstempel des Servers taugt
+   dafür nicht – GitHub Pages meldet für jede Datei den Zeitpunkt der letzten
+   Veröffentlichung, also auch dann ein neues Datum, wenn nur ein Werkzeug geändert
+   wurde. Der Wert aus der Datei gilt auch für eine von Hand gewählte Preisliste. */
+function standAusMappe(wb){
+  const d=(wb&&wb.modified)?new Date(wb.modified):null;
+  return (!d||isNaN(d))?'':('0'+d.getDate()).slice(-2)+'.'+('0'+(d.getMonth()+1)).slice(-2)+'.'+d.getFullYear();
 }
 async function ladePreislisteVonServer(){
   if(location.protocol==='file:')return false;
@@ -1350,7 +1354,7 @@ async function ladePreislisteVonServer(){
     await wb.xlsx.load(buf);
     const ds=parseWorkbookToDataset(wb);
     if(!ds||!Object.keys(ds).length)throw new Error('Keine Jahrgänge in der Datei.');
-    datenStand=standAusKopf(r);
+    datenStand=standAusMappe(wb);
     DATASET=ds;isCustomData=true;loadedFileName=DATEN_DATEI;
     /* Der gemerkte Jahrgang bleibt stehen, solange die Preisliste ihn kennt. */
     if(!currentYear||!DATASET[currentYear])currentYear=defaultYear();

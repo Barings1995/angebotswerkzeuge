@@ -1269,6 +1269,17 @@ function parseWorkbookToDataset(wb) {
   return ds;
 }
 
+/* Der Stand kommt aus der Preisliste selbst: jede xlsx-Datei führt intern Buch darüber,
+   wann sie zuletzt gespeichert wurde. Der Zeitstempel des Servers taugt dafür nicht –
+   GitHub Pages meldet für jede Datei den Zeitpunkt der letzten Veröffentlichung, also
+   auch dann ein neues Datum, wenn lediglich ein Werkzeug geändert wurde. */
+function standAusMappe(wb) {
+  const d = (wb && wb.modified) ? new Date(wb.modified) : null;
+  if (!d || isNaN(d)) return '';
+  const p = n => String(n).padStart(2, '0');
+  return ` · Stand ${p(d.getDate())}.${p(d.getMonth() + 1)}.${d.getFullYear()}`;
+}
+
 async function onDataFileChosen(event) {
   const file = event.target.files[0];
   if (!file) return;
@@ -1288,7 +1299,7 @@ async function onDataFileChosen(event) {
     applyYear(currentYear);                      // stellt Zeilen um + speichert Cache
     if (!document.querySelector('#posBody tr')) addPosition();  // beim ersten Laden eine Position anlegen
     const nTitel = Object.keys(DATASET[currentYear].titel).length;
-    updateDataStatus(`geladen: ${file.name} · Jahrgänge ${activeYears().join(', ')} · ${nTitel} Titel`, true);
+    updateDataStatus(`geladen: ${file.name} · Jahrgänge ${activeYears().join(', ')} · ${nTitel} Titel${standAusMappe(wb)}`, true);
     // Angaben, die es in der neuen Preisliste nicht mehr gibt. Ohne Hinweis bliebe eine
     // Position still ohne Ausgabe stehen – oder, fehlt der Titel, auf dem ersten der Liste.
     if (datenAbgleichVerloren.length) {
@@ -1337,12 +1348,7 @@ async function ladePreislisteVonServer() {
     if (noDataRow) noDataRow.remove();
     applyYear(currentYear);
     const nTitel = Object.keys(DATASET[currentYear].titel).length;
-    const lm = r.headers.get('last-modified');
-    const d  = lm ? new Date(lm) : null;
-    const stand = (d && !isNaN(d))
-      ? ` · Stand ${String(d.getDate()).padStart(2, '0')}.${String(d.getMonth() + 1).padStart(2, '0')}.${d.getFullYear()}`
-      : '';
-    updateDataStatus(`geladen: ${DATEN_DATEI} · Jahrgänge ${activeYears().join(', ')} · ${nTitel} Titel${stand}`, true);
+    updateDataStatus(`geladen: ${DATEN_DATEI} · Jahrgänge ${activeYears().join(', ')} · ${nTitel} Titel${standAusMappe(wb)}`, true);
     // Wie beim Laden von Hand: nur melden, wenn an vorhandenen Positionen etwas verlorenging.
     if (datenAbgleichVerloren.length) {
       alert('Diese Angaben aus den vorhandenen Positionen gibt es in der neu geladenen '

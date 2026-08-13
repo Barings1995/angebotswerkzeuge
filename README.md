@@ -62,8 +62,11 @@ Doppelklick auf `Preisliste abgleichen.command` holt sie und meldet es. Nur wenn
 auf **beiden** Seiten geändert wurde, bricht das Skript ab — dann muss von Hand
 entschieden werden, welche Fassung gilt.
 
-Der auf der Startseite angezeigte Stand kommt aus dem Zeitstempel der Datei und muss
-nicht gepflegt werden.
+Der auf der Startseite und in den Statuszeilen angezeigte Stand kommt aus der
+`Angebotsdaten.xlsx` selbst: Excel schreibt beim Speichern den Zeitpunkt in die Datei
+hinein, und dieser Wert wandert mit ihr mit — auch über den Umweg des Hochladens.
+Gepflegt werden muss er nicht. Der Zeitstempel des Servers taugt dafür nicht, weil
+GitHub Pages für jede Datei den Zeitpunkt der letzten Veröffentlichung meldet.
 
 Wer ein Werkzeug schon offen hat, sieht den neuen Stand nach dem Neuladen der Seite.
 Ein Zwischenspeicher des Browsers hält die alte Preisliste nur so lange, bis das

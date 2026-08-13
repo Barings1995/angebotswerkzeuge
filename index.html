@@ -126,20 +126,70 @@
 </main>
 
 <script>
-/* Stand der Preisliste: kommt aus dem Zeitstempel der Datei, den der Server mitschickt.
-   Damit ist die Angabe immer richtig, ohne dass sie jemand pflegen muss. Bei einem
-   Doppelklick auf diese Datei (file://) gibt es keinen Server und keinen Zeitstempel –
-   dann bleibt die Zeile weg, statt etwas Falsches zu behaupten. */
+/* Stand der Preisliste: kommt aus der Datei selbst. Jede xlsx-Datei führt intern
+   Buch darüber, wann sie zuletzt gespeichert wurde (docProps/core.xml, Feld
+   dcterms:modified) – dieser Zeitstempel wandert mit der Datei mit, auch über einen
+   Upload von einem anderen Rechner. Der Zeitstempel des Servers taugt dafür nicht:
+   GitHub Pages meldet für jede Datei denselben Zeitpunkt, nämlich den der letzten
+   Veröffentlichung. Damit sähe die Preisliste auch dann nach „heute" aus, wenn
+   lediglich ein Werkzeug geändert wurde. Bei einem Doppelklick auf diese Datei
+   (file://) darf der Browser die Nachbardatei nicht lesen – dann bleibt die Zeile
+   weg, statt etwas Falsches zu behaupten. */
+
+/* Liest den Speicherzeitpunkt aus dem xlsx-Archiv. Eine xlsx-Datei ist ein ZIP;
+   gesucht wird der Eintrag docProps/core.xml, der ausgepackt und nach dem Feld
+   dcterms:modified durchsucht wird. Ohne Zusatzbibliothek, ~5 ms. Bei jedem
+   unerwarteten Aufbau wird null geliefert – dann steht kein Datum da. */
+async function standAusDatei(buf) {
+  try {
+    const dv = new DataView(buf), u8 = new Uint8Array(buf);
+    let eocd = -1;                                  // Ende des Inhaltsverzeichnisses
+    for (let i = u8.length - 22; i >= 0 && i >= u8.length - 65558; i--) {
+      if (dv.getUint32(i, true) === 0x06054b50) { eocd = i; break; }
+    }
+    if (eocd < 0) return null;
+    let p = dv.getUint32(eocd + 16, true);
+    const n = dv.getUint16(eocd + 10, true);
+    for (let k = 0; k < n; k++) {
+      if (dv.getUint32(p, true) !== 0x02014b50) return null;
+      const verf = dv.getUint16(p + 10, true);      // 0 = ungepackt, 8 = deflate
+      const glen = dv.getUint32(p + 20, true);      // gepackte Länge
+      const nlen = dv.getUint16(p + 28, true);
+      const elen = dv.getUint16(p + 30, true);
+      const clen = dv.getUint16(p + 32, true);
+      const lho  = dv.getUint32(p + 42, true);      // Kopf des Eintrags
+      const name = new TextDecoder().decode(u8.subarray(p + 46, p + 46 + nlen));
+      if (name === 'docProps/core.xml') {
+        if (dv.getUint32(lho, true) !== 0x04034b50) return null;
+        const von = lho + 30 + dv.getUint16(lho + 26, true) + dv.getUint16(lho + 28, true);
+        const roh = u8.subarray(von, von + glen);
+        let xml;
+        if (verf === 0) {
+          xml = new TextDecoder().decode(roh);
+        } else if (verf === 8 && typeof DecompressionStream === 'function') {
+          xml = await new Response(new Blob([roh]).stream()
+                  .pipeThrough(new DecompressionStream('deflate-raw'))).text();
+        } else return null;
+        const m = xml.match(/<dcterms:modified[^>]*>([^<]+)</);
+        if (!m) return null;
+        const d = new Date(m[1]);
+        return isNaN(d) ? null : d;
+      }
+      p += 46 + nlen + elen + clen;
+    }
+    return null;
+  } catch (e) { return null; }
+}
+
 (async () => {
   const box = document.getElementById('stand');
   const txt = document.getElementById('standText');
   if (location.protocol === 'file:') return;
   try {
-    const r = await fetch('Angebotsdaten.xlsx', { method: 'HEAD', cache: 'no-cache' });
+    const r = await fetch('Angebotsdaten.xlsx', { cache: 'no-cache' });
     if (!r.ok) throw new Error('HTTP ' + r.status);
-    const lm = r.headers.get('last-modified');
-    const d  = lm ? new Date(lm) : null;
-    if (d && !isNaN(d)) {
+    const d = await standAusDatei(await r.arrayBuffer());
+    if (d) {
       const p = n => String(n).padStart(2, '0');
       txt.innerHTML = 'Preisliste: <b>Stand ' + p(d.getDate()) + '.' + p(d.getMonth() + 1) + '.' + d.getFullYear() + '</b>';
     } else {
