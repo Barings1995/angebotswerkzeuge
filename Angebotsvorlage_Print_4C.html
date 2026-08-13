@@ -1022,6 +1022,7 @@ let TITEL_DATA     = {};             // zeigen auf den aktiven Jahrgang, sobald 
 let AUSGABEN_DATA  = {};
 let loadedFileName = '';
 let isCustomData   = false;          // true, sobald eine Datei geladen wurde
+let datenStand     = '';             // Stand der Preisliste als fertiger Textzusatz, siehe standAusMappe()
 const CACHE_KEY    = 'onkoAngebotDaten';
 const ABSENDER_KEY = 'onkoAbsender';
 
@@ -1283,7 +1284,9 @@ async function onDataFileChosen(event) {
     applyYear(currentYear);                      // stellt Zeilen um + speichert Cache
     if (!document.querySelector('#posBody tr')) addPosition();  // beim ersten Laden eine Position anlegen
     const nTitel = Object.keys(DATASET[currentYear].titel).length;
-    updateDataStatus(`geladen: ${file.name} · Jahrgänge ${activeYears().join(', ')} · ${nTitel} Titel${standAusMappe(wb)}`, true);
+    datenStand = standAusMappe(wb);
+    saveCache();                                 // Stand nachtragen: applyYear() hat ihn noch nicht gekannt
+    updateDataStatus(`geladen: ${file.name} · Jahrgänge ${activeYears().join(', ')} · ${nTitel} Titel${datenStand}`, true);
     // Angaben, die es in der neuen Preisliste nicht mehr gibt. Ohne Hinweis bliebe eine
     // Position still ohne Ausgabe stehen – oder, fehlt der Titel, auf dem ersten der Liste.
     if (datenAbgleichVerloren.length) {
@@ -1332,7 +1335,9 @@ async function ladePreislisteVonServer() {
     if (noDataRow) noDataRow.remove();
     applyYear(currentYear);
     const nTitel = Object.keys(DATASET[currentYear].titel).length;
-    updateDataStatus(`geladen: ${DATEN_DATEI} · Jahrgänge ${activeYears().join(', ')} · ${nTitel} Titel${standAusMappe(wb)}`, true);
+    datenStand = standAusMappe(wb);
+    saveCache();                                 // Stand nachtragen: applyYear() hat ihn noch nicht gekannt
+    updateDataStatus(`geladen: ${DATEN_DATEI} · Jahrgänge ${activeYears().join(', ')} · ${nTitel} Titel${datenStand}`, true);
     // Wie beim Laden von Hand: nur melden, wenn an vorhandenen Positionen etwas verlorenging.
     if (datenAbgleichVerloren.length) {
       alert('Diese Angaben aus den vorhandenen Positionen gibt es in der neu geladenen '
@@ -1351,7 +1356,10 @@ async function ladePreislisteVonServer() {
 function saveCache() {
   if (!isCustomData) return;
   try {
-    localStorage.setItem(CACHE_KEY, JSON.stringify({ ds: DATASET, year: currentYear, file: loadedFileName }));
+    // Der Stand wandert mit: sonst stünde nach einem Neustart der Seite eine Preisliste
+    // ohne Datum da, solange die Datei noch nicht wieder von der Adresse geholt ist –
+    // und ohne Netz bliebe das Datum ganz weg.
+    localStorage.setItem(CACHE_KEY, JSON.stringify({ ds: DATASET, year: currentYear, file: loadedFileName, stand: datenStand }));
   } catch (e) {}
 }
 function loadCache() {
@@ -1363,6 +1371,7 @@ function loadCache() {
       DATASET        = obj.ds;
       currentYear    = (obj.year && obj.ds[obj.year]) ? obj.year : Object.keys(obj.ds).sort()[0];
       loadedFileName = obj.file || '';
+      datenStand     = obj.stand || '';
       isCustomData   = true;
       return true;
     }
@@ -1444,7 +1453,7 @@ window.addEventListener('DOMContentLoaded', async () => {
   applyYear(currentYear);
   updateDataStatus(
     fromCache
-      ? (loadedFileName ? `aus Browser-Speicher: ${loadedFileName}` : 'zuletzt geladene Daten (Browser-Speicher)')
+      ? (loadedFileName ? `aus Browser-Speicher: ${loadedFileName}${datenStand}` : `zuletzt geladene Daten (Browser-Speicher)${datenStand}`)
       : 'Bitte zuerst über „Daten laden" die Angebotsdaten.xlsx laden.',
     fromCache);
 
@@ -2180,6 +2189,10 @@ async function applyAngebot(data) {
       : dsDatei;
     isCustomData   = true;
     loadedFileName = data.loadedFileName || '';
+    // Die Preise kommen jetzt aus der Angebotsdatei, nicht mehr aus der geladenen
+    // Preisliste. Deren Stand würde etwas Falsches behaupten und wird deshalb
+    // weggelassen – lieber kein Datum als ein unzutreffendes.
+    datenStand     = '';
     // In den Browser-Speicher schreiben, wie es der OpenSlots-Angebotsplaner tut: Wer ein
     // altes Angebot mit seinen alten Preisen öffnet, findet sie nach einem Neustart des
     // Browsers wieder vor. Zurück zum neueren Stand geht es über „Daten laden" oder beim

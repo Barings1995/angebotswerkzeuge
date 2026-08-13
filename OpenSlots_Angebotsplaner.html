@@ -1372,7 +1372,10 @@ async function ladePreislisteVonServer(){
 
 function saveCache(){
   if(!isCustomData)return;
-  try{localStorage.setItem(CACHE_KEY,JSON.stringify({ds:DATASET,year:currentYear,file:loadedFileName,yearSetIn:String(new Date().getFullYear())}));}catch(e){}
+  /* Der Stand wandert mit in den Zwischenspeicher: sonst stünde nach einem Neustart
+     der Seite eine Preisliste ohne Datum da, solange die Datei noch nicht wieder von
+     der Adresse geholt ist - und ohne Netz bliebe das Datum ganz weg. */
+  try{localStorage.setItem(CACHE_KEY,JSON.stringify({ds:DATASET,year:currentYear,file:loadedFileName,stand:datenStand,yearSetIn:String(new Date().getFullYear())}));}catch(e){}
 }
 function saveCacheYear(){
   if(!isCustomData||!currentYear)return;
@@ -1389,7 +1392,7 @@ function loadCache(){
     const raw=localStorage.getItem(CACHE_KEY);if(!raw)return;
     const o=JSON.parse(raw);
     if(o&&o.ds&&Object.keys(o.ds).length){
-      DATASET=o.ds;isCustomData=true;loadedFileName=o.file||'';
+      DATASET=o.ds;isCustomData=true;loadedFileName=o.file||'';datenStand=o.stand||'';
       /* Der zuletzt gewählte Jahrgang wird gemerkt, aber nur innerhalb desselben
          Kalenderjahres. Beim ersten Start im neuen Jahr gilt wieder die Voreinstellung. */
       const gemerkt=(o.year&&o.ds[o.year]&&o.yearSetIn===String(new Date().getFullYear()))?o.year:'';
@@ -1737,6 +1740,10 @@ async function applyAngebot(data){
     DATASET=Object.assign({},DATASET,data.dataset);   // andere Jahrgänge bleiben erhalten
     isCustomData=true;
     if(data.loadedFileName)loadedFileName=data.loadedFileName;
+    /* Die Preise kommen jetzt aus der Angebotsdatei, nicht mehr aus der geladenen
+       Preisliste. Deren Stand würde etwas Falsches behaupten und wird deshalb
+       weggelassen - lieber kein Datum als ein unzutreffendes. */
+    datenStand='';
     saveCache();
   }
   if(!DATASET[jahr]){alert('Der Jahrgang '+jahr+' steckt weder in der Datei noch in den geladenen Daten.');return false;}
