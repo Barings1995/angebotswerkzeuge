@@ -23,8 +23,9 @@ Browser aus `file://` heraus keine Nachbardateien lesen darf.
 |---|---|
 | `index.html` | Startseite mit den drei Werkzeugen und dem Stand der Preisliste |
 | `OpenSlots_Angebotsplaner.html` | Platzierungen über die Ausgaben eines Jahrgangs ankreuzen |
-| `Angebotsvorlage_Print.html` | Angebot mit Positionen, Rabatt und Summen |
-| `Angebotsvorlage_Print_4C.html` | dieselbe Vorlage mit getrenntem Farbzuschlag |
+| `MediaQuote_Angebotsvorlage.html` | Angebot mit Positionen, Rabatt und Summen; Farbzuschlag getrennt ausgewiesen (s/w-Preis, 4c-Zuschlag, 4c-Preis) |
+| `MediaQuote_Angebotsvorlage_4C.html` | dieselbe Vorlage mit einer einzigen Preisspalte (nur 4c-Preis) |
+| `Angebotsvorlage_Print*.html` | nur Weiterleitungen: die Vorlagen hießen bis zum 14.08.2026 so. Können entfallen, sobald keine Lesezeichen mehr darauf zeigen |
 | `Angebotsdaten.xlsx` | die gemeinsame Preisliste (Blätter „Preise", „Termine", „Info") |
 | `manifest.webmanifest` | Name und Symbol beim Ablegen im Dock |
 

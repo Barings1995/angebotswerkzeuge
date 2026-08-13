@@ -1,7 +1,7 @@
 {
   "name": "Angebotswerkzeuge",
   "short_name": "Angebote",
-  "description": "Angebotsplaner und Angebotsvorlagen für die Printtitel",
+  "description": "OpenSlots und MediaQuote: Angebotsplaner und Angebotsvorlagen für die Printtitel",
   "lang": "de",
   "dir": "ltr",
   "start_url": ".",

@@ -1,0 +1,2667 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MediaQuote – Angebotsvorlage 4C</title>
+<!-- Schrift für den Schriftzug in der Kopfleiste, dieselbe Adresse wie in der Startseite
+     und im OpenSlots-Angebotsplaner (einmal geholt, gilt für alle drei). Ohne Netz greift
+     die Ersatzschrift Georgia. Das Angebot selbst braucht die Schrift nicht: die Leiste
+     wird nicht gedruckt, und die Überschrift „Angebot" steht bewusst in Georgia. -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700&family=Source+Sans+3:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='7' fill='%2300285a'/><path d='M11 7h7l4 4v14a1 1 0 01-1 1H11a1 1 0 01-1-1V8a1 1 0 011-1z' fill='%23ffffff'/><path d='M18 7l4 4h-4V7z' fill='%23ece7e0'/><rect x='12.5' y='14' width='9' height='1.6' rx='0.8' fill='%23ee7d11'/><rect x='12.5' y='17.5' width='9' height='1.6' rx='0.8' fill='%2300285a' opacity='0.35'/><rect x='12.5' y='21' width='6' height='1.6' rx='0.8' fill='%2300285a' opacity='0.35'/></svg>">
+<style>
+  :root {
+    --navy: #00285a;
+    --orange: #ee7d11;
+    --springer-blue: #0176c3;
+    --springer-blue-dark: #015d96;
+    --light-bg: #f5f7fa;
+    --border: #dde2ea;
+    --text: #1a1a2e;
+    --muted: #6b7280;
+    /* Rot für „Zurücksetzen" – keine Brandfarbe, aber dieselbe wie im
+       OpenSlots-Angebotsplaner, damit derselbe Vorgang gleich aussieht. */
+    --rot: #c0392b;
+    --rot-dunkel: #9c2e22;
+  }
+
+  /* Kurze Speicher-/Status-Bestätigung (unten rechts, blendet selbst aus) */
+  .toast {
+    position: fixed;
+    bottom: 24px;
+    right: 24px;
+    background: var(--navy);
+    color: #fff;
+    padding: 12px 18px;
+    border-radius: 8px;
+    font-size: 13px;
+    font-weight: 600;
+    box-shadow: 0 6px 24px rgba(0,40,90,0.28);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    max-width: 360px;
+    opacity: 0;
+    transform: translateY(12px);
+    transition: opacity .25s ease, transform .25s ease;
+    z-index: 9999;
+    pointer-events: none;
+  }
+  .toast.show { opacity: 1; transform: translateY(0); }
+  .toast-check { color: #4ade80; font-weight: 800; font-size: 15px; line-height: 1; }
+
+  /* Rückfragefenster „Welche Angebotsdaten sollen gelten?"
+     Bewusst ohne Klick-daneben-schließt: die Frage soll beantwortet und nicht
+     versehentlich weggeklickt werden. Escape bleibt als Ausweg. */
+  .dlg-back {
+    position: fixed;
+    inset: 0;
+    z-index: 10000;
+    background: rgba(0,40,90,0.32);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+  }
+  .dlg-box {
+    background: #fff;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    box-shadow: 0 6px 24px rgba(0,40,90,0.28);
+    max-width: 520px;
+    width: 100%;
+    padding: 18px 22px 17px;
+  }
+  .dlg-hd { font-size: 15px; font-weight: 700; color: var(--navy); margin-bottom: 9px; }
+  .dlg-tx { font-size: 13px; color: var(--text); line-height: 1.55; }
+  .dlg-tx p { margin-bottom: 8px; }
+  .dlg-tx p:last-child { margin-bottom: 0; }
+  .dlg-tx b { font-weight: 600; }
+  .dlg-row { display: flex; gap: 8px; justify-content: flex-end; margin-top: 16px; flex-wrap: wrap; }
+  .dlg-btn {
+    font-family: inherit;
+    font-size: 13px;
+    font-weight: 600;
+    padding: 7px 14px;
+    border-radius: 6px;
+    cursor: pointer;
+    border: 1px solid var(--navy);
+    background: var(--navy);
+    color: #fff;
+  }
+  .dlg-btn.sekundaer { background: #fff; color: var(--navy); border-color: var(--border); }
+  .dlg-btn.sekundaer:hover { border-color: var(--navy); }
+  /* Ein offenes Fenster darf niemals im PDF landen */
+  @media print { .dlg-back { display: none !important; } }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'Aptos', 'Segoe UI', Arial, sans-serif;
+    font-size: 13px;
+    color: var(--text);
+    background: #e8edf3;
+    min-height: 100vh;
+    padding: 20px;
+  }
+
+  .page {
+    background: #fff;
+    max-width: 1220px;
+    margin: 0 auto;
+    padding: 36px 44px;
+    box-shadow: 0 2px 20px rgba(0,40,90,0.12);
+    border-radius: 4px;
+  }
+
+
+  /* ── Kopfleiste (nur am Bildschirm) ──
+     Dieselbe Leiste wie im OpenSlots-Angebotsplaner, damit die beiden Werkzeuge als
+     Paar zu erkennen sind. Sie gehört nicht zum Angebot: im Druck und im PDF ist sie
+     weg (siehe @media print). Die negativen Ränder heben das Polster des Seitenrandes
+     auf, damit die Leiste über die volle Breite läuft; der Inhalt der Leiste steht
+     bündig zum Blatt darunter. Der Schriftzug steht in derselben Schrift wie im
+     OpenSlots-Kopf (Playfair Display, aus dem Netz geholt); ohne Netz greift Georgia,
+     die im Blatt ohnehin verwendet wird. */
+  .sm-hero {
+    background: linear-gradient(135deg, #002050 0%, var(--navy) 60%, #004080 100%);
+    border-bottom: 3px solid var(--orange);
+    padding: 1.1rem 0 1rem;
+    margin: -20px -20px 20px;
+  }
+  .sm-hero-inner { max-width: 1220px; margin: 0 auto; padding: 0 44px; }
+  .sm-hero-head { display: flex; align-items: center; gap: 1rem; margin-bottom: 8px; }
+  .sm-hero-head svg { flex: none; }
+  .sm-hero-div { width: 1px; align-self: stretch; background: rgba(255,255,255,.28); flex: none; }
+  .sm-hero h1 {
+    font-family: 'Playfair Display', 'Georgia Pro', Georgia, serif;
+    font-size: 25px;
+    font-weight: 700;
+    color: #fff;
+    line-height: 1.2;
+    margin-bottom: 2px;
+    letter-spacing: -.01em;
+  }
+  .sm-hero h1 .sm-hero-mark { color: var(--orange); }
+  .sm-hero-sub {
+    font-size: 12px;
+    font-weight: 600;
+    color: rgba(255,255,255,.72);
+    letter-spacing: .16em;
+    text-transform: uppercase;
+  }
+  .sm-hero p { font-size: 12.5px; color: rgba(255,255,255,.72); line-height: 1.4; }
+  .sm-hero p strong { color: rgba(255,255,255,.9); font-weight: 600; }
+
+  /* ── Header ── */
+  .header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 30px;
+    padding-bottom: 20px;
+    border-bottom: 3px solid var(--navy);
+  }
+  .header .logo svg {
+    width: 225px;
+    height: auto;
+  }
+  .header-right {
+    text-align: right;
+  }
+  .doc-title {
+    /* Bewusst Georgia und nicht die Playfair aus der Kopfleiste: die Überschrift steht
+       auf dem gedruckten Angebot. Georgia ist auf dem Rechner vorhanden, damit sieht das
+       Angebot ohne Netz genauso aus wie mit. */
+    font-family: 'Georgia Pro', Georgia, serif;
+    font-size: 26px;
+    font-weight: 700;
+    color: var(--navy);
+    letter-spacing: 0.5px;
+    margin-bottom: 8px;
+  }
+  .orange-bar {
+    display: flex;
+    justify-content: flex-end;
+    gap: 4px;
+    margin-bottom: 10px;
+  }
+  .bar-orange {
+    flex: 1;
+    height: 5px;
+    background: var(--orange);
+    clip-path: polygon(4px 0, 100% 0, calc(100% - 4px) 100%, 0 100%);
+  }
+  .bar-blue {
+    width: 26px;
+    height: 5px;
+    background: var(--springer-blue);
+    clip-path: polygon(4px 0, 100% 0, calc(100% - 4px) 100%, 0 100%);
+  }
+
+  /* ── Editable fields ── */
+  .field-line {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin-bottom: 4px;
+    font-size: 12px;
+    color: var(--muted);
+    justify-content: flex-end;
+  }
+  .field-line label { white-space: nowrap; }
+  .field-line input[type="text"],
+  .field-line input[type="date"] {
+    border: none;
+    border-bottom: 1px solid var(--border);
+    outline: none;
+    font-size: 12px;
+    color: var(--text);
+    padding: 2px 4px;
+    background: transparent;
+    text-align: right;
+  }
+  .field-line input[type="text"] { width: 160px; }
+  .field-line input[type="date"] { width: 140px; }
+
+  /* ── Address block ── */
+  .adress-block {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 24px;
+    margin-bottom: 28px;
+  }
+  .adress-box label {
+    display: block;
+    font-size: 10px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.8px;
+    color: var(--navy);
+    margin-bottom: 4px;
+    padding-bottom: 3px;
+    border-bottom: 2px solid var(--orange);
+  }
+  .adress-box-text {
+    width: 100%;
+    border: 1px solid var(--border);
+    border-radius: 3px;
+    padding: 8px;
+    font-family: inherit;
+    font-size: 12.5px;
+    color: var(--text);
+    min-height: 80px;
+    background: var(--light-bg);
+    outline: none;
+    box-sizing: border-box;
+    white-space: pre-wrap;
+    line-height: 1.5;
+  }
+  .adress-box-text:focus { border-color: var(--navy); background: #fff; }
+  .adress-box-text a { color: var(--navy); }
+  .adress-box-text:empty::before {
+    content: attr(data-placeholder);
+    color: #aaa;
+    white-space: pre;
+    pointer-events: none;
+  }
+  /* Unterteiltes Empfängerfeld: ein Rahmen, oben Adresse, unten Kampagne/Produkt */
+  .empfaenger-box {
+    border: 1px solid var(--border);
+    border-radius: 3px;
+    background: var(--light-bg);
+    overflow: hidden;
+  }
+  .empfaenger-box:focus-within { border-color: var(--navy); background: #fff; }
+  .empfaenger-box .adress-box-text {
+    border: none;
+    border-radius: 0;
+    background: transparent;
+    min-height: auto;
+  }
+  .empfaenger-box .ef-addr { min-height: 60px; }
+  .empfaenger-box .ef-camp { min-height: auto; padding-top: 2px; }
+  .ef-divider { border-top: 1px solid var(--border); padding: 5px 8px 0; }
+  .ef-sublabel {
+    display: block;
+    font-size: 9px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: var(--muted);
+    margin-bottom: 1px;
+  }
+
+  /* ── Section header ── */
+  .section-title {
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.8px;
+    color: var(--navy);
+    margin: 20px 0 8px;
+    padding-bottom: 4px;
+    border-bottom: 2px solid var(--orange);
+  }
+
+  /* ── Positions table ── */
+  .positions-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-bottom: 8px;
+    font-size: 12px;
+  }
+  /* Gleich breite Ziffern → Beträge stehen in den Spalten exakt untereinander */
+  .positions-table,
+  .summary-table { font-variant-numeric: tabular-nums; }
+  .positions-table th {
+    background: var(--navy);
+    color: #fff;
+    padding: 8px 7px;
+    text-align: left;
+    font-weight: 600;
+    font-size: 11px;
+    white-space: nowrap;
+  }
+  .col-titel th, th.col-titel,
+  .col-fmt   th, th.col-fmt,
+  .col-datum th, th.col-datum {
+    white-space: normal;
+    word-break: break-word;
+  }
+  .positions-table th:nth-child(5),
+  .positions-table th:nth-child(6),
+  .positions-table th:nth-child(7),
+  .positions-table th:nth-child(8) { text-align: right; }
+
+  .positions-table td {
+    padding: 5px 5px;
+    border-bottom: 1px solid var(--border);
+    vertical-align: top;
+  }
+  .positions-table td.col-pos,
+  .positions-table td.price-cell,
+  .positions-table td.deduct-cell,
+  .positions-table td.gp-cell {
+    padding-top: 10px;
+  }
+  /* Preisfeld-Kästchen (.price-input) bringt Rahmen+Innenabstand mit → 4 px weniger Zell-Abstand,
+     damit die Zahl auf Höhe der Dropdowns/anderen €-Beträge sitzt */
+  .positions-table td.price-cell { padding-top: 6px; }
+  .positions-table tr:nth-child(even) td { background: var(--light-bg); }
+  .positions-table tr:hover td { background: #eef2f8; }
+
+  .positions-table td select,
+  .positions-table td input[type="text"],
+  .positions-table td input[type="number"] {
+    width: 100%;
+    border: 1px solid #ccd3dc;
+    border-radius: 3px;
+    padding: 4px 5px;
+    white-space: normal;
+    word-break: break-word;
+    font-size: 11.5px;
+    font-family: inherit;
+    color: var(--text);
+    background: #fff;
+    outline: none;
+  }
+  .positions-table td select:focus,
+  .positions-table td input:focus {
+    border-color: var(--navy);
+    box-shadow: 0 0 0 2px rgba(0,40,90,0.1);
+  }
+
+  .col-pos    { width: 30px; text-align: center; font-weight: 700; color: var(--muted); }
+  .col-titel  { width: 170px; }
+  .col-fmt    { width: 200px; }
+  .col-datum  { width: 185px; }
+  .sel-label {
+    white-space: normal;
+    word-break: break-word;
+    font-size: 10.5px;
+    color: var(--navy);
+    margin-top: 3px;
+    line-height: 1.35;
+    min-height: 0;
+  }
+  .positions-table td .umfeld-input {
+    width: 100%;
+    margin-top: 4px;
+    border: 1px dashed #ccd3dc;
+    border-radius: 3px;
+    padding: 3px 5px;
+    font-size: 10.5px;
+    font-family: inherit;
+    color: var(--navy);
+    background: #fff;
+    line-height: 1.35;
+    resize: none;
+    overflow: hidden;
+    box-sizing: border-box;
+  }
+  .positions-table td .umfeld-input::placeholder { color: var(--muted); font-style: italic; }
+  .positions-table td .umfeld-input:focus { border-color: var(--navy); box-shadow: 0 0 0 2px rgba(0,40,90,0.1); outline: none; }
+  .umfeld-label { display: none; }
+  .umfeld-label:empty { display: none; }
+  .termin-label {
+    white-space: nowrap;
+    font-size: 10px;
+    color: var(--springer-blue);
+    margin-top: 3px;
+    line-height: 1.4;
+  }
+  .termin-label:empty { display: none; }
+  .col-ep     { width: 118px; text-align: right; }
+  .col-rabatt { width: 68px; text-align: right; }
+  .col-ae     { width: 62px; text-align: right; }
+  .col-gp     { width: 92px; text-align: right; font-weight: 600; }
+  .col-del    { width: 26px; text-align: center; }
+
+  /* ── Toggle columns ── */
+  .col-hidden { display: none !important; }
+
+  .th-ctrl {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+  }
+  .th-ctrl-top {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    font-size: 11px;
+  }
+  .col-toggle {
+    background: rgba(255,255,255,0.18);
+    border: 1px solid rgba(255,255,255,0.45);
+    color: #fff;
+    border-radius: 3px;
+    width: 17px;
+    height: 15px;
+    font-size: 9px;
+    cursor: pointer;
+    padding: 0;
+    line-height: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background 0.15s;
+    flex-shrink: 0;
+  }
+  .col-toggle:hover { background: rgba(255,255,255,0.35); }
+  .col-toggle.off { background: rgba(0,0,0,0.3); border-color: rgba(255,255,255,0.2); opacity: 0.6; }
+
+  .hdr-pct {
+    display: flex;
+    align-items: center;
+    gap: 2px;
+    font-size: 11px;
+    color: rgba(255,255,255,0.85);
+  }
+  .hdr-pct input {
+    width: 36px;
+    border: none;
+    border-bottom: 1px solid rgba(255,255,255,0.45);
+    background: transparent;
+    color: #fff;
+    font-size: 11px;
+    text-align: right;
+    padding: 1px 2px;
+    outline: none;
+    -moz-appearance: textfield;
+  }
+  .hdr-pct input::-webkit-outer-spin-button,
+  .hdr-pct input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+  .hdr-pct input:focus { border-bottom-color: var(--orange); }
+  /* Text-Zwilling der Prozentzahl: nur im Druck sichtbar (s. @media print) */
+  .hdr-pct-print { display: none; }
+
+  .deduct-cell {
+    font-size: 11.5px;
+    color: var(--orange);
+    text-align: right;
+    white-space: nowrap;
+  }
+  .rabatt-blocked {
+    color: var(--border) !important;
+    background: #f8f9fb !important;
+    font-size: 11px;
+    text-align: center;
+  }
+
+  .price-cell {
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--navy);
+    text-align: right;
+  }
+  /* Preis als dauerhaft erkennbares Eingabefeld (wie die Dropdowns), von Hand überschreibbar */
+  .price-input {
+    display: inline-block;
+    min-width: 80px;
+    padding: 3px 7px;
+    border: 1px solid #c9d2de;
+    border-radius: 5px;
+    background: #fff;
+    cursor: text;
+  }
+  .price-input:hover { border-color: #9aa7b6; }
+  .price-input:focus {
+    outline: none;
+    border-color: var(--navy);
+    box-shadow: 0 0 0 2px rgba(0,40,90,0.12);
+  }
+  .gp-cell {
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--navy);
+    text-align: right;
+  }
+
+  .btn-del {
+    background: none;
+    border: none;
+    color: #c0392b;
+    cursor: pointer;
+    font-size: 16px;
+    line-height: 1;
+    padding: 2px 4px;
+    border-radius: 3px;
+    transition: background 0.15s;
+  }
+  .btn-del:hover { background: #fdecea; }
+
+  .checkbox-4c {
+    width: 15px; height: 15px;
+    cursor: pointer;
+    accent-color: var(--navy);
+  }
+
+  /* ── Add button ── */
+  .btn-add {
+    background: var(--navy);
+    color: #fff;
+    border: none;
+    padding: 8px 18px;
+    border-radius: 4px;
+    font-size: 12.5px;
+    font-weight: 600;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    margin-top: 6px;
+    transition: background 0.15s;
+  }
+  .btn-add:hover { background: #003a80; }
+  .btn-add svg { width: 14px; height: 14px; }
+
+  /* ── Summary ── */
+  .summary-block {
+    display: flex;
+    justify-content: flex-end;
+    margin-top: 20px;
+  }
+  .summary-inner { display: flex; flex-direction: column; }
+  .mwst-toggle {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin-bottom: 8px;
+    font-size: 12px;
+    color: var(--muted);
+    cursor: pointer;
+  }
+  .summary-table {
+    min-width: 280px;
+    border-collapse: collapse;
+    font-size: 13px;
+  }
+  .summary-table td {
+    padding: 5px 10px;
+    border-bottom: 1px solid var(--border);
+  }
+  .summary-table td:last-child { text-align: right; font-weight: 600; min-width: 100px; }
+  .summary-table tr.total td {
+    background: var(--navy);
+    color: #fff;
+    font-weight: 700;
+    font-size: 14px;
+    border-radius: 0;
+  }
+  .summary-table tr.netto td { color: var(--muted); }
+  .summary-table tr.mwst td { color: var(--muted); }
+
+  /* ── Rabatt ── */
+  .rabatt-row td { color: var(--orange) !important; }
+
+  /* ── Bemerkungen ── */
+  .bemerkungen {
+    margin-top: 24px;
+  }
+  .bemerkungen label {
+    display: block;
+    font-size: 10px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.8px;
+    color: var(--navy);
+    margin-bottom: 4px;
+    padding-bottom: 3px;
+    border-bottom: 2px solid var(--orange);
+  }
+  .bemerkungen-text {
+    width: 100%;
+    border: 1px solid var(--border);
+    border-radius: 3px;
+    padding: 10px;
+    font-family: inherit;
+    font-size: 12.5px;
+    color: var(--text);
+    min-height: 70px;
+    background: var(--light-bg);
+    outline: none;
+    box-sizing: border-box;
+    white-space: pre-wrap;
+    line-height: 1.5;
+  }
+  .bemerkungen-text:focus { border-color: var(--navy); background: #fff; }
+  .bemerkungen-text a { color: var(--navy); }
+
+  /* ── Footer ── */
+  .footer {
+    margin-top: 36px;
+    padding-top: 14px;
+    border-top: 1px solid var(--border);
+    font-size: 10.5px;
+    color: var(--muted);
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+
+  /* ── Action buttons ── */
+  .actions {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 20px;
+    flex-wrap: wrap;
+  }
+  .btn-action {
+    /* Feste Höhe statt senkrechter Polsterung: Sonst wächst jeder Knopf um seine
+       Kantenstärke und die Leiste bekommt drei verschiedene Höhen. Mit
+       box-sizing: border-box (global gesetzt) zählt die Kante hier nicht mit. */
+    height: 30px;
+    padding: 0 16px;
+    border-radius: 4px;
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    border: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    transition: background 0.18s ease, transform 0.05s ease;
+  }
+  /* Sanftes „Gedrückt"-Feedback beim Klick (nur Bildschirm) */
+  .btn-action:active,
+  .btn-add:active { transform: translateY(1px); }
+  /* Sichtbarer Fokusrahmen bei Tastaturbedienung (für Maus-Nutzer unsichtbar) */
+  .btn-action:focus-visible,
+  .btn-add:focus-visible,
+  .btn-del:focus-visible {
+    outline: 2px solid var(--navy);
+    outline-offset: 2px;
+  }
+  /* Einheitliche Symbolgröße – die width/height der SVG selbst weichen ab */
+  .btn-action svg { width: 14px; height: 14px; }
+  .btn-print { background: var(--orange); color: #fff; }
+  .btn-print:hover { background: #d46e0d; }
+  /* „Zurücksetzen" löscht das ganze Formular und ist damit der einzige Knopf mit
+     Folgen. Gefüllt in demselben Rot, das der OpenSlots-Angebotsplaner für
+     „Auswahl zurücksetzen" verwendet – gleiche Wirkung, gleiche Farbe. */
+  /* Ohne Kante, sonst wäre der Knopf durch sie 2 px höher als seine Nachbarn –
+     bisher fiel das bei weißem Grund nicht auf, bei einer Fläche schon. */
+  .btn-reset { background: var(--rot); color: #fff; border: none; }
+  .btn-reset:hover { background: var(--rot-dunkel); }
+  /* Excel-Export: eigene Klasse. Vorher borgte sich der Knopf die Klasse der
+     Spaltenschalter und überschrieb ihre Farben im style-Attribut – daher auch
+     die abweichende Kantenstärke von 1,5 px. */
+  .btn-excel { background: #1d6f42; color: #fff; border: none; }
+  .btn-excel:hover { background: #175a36; }
+  .btn-load { background: var(--springer-blue); color: #fff; }
+  .btn-load:hover { background: var(--springer-blue-dark); }
+  .btn-angebot { background: #fff; color: var(--navy); border: 1px solid var(--navy); }
+  .btn-angebot:hover { background: var(--light-bg); }
+  .actions-sep { width: 1px; align-self: stretch; background: var(--border); margin: 2px 2px; }
+  .col-toggles { display: inline-flex; align-items: center; gap: 10px; font-size: 12px; }
+  .data-bar-sep { width: 1px; height: 16px; background: #ccd3dc; margin: 0 4px; }
+  .col-toggles .ct-label { color: var(--navy); font-weight: 600; }
+  .col-toggles label { display: inline-flex; align-items: center; gap: 4px; cursor: pointer; font-weight: 600; color: var(--navy); }
+  .col-toggles input { accent-color: var(--navy); cursor: pointer; margin: 0; }
+
+  /* ── Daten laden / Jahrgang ── */
+  .data-bar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    flex-wrap: wrap;
+    margin-bottom: 10px;
+  }
+  .data-bar-left { display: flex; align-items: center; gap: 8px; }
+  .data-bar-left label { font-size: 12px; font-weight: 600; color: var(--navy); }
+  #yearSelect {
+    border: 1px solid #ccd3dc;
+    border-radius: 4px;
+    padding: 4px 9px;
+    font-size: 12.5px;
+    font-family: inherit;
+    color: var(--text);
+    background: #fff;
+    font-weight: 600;
+    outline: none;
+  }
+  #yearSelect:focus { border-color: var(--navy); box-shadow: 0 0 0 2px rgba(0,40,90,0.1); }
+  .data-status { font-size: 11.5px; color: var(--muted); font-style: italic; }
+  .data-status.loaded { color: var(--springer-blue); font-style: normal; font-weight: 600; }
+
+
+  /* ── Print ── */
+  @page { size: A4 landscape; margin: 12mm 14mm; }
+  * {
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+  @media print {
+    body { background: #fff; padding: 0; }
+    /* Eine Position nicht über den Seitenumbruch zerreißen; Summenblock zusammenhalten */
+    .positions-table tr { break-inside: avoid; }
+    .summary-block { break-inside: avoid; }
+    /* .page als Flex-Spalte ueber die volle Seitenhoehe -> die Fusszeile
+       (margin-top:auto) wird ans untere Seitenende gedrueckt. Bei einseitigem
+       Angebot sitzt sie fest unten; laeuft der Inhalt auf weitere Seiten, steht
+       sie am Ende des Inhalts auf der letzten Seite (nicht auf jeder Seite). */
+    .page { box-shadow: none; padding: 12px 16px; max-width: 100%; border-radius: 0;
+            display: flex; flex-direction: column; min-height: 100vh; }
+    .sm-hero, .actions, .btn-del, .btn-add, .mwst-toggle, .toast { display: none !important; }
+    .positions-table td select,
+    .positions-table td input[type="text"],
+    .positions-table td input[type="number"] {
+      border: none;
+      background: transparent;
+      padding: 0;
+    }
+    .col-titel select, .col-fmt select, .col-datum select { display: none; }
+    .sel-label { font-size: 11px; color: var(--text); margin-top: 0; line-height: 1.2; }
+    .positions-table td .umfeld-input { display: none; }
+    .umfeld-label { display: block; font-size: 10.5px; font-style: italic; color: var(--springer-blue); margin-top: 1px; line-height: 1.2; white-space: pre-wrap; }
+    .umfeld-label:empty { display: none; }
+    .termin-label { display: block; font-size: 10px; color: var(--springer-blue); margin-top: 1px; line-height: 1.25; white-space: nowrap; }
+    .termin-label:empty { display: none; }
+    .adress-box-text,
+    .bemerkungen-text {
+      border: none;
+      background: transparent;
+    }
+    .field-line input {
+      border: none;
+    }
+    .col-toggle { display: none !important; }
+    /* Eingabefeld der Prozentzahl im Druck ausblenden und durch den Text-Zwilling ersetzen,
+       da Browser <input>-Felder im wiederholten Tabellenkopf auf Folgeseiten nicht rendern */
+    .hdr-pct input { display: none; }
+    .hdr-pct-print { display: inline; color: #fff; font-size: 11px; }
+    .data-bar { display: none !important; }
+    /* im Druck/PDF gibt es keine Dropdowns – Zahlen buendig mit den Text-Labels oben ausrichten */
+    .positions-table td.col-pos,
+    .positions-table td.price-cell,
+    .positions-table td.deduct-cell,
+    .positions-table td.gp-cell { padding-top: 3px; }
+    /* Feld-Optik des Preisfeldes im Druck/PDF unsichtbar machen – nur die Zahl bleibt */
+    .price-input, .price-input:hover, .price-input:focus {
+      border: none !important;
+      background: transparent !important;
+      box-shadow: none !important;
+      padding: 0 !important;
+      min-width: 0 !important;
+    }
+
+    /* Verdichtetes Layout fuer mehr Positionen pro Seite (nur Druck/PDF, Bildschirm unveraendert) */
+    .header { margin-bottom: 12px; padding-bottom: 8px; }
+    .doc-title { margin-bottom: 4px; }
+    .orange-bar { margin-bottom: 6px; }
+    .field-line { margin-bottom: 2px; }
+    .adress-block { margin-bottom: 10px; }
+    .adress-box label { margin-bottom: 2px; padding-bottom: 2px; }
+    .adress-box-text { min-height: 40px; padding: 5px; line-height: 1.3; }
+    .empfaenger-box { border: none; background: transparent; }
+    .empfaenger-box .ef-addr { min-height: 34px; }
+    .empfaenger-box .ef-camp { min-height: auto; }
+    .ef-divider { padding: 3px 5px 0; }
+    .ef-sublabel { font-size: 8.5px; }
+    .section-title { margin: 8px 0 4px; padding-bottom: 2px; }
+    .positions-table th { padding: 4px 6px; }
+    .positions-table td { padding-top: 3px; padding-bottom: 3px; }
+    .summary-block { margin-top: 8px; }
+    .summary-table td { padding: 3px 10px; }
+    .bemerkungen { margin-top: 8px; margin-bottom: 12px; }
+    .bemerkungen label { margin-bottom: 2px; padding-bottom: 2px; }
+    .bemerkungen-text { min-height: 30px; padding: 6px; line-height: 1.3; }
+
+    /* margin-top:auto drueckt die Fusszeile im Flex-Container ans untere Seitenende
+       (nur letzte Seite, kein position:fixed -> keine Ueberlappung/Wiederholung) */
+    .footer { margin-top: auto; padding-top: 6px; gap: 3px; }
+  }
+</style>
+</head>
+<body>
+
+<!-- Kopfleiste wie im OpenSlots-Angebotsplaner: nur am Bildschirm, im Angebot nicht -->
+<div class="sm-hero">
+  <div class="sm-hero-inner">
+    <div class="sm-hero-head">
+      <svg id="sm-logo-svg" style="display:block;height:28px;width:auto" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 157.207 26.299"><defs><style>.cls-1{fill:#fff;stroke-width:0px;}</style></defs><path class="cls-1" d="M20.733,20.18H3.744v-1.044h1.44c.252-3.384,3.491-4.644,5.291-7.379h-2.087c-1.008.36-2.52,2.591-2.52,3.887h-2.627l.036-1.08-.864.72L.108,12.621s-.108-.144-.108-.252.036-.18.036-.18l3.636-4.931.647-1.944.972-.36,1.008-1.404-.36-2.448c.972-.36,1.908-.036,2.375.432.036-.72-.036-1.512-.036-1.512,1.728-.18,2.339.756,2.627,1.8.468.036.9.108,1.296.18.072-.216.288-.396.54-.396.324,0,.539.252.539.54v.144c.756.252,1.476.612,2.124,1.008.108-.144.252-.216.432-.216.324,0,.54.252.54.54,0,.144-.036.252-.108.324.612.504,1.116,1.116,1.584,1.764.072-.036.18-.072.252-.072.324,0,.576.252.576.54,0,.216-.108.396-.288.468.36.648.647,1.368.864,2.124.036-.036.108-.036.144-.036.324,0,.54.252.54.54s-.18.504-.395.54c.143.756.252,1.512.324,2.304.324,0,.576.252.576.54,0,.324-.252.539-.539.576,0,.756-.036,1.584-.108,2.376.288.036.504.288.504.576s-.252.54-.576.54h-.036c-.143.792-.288,1.583-.468,2.412h1.512v1.044ZM18.142,19.172c2.088-8.603-.36-15.442-7.019-16.234.036.36.036.648.036.936,0,.432-.036.792-.036.792l-1.043-.18c.036-.36.108-2.808-.756-3.347,0,0,0,1.295-.288,2.591l-.972-.18c0-.9-.396-1.26-.936-1.512l.252,1.764-.612.9.288.828-1.908.648-.54,1.548-3.348,4.608,1.26,1.512,1.404-1.188.324.216v1.764h.756c.324-1.26,1.368-2.736,2.34-3.456l-.54-.648.792-.684.756.936s2.7,0,2.7-.036c.396-.864.648-1.908.648-3.131h1.044c0,4.104-2.052,5.723-4.607,8.243-.936.936-1.764,1.943-1.872,3.311h11.878ZM3.132,11.217c.036.468-.036,1.188-.288,1.548l-.756-.288c.252-.36.396-.864.396-1.296l.648.036ZM7.271,7.221l-1.62.864-.108-1.332,1.692-.18.036.648Z"/><path class="cls-1" d="M20.733,25.507H3.744v-2.088h16.99v2.088Z"/><path class="cls-1" d="M32.399,20.468c-1.368,0-2.448-.324-3.492-.792-.216-.936-.288-2.196-.36-3.492l.828-.144c.468,1.764,1.116,3.492,3.275,3.492,1.512,0,2.412-.936,2.412-2.34,0-3.708-6.155-2.879-6.155-7.163,0-1.944,1.584-3.708,4.392-3.708.936,0,1.944.252,2.952.612.072.756.144,1.62.18,3.132l-.756.036c-.36-1.26-.935-2.808-2.771-2.808-1.368,0-2.052.936-2.052,2.052,0,3.42,6.263,2.7,6.263,7.163,0,2.124-1.908,3.96-4.715,3.96ZM42.658,20.324c-.576-.036-1.044-.144-1.332-.252v3.383c0,1.224.144,1.332,1.8,1.476v.684h-5.075v-.684c1.296-.144,1.404-.252,1.404-1.476v-9.611c0-1.26-.036-1.296-1.26-1.404v-.612c1.08-.216,2.087-.54,3.131-.9v1.368l1.944-1.008c.252-.144.504-.18.756-.18,2.232,0,3.492,1.943,3.492,3.815,0,3.024-2.16,5.075-4.859,5.4ZM43.125,12.441c-.576,0-1.332.396-1.8.684v5.327c.396.432,1.044.756,1.836.756,1.044,0,2.412-.792,2.412-3.491,0-2.268-1.08-3.276-2.448-3.276ZM54.356,13.341c-.216-.288-.504-.36-.864-.36-.468,0-1.044.54-1.44,1.656v3.348c0,1.224.144,1.332,1.692,1.44v.72h-4.895v-.72c1.224-.108,1.368-.216,1.368-1.44v-4.067c0-1.224-.108-1.224-1.224-1.44v-.612c1.08-.216,2.124-.432,3.059-.792v2.16h.036c.648-1.188,1.548-2.124,2.375-2.124.72,0,1.224.54,1.224,1.116,0,.828-.864,1.548-1.332,1.116ZM61.231,20.144h-4.607v-.72c1.224-.108,1.404-.216,1.404-1.512v-3.888c0-1.404-.108-1.404-1.296-1.548v-.612c1.116-.216,2.231-.468,3.131-.792v6.839c0,1.296.108,1.404,1.368,1.512v.72ZM58.855,9.165c-.684,0-1.224-.54-1.224-1.224,0-.72.54-1.26,1.224-1.26.72,0,1.26.54,1.26,1.26,0,.684-.539,1.224-1.26,1.224ZM72.246,20.144h-4.248v-.72c1.008-.108,1.152-.216,1.152-1.368v-3.527c0-1.296-.576-2.088-1.656-2.088-.684,0-1.476.504-2.016,1.008v4.607c0,1.152.108,1.26,1.116,1.368v.72h-4.392v-.72c1.224-.108,1.404-.216,1.404-1.368v-4.139c0-1.224-.072-1.296-1.152-1.44v-.612c1.08-.216,2.088-.432,3.023-.792v1.44c.468-.396,1.836-1.404,2.88-1.404,1.62,0,2.627,1.116,2.627,2.772v4.175c0,1.152.18,1.26,1.26,1.368v.72ZM82.504,11.577c-.144.324-.54.936-.864,1.116l-1.044-.108c.288.396.504,1.188.504,1.8,0,2.196-1.979,3.384-3.779,3.384-.108,0-.396-.036-.648-.036-.432.144-.792.648-.792.972s.324.72,1.188.72h2.16c1.26,0,2.952.612,2.952,2.627,0,2.304-2.412,4.248-5.219,4.248-2.448,0-3.744-1.512-3.744-2.736,0-.792.396-1.404,2.088-2.7-.612-.216-1.692-.828-1.62-1.98.828-.36,1.584-1.008,1.908-1.404-.972-.324-1.872-1.476-1.872-2.771,0-2.34,2.088-3.6,3.815-3.6.756,0,1.476.18,2.088.504.936-.036,1.872-.144,2.736-.252l.144.216ZM79.661,21.224c-.504-.18-1.188-.216-2.304-.216-1.548,0-2.232,1.152-2.232,2.016,0,1.224,1.08,2.16,2.7,2.16,1.8,0,2.808-1.188,2.808-2.376,0-.756-.432-1.368-.972-1.583ZM77.357,11.973c-.756,0-1.62.792-1.62,2.304s.792,2.592,1.872,2.592c.791,0,1.548-.684,1.548-2.34,0-1.404-.684-2.556-1.8-2.556ZM90.063,15.14c-.324.036-2.808.216-5.075.288.072,2.375,1.476,3.383,2.88,3.383.791,0,1.368-.216,2.087-.936l.468.648c-1.188,1.476-2.592,1.835-3.24,1.835-2.556,0-4.032-1.943-4.032-4.247,0-2.808,2.124-5.003,4.248-5.003,1.764,0,3.167,1.512,3.167,3.204,0,.54-.108.756-.504.828ZM87.004,12.009c-.828,0-1.692.9-1.908,2.447l3.096-.072c.396,0,.468-.108.468-.468,0-.972-.684-1.908-1.656-1.908ZM97.371,13.341c-.252-.252-.576-.36-.864-.36-.468,0-1.08.54-1.476,1.656v3.348c0,1.224.144,1.332,1.691,1.44v.72h-4.931v-.72c1.26-.108,1.368-.216,1.368-1.44v-4.067c0-1.224-.072-1.224-1.224-1.44v-.612c1.152-.216,2.16-.432,3.096-.792v2.16h.036c.612-1.188,1.512-2.124,2.376-2.124.684,0,1.224.54,1.224,1.116,0,.828-.9,1.548-1.296,1.116Z"/><path class="cls-1" d="M113.758,20.144l-.396-6.083c-.144-1.908-.288-4.068-.216-5.759-.54,1.62-1.009,3.06-1.692,4.895l-2.628,6.947h-.647l-2.448-6.731c-.684-1.872-1.224-3.384-1.655-5.039-.036,1.764-.144,3.815-.288,5.831l-.36,5.939h-.971l.936-12.814h1.115l2.664,7.127c.611,1.656,1.008,2.88,1.403,4.284.324-1.368.756-2.556,1.404-4.248l2.699-7.163h1.188l.863,12.814h-.972Z"/><path class="cls-1" d="M117.72,15.573c.035,2.987,1.547,3.923,3.239,3.923,1.116,0,1.764-.216,2.304-.504l.216.756c-.432.252-1.332.54-2.664.54-2.556,0-4.067-1.872-4.067-4.427,0-2.916,1.62-4.752,3.888-4.752,2.771,0,3.311,2.556,3.311,3.887,0,.216,0,.396-.036.576h-6.19ZM117.791,14.817h5.147c0-1.476-.684-2.952-2.447-2.952-1.728,0-2.556,1.584-2.7,2.952Z"/><path class="cls-1" d="M131.974,20.144l-.036-1.512c-.504.936-1.512,1.692-2.987,1.692-2.052,0-3.708-1.692-3.708-4.5,0-3.024,1.8-4.751,3.851-4.751,1.26,0,2.196.612,2.7,1.44v-5.363h.972v10.979c0,.576.036,1.44.072,2.016h-.864ZM131.794,14.744c0-.216-.036-.504-.072-.756-.288-1.152-1.26-2.088-2.556-2.088-1.836,0-2.916,1.692-2.916,3.852,0,1.98.9,3.816,2.844,3.816,1.08,0,2.196-.684,2.628-2.232.036-.216.072-.396.072-.648v-1.944Z"/><path class="cls-1" d="M135.683,9.669c-.396,0-.72-.36-.72-.792s.323-.792.791-.792c.396,0,.721.36.721.792s-.324.792-.756.792h-.036ZM135.215,20.144v-8.855h.972v8.855h-.972Z"/><path class="cls-1" d="M137.842,20.144v-.576l4.608-6.299c.287-.396.611-.756.971-1.188h-5.147v-.792h6.299v.612l-4.607,6.264c-.288.395-.576.791-.9,1.224h5.507v.756h-6.731Z"/><path class="cls-1" d="M147.274,9.669c-.396,0-.721-.36-.721-.792s.324-.792.791-.792c.396,0,.721.36.721.792s-.324.792-.756.792h-.035ZM146.805,20.144v-8.855h.973v8.855h-.973Z"/><path class="cls-1" d="M156.237,20.144v-5.363c0-1.512-.541-2.844-2.268-2.844-1.152,0-2.16.792-2.449,1.908-.07.216-.107.504-.107.792v5.507h-1.008v-6.731c0-.864-.035-1.368-.072-2.124h.936l.037,1.404c.504-.9,1.584-1.584,2.879-1.584,1.008,0,3.023.504,3.023,3.491v5.543h-.971Z"/></svg>
+      <div class="sm-hero-div"></div>
+      <div>
+        <h1>Media<span class="sm-hero-mark">Quote</span></h1>
+        <div class="sm-hero-sub">Angebotsvorlage &middot; nur 4C</div>
+      </div>
+    </div>
+    <p>Empf&auml;nger und Kampagne eintragen &rarr; Positionen anlegen &rarr; als PDF drucken. <strong>Rabatt und AE</strong> gelten f&uuml;r alle Positionen, die daf&uuml;r vorgesehen sind.</p>
+  </div>
+</div>
+
+<div class="page">
+
+  <!-- Action buttons (screen only) -->
+  <div class="actions">
+    <input type="file" id="dataFileInput" accept=".xlsx" style="display:none" onchange="onDataFileChosen(event)">
+    <button class="btn-action btn-load" onclick="document.getElementById('dataFileInput').click()" title="Daten (Preise &amp; Termine) aus Excel laden">
+      <svg viewBox="0 0 20 20" fill="currentColor" width="14" height="14"><path d="M3 5a2 2 0 012-2h3.586a1 1 0 01.707.293l1.414 1.414A1 1 0 0011.414 5H15a2 2 0 012 2v1H3V5z"/><path d="M3 9h14v5a2 2 0 01-2 2H5a2 2 0 01-2-2V9zm7 1a1 1 0 00-1 1v1.586l-.293-.293a1 1 0 10-1.414 1.414l2 2a1 1 0 001.414 0l2-2a1 1 0 00-1.414-1.414l-.293.293V11a1 1 0 00-1-1z"/></svg>
+      Daten laden
+    </button>
+
+    <span class="actions-sep"></span>
+
+    <input type="file" id="angebotFileInput" accept=".json,application/json" style="display:none" onchange="onAngebotFileChosen(event)">
+    <button class="btn-action btn-angebot" onclick="openAngebot()" title="Ein gespeichertes Angebot öffnen und weiterbearbeiten">
+      <svg viewBox="0 0 20 20" fill="currentColor" width="14" height="14"><path d="M2 6a2 2 0 012-2h4l2 2h6a2 2 0 012 2v6a2 2 0 01-2 2H4a2 2 0 01-2-2V6z"/></svg>
+      Angebot öffnen
+    </button>
+    <button class="btn-action btn-angebot" onclick="saveAngebot()" title="Dieses Angebot speichern (überschreibt beim erneuten Speichern dieselbe Datei)">
+      <svg viewBox="0 0 20 20" fill="currentColor" width="14" height="14"><path d="M3 4a1 1 0 011-1h9l4 4v9a1 1 0 01-1 1H4a1 1 0 01-1-1V4zm4 0v4h6V4H7zm1 1h2v2H8V5zm-1 8a1 1 0 011-1h4a1 1 0 011 1v3H7v-3z"/></svg>
+      Angebot speichern
+    </button>
+
+    <span class="actions-sep"></span>
+
+    <button class="btn-action btn-excel" onclick="exportToExcel()">
+      <svg viewBox="0 0 20 20" fill="currentColor" width="13" height="13"><path fill-rule="evenodd" d="M3 4a1 1 0 011-1h4a1 1 0 010 2H6.414l2.293 2.293a1 1 0 11-1.414 1.414L5 6.414V8a1 1 0 01-2 0V4zm9 1a1 1 0 010-2h4a1 1 0 011 1v4a1 1 0 01-2 0V6.414l-2.293 2.293a1 1 0 11-1.414-1.414L13.586 5H12zm-9 7a1 1 0 012 0v1.586l2.293-2.293a1 1 0 111.414 1.414L6.414 15H8a1 1 0 010 2H4a1 1 0 01-1-1v-4zm13-1a1 1 0 011 1v4a1 1 0 01-1 1h-4a1 1 0 010-2h1.586l-2.293-2.293a1 1 0 111.414-1.414L15 13.586V12a1 1 0 011-1z" clip-rule="evenodd"/></svg>
+      Als Excel exportieren
+    </button>
+    <button class="btn-action btn-print" onclick="window.print()">
+      <svg viewBox="0 0 20 20" fill="currentColor" width="14" height="14"><path d="M5 4a1 1 0 00-1 1v2H3a2 2 0 00-2 2v5a2 2 0 002 2h1v2a1 1 0 001 1h10a1 1 0 001-1v-2h1a2 2 0 002-2V9a2 2 0 00-2-2h-1V5a1 1 0 00-1-1H5zm8 2H7V5h6v1zm-1 9H8v-3h4v3zm3-4H5V9h10v2z"/></svg>
+      Drucken / PDF
+    </button>
+
+    <span class="actions-sep"></span>
+
+    <button class="btn-action btn-reset" onclick="resetForm()">
+      <svg viewBox="0 0 20 20" fill="currentColor" width="13" height="13"><path fill-rule="evenodd" d="M4 2a1 1 0 011 1v2.101a7.002 7.002 0 0111.601 2.566 1 1 0 11-1.885.666A5.002 5.002 0 005.999 7H9a1 1 0 010 2H4a1 1 0 01-1-1V3a1 1 0 011-1zm.008 9.057a1 1 0 011.276.61A5.002 5.002 0 0014.001 13H11a1 1 0 110-2h5a1 1 0 011 1v5a1 1 0 11-2 0v-2.101a7.002 7.002 0 01-11.601-2.566 1 1 0 01.61-1.276z" clip-rule="evenodd"/></svg>
+      Zurücksetzen
+    </button>
+
+  </div>
+
+  <!-- Header -->
+  <div class="header">
+    <div class="logo">
+      <!-- Springer Medizin Logo (bunt) -->
+      <svg id="Ebene_1" xmlns="http://www.w3.org/2000/svg" version="1.1" viewBox="62.75 40.3 558.75 95.14">
+        <defs><style>.st0{fill:#ee7d11;}.st1{fill:#00285a;}</style></defs>
+        <path class="st1" d="M137.18083,112.77198h-60.16901v-3.69695h5.09973c.8921-11.98365,12.36402-16.44521,18.73796-26.13222h-7.39248c-3.5691,1.27422-8.92453,9.17703-8.92453,13.76643h-9.30523l.1282-3.82338-3.0609,2.5488-8.1585-9.43308s-.38213-.50997-.38213-.8921.12785-.63817.12785-.63817l12.87611-17.46338,2.29275-6.88428,3.44303-1.27458,3.5691-4.97153-1.27458-8.66848c3.44125-1.27458,6.75643-.1282,8.41278,1.5285.1282-2.5488-.12608-5.35365-.12608-5.35365,6.11792-.6364,8.28458,2.677,9.30488,6.37395,1.6567.12785,3.18698.38213,4.5894.63817.25428-.76425,1.0203-1.40243,1.91275-1.40243,1.14638,0,1.91063.8921,1.91063,1.9124v.51033c2.67877.8921,5.22758,2.16668,7.5221,3.5691.38248-.51033.89245-.76602,1.52886-.76602,1.14815,0,1.9124.8921,1.9124,1.9124,0,.51033-.12608.89245-.38213,1.14815,2.16669,1.78455,3.95123,3.95158,5.6097,6.24611.25429-.12785.6364-.25605.8921-.25605,1.14673,0,2.03883.89245,2.03883,1.91275,0,.76602-.38213,1.40243-1.01853,1.65812,1.27458,2.29311,2.29311,4.84368,3.05915,7.52068.12783-.1282.38211-.1282.50997-.1282,1.14671,0,1.91097.89245,1.91097,1.91275s-.6364,1.78455-1.40065,1.9124c.5082,2.677.89211,5.35365,1.14638,8.1585,1.14673,0,2.03883.89245,2.03883,1.91275,0,1.14638-.8921,1.91063-1.91061,2.03883,0,2.67665-.12822,5.60935-.38248,8.4142,1.01851.12643,1.78453,1.01853,1.78453,2.03883s-.89208,1.91275-2.04025,1.91275h-.1282c-.5082,2.8045-1.01851,5.60758-1.65635,8.54063h5.35365v3.69695ZM128.00202,109.20288c7.39425-30.46734-1.27458-54.68893-24.85764-57.49378.12785,1.27635.12785,2.29488.12785,3.31518,0,1.53027-.12785,2.80485-.12785,2.80485l-3.69553-.63817c.12608-1.27458.38213-9.94305-2.67877-11.85404,0,0,0,4.58763-1.01853,9.17703l-3.44267-.6364c0-3.18698-1.40243-4.4612-3.31341-5.35365l.89245,6.24611-2.16845,3.18698,1.0203,2.93093-6.75608,2.29488-1.91275,5.4815-11.85544,16.31736,4.46296,5.35365,4.97154-4.20551,1.14672.76425v6.24611h2.67665c1.14815-4.46155,4.84368-9.68913,8.28671-12.23793l-1.91275-2.29488,2.80485-2.42237,2.677,3.31482s9.56094,0,9.56094-.12785c1.40243-3.05913,2.29451-6.75608,2.29451-11.08979h3.6973c0,14.53246-7.26641,20.26859-16.31736,29.19311-3.31482,3.31305-6.24752,6.88215-6.62965,11.72761h42.0671ZM74.84516,81.03006c.12819,1.6567-.12786,4.20728-1.02031,5.48185l-2.67665-1.0203c.89211-1.27458,1.40243-3.05913,1.40243-4.5894l2.29454.12785ZM89.50403,66.87973l-5.73578,3.05913-.38248-4.71583,5.99183-.63782.12643,2.29452Z"/>
+        <path class="st0" d="M137.18083,131.63814h-60.16901v-7.39425h60.16901v7.39425Z"/>
+        <path class="st1" d="M178.49394,113.79228c-4.84368,0-8.66848-1.14815-12.36578-2.80485-.76425-3.31482-1.0203-7.77638-1.27422-12.36578l2.9327-.50997c1.6567,6.24575,3.95123,12.36578,11.59976,12.36578,5.35365,0,8.54063-3.31518,8.54063-8.28671,0-13.13003-21.79886-10.19733-21.79886-25.36796,0-6.88393,5.6097-13.13003,15.55277-13.13003,3.31516,0,6.88426.89245,10.45336,2.16668.25428,2.677.50997,5.7379.6364,11.09156l-2.677.12785c-1.27458-4.46297-3.31304-9.94483-9.81519-9.94483-4.8437,0-7.26607,3.31482-7.26607,7.26641,0,12.1115,22.18063,9.56093,22.18063,25.36761,0,7.52245-6.75608,14.02425-16.69913,14.02425ZM214.82526,113.2823c-2.0406-.1282-3.69693-.51033-4.71725-.89245v11.98188c0,4.33512.50997,4.71725,6.37395,5.22758v2.42095h-17.97371v-2.42095c4.5894-.51033,4.97153-.89245,4.97153-5.22758v-34.03644c0-4.46155-.12785-4.5894-4.46155-4.97153v-2.16703c3.82338-.76425,7.39248-1.9124,11.08979-3.18698v4.84368l6.88393-3.5691c.89245-.50997,1.78455-.6364,2.677-.6364,7.90423,0,12.36578,6.88251,12.36578,13.51216,0,10.70766-7.64853,17.97371-17.20946,19.12221ZM216.48196,85.36377c-2.03881,0-4.71583,1.40243-6.37395,2.42237v18.86616c1.40243,1.53027,3.69695,2.677,6.5018,2.677,3.6973,0,8.54063-2.80343,8.54063-12.36436,0-8.03207-3.8248-11.60117-8.66848-11.60117ZM256.25418,88.55074c-.76425-1.0203-1.78455-1.27458-3.05877-1.27458-1.6567,0-3.6973,1.9124-5.09973,5.86398v11.85545c0,4.33371.51033,4.71725,5.99183,5.09973v2.5488h-17.33731v-2.5488c4.33512-.38248,4.84547-.76602,4.84547-5.09973v-14.40461c0-4.33512-.38214-4.33512-4.33514-5.09937v-2.16668c3.8248-.76602,7.5221-1.53063,10.83515-2.80485v7.64853h.1282c2.29452-4.20728,5.4815-7.52068,8.41278-7.52068,2.55057,0,4.33512,1.91098,4.33512,3.95123,0,2.93128-3.05913,5.48185-4.7176,3.95158ZM280.60361,112.64413h-16.31701v-2.5488c4.33335-.38248,4.97155-.76602,4.97155-5.35401v-13.76821c0-4.97153-.38215-4.97153-4.58942-5.4815v-2.16668c3.95123-.76602,7.90281-1.65847,11.08979-2.80485v24.22123c0,4.58799.38213,4.97153,4.8451,5.35401v2.5488ZM272.18942,73.76401c-2.42095,0-4.33369-1.91275-4.33369-4.33548,0-2.5488,1.91273-4.4612,4.33369-4.4612,2.55057,0,4.4612,1.9124,4.4612,4.4612,0,2.42273-1.91063,4.33548-4.4612,4.33548ZM319.61194,112.64413h-15.04278v-2.5488c3.5691-.38248,4.07943-.76602,4.07943-4.84545v-12.49186c0-4.5894-2.0406-7.39425-5.86398-7.39425-2.42273,0-5.22758,1.78455-7.13997,3.5691v16.31701c0,4.07943.3839,4.46297,3.953,4.84545v2.5488h-15.55276v-2.5488c4.33335-.38248,4.97153-.76602,4.97153-4.84545v-14.65889c0-4.33512-.25428-4.5894-4.07907-5.09937v-2.16668c3.8248-.76602,7.39425-1.53063,10.70731-2.80485v5.09937c1.65849-1.40243,6.5018-4.97153,10.1991-4.97153,5.73578,0,9.3049,3.95123,9.3049,9.81521v14.78673c0,4.07943.63815,4.46297,4.4633,4.84545v2.5488ZM355.94148,82.30464c-.50853,1.14638-1.91096,3.31482-3.05913,3.95123l-3.69695-.38213c1.02032,1.40243,1.78455,4.20728,1.78455,6.37395,0,7.77638-7.01036,11.98365-13.38431,11.98365-.38213,0-1.40243-.12785-2.29488-.12785-1.53027.50997-2.80485,2.29452-2.80485,3.4409,0,1.1485,1.1485,2.55093,4.20728,2.55093h7.64853c4.46158,0,10.45338,2.16668,10.45338,9.30488,0,8.1585-8.54098,15.04278-18.48404,15.04278-8.66848,0-13.25786-5.35401-13.25786-9.68913,0-2.80308,1.40243-4.97153,7.39423-9.56093-2.16845-.76425-5.99181-2.93093-5.7379-7.01036,2.93305-1.27422,5.6097-3.5691,6.75643-4.97153-3.44125-1.14815-6.62823-5.22758-6.62823-9.81521,0-8.28635,7.39425-12.74791,13.51216-12.74791,2.677,0,5.22758.6364,7.39425,1.78455,3.31482-.12785,6.62823-.50997,9.6888-.8921l.50853.76425ZM345.872,116.46928c-1.78455-.63817-4.20728-.76602-8.1585-.76602-5.4815,0-7.90423,4.07907-7.90423,7.13997,0,4.33335,3.82515,7.64818,9.56093,7.64818,6.37395,0,9.94308-4.20728,9.94308-8.4142,0-2.677-1.53029-4.84368-3.44128-5.60793ZM337.71349,83.70706c-2.67665,0-5.73755,2.80485-5.73755,8.1585s2.80485,9.1788,6.63,9.1788c2.80308,0,5.4815-2.42273,5.4815-8.28635,0-4.97188-2.42273-9.05096-6.37395-9.05096ZM382.71187,94.9247c-1.14673.12785-9.94305.76425-17.97371,1.0203.25428,8.41243,5.22581,11.98188,10.1991,11.98188,2.80308,0,4.84335-.76461,7.39248-3.31341l1.65814,2.29488c-4.20728,5.22545-9.17883,6.50003-11.47335,6.50003-9.05096,0-14.27853-6.88251-14.27853-15.04101,0-9.94305,7.52245-17.71943,15.04278-17.71943,6.24611,0,11.21763,5.35365,11.21763,11.34548,0,1.91098-.38213,2.677-1.78455,2.93128ZM371.87636,83.83491c-2.93093,0-5.99183,3.18698-6.75608,8.66706l10.96335-.25428c1.40243,0,1.6567-.38213,1.6567-1.6567,0-3.44267-2.42095-6.75608-5.86398-6.75608ZM408.58981,88.55074c-.89245-.89245-2.03883-1.27458-3.05911-1.27458-1.65637,0-3.82517,1.9124-5.22583,5.86398v11.85545c0,4.33371.50858,4.71725,5.99006,5.09973v2.5488h-17.46338v-2.5488c4.46155-.38248,4.84368-.76602,4.84368-5.09973v-14.40461c0-4.33512-.25428-4.33512-4.33371-5.09937v-2.16668c4.07943-.76602,7.64853-1.53063,10.96335-2.80485v7.64853h.12643c2.16668-4.20728,5.35365-7.52068,8.41455-7.52068,2.42095,0,4.33335,1.91098,4.33335,3.95123,0,2.93128-3.18698,5.48185-4.5894,3.95158Z"/>
+        <path class="st1" d="M466.62475,112.64413l-1.40068-21.54281c-.51172-6.75785-1.0203-14.40638-.76425-20.39644-1.91275,5.73578-3.57264,10.83551-5.9936,17.33554l-9.30665,24.60371h-2.29311l-8.67025-23.83769c-2.42095-6.62965-4.33368-11.98365-5.86221-17.84728-.12785,6.24611-.50856,13.51216-1.0203,20.65036l-1.27635,21.03461h-3.43913l3.31482-45.38228h3.94948l9.43483,25.24012c2.16491,5.8654,3.5691,10.1991,4.96976,15.17063,1.14815-4.84368,2.677-9.05096,4.9733-15.04278l9.55916-25.36796h4.20905l3.05736,45.38228h-3.44123Z"/>
+        <path class="st1" d="M480.6557,96.45497c.12466,10.57946,5.47831,13.89428,11.47191,13.89428,3.953,0,6.24575-.76425,8.1585-1.78455l.76425,2.677c-1.5285.8921-4.71725,1.9124-9.43485,1.9124-9.05058,0-14.40425-6.62823-14.40425-15.67883,0-10.32695,5.73755-16.82733,13.76823-16.82733,9.81483,0,11.72758,9.05096,11.72758,13.76643,0,.76602,0,1.40243-.1282,2.0406h-21.92317ZM480.90821,93.77797h18.22976c0-5.22722-2.42095-10.45303-8.66706-10.45303-6.12145,0-9.05096,5.60793-9.5627,10.45303Z"/>
+        <path class="st1" d="M531.13558,112.64413l-.12785-5.35365c-1.78455,3.31482-5.35363,5.99183-10.57946,5.99183-7.26641,0-13.1318-5.99183-13.1318-15.93488,0-10.70943,6.37395-16.82733,13.64-16.82733,4.46155,0,7.77815,2.16668,9.5627,5.09937v-18.99401h3.44125v38.88047c0,2.03847.12785,5.09937.25605,7.1382h-3.0609ZM530.49918,93.52227c0-.76425-.12782-1.78455-.25569-2.677-1.0203-4.07907-4.46155-7.39425-9.05096-7.39425-6.5018,0-10.32695,5.99183-10.32695,13.64036,0,7.01213,3.18875,13.51393,10.0709,13.51393,3.82518,0,7.77815-2.42273,9.30701-7.90423.12787-.76461.25569-1.40243.25569-2.29488v-6.88393Z"/>
+        <path class="st1" d="M544.27092,75.54856c-1.4042,0-2.5488-1.27458-2.5488-2.80485s1.14461-2.80485,2.80131-2.80485c1.4042,0,2.55234,1.27458,2.55234,2.80485s-1.14815,2.80485-2.677,2.80485h-.12785ZM542.61425,112.64413v-31.35979h3.44123v31.35979h-3.44123Z"/>
+        <path class="st1" d="M551.91771,112.64413v-2.03883l16.31875-22.30883c1.01679-1.40243,2.16491-2.677,3.43771-4.20728h-18.22799v-2.80485h22.30883v2.16668l-16.31521,22.18276c-1.02033,1.40065-2.04063,2.80308-3.18877,4.33335h19.50398v2.677h-23.83731Z"/>
+        <path class="st1" d="M585.32126,75.54856c-1.4042,0-2.55234-1.27458-2.55234-2.80485s1.14815-2.80485,2.80131-2.80485c1.4042,0,2.55234,1.27458,2.55234,2.80485s-1.14815,2.80485-2.67665,2.80485h-.12466ZM583.66137,112.64413v-31.35979h3.44447v31.35979h-3.44447Z"/>
+        <path class="st1" d="M617.06321,112.64413v-18.99401c0-5.35365-1.91594-10.0709-8.03068-10.0709-4.08085,0-7.64995,2.8045-8.67379,6.75608-.24897.76602-.38035,1.78455-.38035,2.80485v19.50398h-3.56907v-23.83769c0-3.06055-.12469-4.8451-.25608-7.5221h3.31341l.13139,4.97153c1.78455-3.18698,5.6097-5.60793,10.19556-5.60793,3.5691,0,10.70731,1.78455,10.70731,12.36401v19.63219h-3.43768Z"/>
+      </svg>
+    </div>
+    <div class="header-right">
+      <div class="doc-title">Angebot</div>
+      <div class="orange-bar">
+        <span class="bar-orange"></span>
+        <span class="bar-blue"></span>
+      </div>
+      <div class="field-line">
+        <label>Datum:</label>
+        <input type="date" id="datumField" />
+      </div>
+    </div>
+  </div>
+
+  <!-- Address block -->
+  <div class="adress-block">
+    <div class="adress-box">
+      <label>Empfänger</label>
+      <div class="empfaenger-box">
+        <div id="kundeText" class="adress-box-text ef-addr" contenteditable="true" data-placeholder="Firmenname&#10;Ansprechperson&#10;Straße Nr.&#10;PLZ Ort"></div>
+        <div class="ef-divider">
+          <span class="ef-sublabel">Kampagne / Produkt</span>
+          <div id="kampagneText" class="adress-box-text ef-camp" contenteditable="true" data-placeholder="für Kunde (ggf.), Produkt / Kampagne …"></div>
+        </div>
+      </div>
+    </div>
+    <div class="adress-box">
+      <label>Ihre Ansprechperson bei Springer Medizin</label>
+      <div id="absenderText" class="adress-box-text" contenteditable="true" data-placeholder="Vorname Nachname&#10;Funktion&#10;Tel.: …&#10;E-Mail-Adresse"></div>
+    </div>
+  </div>
+
+  <!-- Positions -->
+  <div class="section-title">Angebotsübersicht</div>
+
+  <div class="data-bar">
+    <div class="data-bar-left">
+      <label for="yearSelect">Mediadaten-Jahrgang:</label>
+      <select id="yearSelect" onchange="onYearChange()"></select>
+      <span class="data-bar-sep"></span>
+      <span class="col-toggles" title="Spalten Rabatt / AE ein- oder ausblenden">
+        <span class="ct-label">Spalten:</span>
+        <label><input type="checkbox" id="colchk-rabatt" checked onchange="onColToggle('rabatt', this.checked)"> Rabatt</label>
+        <label><input type="checkbox" id="colchk-ae" checked onchange="onColToggle('ae', this.checked)"> AE</label>
+      </span>
+    </div>
+    <div class="data-status" id="dataStatus">Bitte zuerst über „Daten laden" die Angebotsdaten.xlsx laden.</div>
+  </div>
+
+  <table class="positions-table" id="posTable">
+    <thead>
+      <tr>
+        <th class="col-pos">Pos.</th>
+        <th class="col-titel">Titel</th>
+        <th class="col-datum">Ausgabe / Termine</th>
+        <th class="col-fmt">Format / Platzierung</th>
+        <th class="col-ep">Preis (€)</th>
+        <th class="col-rabatt">
+          <div class="th-ctrl">
+            Rabatt
+            <div class="hdr-pct">
+              <input type="number" id="hdr-rabatt" value="0" min="0" max="100" step="0.5" oninput="onPctInput(this)">
+              <span class="hdr-pct-print" id="hdr-rabatt-print">0</span>
+              <span>%</span>
+            </div>
+          </div>
+        </th>
+        <th class="col-ae">
+          <div class="th-ctrl">
+            AE
+            <div class="hdr-pct">
+              <input type="number" id="hdr-ae" value="0" min="0" max="100" step="0.5" oninput="onPctInput(this)">
+              <span class="hdr-pct-print" id="hdr-ae-print">0</span>
+              <span>%</span>
+            </div>
+          </div>
+        </th>
+        <th class="col-gp">GP netto (€)</th>
+        <th class="col-del"></th>
+      </tr>
+    </thead>
+    <tbody id="posBody">
+    </tbody>
+  </table>
+
+  <button class="btn-add" onclick="addPosition()">
+    <svg viewBox="0 0 20 20" fill="currentColor"><path d="M10 5a1 1 0 011 1v3h3a1 1 0 110 2h-3v3a1 1 0 11-2 0v-3H6a1 1 0 110-2h3V6a1 1 0 011-1z"/></svg>
+    Position hinzufügen
+  </button>
+
+  <div class="summary-block">
+    <div class="summary-inner">
+      <label class="mwst-toggle">
+        <input type="checkbox" id="auslandMwst" onchange="recalcTotal()">
+        Auslandskunde – ohne MwSt.
+      </label>
+      <table class="summary-table">
+        <tbody>
+          <tr class="netto">
+            <td>Nettobetrag</td>
+            <td id="sumNetto">0,00 €</td>
+          </tr>
+          <tr class="mwst">
+            <td id="mwstLabel">zzgl. 19% MwSt.</td>
+            <td id="sumMwst">0,00 €</td>
+          </tr>
+          <tr class="total">
+            <td id="totalLabel">Gesamtbetrag brutto</td>
+            <td id="sumTotal">0,00 €</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Bemerkungen -->
+  <div class="bemerkungen">
+    <label>Bemerkungen / Konditionen</label>
+    <div id="bemerkungen" class="bemerkungen-text" contenteditable="true">Bestimmung der Rabatte, wenn das Gesamtschaltvolumen feststeht. Beilagen und Sonderwerbeformen sind nicht rabattfähig.
+Es gelten unsere Allgemeinen Geschäftsbedingungen, einsehbar unter <a href="https://www.springermedizin.de/mediadaten" target="_blank">www.springermedizin.de/mediadaten</a>. Bitte beachten Sie unsere Regelungen zu kurzfristigen Stornierungen von Aufträgen.</div>
+  </div>
+
+  <!-- Footer -->
+  <div class="footer">
+    <span><strong>Springer Medizin Verlag GmbH</strong> | Heidelberger Platz 3, 14197 Berlin | Amtsgericht Berlin-Charlottenburg, HRB 167094 B</span>
+    <span>Geschäftsführung: Fabian Kaufmann, Dr. Cécile Mack, Dr. Hendrik Pugge</span>
+  </div>
+
+</div><!-- /page -->
+
+<div class="dlg-back" id="dlgBack" style="display:none">
+  <div class="dlg-box" role="dialog" aria-modal="true" aria-labelledby="dlgHd">
+    <div class="dlg-hd" id="dlgHd">Welche Angebotsdaten sollen gelten?</div>
+    <div class="dlg-tx" id="dlgTx"></div>
+    <div class="dlg-row">
+      <button type="button" class="dlg-btn sekundaer" id="dlgBtnNeu">Geladene Daten verwenden</button>
+      <button type="button" class="dlg-btn" id="dlgBtnAlt">Daten aus dem Angebot</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ─────────────────────────────────────────
+//  PREISDATEN 2026 – aus Preise Onko-Titel.xlsx
+// ─────────────────────────────────────────
+// (Standarddaten entfernt – Preise kommen aus Angebotsdaten.xlsx)
+
+// ─────────────────────────────────────────
+//  ERSCHEINUNGSTERMINE 2026 – aus Mediadaten
+// ─────────────────────────────────────────
+// (Standarddaten entfernt – Termine kommen aus Angebotsdaten.xlsx)
+
+// HTML-Sonderzeichen in aus Excel stammenden Werten entschärfen, bevor sie in
+// Dropdown-/Options-HTML eingesetzt werden (verhindert, dass z. B. ein " oder <
+// in einer Zelle ein Dropdown zerschießt). Der DOM liefert die .value-Property
+// entkodiert zurück, daher bleibt der spätere Abgleich (Auswahl merken) intakt.
+function esc(s) {
+  return String(s == null ? '' : s)
+    .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+}
+
+function buildAusgabeOptions(titelName) {
+  const ausgaben = AUSGABEN_DATA[titelName];
+  if (!ausgaben) return '<option value="">– bitte wählen –</option>';
+  return '<option value="">– bitte wählen –</option>' +
+    ausgaben.map(a =>
+      `<option value="${esc('Heft ' + a.heft + '/' + a.monat.slice(0,3) + '.')}"` +
+      ` data-et="${esc(a.et || '')}" data-as="${esc(a.as || '')}" data-du="${esc(a.du || '')}" data-eh="${esc(a.eh || '')}">` +
+      `Heft ${esc(a.heft)} · ${esc(a.monat)}${a.et ? ' · ET ' + esc(a.et) : ''}</option>`
+    ).join('');
+}
+
+// ─────────────────────────────────────────
+//  State
+// ─────────────────────────────────────────
+let posCounter = 0;
+const colActive = { rabatt: true, ae: true };
+
+// ── Datensätze nach Jahrgang ──────────────────────────────
+// DATASET = { '2026': { titel:{…}, ausgaben:{…} }, '2027': {…}, … }
+// TITEL_DATA / AUSGABEN_DATA zeigen immer auf den aktiven Jahrgang,
+// damit der restliche Rechen-Code unverändert weiterläuft.
+let DATASET = {};                    // wird ausschließlich aus der geladenen Excel-Datei (bzw. dem Browser-Speicher) befüllt
+let currentYear    = '2026';
+let TITEL_DATA     = {};             // zeigen auf den aktiven Jahrgang, sobald Daten geladen sind
+let AUSGABEN_DATA  = {};
+let loadedFileName = '';
+let isCustomData   = false;          // true, sobald eine Datei geladen wurde
+let datenStand     = '';             // Stand der Preisliste als fertiger Textzusatz, siehe standAusMappe()
+const CACHE_KEY    = 'onkoAngebotDaten';
+const ABSENDER_KEY = 'onkoAbsender';
+
+// Format eines (Titel, Format) samt Kategorie finden
+function findFormat(titelName, fmtName) {
+  const data = TITEL_DATA[titelName];
+  if (!data) return null;
+  for (const [kat, formate] of Object.entries(data.kategorien)) {
+    if (fmtName in formate) return { kat, entry: formate[fmtName] };
+  }
+  return null;
+}
+
+// Rabattfähigkeit: Pflichtangabe aus der Datentabelle – nur »ja« erlaubt Rabatt.
+function isRabattBlocked(titelName, fmtName) {
+  const f = findFormat(titelName, fmtName);
+  if (!f) return false;
+  return f.entry.rab !== true;
+}
+
+// AE-Fähigkeit: Pflichtangabe aus der Datentabelle – nur »ja« erlaubt AE.
+function isAeBlocked(titelName, fmtName) {
+  const f = findFormat(titelName, fmtName);
+  if (!f) return false;
+  return f.entry.ae !== true;
+}
+
+// ── Welcher Termin gilt? ──────────────────────────────────────────────
+// Kommt ausschließlich aus der Spalte „Termin (DU/EH)" der Preisliste:
+// »DU« = Druckunterlagenschluss (der Verlag druckt), »EH« = Anliefertermin
+// (fertige Ware in der Druckerei). Steht dort nichts oder etwas anderes,
+// wird für dieses Format bewusst gar kein Produktionstermin ausgegeben.
+function terminArt(titelName, fmtName) {
+  const f = findFormat(titelName, fmtName);
+  if (!f) return '';
+  const flag = (typeof f.entry.termin === 'string') ? f.entry.termin.trim().toUpperCase() : '';
+  return (flag === 'DU' || flag === 'EH') ? flag : '';
+}
+
+// ─────────────────────────────────────────
+//  Jahrgang & Datenverwaltung
+// ─────────────────────────────────────────
+function activeYears() {
+  return Object.keys(DATASET).sort();
+}
+
+function rebuildYearDropdown() {
+  const sel = document.getElementById('yearSelect');
+  if (!sel) return;
+  const years = activeYears();
+  sel.innerHTML = years.map(y => `<option value="${esc(y)}">${esc(y)}</option>`).join('');
+  if (!years.includes(currentYear) && years.length) currentYear = years[0];
+  sel.value = currentYear;
+}
+
+function onYearChange() {
+  applyYear(document.getElementById('yearSelect').value);
+}
+
+// Was beim Auffrischen einer Position verlorengegangen ist. Gefüllt von refreshRow(),
+// geleert von applyYear(). Gemeldet wird nur beim Laden einer neuen Preisliste
+// (onDataFileChosen) – beim bloßen Jahrgangswechsel ist ein anderer Heftplan der
+// Normalfall und eine Meldung wäre nur lästig.
+let datenAbgleichVerloren = [];
+
+// Aktiven Jahrgang setzen und vorhandene Zeilen darauf umstellen
+function applyYear(year) {
+  if (!DATASET[year]) return;
+  datenAbgleichVerloren = [];   // je Durchlauf neu sammeln
+  currentYear   = year;
+  TITEL_DATA    = DATASET[year].titel;
+  AUSGABEN_DATA = DATASET[year].ausgaben || {};
+  const sel = document.getElementById('yearSelect');
+  if (sel && sel.value !== year) sel.value = year;
+  document.querySelectorAll('#posBody tr').forEach(tr => {
+    const id = parseInt(tr.id.replace('row-', ''));
+    if (id) refreshRow(id);
+  });
+  recalcTotal();
+  saveCache();
+}
+
+// Eine Positionszeile auf den aktuellen Jahrgang auffrischen,
+// die bisherige Auswahl (Titel/Format/Ausgabe) dabei nach Möglichkeit erhalten
+function refreshRow(id) {
+  const titelSel = document.getElementById('titel-' + id);
+  if (!titelSel) return;
+  const fmtSel    = document.getElementById('fmt-' + id);
+  const prevTitel = titelSel.value;
+  const prevFmt   = fmtSel ? fmtSel.value : '';
+  const prevDatum = document.getElementById('datum-' + id)?.value || '';
+
+  titelSel.innerHTML = titelOptionenHtml();
+  const titelDa = [...titelSel.options].some(o => o.value === prevTitel);
+  if (titelDa) titelSel.value = prevTitel;
+
+  onTitelChange(id);  // baut Format- + Ausgabe-Dropdown für den neuen Jahrgang neu
+
+  const fmtDa = !!(fmtSel && [...fmtSel.options].some(o => o.value === prevFmt));
+  if (fmtDa) {
+    fmtSel.value = prevFmt;
+    onFormatChange(id);
+  }
+  const dSel = document.getElementById('datum-' + id);
+  const datumDa = !!(dSel && prevDatum && [...dSel.options].some(o => o.value === prevDatum));
+  if (datumDa) {
+    dSel.value = prevDatum;
+    const lbl = document.getElementById('datum-lbl-' + id);
+    if (lbl) lbl.textContent = dSel.options[dSel.selectedIndex]?.text || '';
+    updateTerminLabel(id);
+  }
+
+  // Fehlt schon der Titel, stehen Format und Ausgabe zwangsläufig auch nicht mehr zur
+  // Verfügung – dann wird nur der Titel gemeldet, sonst stünden drei Zeilen für ein
+  // und dieselbe Ursache in der Meldung.
+  if (prevTitel && !titelDa) {
+    datenAbgleichVerloren.push(`Position ${id}: Titel \u201e${prevTitel}\u201c`);
+  } else {
+    if (prevFmt   && !fmtDa)   datenAbgleichVerloren.push(`Position ${id}: Format \u201e${prevFmt}\u201c`);
+    if (prevDatum && !datumDa) datenAbgleichVerloren.push(`Position ${id}: Ausgabe \u201e${prevDatum}\u201c`);
+  }
+}
+
+function updateDataStatus(text, loaded) {
+  const el = document.getElementById('dataStatus');
+  if (!el) return;
+  el.textContent = text;
+  el.classList.toggle('loaded', !!loaded);
+}
+
+// Hinweiszeile in der ansonsten leeren Tabelle, solange noch keine Daten geladen sind
+function showNoDataRow() {
+  const tbody = document.getElementById('posBody');
+  if (!tbody) return;
+  if (document.getElementById('no-data-row')) return;
+  tbody.innerHTML = '<tr id="no-data-row"><td colspan="99" style="text-align:center; padding:22px; color:var(--muted); font-style:italic;">Bitte zuerst über „Daten laden" die Angebotsdaten.xlsx laden.</td></tr>';
+}
+
+// ── ExcelJS bei Bedarf (lazy) laden ──
+function ensureExcelJS() {
+  if (window.ExcelJS) return Promise.resolve();
+  return new Promise((res, rej) => {
+    const s = document.createElement('script');
+    s.src = 'https://cdn.jsdelivr.net/npm/exceljs@4.3.0/dist/exceljs.min.js';
+    s.onload = res; s.onerror = rej;
+    document.head.appendChild(s);
+  });
+}
+
+// Zellwert robust als Text bzw. Zahl lesen (ExcelJS liefert teils Objekte)
+function cellStr(cell) {
+  const v = cell ? cell.value : null;
+  if (v === null || v === undefined) return '';
+  if (typeof v === 'object') {
+    if ('text'     in v) return String(v.text).trim();
+    if ('result'   in v) return String(v.result).trim();
+    if ('richText' in v) return v.richText.map(r => r.text).join('').trim();
+  }
+  return String(v).trim();
+}
+function cellNum(cell) {
+  const v = cell ? cell.value : null;
+  if (v === null || v === undefined || v === '') return 0;
+  if (typeof v === 'object' && 'result' in v) return Number(v.result) || 0;
+  const n = Number(v);
+  return isNaN(n) ? 0 : n;
+}
+
+// "ja"/"nein" o. Ä. als Boolean lesen; leer/unklar → undefined (Fallback greift)
+function cellBool(cell) {
+  const v = cellStr(cell).toLowerCase();
+  if (['ja','j','yes','y','true','wahr','x','1'].includes(v)) return true;
+  if (['nein','n','no','false','falsch','0'].includes(v)) return false;
+  return undefined;
+}
+
+// Excel-Arbeitsmappe → DATASET-Struktur
+function parseWorkbookToDataset(wb) {
+  const wsP = wb.getWorksheet('Preise');
+  if (!wsP) throw new Error('Im Excel fehlt das Tabellenblatt „Preise".');
+  const ds = {};
+  wsP.eachRow((row, rn) => {
+    if (rn === 1) return;                       // Kopfzeile
+    const jahr  = cellStr(row.getCell(1));
+    const titel = cellStr(row.getCell(2));
+    const fmt   = cellStr(row.getCell(5));
+    if (!jahr || !titel || !fmt) return;
+    const auflage = cellNum(row.getCell(3));
+    const kat     = cellStr(row.getCell(4)) || 'Sonstige';
+    const gp      = cellNum(row.getCell(6));
+    const z4c     = cellNum(row.getCell(7));
+    const rab     = cellBool(row.getCell(8));   // rabattfähig (Spalte 8)
+    const ae      = cellBool(row.getCell(9));   // AE-fähig    (Spalte 9)
+    if (!ds[jahr]) ds[jahr] = { titel: {}, ausgaben: {} };
+    const T = ds[jahr].titel;
+    if (!T[titel]) T[titel] = { auflage: auflage, hat4c: false, fach: '', kategorien: {} };
+    if (auflage) T[titel].auflage = auflage;
+    // Optionale Spalte 11 „Fachbereich": wie die Auflage je Titel ein fester Wert,
+    // der in jeder Preiszeile erneut steht. Fehlt die Spalte, bleibt das Feld leer.
+    const fach = cellStr(row.getCell(11));
+    if (fach) T[titel].fach = fach;
+    if (!T[titel].kategorien[kat]) T[titel].kategorien[kat] = {};
+    const entry = { gp: gp, z4c: z4c };
+    const tArt = cellStr(row.getCell(10));   // optionale Spalte „Termin": DU oder EH
+    if (tArt) entry.termin = tArt;
+    if (rab !== undefined) entry.rab = rab;
+    if (ae  !== undefined) entry.ae  = ae;
+    T[titel].kategorien[kat][fmt] = entry;
+    if (z4c > 0) T[titel].hat4c = true;         // 4c-Zuschlag vorhanden → Titel kennt s/w + 4c
+  });
+  const wsT = wb.getWorksheet('Termine');
+  if (wsT) wsT.eachRow((row, rn) => {
+    if (rn === 1) return;
+    const jahr  = cellStr(row.getCell(1));
+    const titel = cellStr(row.getCell(2));
+    if (!jahr || !titel) return;
+    if (!ds[jahr]) ds[jahr] = { titel: {}, ausgaben: {} };
+    if (!ds[jahr].ausgaben[titel]) ds[jahr].ausgaben[titel] = [];
+    ds[jahr].ausgaben[titel].push({
+      heft:  cellStr(row.getCell(3)),
+      monat: cellStr(row.getCell(4)),
+      et:    cellStr(row.getCell(5)),
+      as:    cellStr(row.getCell(6)),
+      du:    cellStr(row.getCell(7)),
+      eh:    cellStr(row.getCell(8)),
+    });
+  });
+  if (Object.keys(ds).length === 0) throw new Error('Es wurden keine Datenzeilen gefunden.');
+  return ds;
+}
+
+/* Der Stand kommt aus der Preisliste selbst: jede xlsx-Datei führt intern Buch darüber,
+   wann sie zuletzt gespeichert wurde. Der Zeitstempel des Servers taugt dafür nicht –
+   GitHub Pages meldet für jede Datei den Zeitpunkt der letzten Veröffentlichung, also
+   auch dann ein neues Datum, wenn lediglich ein Werkzeug geändert wurde. */
+function standAusMappe(wb) {
+  const d = (wb && wb.modified) ? new Date(wb.modified) : null;
+  if (!d || isNaN(d)) return '';
+  const p = n => String(n).padStart(2, '0');
+  return ` · Stand ${p(d.getDate())}.${p(d.getMonth() + 1)}.${d.getFullYear()}`;
+}
+
+async function onDataFileChosen(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+  updateDataStatus('lädt …', false);
+  try {
+    await ensureExcelJS();
+    const wb = new ExcelJS.Workbook();
+    await wb.xlsx.load(await file.arrayBuffer());
+    const ds = parseWorkbookToDataset(wb);
+    DATASET        = ds;
+    loadedFileName = file.name;
+    isCustomData   = true;
+    currentYear    = activeYears()[0];
+    rebuildYearDropdown();
+    const noDataRow = document.getElementById('no-data-row');
+    if (noDataRow) noDataRow.remove();           // Hinweiszeile entfernen, bevor die erste Position erscheint
+    applyYear(currentYear);                      // stellt Zeilen um + speichert Cache
+    if (!document.querySelector('#posBody tr')) addPosition();  // beim ersten Laden eine Position anlegen
+    const nTitel = Object.keys(DATASET[currentYear].titel).length;
+    datenStand = standAusMappe(wb);
+    saveCache();                                 // Stand nachtragen: applyYear() hat ihn noch nicht gekannt
+    updateDataStatus(`geladen: ${file.name} · Jahrgänge ${activeYears().join(', ')} · ${nTitel} Titel${datenStand}`, true);
+    // Angaben, die es in der neuen Preisliste nicht mehr gibt. Ohne Hinweis bliebe eine
+    // Position still ohne Ausgabe stehen – oder, fehlt der Titel, auf dem ersten der Liste.
+    if (datenAbgleichVerloren.length) {
+      alert('Diese Angaben aus den vorhandenen Positionen gibt es in der neu geladenen '
+          + 'Preisliste nicht mehr:\n\n' + datenAbgleichVerloren.join('\n')
+          + '\n\nBitte die betroffenen Positionen prüfen.');
+    }
+  } catch (e) {
+    console.error(e);
+    alert('Die Datei konnte nicht gelesen werden:\n' + (e.message || e) +
+          '\n\nBitte eine Excel-Datei mit den Tabellenblättern „Preise" und „Termine" verwenden.');
+    updateDataStatus(isCustomData ? `geladen: ${loadedFileName}` : 'Bitte zuerst über „Daten laden" die Angebotsdaten.xlsx laden.', isCustomData);
+  } finally {
+    event.target.value = '';                     // erlaubt erneutes Laden derselben Datei
+  }
+}
+
+// ── Preisliste von der Adresse holen ──────────────────────────────────────────
+// Liegt diese Vorlage unter einer Adresse (https://…), steht die Angebotsdaten.xlsx
+// daneben und wird beim Start selbst geholt – „Daten laden" wird dann nicht gebraucht.
+// Per Doppelklick geöffnet (file://) verbietet der Browser das Lesen von Nachbardateien;
+// dann bleibt es beim Laden von Hand wie bisher. Ein Fehlschlag ist deshalb kein Fehler.
+// Aufgerufen wird das vor addPosition() und restoreStand(), damit der zuletzt
+// bearbeitete Stand die Preisdaten schon vorfindet – ohne sie legt er nichts an.
+const DATEN_DATEI = 'Angebotsdaten.xlsx';
+
+async function ladePreislisteVonServer() {
+  if (location.protocol === 'file:') return false;
+  if (!isCustomData) updateDataStatus('Preisliste wird geladen …', false);
+  try {
+    const r = await fetch(DATEN_DATEI, { cache: 'no-cache' });
+    if (!r.ok) throw new Error('HTTP ' + r.status);
+    const buf = await r.arrayBuffer();
+    await ensureExcelJS();
+    const wb = new ExcelJS.Workbook();
+    await wb.xlsx.load(buf);
+    const ds = parseWorkbookToDataset(wb);
+    if (!ds || !Object.keys(ds).length) throw new Error('Keine Jahrgänge in der Datei.');
+    DATASET        = ds;
+    loadedFileName = DATEN_DATEI;
+    isCustomData   = true;
+    // Der gemerkte Jahrgang bleibt stehen, solange die Preisliste ihn kennt.
+    if (!currentYear || !DATASET[currentYear]) currentYear = activeYears()[0];
+    rebuildYearDropdown();
+    const noDataRow = document.getElementById('no-data-row');
+    if (noDataRow) noDataRow.remove();
+    applyYear(currentYear);
+    const nTitel = Object.keys(DATASET[currentYear].titel).length;
+    datenStand = standAusMappe(wb);
+    saveCache();                                 // Stand nachtragen: applyYear() hat ihn noch nicht gekannt
+    updateDataStatus(`geladen: ${DATEN_DATEI} · Jahrgänge ${activeYears().join(', ')} · ${nTitel} Titel${datenStand}`, true);
+    // Wie beim Laden von Hand: nur melden, wenn an vorhandenen Positionen etwas verlorenging.
+    if (datenAbgleichVerloren.length) {
+      alert('Diese Angaben aus den vorhandenen Positionen gibt es in der neu geladenen '
+          + 'Preisliste nicht mehr:\n\n' + datenAbgleichVerloren.join('\n')
+          + '\n\nBitte die betroffenen Positionen prüfen.');
+    }
+    return true;
+  } catch (e) {
+    console.warn('Preisliste nicht von der Adresse geholt:', e);
+    if (!isCustomData) updateDataStatus('Preisliste nicht erreichbar – bitte über „Daten laden" die Angebotsdaten.xlsx laden.', false);
+    return false;
+  }
+}
+
+// ── Browser-Speicher (überdauert das Schließen, pro Gerät/Browser) ──
+function saveCache() {
+  if (!isCustomData) return;
+  try {
+    // Der Stand wandert mit: sonst stünde nach einem Neustart der Seite eine Preisliste
+    // ohne Datum da, solange die Datei noch nicht wieder von der Adresse geholt ist –
+    // und ohne Netz bliebe das Datum ganz weg.
+    localStorage.setItem(CACHE_KEY, JSON.stringify({ ds: DATASET, year: currentYear, file: loadedFileName, stand: datenStand }));
+  } catch (e) {}
+}
+function loadCache() {
+  try {
+    const raw = localStorage.getItem(CACHE_KEY);
+    if (!raw) return false;
+    const obj = JSON.parse(raw);
+    if (obj && obj.ds && Object.keys(obj.ds).length) {
+      DATASET        = obj.ds;
+      currentYear    = (obj.year && obj.ds[obj.year]) ? obj.year : Object.keys(obj.ds).sort()[0];
+      loadedFileName = obj.file || '';
+      datenStand     = obj.stand || '';
+      isCustomData   = true;
+      return true;
+    }
+  } catch (e) {}
+  return false;
+}
+
+// ── Absender/Kontaktdaten merken (pro Gerät/Browser) ──
+function saveAbsender() {
+  try {
+    const el = document.getElementById('absenderText');
+    if (el) localStorage.setItem(ABSENDER_KEY, el.innerHTML);
+  } catch (e) {}
+}
+function loadAbsender() {
+  try {
+    const saved = localStorage.getItem(ABSENDER_KEY);
+    const el = document.getElementById('absenderText');
+    if (saved !== null && el) el.innerHTML = saved;
+  } catch (e) {}
+}
+
+// ── Arbeitsstand merken (pro Gerät/Browser) ──
+// Gleiches Verhalten wie im OpenSlots-Angebotsplaner: Der zuletzt bearbeitete Stand
+// steht beim nächsten Öffnen wieder da. Der Datenteil wird nicht mitgeschrieben – die
+// Preisdaten liegen bereits unter CACHE_KEY, doppelt wäre nur Ballast. Was der
+// Browser-Speicher nicht halten kann, ist der Zeiger auf eine geöffnete Angebotsdatei:
+// „Speichern" fragt nach einem Neustart deshalb nach einer Datei.
+// Eigener Schlüssel je Fassung: s/w und 4C sind zwei Dokumente, der zuletzt
+// bearbeitete Stand der einen darf nicht in der anderen auftauchen. Die
+// Preisdaten (CACHE_KEY) teilen sie sich dagegen bewusst – es ist dieselbe Excel.
+const STAND_KEY = 'onkoAngebotStand4c';
+let standTimer = null;
+function saveStand() {
+  if (standTimer) clearTimeout(standTimer);
+  standTimer = setTimeout(() => {
+    standTimer = null;
+    try {
+      const stand = collectAngebot();
+      delete stand.dataset;
+      localStorage.setItem(STAND_KEY, JSON.stringify(stand));
+    } catch (e) {}
+  }, 400);
+}
+function clearStand() {
+  if (standTimer) { clearTimeout(standTimer); standTimer = null; }
+  try { localStorage.removeItem(STAND_KEY); } catch (e) {}
+}
+function restoreStand() {
+  try {
+    const raw = localStorage.getItem(STAND_KEY);
+    if (!raw) return;
+    const stand = JSON.parse(raw);
+    if (!stand || stand.app !== 'Angebotsvorlage' || !stand.form) return;
+    if (!Object.keys(DATASET).length) return;      // ohne Preisdaten keine Positionen
+    // Der Stand gehört zu seinem Jahrgang – erst dorthin wechseln, dann aufbauen.
+    if (stand.currentYear && DATASET[stand.currentYear] && stand.currentYear !== currentYear) {
+      applyYear(stand.currentYear);
+    }
+    applyAngebot(stand);   // ohne Datenteil: rechnet mit den geladenen Preisdaten
+  } catch (e) {}
+}
+
+// ─────────────────────────────────────────
+//  Init
+// ─────────────────────────────────────────
+window.addEventListener('DOMContentLoaded', async () => {
+  // Set today's date
+  const today = new Date();
+  // Lokales Datum (YYYY-MM-DD) – nicht toISOString(), das in UTC umrechnet
+  // und vor 1–2 Uhr nachts fälschlich den Vortag liefern würde.
+  const pad = n => String(n).padStart(2, '0');
+  const todayStr = `${today.getFullYear()}-${pad(today.getMonth() + 1)}-${pad(today.getDate())}`;
+  document.getElementById('datumField').value = todayStr;
+
+  // Zuletzt geladene Preisdaten aus dem Browser-Speicher übernehmen (falls vorhanden)
+  const fromCache = loadCache();
+  rebuildYearDropdown();
+  applyYear(currentYear);
+  updateDataStatus(
+    fromCache
+      ? (loadedFileName ? `aus Browser-Speicher: ${loadedFileName}${datenStand}` : `zuletzt geladene Daten (Browser-Speicher)${datenStand}`)
+      : 'Bitte zuerst über „Daten laden" die Angebotsdaten.xlsx laden.',
+    fromCache);
+
+  // Gespeicherte Kontaktdaten (Absender) übernehmen + bei Änderung automatisch merken
+  loadAbsender();
+  const absEl = document.getElementById('absenderText');
+  if (absEl) absEl.addEventListener('blur', saveAbsender);
+
+  // Platzhalter zuverlässig wieder anzeigen: contenteditable-Felder hinterlassen
+  // beim Leeren oft ein <br>, wodurch :empty (und damit der Platzhalter) nicht
+  // mehr greift. Ist der Inhalt tatsächlich leer, das Feld echt leeren.
+  document.querySelectorAll('.adress-box-text').forEach(el => {
+    el.addEventListener('input', () => {
+      if (el.textContent.trim() === '') el.innerHTML = '';
+    });
+  });
+
+  // Einfügen (Copy/Paste) in freie Textfelder: immer nur reiner Text,
+  // damit die Feld-Formatierung erhalten bleibt und keine Fremdformatierung
+  // (Schrift, Farbe, Hintergrund aus der Quelle) übernommen wird.
+  document.querySelectorAll('[contenteditable="true"]').forEach(el => {
+    el.addEventListener('paste', plainPaste);
+  });
+
+  // Beim Drucken/PDF-Speichern schlägt der Browser den Fenster-Titel als
+  // Dateinamen vor. Für die Dauer des Druckvorgangs den Titel auf denselben
+  // Namensvorschlag wie bei „Angebot speichern" setzen (ohne .json – die
+  // .pdf-Endung ergänzt der Browser selbst), danach wieder zurücksetzen.
+  window.addEventListener('beforeprint', () => {
+    _origPrintTitle = document.title;
+    document.title = suggestAngebotName().replace(/\.json$/i, '');
+  });
+  window.addEventListener('afterprint', () => {
+    if (_origPrintTitle !== null) { document.title = _origPrintTitle; _origPrintTitle = null; }
+  });
+
+  // Jede Eingabe sichert den Arbeitsstand (gesammelt, nicht bei jedem Tastendruck).
+  // Die Ereignisse werden in der Einfangphase abgeholt, damit auch Felder mit
+  // eigenem oninput-Aufruf erfasst werden.
+  ['input', 'change'].forEach(ev => document.addEventListener(ev, saveStand, true));
+
+  // Preisliste von der Adresse holen, bevor die erste Position entsteht.
+  // Ohne Adresse (Doppelklick) kehrt der Aufruf sofort zurück und es bleibt beim
+  // Zwischenspeicher bzw. beim Laden von Hand.
+  await ladePreislisteVonServer();
+
+  // Start mit einer leeren Position
+  addPosition();
+
+  // Zuletzt bearbeiteten Stand zurückholen (ersetzt die leere Position, falls vorhanden)
+  restoreStand();
+});
+
+// ─────────────────────────────────────────
+//  Add position row
+// ─────────────────────────────────────────
+function addPosition() {
+  if (Object.keys(TITEL_DATA).length === 0) { showNoDataRow(); return; }  // ohne geladene Daten: Hinweis statt Zeile
+  posCounter++;
+  const id = posCounter;
+  const tbody = document.getElementById('posBody');
+  const tr = document.createElement('tr');
+  tr.id = 'row-' + id;
+
+  // Build title options
+  const titelOpts = titelOptionenHtml();
+
+  // Build initial format options for first title
+  const firstTitel = Object.keys(TITEL_DATA)[0];
+  const fmtOpts = buildFormatOptions(firstTitel);
+  const hat4c = TITEL_DATA[firstTitel].hat4c;
+
+  tr.innerHTML = `
+    <td class="col-pos">${id}</td>
+    <td class="col-titel">
+      <select onchange="onTitelChange(${id})" id="titel-${id}">
+        ${titelOpts}
+      </select>
+      <div class="sel-label" id="titel-lbl-${id}"></div>
+    </td>
+    <td class="col-datum">
+      <select id="datum-${id}">
+        ${buildAusgabeOptions(firstTitel)}
+      </select>
+      <div class="sel-label" id="datum-lbl-${id}"></div>
+      <div class="termin-label" id="termin-lbl-${id}"></div>
+    </td>
+    <td class="col-fmt">
+      <select onchange="onFormatChange(${id})" id="fmt-${id}">
+        ${fmtOpts}
+      </select>
+      <div class="sel-label" id="fmt-lbl-${id}"></div>
+      <textarea class="umfeld-input" id="umfeld-${id}" rows="1" placeholder="+ Platzierung/sonstige Info." aria-label="Platzierung (optional)" oninput="onUmfeldChange(${id})"></textarea>
+      <div class="umfeld-label" id="umfeld-lbl-${id}"></div>
+    </td>
+    <td class="col-ep price-cell">
+      <span class="price-input" id="ep-${id}" data-price="" contenteditable="true"
+            spellcheck="false" title="Preis anklicken, um ihn von Hand zu überschreiben"
+            onblur="onPriceEdit(${id})"
+            onkeydown="if(event.key==='Enter'){event.preventDefault();this.blur();}">–</span>
+    </td>
+    <td class="col-rabatt deduct-cell" id="rabatt-${id}">–</td>
+    <td class="col-ae deduct-cell" id="ae-${id}">–</td>
+    <td class="col-gp gp-cell" id="gp-${id}">–</td>
+    <td class="col-del">
+      <button class="btn-del" onclick="removePosition(${id})" title="Position entfernen">✕</button>
+    </td>`;
+
+  tbody.appendChild(tr);
+  // Bei gruppierter Titelliste steht oben nicht mehr zwangsläufig derselbe Titel wie in
+  // firstTitel, für den Format- und Ausgabefeld vorbereitet wurden. Deshalb ausdrücklich
+  // setzen – so startet eine neue Zeile auf demselben Titel wie vor der Gruppierung.
+  const titelSelNeu = document.getElementById('titel-' + id);
+  if (titelSelNeu && [...titelSelNeu.options].some(o => o.value === firstTitel)) titelSelNeu.value = firstTitel;
+  onTitelChange(id);
+  renumberPositions();
+
+  // Versteckte Spalten auf neue Zeile übertragen
+  ['rabatt', 'ae'].forEach(col => {
+    if (!colActive[col]) {
+      tr.querySelectorAll('.col-' + col).forEach(el => el.classList.add('col-hidden'));
+    }
+  });
+}
+
+// ─────────────────────────────────────────
+//  Build format <options> for a title
+// ─────────────────────────────────────────
+// Titel-Auswahl: stehen in der Excel mindestens zwei Fachbereiche (Spalte 11), werden
+// die Titel danach gebündelt – dasselbe optgroup-Muster wie beim Format-Feld darunter.
+// Ohne die Spalte bleibt die Liste flach wie bisher.
+function titelOptionenHtml() {
+  const namen = Object.keys(TITEL_DATA);
+  const OHNE = 'Ohne Fachbereich';
+  const m = new Map();
+  namen.forEach(t => {
+    const k = (((TITEL_DATA[t] || {}).fach || '').trim()) || OHNE;
+    if (!m.has(k)) m.set(k, []);
+    m.get(k).push(t);
+  });
+  const flach = () => namen.map(t => `<option value="${esc(t)}">${esc(t)}</option>`).join('');
+  if (m.size < 2) return flach();
+  const ls = [...m.keys()].filter(k => k !== OHNE)
+    .sort((a, b) => a.localeCompare(b, 'de', { numeric: true, sensitivity: 'base' }));
+  if (m.has(OHNE)) ls.push(OHNE);
+  return ls.map(l => `<optgroup label="${esc(l)}">`
+    + m.get(l).map(t => `<option value="${esc(t)}">${esc(t)}</option>`).join('')
+    + '</optgroup>').join('');
+}
+
+function buildFormatOptions(titelName) {
+  const data = TITEL_DATA[titelName];
+  if (!data) return '<option>–</option>';
+  let html = '';
+  for (const [kat, formate] of Object.entries(data.kategorien)) {
+    html += `<optgroup label="${esc(kat)}">`;
+    for (const fmt of Object.keys(formate)) {
+      html += `<option value="${esc(fmt)}">${esc(fmt)}</option>`;
+    }
+    html += '</optgroup>';
+  }
+  return html;
+}
+
+// ─────────────────────────────────────────
+//  Event: Titel changed
+// ─────────────────────────────────────────
+function onTitelChange(id) {
+  const titelSel = document.getElementById('titel-' + id);
+  const titel    = titelSel.value;
+  const data     = TITEL_DATA[titel];
+  const fmtSel   = document.getElementById('fmt-' + id);
+  fmtSel.innerHTML = buildFormatOptions(titel);
+
+  // Update titel label
+  const titelLbl = document.getElementById('titel-lbl-' + id);
+  if (titelLbl) titelLbl.textContent = titelSel.options[titelSel.selectedIndex]?.text || '';
+
+  // Rebuild Ausgabe dropdown for new title
+  const datumSel = document.getElementById('datum-' + id);
+  if (datumSel) {
+    datumSel.innerHTML = buildAusgabeOptions(titel);
+    const datumLbl = document.getElementById('datum-lbl-' + id);
+    if (datumLbl) datumLbl.textContent = '';
+    datumSel.onchange = () => {
+      const lbl = document.getElementById('datum-lbl-' + id);
+      if (lbl) lbl.textContent = datumSel.options[datumSel.selectedIndex]?.text || '';
+      updateTerminLabel(id);
+    };
+  }
+
+  onFormatChange(id);
+}
+
+// ─────────────────────────────────────────
+//  Event: Format / 4c changed
+// ─────────────────────────────────────────
+function onUmfeldChange(id) {
+  const inp = document.getElementById('umfeld-' + id);
+  const lbl = document.getElementById('umfeld-lbl-' + id);
+  if (!inp || !lbl) return;
+  inp.style.height = 'auto';
+  inp.style.height = inp.scrollHeight + 'px';
+  lbl.textContent = inp.value.trim();
+}
+
+// Termine unter der gewählten Ausgabe anzeigen: Anzeigenschluss und – je nach Format –
+// entweder der DU-Schluss oder der Anliefertermin. Die Werte stecken als data-Attribute
+// in der Ausgabe-Option, die Zuordnung liefert terminArt().
+function updateTerminLabel(id) {
+  const lbl = document.getElementById('termin-lbl-' + id);
+  if (!lbl) return;
+  const datumLbl = document.getElementById('datum-lbl-' + id);
+  const datumSel = document.getElementById('datum-' + id);
+  const opt = (datumSel && datumSel.selectedIndex >= 0) ? datumSel.options[datumSel.selectedIndex] : null;
+  const ausgabe = opt ? (opt.text || '') : ''; // Ausgabe-Zeile inkl. ET – steckt bereits im Options-Text
+  if (datumLbl) datumLbl.textContent = ausgabe; // immer aus opt.text → kein doppelter ET
+  if (!opt || !opt.value) { lbl.textContent = ''; return; }
+  const as = (opt.dataset.as || '').trim();
+  const du = (opt.dataset.du || '').trim();
+  const eh = (opt.dataset.eh || '').trim();
+  const NB = String.fromCharCode(160); // geschuetztes Leerzeichen: haelt Kuerzel und Datum zusammen
+  // Darunter in EINER Zeile (ET steht bereits oben in der Ausgabe-Zeile): der
+  // Anzeigenschluss und der Termin, der für das gewählte Format tatsächlich gilt.
+  const titel = document.getElementById('titel-' + id)?.value || '';
+  const fmt   = document.getElementById('fmt-'   + id)?.value || '';
+  const art   = terminArt(titel, fmt);
+  const parts = [];
+  if (as) parts.push('AS' + NB + as);
+  if (art === 'EH' && eh) parts.push('Anlieferung' + NB + eh);
+  if (art === 'DU' && du) parts.push('DU' + NB + du);
+  lbl.textContent = parts.join(' · '); // eine Zeile; CSS white-space:nowrap verhindert Umbruch
+}
+
+function onFormatChange(id) {
+  const titel  = document.getElementById('titel-' + id).value;
+  const fmtSel = document.getElementById('fmt-'   + id);
+  const fmt    = fmtSel.value;
+  const data   = TITEL_DATA[titel];
+  if (!data) return;
+
+  // Update format label
+  const fmtLbl = document.getElementById('fmt-lbl-' + id);
+  if (fmtLbl) fmtLbl.textContent = fmtSel.options[fmtSel.selectedIndex]?.text || '';
+
+  // Termin-Unterzeile aktuell halten
+  updateTerminLabel(id);
+
+  // Find prices for selected format
+  let gpSw = null, z4cStored = 0;
+  for (const formate of Object.values(data.kategorien)) {
+    if (formate[fmt] !== undefined) {
+      gpSw      = formate[fmt].gp;
+      z4cStored = formate[fmt].z4c || 0;
+      break;
+    }
+  }
+
+  const epCell  = document.getElementById('ep-'      + id);
+  const rabCell = document.getElementById('rabatt-'  + id);
+  const aeCell  = document.getElementById('ae-'      + id);
+  const blocked   = isRabattBlocked(titel, fmt);
+  const aeBlocked = isAeBlocked(titel, fmt);
+
+  if (gpSw !== null) {
+    // Nur noch ein Preis: voller 4C-Preis = Grundpreis + (evtl.) 4C-Zuschlag
+    const preis = gpSw + z4cStored;
+    epCell.dataset.price  = preis;
+    epCell.dataset.manual = '';   // Format-/Titelwechsel lädt Katalogpreis → Handmarke entfernen
+    epCell.textContent    = formatEur(preis);
+  } else {
+    epCell.dataset.price  = '';
+    epCell.dataset.manual = '';
+    epCell.textContent    = '–';
+  }
+
+  if (blocked) {
+    rabCell.classList.add('rabatt-blocked');
+    rabCell.dataset.blocked = '1';
+    rabCell.textContent = '–';
+  } else {
+    rabCell.classList.remove('rabatt-blocked');
+    rabCell.dataset.blocked = '';
+  }
+
+  if (aeBlocked) {
+    aeCell.classList.add('rabatt-blocked');
+    aeCell.dataset.blocked = '1';
+    aeCell.textContent = '–';
+  } else {
+    aeCell.classList.remove('rabatt-blocked');
+    aeCell.dataset.blocked = '';
+  }
+
+  onAnzahlChange(id);
+}
+
+// ─────────────────────────────────────────
+//  Preis von Hand überschreiben (contenteditable-Zelle)
+// ─────────────────────────────────────────
+function onPriceEdit(id) {
+  const epCell = document.getElementById('ep-' + id);
+  if (!epCell) return;
+  const wert = parseEur(epCell.textContent);   // null bei leer/„–"/ungültig
+  if (wert !== null && !isNaN(wert) && wert >= 0) {
+    // Gültige Handeingabe übernehmen und sauber formatieren
+    epCell.dataset.price  = wert;
+    epCell.dataset.manual = '1';
+    epCell.textContent    = formatEur(wert);
+    onAnzahlChange(id);
+  } else {
+    // Leer/ungültig → Handmarke weg, Katalogpreis wiederherstellen (ruft intern onAnzahlChange)
+    epCell.dataset.manual = '';
+    onFormatChange(id);
+  }
+}
+
+// ─────────────────────────────────────────
+//  Zeile neu berechnen (Preis / Rabatt / AE / GP netto)
+// ─────────────────────────────────────────
+function onAnzahlChange(id) {
+  const epCell  = document.getElementById('ep-'     + id);
+  const gpCell  = document.getElementById('gp-'      + id);
+  const rabCell = document.getElementById('rabatt-'  + id);
+  const aeCell  = document.getElementById('ae-'      + id);
+  const preis   = parseFloat(epCell?.dataset.price);
+
+  // Rabatt-/AE-Basis: voller 4C-Preis
+  const blocked   = rabCell.dataset.blocked === '1';
+  const aeBlocked = aeCell.dataset.blocked === '1';
+  const rabattPct = (!blocked   && colActive.rabatt) ? (parseFloat(document.getElementById('hdr-rabatt').value) || 0) : 0;
+  const aePct     = (!aeBlocked && colActive.ae)     ? (parseFloat(document.getElementById('hdr-ae').value) || 0) : 0;
+
+  if (!isNaN(preis)) {
+    const rabattAmt   = blocked ? 0 : preis * rabattPct / 100;
+    const afterRabatt = preis - rabattAmt;
+    const aeAmt       = aeBlocked ? 0 : afterRabatt * aePct / 100;
+    const gpRaw       = afterRabatt - aeAmt;
+
+    rabCell.textContent = blocked   ? '–' : (rabattPct > 0 ? '− ' + formatEur(rabattAmt) : '–');
+    aeCell.textContent  = aeBlocked ? '–' : (aePct > 0 ? '− ' + formatEur(aeAmt) : '–');
+    gpCell.textContent  = formatEur(gpRaw);
+    gpCell.dataset.gp   = gpRaw;
+  } else {
+    rabCell.textContent = '–';
+    aeCell.textContent  = '–';
+    gpCell.textContent  = '–';
+    gpCell.dataset.gp   = '';
+  }
+  recalcTotal();
+}
+
+// ─────────────────────────────────────────
+//  Recalculate all rows (after header % change)
+// ─────────────────────────────────────────
+function recalcAll() {
+  // Kopf-Prozentwerte in statische Text-Zwillinge spiegeln, damit sie im Druck auch auf
+  // Folgeseiten (wiederholter Tabellenkopf) erscheinen – Browser rendern dort keine <input>.
+  syncHeaderPctPrint();
+  document.querySelectorAll('#posBody tr').forEach(tr => {
+    const id = tr.id.replace('row-', '');
+    if (id) onAnzahlChange(parseInt(id));
+  });
+}
+
+// Rabatt-/AE-Eingabe auf 0–100 % begrenzen (schützt vor Tippfehlern wie 150 oder -10,
+// die sonst unsinnige/negative Preise erzeugen würden) und danach neu rechnen.
+// Nur bei tatsächlicher Bereichsüberschreitung wird der Feldwert korrigiert, damit
+// normales Tippen (auch Dezimalstellen wie 12,5) nicht gestört wird.
+function onPctInput(el) {
+  const v = parseFloat(el.value);
+  if (!isNaN(v)) {
+    if (v < 0)        el.value = 0;
+    else if (v > 100) el.value = 100;
+  }
+  recalcAll();
+}
+
+// Spiegelt Rabatt-/AE-Prozent aus den Kopf-Eingabefeldern in die Text-Zwillinge
+// (#hdr-rabatt-print / #hdr-ae-print), die nur im Druck sichtbar sind.
+function syncHeaderPctPrint() {
+  [['hdr-rabatt', 'hdr-rabatt-print'], ['hdr-ae', 'hdr-ae-print']].forEach(([inId, outId]) => {
+    const inEl  = document.getElementById(inId);
+    const outEl = document.getElementById(outId);
+    if (inEl && outEl) outEl.textContent = (inEl.value === '' ? '0' : inEl.value);
+  });
+}
+
+// ─────────────────────────────────────────
+//  Remove position
+// ─────────────────────────────────────────
+function removePosition(id) {
+  const row = document.getElementById('row-' + id);
+  if (row) row.remove();
+  renumberPositions();
+  recalcTotal();
+}
+
+// ─────────────────────────────────────────
+//  Renumber positions
+// ─────────────────────────────────────────
+function renumberPositions() {
+  const rows = document.querySelectorAll('#posBody tr');
+  rows.forEach((tr, i) => {
+    const posCell = tr.querySelector('.col-pos');
+    if (posCell) posCell.textContent = i + 1;
+  });
+  saveStand();   // Zeile hinzugefügt oder entfernt – das löst kein Eingabe-Ereignis aus
+}
+
+// ─────────────────────────────────────────
+//  Recalculate total
+// ─────────────────────────────────────────
+function recalcTotal() {
+  let netto = 0;
+  document.querySelectorAll('#posBody tr').forEach(tr => {
+    const gpCell = tr.querySelector('.gp-cell');
+    if (gpCell && gpCell.dataset.gp) {
+      netto += parseFloat(gpCell.dataset.gp) || 0;
+    }
+  });
+
+  const ohneMwst = document.getElementById('auslandMwst')?.checked;
+  const mwst   = ohneMwst ? 0 : netto * 0.19;
+  const brutto = netto + mwst;
+
+  document.getElementById('sumNetto').textContent = formatEur(netto);
+  document.getElementById('sumMwst').textContent  = ohneMwst ? '–' : formatEur(mwst);
+  document.getElementById('sumTotal').textContent = formatEur(brutto);
+
+  document.getElementById('mwstLabel').textContent  = ohneMwst ? 'Umsatzsteuerfrei (Ausland)' : 'zzgl. 19% MwSt.';
+  document.getElementById('totalLabel').textContent = ohneMwst ? 'Gesamtbetrag' : 'Gesamtbetrag brutto';
+}
+
+// ─────────────────────────────────────────
+//  Einfügen (Paste) ohne Fremdformatierung – nur reiner Text
+// ─────────────────────────────────────────
+function plainPaste(e) {
+  e.preventDefault();
+  const cb = e.clipboardData || window.clipboardData;
+  const text = cb ? (cb.getData('text/plain') || '') : '';
+  // execCommand('insertText') fügt reinen Text am Cursor ein und erhält
+  // Cursor-Position und Rückgängig-Verlauf; die Feld-Optik bleibt bestehen.
+  if (document.queryCommandSupported && document.queryCommandSupported('insertText')) {
+    document.execCommand('insertText', false, text);
+    return;
+  }
+  // Fallback (ältere Browser): manuell am Cursor einfügen
+  const sel = window.getSelection();
+  if (sel && sel.rangeCount) {
+    const range = sel.getRangeAt(0);
+    range.deleteContents();
+    const node = document.createTextNode(text);
+    range.insertNode(node);
+    range.setStartAfter(node);
+    range.collapse(true);
+    sel.removeAllRanges();
+    sel.addRange(range);
+  }
+}
+
+// ─────────────────────────────────────────
+//  Kurze Bestätigungsmeldung (Toast) unten rechts
+// ─────────────────────────────────────────
+let _toastTimer = null;
+let _origPrintTitle = null;   // Fenster-Titel während Druck/PDF zwischenspeichern
+function showToast(msg) {
+  let t = document.getElementById('appToast');
+  if (!t) {
+    t = document.createElement('div');
+    t.id = 'appToast';
+    t.className = 'toast';
+    document.body.appendChild(t);
+  }
+  t.innerHTML = '';
+  const chk = document.createElement('span');
+  chk.className = 'toast-check';
+  chk.textContent = '✓';
+  const m = document.createElement('span');
+  m.textContent = msg;                 // reiner Text (Dateiname sicher)
+  t.append(chk, m);
+  void t.offsetWidth;                   // Reflow erzwingen, damit die Animation greift
+  t.classList.add('show');
+  clearTimeout(_toastTimer);
+  _toastTimer = setTimeout(() => t.classList.remove('show'), 2800);
+}
+
+// ─────────────────────────────────────────
+//  Reset form
+// ─────────────────────────────────────────
+function resetForm() {
+  if (!confirm('Formular wirklich zurücksetzen? Alle Eingaben gehen verloren.')) return;
+  document.getElementById('posBody').innerHTML = '';
+  posCounter = 0;
+  document.getElementById('kundeText').innerHTML = '';
+  document.getElementById('kampagneText').innerHTML = '';
+  document.getElementById('auslandMwst').checked = false;
+  document.getElementById('bemerkungen').innerHTML = 'Bestimmung der Rabatte, wenn das Gesamtschaltvolumen feststeht. Beilagen und Sonderwerbeformen sind nicht rabattfähig.\nEs gelten unsere Allgemeinen Geschäftsbedingungen, einsehbar unter <a href="https://www.springermedizin.de/mediadaten" target="_blank">www.springermedizin.de/mediadaten</a>. Bitte beachten Sie unsere Regelungen zu kurzfristigen Stornierungen von Aufträgen.';
+  // Verknüpfung zur zuletzt gespeicherten Datei lösen: Das nächste Speichern
+  // legt ein eigenständiges, neues Angebot an (überschreibt nicht das alte).
+  angebotFileHandle = null;
+  angebotFileName   = '';
+  recalcTotal();
+  addPosition();
+  clearStand();   // nach addPosition(), sonst schreibt der laufende Sammelauftrag zurück
+}
+
+// ─────────────────────────────────────────
+//  Angebot speichern / öffnen (eigenständige .json-Datei)
+//  Chrome/Edge: echtes Überschreiben derselben Datei über die
+//  File System Access API; sonst Rückfall auf normalen Download.
+// ─────────────────────────────────────────
+let angebotFileHandle = null;   // Datei-Handle (Chrome/Edge) für Überschreiben
+let angebotFileName   = '';     // zuletzt verwendeter Dateiname (Fallback-Download)
+const ANGEBOT_VERSION = 1;
+
+// Spalten-Sichtbarkeit (Rabatt/AE) gezielt setzen – ohne zu toggeln
+function setColActive(col, active) {
+  colActive[col] = active;
+  const chk = document.getElementById('colchk-' + col);
+  if (chk) chk.checked = active;
+  document.querySelectorAll('.col-' + col).forEach(el => el.classList.toggle('col-hidden', !active));
+}
+
+// Häkchen „Spalten: Rabatt / AE" umgeschaltet
+function onColToggle(col, checked) {
+  setColActive(col, checked);
+  recalcAll();
+}
+
+// Dateinamen-Vorschlag: „Kunde" als Platzhalter + Datum.
+// Der Name wird bewusst NICHT mehr aus dem Kundenfeld gezogen – „Kunde" wird im
+// Speichern-Dialog überschrieben. Gilt für alle drei Ausgaben (Speicherdatei,
+// PDF, Excel), damit sie gleich heißen.
+function suggestAngebotName() {
+  const datum = document.getElementById('datumField')?.value || '';
+  return `Angebot_Kunde${datum ? '_' + datum : ''}.json`;
+}
+
+// Name der Speicherdatei: „MQ" für MediaQuote, damit die Datei auf einen
+// Blick von den Angeboten aus dem OpenSlots-Angebotsplaner („OS_…") zu
+// unterscheiden ist. Bewusst nur hier – der Namensvorschlag für das PDF, das
+// zum Kunden geht, bleibt ohne dieses Kürzel. Früher gespeicherte Dateien
+// heißen „AV_…" und lassen sich unverändert öffnen: geprüft wird nicht der
+// Dateiname, sondern die Kennung im Inneren.
+function suggestDateiName() {
+  return 'MQ_' + suggestAngebotName();
+}
+
+// Aktuellen Zustand als Objekt einsammeln
+function collectAngebot() {
+  const positions = [];
+  document.querySelectorAll('#posBody tr').forEach(tr => {
+    const id = tr.id.replace('row-', '');
+    if (!id) return;
+    const titelSel = document.getElementById('titel-' + id);
+    if (!titelSel) return;   // Hinweiszeile (ohne Daten) überspringen
+    const epCell = document.getElementById('ep-' + id);
+    const pos = {
+      titel:  titelSel.value,
+      fmt:    document.getElementById('fmt-'     + id)?.value || '',
+      umfeld: document.getElementById('umfeld-'  + id)?.value || '',
+      datum:  document.getElementById('datum-'   + id)?.value || '',
+    };
+    // Nur einen von Hand überschriebenen Preis mitspeichern (sonst gilt der Katalogpreis)
+    if (epCell && epCell.dataset.manual === '1' && epCell.dataset.price !== '') {
+      pos.manual = true;
+      pos.preis  = parseFloat(epCell.dataset.price);
+    }
+    positions.push(pos);
+  });
+  return {
+    app: 'Angebotsvorlage',
+    version: ANGEBOT_VERSION,
+    savedAt: new Date().toISOString(),
+    dataset: DATASET,
+    currentYear: currentYear,
+    loadedFileName: loadedFileName,
+    form: {
+      datum:       document.getElementById('datumField')?.value || '',
+      kunde:       document.getElementById('kundeText')?.innerHTML || '',
+      kampagne:    document.getElementById('kampagneText')?.innerHTML || '',
+      absender:    document.getElementById('absenderText')?.innerHTML || '',
+      bemerkungen: document.getElementById('bemerkungen')?.innerHTML || '',
+      auslandMwst: !!document.getElementById('auslandMwst')?.checked,
+      rabattPct:   document.getElementById('hdr-rabatt')?.value || '0',
+      aePct:       document.getElementById('hdr-ae')?.value || '0',
+      colRabatt:   colActive.rabatt,
+      colAe:       colActive.ae,
+    },
+    positions,
+  };
+}
+
+async function saveAngebot() {
+  const json = JSON.stringify(collectAngebot(), null, 2);
+
+  // Bevorzugt: File System Access API (Chrome/Edge) → dieselbe Datei überschreiben
+  if (window.showSaveFilePicker) {
+    try {
+      if (!angebotFileHandle) {
+        angebotFileHandle = await window.showSaveFilePicker({
+          suggestedName: suggestDateiName(),
+          types: [{ description: 'Angebot', accept: { 'application/json': ['.json'] } }],
+        });
+      }
+      const writable = await angebotFileHandle.createWritable();
+      await writable.write(json);
+      await writable.close();
+      angebotFileName = angebotFileHandle.name || '';
+      showToast('Gespeichert: ' + (angebotFileName || 'Angebot'));
+      return;
+    } catch (e) {
+      if (e && e.name === 'AbortError') return;   // Dialog abgebrochen
+      angebotFileHandle = null;                    // sonst: Download-Fallback
+    }
+  }
+  downloadAngebotFallback(json);
+}
+
+function downloadAngebotFallback(json) {
+  const name = angebotFileName || suggestDateiName();
+  const blob = new Blob([json], { type: 'application/json' });
+  const a = Object.assign(document.createElement('a'), {
+    href: URL.createObjectURL(blob),
+    download: name,
+  });
+  document.body.appendChild(a);
+  a.click();
+  setTimeout(() => { URL.revokeObjectURL(a.href); document.body.removeChild(a); }, 100);
+  showToast('Gespeichert: ' + name);
+}
+
+async function openAngebot() {
+  // Bevorzugt: File System Access API → geöffnete Datei kann direkt zurückgeschrieben werden
+  if (window.showOpenFilePicker) {
+    try {
+      const [handle] = await window.showOpenFilePicker({
+        types: [{ description: 'Angebot', accept: { 'application/json': ['.json'] } }],
+        multiple: false,
+      });
+      const file = await handle.getFile();
+      if (await applyAngebot(JSON.parse(await file.text()))) {
+        angebotFileHandle = handle;             // ab jetzt überschreibt „Speichern" diese Datei
+        angebotFileName   = handle.name || '';
+      }
+      return;
+    } catch (e) {
+      if (e && e.name === 'AbortError') return;
+      if (e instanceof SyntaxError) { alert('Die Datei ist keine gültige Angebotsdatei.'); return; }
+      // sonst: Fallback über verstecktes Datei-Feld
+    }
+  }
+  document.getElementById('angebotFileInput').click();
+}
+
+function onAngebotFileChosen(evt) {
+  const file = evt.target.files && evt.target.files[0];
+  evt.target.value = '';   // erlaubt erneutes Öffnen derselben Datei
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = async () => {
+    try {
+      if (await applyAngebot(JSON.parse(reader.result))) {
+        angebotFileHandle = null;    // Fallback-Weg kann nicht in dieselbe Datei zurückschreiben
+        angebotFileName   = file.name;
+      }
+    } catch (e) {
+      alert('Die Datei konnte nicht gelesen werden. Ist es eine gespeicherte Angebotsdatei?');
+    }
+  };
+  reader.readAsText(file);
+}
+
+// Rückfrage, welcher Datenstand gelten soll. Rückgabe: true = Daten aus der
+// Angebotsdatei, false = aktuell geladene Daten, null = abgebrochen.
+function frageDatenstand(savedAt, dateiName) {
+  return new Promise(res => {
+    const back = document.getElementById('dlgBack');
+    const bAlt = document.getElementById('dlgBtnAlt');
+    const bNeu = document.getElementById('dlgBtnNeu');
+    let stand = '';
+    if (savedAt) {
+      const d = new Date(savedAt), p = n => ('0' + n).slice(-2);
+      if (!isNaN(d)) stand = ' (gespeichert am ' + p(d.getDate()) + '.' + p(d.getMonth() + 1) + '.' + d.getFullYear() + ')';
+    }
+    document.getElementById('dlgTx').innerHTML =
+      '<p>Das Angebot bringt seine eigenen Preise und Termine mit' + esc(stand) + '. Die aktuell geladenen ' +
+      'Angebotsdaten' + (dateiName ? ' aus <b>' + esc(dateiName) + '</b>' : '') + ' weichen davon ab.</p>' +
+      '<p><b>Daten aus dem Angebot:</b> alles bleibt so, wie es beim Speichern war.</p>' +
+      '<p><b>Geladene Daten verwenden:</b> es gelten die heutigen Titel, Formate, Preise und Termine. ' +
+      'Positionen, die dazu nicht mehr passen, werden anschließend genannt.</p>';
+    const zu = w => {
+      back.style.display = 'none';
+      document.removeEventListener('keydown', aufEscape, true);
+      bAlt.onclick = bNeu.onclick = null;
+      res(w);
+    };
+    function aufEscape(e) { if (e.key === 'Escape') { e.stopPropagation(); zu(null); } }
+    bAlt.onclick = () => zu(true);
+    bNeu.onclick = () => zu(false);
+    document.addEventListener('keydown', aufEscape, true);
+    back.style.display = '';
+    bAlt.focus();
+  });
+}
+
+// Positionen, die beim Öffnen nicht zum geltenden Datenstand passen
+let fehlendeAngaben = [];
+
+// Gespeichertes Angebot vollständig wiederherstellen. Rückgabe: true, wenn es geklappt hat.
+async function applyAngebot(data) {
+  if (!data || data.app !== 'Angebotsvorlage' || !data.form) {
+    alert('Diese Datei ist keine gültige Angebotsdatei.');
+    return false;
+  }
+
+  // 1) Welcher Datenstand gilt? Die Angebotsdatei bringt ihren eigenen mit. Ist für
+  //    denselben Jahrgang inzwischen etwas anderes geladen, wird gefragt; sind beide
+  //    gleich – der Regelfall –, läuft alles ohne Rückfrage durch.
+  const dsDatei = (data.dataset && Object.keys(data.dataset).length) ? data.dataset : null;
+  const jahr    = dsDatei
+    ? ((data.currentYear && dsDatei[data.currentYear]) ? data.currentYear : Object.keys(dsDatei)[0])
+    : '';
+  let nimmDatei = true;
+  if (dsDatei && DATASET[jahr] && JSON.stringify(dsDatei[jahr]) !== JSON.stringify(DATASET[jahr])) {
+    nimmDatei = await frageDatenstand(data.savedAt, loadedFileName);
+    if (nimmDatei === null) return false;            // abgebrochen: nichts ändern
+  }
+  if (dsDatei && nimmDatei) {
+    // Nur der Jahrgang des Angebots wird ersetzt – andere Jahrgänge der geladenen Excel
+    // bleiben stehen. Ist noch gar nichts geladen, kommt alles aus der Datei.
+    DATASET = Object.keys(DATASET).length
+      ? Object.assign({}, DATASET, { [jahr]: dsDatei[jahr] })
+      : dsDatei;
+    isCustomData   = true;
+    loadedFileName = data.loadedFileName || '';
+    // Die Preise kommen jetzt aus der Angebotsdatei, nicht mehr aus der geladenen
+    // Preisliste. Deren Stand würde etwas Falsches behaupten und wird deshalb
+    // weggelassen – lieber kein Datum als ein unzutreffendes.
+    datenStand     = '';
+    // In den Browser-Speicher schreiben, wie es der OpenSlots-Angebotsplaner tut: Wer ein
+    // altes Angebot mit seinen alten Preisen öffnet, findet sie nach einem Neustart des
+    // Browsers wieder vor. Zurück zum neueren Stand geht es über „Daten laden" oder beim
+    // nächsten Öffnen über „Geladene Daten verwenden" – dieser Weg schreibt nichts.
+    saveCache();
+  }
+  if (dsDatei && DATASET[jahr]) {
+    currentYear   = jahr;
+    TITEL_DATA    = DATASET[currentYear].titel;
+    AUSGABEN_DATA = DATASET[currentYear].ausgaben || {};
+    rebuildYearDropdown();
+    const ys = document.getElementById('yearSelect');
+    if (ys) ys.value = currentYear;
+    updateDataStatus(nimmDatei
+      ? (loadedFileName ? `aus Angebot: ${loadedFileName}` : 'Daten aus geladenem Angebot')
+      : (loadedFileName ? `geladen: ${loadedFileName}` : 'geladene Angebotsdaten'), true);
+  }
+
+  // 2) Kopf-/Kontaktfelder
+  const f = data.form;
+  const datumEl = document.getElementById('datumField');
+  if (datumEl) datumEl.value = f.datum || '';
+  document.getElementById('kundeText').innerHTML    = f.kunde || '';
+  document.getElementById('kampagneText').innerHTML = f.kampagne || '';
+  document.getElementById('absenderText').innerHTML = f.absender || '';
+  document.getElementById('bemerkungen').innerHTML  = f.bemerkungen || '';
+  document.getElementById('auslandMwst').checked    = !!f.auslandMwst;
+  document.getElementById('hdr-rabatt').value       = (f.rabattPct != null ? f.rabattPct : '0');
+  document.getElementById('hdr-ae').value           = (f.aePct != null ? f.aePct : '0');
+
+  // 3) Spalten-Sichtbarkeit (vor dem Neuaufbau, damit neue Zeilen sie übernehmen)
+  setColActive('rabatt', f.colRabatt !== false);
+  setColActive('ae',     f.colAe     !== false);
+
+  // 4) Positionen neu aufbauen
+  document.getElementById('posBody').innerHTML = '';
+  posCounter = 0;
+  fehlendeAngaben = [];
+  (data.positions || []).forEach(pos => restorePosition(pos));
+
+  syncHeaderPctPrint();
+  recalcAll();
+  recalcTotal();
+
+  // Nur beim Umstellen auf die geladenen Daten möglich: Angaben aus dem Angebot, die
+  // es dort nicht mehr gibt. Ohne Hinweis bliebe stillschweigend der erste Titel stehen.
+  saveStand();   // programmatisch gesetzte Felder lösen keine Eingabe-Ereignisse aus
+
+  if (fehlendeAngaben.length) {
+    alert('Diese Angaben aus dem gespeicherten Angebot gibt es in den geladenen '
+        + 'Angebotsdaten nicht mehr:\n\n' + fehlendeAngaben.join('\n')
+        + '\n\nBitte die betroffenen Positionen prüfen.');
+  }
+  return true;
+}
+
+// Eine gespeicherte Position wiederherstellen (Reihenfolge der Aufrufe ist wichtig)
+function restorePosition(pos) {
+  addPosition();
+  const id = posCounter;
+  const titelSel = document.getElementById('titel-' + id);
+  if (!titelSel) return;   // ohne Daten würde nur eine Hinweiszeile entstehen
+
+  if (pos.titel && [...titelSel.options].some(o => o.value === pos.titel)) titelSel.value = pos.titel;
+  else if (pos.titel) fehlendeAngaben.push(`Position ${id}: Titel „${pos.titel}“`);
+  onTitelChange(id);       // baut Format-/Ausgabe-Dropdown + ruft onFormatChange
+
+  const fmtSel = document.getElementById('fmt-' + id);
+  if (fmtSel && pos.fmt && [...fmtSel.options].some(o => o.value === pos.fmt)) fmtSel.value = pos.fmt;
+  else if (pos.fmt) fehlendeAngaben.push(`Position ${id}: Format „${pos.fmt}“`);
+  onFormatChange(id);      // Preise + 4c-Optionen für dieses Format
+
+  const datumSel = document.getElementById('datum-' + id);
+  if (datumSel && pos.datum != null) {
+    if ([...datumSel.options].some(o => o.value === pos.datum)) datumSel.value = pos.datum;
+    else if (pos.datum) fehlendeAngaben.push(`Position ${id}: Ausgabe „${pos.datum}“`);
+    const lbl = document.getElementById('datum-lbl-' + id);
+    if (lbl) lbl.textContent = datumSel.options[datumSel.selectedIndex]?.text || '';
+    updateTerminLabel(id);
+  }
+
+  const umfeld = document.getElementById('umfeld-' + id);
+  if (umfeld) { umfeld.value = pos.umfeld || ''; onUmfeldChange(id); }
+
+  // Von Hand überschriebenen Preis wiederherstellen (nach onFormatChange, das den Katalogpreis setzt)
+  if (pos.manual && pos.preis != null && !isNaN(parseFloat(pos.preis))) {
+    const epCell = document.getElementById('ep-' + id);
+    if (epCell) {
+      const wert = parseFloat(pos.preis);
+      epCell.dataset.price  = wert;
+      epCell.dataset.manual = '1';
+      epCell.textContent    = formatEur(wert);
+    }
+  }
+
+  onAnzahlChange(id);      // Preis + GP netto aktualisieren
+}
+
+// ─────────────────────────────────────────
+//  Excel Export (ExcelJS – mit Farben & Logo)
+// ─────────────────────────────────────────
+async function exportToExcel() {
+  // Lazy-load ExcelJS
+  try { await ensureExcelJS(); }
+  catch (e) {
+    alert('Excel-Bibliothek konnte nicht geladen werden. Bitte prüfen Sie Ihre Internetverbindung.');
+    return;
+  }
+
+  // SVG-Element -> PNG base64
+  async function svgToBase64(svgEl, w, h) {
+    try {
+      const data = new XMLSerializer().serializeToString(svgEl);
+      const blob = new Blob([data], { type: 'image/svg+xml;charset=utf-8' });
+      const url  = URL.createObjectURL(blob);
+      return await new Promise(res => {
+        const img = new Image();
+        img.onload = () => {
+          const c = document.createElement('canvas');
+          c.width = w; c.height = h;
+          c.getContext('2d').drawImage(img, 0, 0, w, h);
+          URL.revokeObjectURL(url);
+          res(c.toDataURL('image/png').split(',')[1]);
+        };
+        img.onerror = () => { URL.revokeObjectURL(url); res(null); };
+        img.src = url;
+      });
+    } catch(e) { return null; }
+  }
+
+  function divText(id) { return (document.getElementById(id)?.innerText || '').trim(); }
+
+  // Daten sammeln
+  const datum = document.getElementById('datumField')?.value || '';
+  let datumDE = datum;
+  if (datum) { const [y,m,d] = datum.split('-'); datumDE = `${d}.${m}.${y}`; }
+  const kundeLines    = divText('kundeText').split('\n').filter(Boolean);
+  const kampagneLines = divText('kampagneText').split('\n').filter(Boolean);
+  const absenderLines = divText('absenderText').split('\n').filter(Boolean);
+  const bemerk        = divText('bemerkungen');
+
+  // Markenfarben (ARGB)
+  const NAVY   = 'FF00285A';
+  const ORANGE = 'FFEE7D11';
+  const ALT    = 'FFF5F7FA';
+  const WHITE  = 'FFFFFFFF';
+  const TEXT   = 'FF333333';
+  const BORDER = 'FFD0D5DD';
+  const N = 8; // Spaltenanzahl
+
+  const wb = new ExcelJS.Workbook();
+  wb.creator = 'Springer Medizin';
+  const ws = wb.addWorksheet('Angebot', {
+    pageSetup: { paperSize: 9, orientation: 'landscape', fitToPage: true, fitToWidth: 1, fitToHeight: 0 }
+  });
+
+  ws.columns = [
+    { width: 6 }, { width: 28 }, { width: 30 }, { width: 34 },
+    { width: 14 }, { width: 11 }, { width: 11 }, { width: 15 }
+  ];
+
+  // Hilfsfunktion: Zelle formatieren
+  function sc(cell, { bg, fg = TEXT, bold = false, size = 10, align = 'left', vAlign = 'middle', wrap = false, numFmt } = {}) {
+    if (bg) cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: bg } };
+    cell.font      = { name: 'Arial', size, bold, color: { argb: fg } };
+    cell.alignment = { horizontal: align, vertical: vAlign, wrapText: wrap };
+    if (numFmt) cell.numFmt = numFmt;
+  }
+
+  const hairBorder = {
+    top:    { style: 'hair',   color: { argb: BORDER } },
+    bottom: { style: 'hair',   color: { argb: BORDER } },
+    left:   { style: 'hair',   color: { argb: BORDER } },
+    right:  { style: 'hair',   color: { argb: BORDER } },
+  };
+
+  let r = 1;
+
+  // ── Zeile 1: Logo-Bereich + "Angebot" ──
+  ws.getRow(r).height = 55;
+  sc(ws.getCell(r, 9), { fg: NAVY, bold: true, size: 22, align: 'right', vAlign: 'bottom' });
+  ws.getCell(r, 9).value = 'Angebot';
+  ws.mergeCells(r, 9, r, N);
+  r++;
+
+  // ── Zeile 2: Oranger Balken ──
+  ws.getRow(r).height = 4;
+  for (let c = 1; c <= N; c++)
+    ws.getCell(r, c).fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: ORANGE } };
+  r++;
+
+  // ── Zeile 3: Abstand ──
+  ws.getRow(r).height = 8; r++;
+
+  // ── Zeile 4: Datum ──
+  ws.getRow(r).height = 16;
+  ws.getCell(r, 1).value = 'Datum:';
+  sc(ws.getCell(r, 1), { fg: NAVY, bold: true });
+  ws.getCell(r, 2).value = datumDE;
+  sc(ws.getCell(r, 2), {});
+  ws.mergeCells(r, 2, r, N);
+  r++;
+
+  // ── Zeile 5: Abstand ──
+  ws.getRow(r).height = 8; r++;
+
+  // ── Zeile 6: Adress-Labels ──
+  ws.getRow(r).height = 14;
+  ws.getCell(r, 2).value = 'Empfänger';
+  sc(ws.getCell(r, 2), { fg: NAVY, bold: true, size: 9 });
+  ws.getCell(r, 2).border = { bottom: { style: 'thin', color: { argb: ORANGE } } };
+  ws.mergeCells(r, 2, r, 5);
+  ws.getCell(r, 6).value = 'Ihre Ansprechperson bei Springer Medizin';
+  sc(ws.getCell(r, 6), { fg: NAVY, bold: true, size: 9 });
+  ws.getCell(r, 6).border = { bottom: { style: 'thin', color: { argb: ORANGE } } };
+  ws.mergeCells(r, 6, r, N);
+  r++;
+
+  // ── Adresszeilen ──
+  const maxAddr = Math.max(kundeLines.length, absenderLines.length, 1);
+  for (let i = 0; i < maxAddr; i++, r++) {
+    ws.getRow(r).height = 14;
+    ws.getCell(r, 2).value = kundeLines[i] || '';
+    sc(ws.getCell(r, 2), {});
+    ws.mergeCells(r, 2, r, 5);
+    ws.getCell(r, 6).value = absenderLines[i] || '';
+    sc(ws.getCell(r, 6), {});
+    ws.mergeCells(r, 6, r, N);
+  }
+
+  // ── Kampagne / Produkt (nur linke Spalte) ──
+  if (kampagneLines.length) {
+    ws.getRow(r).height = 13;
+    ws.getCell(r, 2).value = 'Kampagne / Produkt';
+    sc(ws.getCell(r, 2), { fg: NAVY, bold: true, size: 8 });
+    ws.mergeCells(r, 2, r, 5);
+    r++;
+    for (let i = 0; i < kampagneLines.length; i++, r++) {
+      ws.getRow(r).height = 14;
+      ws.getCell(r, 2).value = kampagneLines[i];
+      sc(ws.getCell(r, 2), {});
+      ws.mergeCells(r, 2, r, 5);
+    }
+  }
+
+  ws.getRow(r).height = 10; r++; // Abstand
+
+  // ── Tabellen-Header ──
+  const hAligns = ['center','left','left','left','right','right','right','right'];
+  const hLabels = ['Pos.','Titel','Format / Platzierung','Ausgabe / Termine',
+                   'Preis (€)','Rabatt','AE','GP netto (€)'];
+  ws.getRow(r).height = 28;
+  hLabels.forEach((h, i) => {
+    const cell = ws.getCell(r, i + 1);
+    cell.value = h;
+    sc(cell, { bg: NAVY, fg: WHITE, bold: true, size: 9, align: hAligns[i], vAlign: 'middle', wrap: true });
+    cell.border = {
+      top:    { style: 'thin',   color: { argb: NAVY } },
+      left:   { style: 'thin',   color: { argb: NAVY } },
+      right:  { style: 'thin',   color: { argb: NAVY } },
+      bottom: { style: 'medium', color: { argb: ORANGE } },
+    };
+  });
+  r++;
+
+  // ── Datenzeilen ──
+  document.querySelectorAll('#posBody tr').forEach((tr, idx) => {
+    if (!/^row-\d+$/.test(tr.id)) return;   // Hinweiszeile („Bitte zuerst … laden") nicht exportieren
+    const id = tr.id.replace('row-', '');
+    const fmtTxt = document.getElementById('fmt-lbl-' + id)?.textContent.trim() || '';
+    const umfTxt = document.getElementById('umfeld-' + id)?.value.trim() || '';
+    const fmtCell = umfTxt ? fmtTxt + '\n' + umfTxt : fmtTxt;
+    const datumTxt  = document.getElementById('datum-lbl-' + id)?.textContent.trim() || '';
+    const terminTxt = document.getElementById('termin-lbl-' + id)?.textContent.trim() || '';
+    const datumCell = terminTxt ? datumTxt + '\n' + terminTxt : datumTxt;
+    const rowData = [
+      tr.querySelector('.col-pos')?.textContent.trim() || '',
+      document.getElementById('titel-lbl-' + id)?.textContent.trim() || '',
+      fmtCell,
+      datumCell,
+      parseEur(document.getElementById('ep-'      + id)?.textContent),
+      document.getElementById('rabatt-' + id)?.textContent.trim() || '–',
+      document.getElementById('ae-'     + id)?.textContent.trim() || '–',
+      parseEur(document.getElementById('gp-' + id)?.textContent),
+    ];
+    const cellLines = Math.max(fmtCell.split('\n').length, datumCell.split('\n').length);
+    ws.getRow(r).height = cellLines > 1 ? Math.min(cellLines * 14, 120) : 18;
+    const bg = idx % 2 === 0 ? WHITE : ALT;
+    rowData.forEach((val, i) => {
+      const cell  = ws.getCell(r, i + 1);
+      const isNum = typeof val === 'number';
+      const isGP  = i === 7;
+      sc(cell, {
+        bg,
+        bold:   isGP && isNum,
+        fg:     isGP && isNum ? NAVY : TEXT,
+        size:   10,
+        align:  hAligns[i],
+        numFmt: isNum ? '#,##0.00 "€"' : undefined,
+        wrap:   i === 2 || i === 3,
+      });
+      cell.border = hairBorder;
+      cell.value  = val === null ? '–' : val;
+    });
+    r++;
+  });
+
+  ws.getRow(r).height = 6; r++; // Abstand
+
+  // ── Summenzeilen ──
+  const ohneMwst = document.getElementById('auslandMwst')?.checked;
+  [
+    ['Nettobetrag:',          'sumNetto', false],
+    [ohneMwst ? 'Umsatzsteuerfrei (Ausland):' : 'zzgl. 19% MwSt.:', 'sumMwst', false],
+    [ohneMwst ? 'Gesamtbetrag:' : 'Gesamtbetrag brutto:',           'sumTotal', true ],
+  ].forEach(([label, id, bold]) => {
+    ws.getRow(r).height = 18;
+    ws.mergeCells(r, 1, r, N - 1);
+    const lc = ws.getCell(r, 1);
+    lc.value = label;
+    sc(lc, { bold, size: 10, align: 'right', fg: bold ? NAVY : TEXT });
+    const val = parseEur(document.getElementById(id)?.textContent);
+    const vc  = ws.getCell(r, N);
+    vc.value  = val !== null ? val : '';
+    sc(vc, { bold, fg: bold ? NAVY : TEXT, size: 10, align: 'right',
+             numFmt: val !== null ? '#,##0.00 "€"' : undefined });
+    if (bold) vc.border = { top: { style: 'medium', color: { argb: NAVY } } };
+    r++;
+  });
+
+  ws.getRow(r).height = 10; r++; // Abstand
+
+  // ── Bemerkungen ──
+  ws.getRow(r).height = 14;
+  ws.getCell(r, 1).value = 'Bemerkungen / Konditionen:';
+  sc(ws.getCell(r, 1), { fg: NAVY, bold: true, size: 9 });
+  ws.mergeCells(r, 1, r, N);
+  r++;
+  bemerk.split('\n').filter(Boolean).forEach(line => {
+    ws.getRow(r).height = 14;
+    ws.getCell(r, 1).value = line;
+    sc(ws.getCell(r, 1), { size: 9, wrap: true });
+    ws.mergeCells(r, 1, r, N);
+    r++;
+  });
+
+  // ── Fußzeile ──
+  const footerLines = Array.from(document.querySelectorAll('.footer span'))
+    .map(el => el.textContent.trim()).filter(Boolean);
+  if (footerLines.length) {
+    ws.getRow(r).height = 10; r++; // Abstand
+    footerLines.forEach(line => {
+      ws.getRow(r).height = 12;
+      ws.getCell(r, 1).value = line;
+      sc(ws.getCell(r, 1), { size: 8, fg: 'FF6B7280', wrap: true });
+      ws.mergeCells(r, 1, r, N);
+      r++;
+    });
+  }
+
+  // ── Logo einfügen ──
+  const logoSvg = document.getElementById('Ebene_1');
+  if (logoSvg) {
+    const vb = logoSvg.viewBox.baseVal;
+    const scale = 2; // Auflösung für scharfe Darstellung
+    const renderW = Math.round(vb.width * scale);
+    const renderH = Math.round(vb.height * scale);
+    const b64 = await svgToBase64(logoSvg, renderW, renderH);
+    if (b64) {
+      const imgId = wb.addImage({ base64: b64, extension: 'png' });
+      const exportWidth  = 260;
+      const exportHeight = Math.round(exportWidth * renderH / renderW);
+      ws.addImage(imgId, { tl: { col: 0, row: 0 }, ext: { width: exportWidth, height: exportHeight } });
+    }
+  }
+
+  // ── Download ──
+  const buf  = await wb.xlsx.writeBuffer();
+  const blob = new Blob([buf], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+  const a    = Object.assign(document.createElement('a'), {
+    href:     URL.createObjectURL(blob),
+    download: `Angebot_Kunde_${(datumDE || 'Export').replace(/\./g, '-')}.xlsx`
+  });
+  document.body.appendChild(a);
+  a.click();
+  setTimeout(() => { URL.revokeObjectURL(a.href); document.body.removeChild(a); }, 100);
+}
+
+// ─────────────────────────────────────────
+//  Format number as Euro
+// ─────────────────────────────────────────
+function formatEur(n) {
+  return n.toLocaleString('de-DE', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' €';
+}
+
+// ─────────────────────────────────────────
+//  Euro-Text in Zahl (de-DE) – null bei leer/„–"/ungültig
+// ─────────────────────────────────────────
+function parseEur(s) {
+  if (!s || s.trim() === '–' || s.trim() === '') return null;
+  const n = parseFloat(s.replace(/\./g, '').replace(',', '.').replace(/[^\d.\-]/g, ''));
+  return isNaN(n) ? null : n;
+}
+</script>
+</body>
+</html>

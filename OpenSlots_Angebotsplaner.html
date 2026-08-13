@@ -1716,11 +1716,14 @@ async function applyAngebot(data){
   if(!data||typeof data!=='object'){
     alert('Diese Datei ist keine gültige Angebotsdatei.');return false;
   }
-  /* Herkunft zuerst prüfen: Eine Datei aus der Angebotsvorlage soll die
-     zutreffende Meldung bekommen und nicht die allgemeine. */
+  /* Herkunft zuerst prüfen: Eine Datei aus MediaQuote soll die zutreffende
+     Meldung bekommen und nicht die allgemeine. Die Kennung im Inneren der Datei
+     heißt weiterhin 'Angebotsvorlage' - das ist der frühere Name des Werkzeugs
+     und darf nicht angepasst werden, sonst lassen sich gespeicherte Angebote
+     nicht mehr zuordnen. */
   if(data.app!==ANGEBOT_APP){
     alert(data.app==='Angebotsvorlage'
-      ? 'Diese Datei stammt aus der Angebotsvorlage und kann hier nicht geöffnet werden.'
+      ? 'Diese Datei stammt aus MediaQuote und kann hier nicht geöffnet werden.'
       : 'Diese Datei stammt nicht aus dem Angebotsplaner.');
     return false;
   }
