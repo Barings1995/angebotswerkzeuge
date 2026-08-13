@@ -127,6 +127,11 @@
      OpenSlots-Kopf (Playfair Display, aus dem Netz geholt); ohne Netz greift Georgia,
      die im Blatt ohnehin verwendet wird. */
   .sm-hero {
+    /* Schrift der Leiste wie in OpenSlots (Source Sans 3). Ohne diese Zeile erbt sie die
+       Aptos des Blattes; deren Zeilenhöhe fällt bei „normal" niedriger aus, wodurch die
+       Unterzeile 14 statt 17,5 px hoch wäre und die ganze Leiste 3,5 px flacher. Gilt nur
+       für die Leiste - das Angebot selbst bleibt bei Aptos. */
+    font-family: 'Source Sans 3', system-ui, sans-serif;
     background: linear-gradient(135deg, #002050 0%, var(--navy) 60%, #004080 100%);
     border-bottom: 3px solid var(--orange);
     padding: 1.1rem 0 1rem;
@@ -137,7 +142,8 @@
   .sm-hero-head svg { flex: none; }
   .sm-hero-div { width: 1px; align-self: stretch; background: rgba(255,255,255,.28); flex: none; }
   .sm-hero h1 {
-    font-family: 'Playfair Display', 'Georgia Pro', Georgia, serif;
+    /* Buchstabengleich zu OpenSlots, auch in der Ersatzkette. */
+    font-family: 'Playfair Display', Georgia, serif;
     font-size: 25px;
     font-weight: 700;
     color: #fff;
