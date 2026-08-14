@@ -1836,8 +1836,11 @@ function pickStartYear(){
 }
 
 const FB_OHNE='Ohne Fachbereich';
-/* Zugeklappte Fachbereiche, als Nummer der Gruppe. Bewusst leer – beim Start ist alles
-   offen, sonst wäre die Titelliste zunächst unsichtbar. Wird nicht gespeichert. */
+/* Zugeklappte Fachbereiche, als Nummer der Gruppe. Beim Aufbau der Liste sind alle
+   Bereiche zu (siehe buildTabs) – die Titelliste passt damit ohne Rollen ins Bild.
+   Unsichtbar wird dadurch nichts: der gewählte Titel bleibt auch in einem zugeklappten
+   Bereich stehen (siehe filterTabs), und während einer Suche gelten alle Bereiche als
+   offen. Wird nicht gespeichert. */
 let collapsedFb=new Set(), fbGroups=[];
 
 /* Fachbereiche in Anzeigereihenfolge: alphabetisch, „Ohne Fachbereich" immer zuletzt.
@@ -1862,7 +1865,7 @@ function tabHtml(ji,gi){
 }
 function buildTabs(){
   fbGroups=fachbereiche();
-  collapsedFb=new Set();
+  collapsedFb=new Set(fbGroups.map((_,gi)=>gi));
   const el=document.getElementById('tabs');
   if(!J.length)el.innerHTML='';
   else if(!fbGroups.length)el.innerHTML=J.map((j,i)=>tabHtml(i,null)).join('');
