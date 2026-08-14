@@ -52,9 +52,17 @@
     border-top-color:var(--sm-orange); box-shadow:0 4px 16px rgba(0,40,90,.10);
     transform:translateY(-2px);
   }
+  /* Kopf der Karte wie die Kopfleiste des jeweiligen Werkzeugs: Name gross, Aufgabe
+     klein und gesperrt darunter. Vorher stand beides in einer Zeile - „MediaQuote –
+     Angebotsvorlage 4C" war damit 10 px zu breit fuer die Karte, sodass „4C" allein
+     umbrach. Getrennt bleibt jede Zeile mit Abstand innerhalb der Kartenbreite. */
   a.karte h2{
-    font-family:'Source Sans 3',sans-serif; font-size:17px; font-weight:700;
-    margin:0 0 6px; color:var(--sm-navy);
+    font-family:'Source Sans 3',sans-serif; font-size:20px; font-weight:700;
+    margin:0 0 3px; color:var(--sm-navy); letter-spacing:-.01em; line-height:1.2;
+  }
+  a.karte .zusatz{
+    font-size:11.5px; font-weight:600; color:var(--sm-muted);
+    letter-spacing:.11em; text-transform:uppercase; margin:0 0 10px; line-height:1.35;
   }
   a.karte p{margin:0; font-size:14px; color:var(--sm-muted); flex:1 1 auto}
   a.karte .mehr{
@@ -91,19 +99,22 @@
 
   <div class="karten">
     <a class="karte" href="OpenSlots_Angebotsplaner.html">
-      <h2>OpenSlots &ndash; Angebotsplaner</h2>
+      <h2>OpenSlots</h2>
+      <div class="zusatz">Angebotsplaner</div>
       <p>Platzierungen &uuml;ber die Ausgaben eines Jahrgangs ankreuzen und als
          Angebots&uuml;bersicht nach Outlook &uuml;bernehmen.</p>
       <span class="mehr">&ouml;ffnen &rarr;</span>
     </a>
     <a class="karte" href="MediaQuote_Angebotsvorlage.html">
-      <h2>MediaQuote &ndash; Angebotsvorlage</h2>
+      <h2>MediaQuote</h2>
+      <div class="zusatz">Angebotsvorlage &middot; s/w und 4C</div>
       <p>Angebot mit Positionen, Rabatt und Summen &ndash; mit getrenntem Ausweis
          des Farbzuschlags (s/w-Preis, 4c-Zuschlag, 4c-Preis).</p>
       <span class="mehr">&ouml;ffnen &rarr;</span>
     </a>
     <a class="karte" href="MediaQuote_Angebotsvorlage_4C.html">
-      <h2>MediaQuote &ndash; Angebotsvorlage 4C</h2>
+      <h2>MediaQuote</h2>
+      <div class="zusatz">Angebotsvorlage &middot; nur 4C</div>
       <p>Dieselbe Vorlage mit einer einzigen Preisspalte &ndash; f&uuml;r Titel,
          die nur noch einen 4c-Preis f&uuml;hren.</p>
       <span class="mehr">&ouml;ffnen &rarr;</span>
