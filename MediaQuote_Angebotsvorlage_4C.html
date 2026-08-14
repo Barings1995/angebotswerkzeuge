@@ -123,7 +123,10 @@
      Paar zu erkennen sind. Sie gehört nicht zum Angebot: im Druck und im PDF ist sie
      weg (siehe @media print). Die negativen Ränder heben das Polster des Seitenrandes
      auf, damit die Leiste über die volle Breite läuft; der Inhalt der Leiste steht
-     bündig zum Blatt darunter. Der Schriftzug steht in derselben Schrift wie im
+     links am Fensterrand, im selben Abstand wie in OpenSlots. Vorher lief er mit dem
+     Blatt darunter mit (max-width 1220px, zentriert) und rückte auf breiten Bildschirmen
+     weit nach innen - nebeneinander geöffnet begannen die beiden Werkzeuge damit an
+     verschiedenen Stellen. Der Schriftzug steht in derselben Schrift wie im
      OpenSlots-Kopf (Playfair Display, aus dem Netz geholt); ohne Netz greift Georgia,
      die im Blatt ohnehin verwendet wird. */
   .sm-hero {
@@ -137,7 +140,7 @@
     padding: 1.1rem 0 1rem;
     margin: -20px -20px 20px;
   }
-  .sm-hero-inner { max-width: 1220px; margin: 0 auto; padding: 0 44px; }
+  .sm-hero-inner { max-width: none; margin: 0; padding: 0 1.5rem; }
   .sm-hero-head { display: flex; align-items: center; gap: 1rem; margin-bottom: 8px; }
   .sm-hero-head svg { flex: none; }
   .sm-hero-div { width: 1px; align-self: stretch; background: rgba(255,255,255,.28); flex: none; }
