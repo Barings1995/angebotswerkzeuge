@@ -151,8 +151,15 @@ body {
 .sidebar > .sec-label:first-child,
 .main > .sec-label:first-child { margin-top: 0; }
 .sidebar .title-search { max-width: none; }
+/* Untereinander statt nebeneinander. Das `align-items: stretch` gehört zwingend dazu:
+   Oben steht `flex-start`, was nebeneinander richtig ist (die Spalten sollen oben
+   beginnen). Untereinander betrifft dieselbe Angabe aber die Breite - der rechte
+   Bereich würde dann so breit wie sein breitestes Kind, die Belegungsmatrix. Sie
+   liefe nicht mehr im eigenen Rahmen, sondern schöbe Kopfleiste, Optionen und
+   Vorschau seitlich aus dem Bild. Betrifft nicht nur Telefone: ein halbiertes
+   Fenster auf dem MacBook liegt mit rund 720 px genau in diesem Bereich. */
 @media (max-width: 820px) {
-  .workspace { flex-direction: column; gap: 0; }
+  .workspace { flex-direction: column; gap: 0; align-items: stretch; }
   .sidebar {
     position: static;
     flex-basis: auto;
