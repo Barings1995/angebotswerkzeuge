@@ -64,6 +64,17 @@
   .data-status.loaded { color: var(--navy); font-weight: 600; }
   .data-error { display: inline-flex; align-items: center; gap: 6px; font-size: 12.5px; font-weight: 600; color: var(--red); background: #fdeaea; border: 1px solid #f3c0c0; border-radius: 6px; padding: 4px 10px; }
   .data-error svg { flex: none; }
+  /* Hinweis, kein Fehler: bewusst neutral gehalten. Rot wäre falsch - es ist nichts
+     schiefgegangen, es fehlt nur ein Posten in der Preisliste. Das helle Springer-Blau
+     bleibt der Ersparnis vorbehalten, deshalb die neutrale Fläche. */
+  .data-note { display: inline-flex; align-items: center; gap: 6px; font-size: 12.5px;
+    color: var(--grey-600); background: var(--surface); border: 1px solid var(--border);
+    border-radius: 6px; padding: 4px 6px 4px 10px; max-width: 100%; }
+  .data-note svg { flex: none; color: var(--navy); }
+  .note-x { border: none; background: none; cursor: pointer; color: var(--grey-500);
+    font-size: 12px; line-height: 1; padding: 3px 4px; border-radius: 4px; }
+  .note-x:hover { color: var(--navy); background: var(--surface-hover); }
+  .note-x:focus-visible { outline: 2px solid var(--navy); outline-offset: 1px; }
   select:disabled, input:disabled, .btn-add:disabled { opacity: 0.5; cursor: not-allowed; }
 
   /* ── Main layout ── */
@@ -213,6 +224,11 @@
       <svg width="14" height="14" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true"><path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-8-5a1 1 0 011 1v4a1 1 0 11-2 0V6a1 1 0 011-1zm0 9a1 1 0 100-2 1 1 0 000 2z" clip-rule="evenodd"/></svg>
       <span id="dataErrorMsg"></span>
     </span>
+    <span class="data-note" id="standNote" style="display:none;">
+      <svg width="14" height="14" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true"><path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-9-3a1 1 0 112 0 1 1 0 01-2 0zm1 3a1 1 0 00-1 1v4a1 1 0 102 0v-4a1 1 0 00-1-1z" clip-rule="evenodd"/></svg>
+      <span id="standNoteMsg"></span>
+      <button type="button" class="note-x" onclick="schliesseStandHinweis()" title="Hinweis schließen" aria-label="Hinweis schließen">✕</button>
+    </span>
     <input type="file" id="dataFile" accept=".xlsx" style="display:none" onchange="onDataFileChosen(event)">
   </div>
 
@@ -254,7 +270,7 @@
   <div class="options-bar">
     <div class="opt-group">
       <label>
-        <span class="switch"><input type="checkbox" id="optAE" onchange="render()"><span class="slider"></span></span>
+        <span class="switch"><input type="checkbox" id="optAE" onchange="render(); saveStand();"><span class="slider"></span></span>
         AE-Provision 10 % <span class="tag">(Agenturbuchung)</span>
       </label>
     </div>
@@ -474,6 +490,8 @@ function applyYear(year){
   initDropdowns();
   items = [];   // Datensatzwechsel (Jahrgang/neuer Import): Paket zurücksetzen – keine gemischten Jahrgänge/Preise
   render();
+  saveStand();  // beim echten Jahrgangswechsel: leeres Paket zum neuen Jahrgang merken.
+                // Während des Aufbaus greift der Aufruf nicht (siehe standAktiv).
 }
 
 // ─── HELPERS ──────────────────────────────────────────────────────────────────
@@ -562,6 +580,7 @@ function addItem() {
 
   items.push({ id: nextId++, journal: j, cat, fn, base: fmt.base, s4c: fmt.s4c, use4c, rabatt: fmt.rabatt, count: anz });
   render();
+  saveStand();
 
   // Feedback
   const btn = document.querySelector('.btn-add');
@@ -569,12 +588,12 @@ function addItem() {
   setTimeout(() => { btn.textContent = '+ Hinzufügen'; btn.style.background = ''; }, 1100);
 }
 
-function removeItem(id) { items = items.filter(it => it.id !== id); render(); }
+function removeItem(id) { items = items.filter(it => it.id !== id); render(); saveStand(); }
 function updateAnz(id, v) {
   const it = items.find(i => i.id === id);
-  if (it) { it.count = Math.min(99, Math.max(1, parseInt(v) || 1)); render(); }
+  if (it) { it.count = Math.min(99, Math.max(1, parseInt(v) || 1)); render(); saveStand(); }
 }
-function clearAll() { items = []; render(); }
+function clearAll() { items = []; render(); saveStand(); }
 
 // ─── RENDER ───────────────────────────────────────────────────────────────────
 function render() {
@@ -728,6 +747,82 @@ function renderProgress(elId, val, steps) {
   });
 }
 
+/* ===== ARBEITSSTAND MERKEN =====
+   Wie in OpenSlots und den MediaQuote-Vorlagen: das Paket überlebt das Neuladen der Seite
+   und das versehentliche Schließen des Fensters. Gemerkt wird nur die Auswahl - Titel,
+   Kategorie, Format, Anzahl, Farbschalter, dazu der Jahrgang und der AE-Schalter. Die
+   Preise stehen bewusst NICHT im Stand: sie werden beim Aufbau frisch aus der Preisliste
+   geholt, sonst rechnete ein Tage alter Stand mit Tage alten Preisen weiter.
+   Eigener Schlüssel, getrennt von den Preisdaten unter CACHE_KEY. */
+const STAND_KEY='preiswerk_stand_v1';
+let standAktiv=false;   // während des Aufbaus nicht schreiben, sonst überschreibt der leere Anfangszustand den gemerkten Stand
+let standTimer=null;
+function saveStand(){
+  if(!standAktiv)return;
+  if(standTimer)clearTimeout(standTimer);
+  /* Kurz gebündelt: beim Tippen in der Anzahl-Spalte läuft sonst je Anschlag ein Schreibvorgang. */
+  standTimer=setTimeout(function(){
+    standTimer=null;
+    try{
+      const ae=document.getElementById('optAE');
+      localStorage.setItem(STAND_KEY,JSON.stringify({
+        jahr:currentYear,
+        ae:!!(ae&&ae.checked),
+        posten:items.map(function(it){return {journal:it.journal,cat:it.cat,fn:it.fn,use4c:!!it.use4c,count:it.count};})
+      }));
+    }catch(e){}
+  },400);
+}
+/* Die Fundliste überlebt den zweiten Aufbau: beim Start läuft restoreStand() zweimal -
+   einmal aus dem Zwischenspeicher, danach noch einmal, wenn die Preisliste von der Adresse
+   da ist. Der erste Lauf schreibt den bereinigten Stand fest, im zweiten fehlt dann nichts
+   mehr. Ohne dieses Merken hätte der zweite Lauf den Hinweis wieder geschlossen, bevor er
+   gelesen werden konnte. Er bleibt jetzt stehen, bis er zugeklappt wird. */
+let standFehlend=[];
+function zeigeStandHinweis(fehlend){
+  const box=document.getElementById('standNote'), m=document.getElementById('standNoteMsg');
+  if(!box||!m)return;
+  const liste=fehlend.slice(0,3).join('; ')+(fehlend.length>3?' und '+(fehlend.length-3)+' weitere':'');
+  m.textContent=(fehlend.length===1?'Ein Posten des gemerkten Pakets steht nicht mehr in der Preisliste und wurde weggelassen: '
+                                   :fehlend.length+' Posten des gemerkten Pakets stehen nicht mehr in der Preisliste und wurden weggelassen: ')+liste+'.';
+  box.style.display='';
+}
+function schliesseStandHinweis(){
+  standFehlend=[];
+  const box=document.getElementById('standNote');
+  if(box)box.style.display='none';
+}
+function restoreStand(){
+  try{
+    const raw=localStorage.getItem(STAND_KEY);if(!raw)return;
+    const st=JSON.parse(raw);
+    if(!st||!Array.isArray(st.posten)||!st.posten.length)return;
+    if(!Object.keys(DATASET).length)return;            // ohne Preisliste keine Positionen
+    if(st.jahr&&st.jahr!==currentYear)return;          // das Paket gehört zu seinem Jahrgang
+    const fehlend=[],neu=[];
+    st.posten.forEach(function(p){
+      const t=DATA[p.journal], c=t&&t.categories&&t.categories[p.cat], fmt=c&&c[p.fn];
+      if(!fmt){fehlend.push(p.journal+' · '+p.cat+' · '+p.fn);return;}
+      const has4c=fmt.s4c!==null&&fmt.s4c>0;
+      neu.push({id:nextId++,journal:p.journal,cat:p.cat,fn:p.fn,
+                base:fmt.base,s4c:fmt.s4c,rabatt:fmt.rabatt,
+                use4c:has4c&&!!p.use4c,
+                count:Math.min(99,Math.max(1,parseInt(p.count)||1))});
+    });
+    if(!neu.length&&!fehlend.length)return;
+    items=neu;
+    const ae=document.getElementById('optAE');if(ae)ae.checked=!!st.ae;
+    render();
+    if(fehlend.length){
+      standFehlend=fehlend;
+      /* Den bereinigten Stand einmal festschreiben, sonst stünde der entfallene Posten
+         weiter im Speicher und der Hinweis käme bei jedem Start erneut. */
+      const merk=standAktiv; standAktiv=true; saveStand(); standAktiv=merk;
+    }
+    if(standFehlend.length)zeigeStandHinweis(standFehlend);
+  }catch(e){}
+}
+
 /* ===== PREISLISTE VON DER ADRESSE HOLEN =====
    Wie in OpenSlots und den beiden MediaQuote-Vorlagen: liegt dieses Werkzeug unter einer
    Adresse (https://…), steht die Angebotsdaten.xlsx daneben und wird beim Start selbst
@@ -757,7 +852,13 @@ async function ladePreislisteVonServer(){
     const ys=years();
     if(!currentYear||!DATASET[currentYear])currentYear=ys.includes('2026')?'2026':ys[0];
     clearDataError();
+    /* applyYear() leert das Paket. Beim Start ist das kein Datensatzwechsel, sondern der
+       normale Weg - der gemerkte Stand darf dabei weder überschrieben noch verloren gehen.
+       Deshalb das Schreiben aussetzen und den Stand danach neu aufbauen. */
+    const merk=standAktiv; standAktiv=false;
     applyYear(currentYear);   // speichert selbst per saveCache()
+    standAktiv=merk;
+    restoreStand();
     return true;
   }catch(e){
     console.warn('Preisliste nicht von der Adresse geholt:',e);
@@ -770,6 +871,10 @@ async function ladePreislisteVonServer(){
 loadCache();
 if (Object.keys(DATASET).length) { applyYear(currentYear); }
 else { syncDataUI(); initDropdowns(); render(); }
+/* Erst den gemerkten Stand aufbauen, dann das Schreiben freigeben: der leere Anfangs-
+   zustand darf den Stand nicht überschreiben. Ohne Netz steht damit sofort das Paket da. */
+restoreStand();
+standAktiv = true;
 /* Zum Schluss die Preisliste von der Adresse holen. Der Aufbau oben läuft vorher, damit
    ohne Netz sofort der gemerkte Stand dasteht statt einer leeren Seite. */
 ladePreislisteVonServer();
