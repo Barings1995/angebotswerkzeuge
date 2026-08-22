@@ -317,6 +317,7 @@ let currentYear = '';
 let isCustomData = false;
 let loadedFileName = '';
 const CACHE_KEY = 'preiswerk_dataset_v1';
+let datenStand = '';    // Stand der Preisliste als fertiger Textzusatz, siehe standAusMappe()
 const CACHE_KEY_OLD = 'mediaquote_dataset_v1'; // einmalige Übernahme der unter dem alten Namen gemerkten Daten
 
 // ─── EXCEL-IMPORT ────────────────────────────────────────
@@ -374,6 +375,18 @@ function parseWorkbookToDataset(wb){
   if(!Object.keys(DS).length)throw new Error('Es wurden keine Datenzeilen gefunden.');
   return DS;
 }
+/* Der Stand kommt aus der Preisliste selbst: jede xlsx-Datei führt intern Buch darüber,
+   wann sie zuletzt gespeichert wurde. Der Zeitstempel des Servers taugt dafür nicht -
+   GitHub Pages meldet für jede Datei den Zeitpunkt der letzten Veröffentlichung, also
+   auch dann ein neues Datum, wenn lediglich ein Werkzeug geändert wurde. Der Wert aus
+   der Datei gilt auch für eine von Hand gewählte Preisliste. */
+function standAusMappe(wb){
+  const d=(wb&&wb.modified)?new Date(wb.modified):null;
+  if(!d||isNaN(d))return '';
+  const p=n=>String(n).padStart(2,'0');
+  return ' · Stand '+p(d.getDate())+'.'+p(d.getMonth()+1)+'.'+d.getFullYear();
+}
+
 function years(){return Object.keys(DATASET).sort();}
 
 function showDataError(msg){
@@ -395,6 +408,7 @@ async function onDataFileChosen(ev){
     const wb=new ExcelJS.Workbook();
     await wb.xlsx.load(await file.arrayBuffer());
     const ds=parseWorkbookToDataset(wb);
+    datenStand=standAusMappe(wb);
     DATASET=ds;isCustomData=true;loadedFileName=file.name;
     const ys=years();currentYear=ys.includes('2026')?'2026':ys[0];
     applyYear(currentYear);   // speichert selbst per saveCache()
@@ -413,7 +427,10 @@ async function onDataFileChosen(ev){
 
 function saveCache(){
   if(!isCustomData)return;
-  try{localStorage.setItem(CACHE_KEY,JSON.stringify({ds:DATASET,year:currentYear,file:loadedFileName}));}catch(e){}
+  /* Der Stand wandert mit in den Zwischenspeicher: sonst stünde nach einem Neustart der
+     Seite eine Preisliste ohne Datum da, solange die Datei noch nicht wieder von der
+     Adresse geholt ist - und ohne Netz bliebe das Datum ganz weg. */
+  try{localStorage.setItem(CACHE_KEY,JSON.stringify({ds:DATASET,year:currentYear,file:loadedFileName,stand:datenStand}));}catch(e){}
 }
 function loadCache(){
   try{
@@ -425,7 +442,7 @@ function loadCache(){
     if(!raw)return;
     const o=JSON.parse(raw);
     if(o&&o.ds&&Object.keys(o.ds).length){
-      DATASET=o.ds;isCustomData=true;loadedFileName=o.file||'';
+      DATASET=o.ds;isCustomData=true;loadedFileName=o.file||'';datenStand=o.stand||'';
       currentYear=(o.year&&o.ds[o.year])?o.year:Object.keys(o.ds).sort()[0];
     }
   }catch(e){}
@@ -438,7 +455,7 @@ function syncDataUI(){
   const yw=document.getElementById('yearWrap');if(yw)yw.style.display=ys.length>1?'':'none';
   const st=document.getElementById('dataStatus');
   if(st){
-    st.textContent=isCustomData?('geladen: '+loadedFileName+' · '+ys.join('/')):'Keine Daten geladen – bitte Angebotsdaten.xlsx laden';
+    st.textContent=isCustomData?('geladen: '+loadedFileName+' · '+ys.join('/')+datenStand):'Keine Daten geladen – bitte Angebotsdaten.xlsx laden';
     st.className='data-status'+(isCustomData?' loaded':'');
   }
 }
@@ -733,6 +750,7 @@ async function ladePreislisteVonServer(){
     await wb.xlsx.load(await r.arrayBuffer());
     const ds=parseWorkbookToDataset(wb);
     if(!ds||!Object.keys(ds).length)throw new Error('Keine Jahrgänge in der Datei.');
+    datenStand=standAusMappe(wb);
     DATASET=ds;isCustomData=true;loadedFileName=DATEN_DATEI;
     /* Der gemerkte Jahrgang bleibt stehen, solange die Preisliste ihn kennt; sonst gilt
        dieselbe Vorgabe wie beim Laden von Hand. */

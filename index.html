@@ -27,7 +27,14 @@
     background:var(--sm-navy); color:#fff;
     padding:14px 26px; display:flex; align-items:center; gap:18px;
   }
-  main{max-width:940px; margin:0 auto; padding:38px 26px 60px}
+  /* Breit genug für vier Karten in einer Reihe: 4 × 258 px Mindestbreite + 3 × 16 px
+     Abstand ergeben 1080 px Inhalt, dazu das Polster von zweimal 26 px - macht 1132 px.
+     Aufgerundet auf 1160 px, damit die Karten nicht exakt auf ihrer Mindestbreite stehen.
+     Vorher 940 px, was für drei Karten reichte; die vierte rutschte allein in die zweite
+     Reihe. Ist das Fenster schmaler, bricht das Raster wie bisher von selbst um - das
+     lässt sich mit CSS nicht verhindern und soll es auch nicht. Die Textblöcke bleiben
+     schmal (siehe die ch-Angaben bei .intro und .hinweise), die Breite gilt den Karten. */
+  main{max-width:1160px; margin:0 auto; padding:38px 26px 60px}
   h1{
     font-family:'Playfair Display',Georgia,serif; font-weight:600;
     font-size:34px; line-height:1.15; margin:0 0 8px; color:var(--sm-navy);
