@@ -137,6 +137,11 @@
   .staffel-item .s-note { font-size: 11px; color: rgba(255,255,255,0.55); margin-top: 3px; }
   .staffel-item .s-note.active { color: var(--blue-light); font-weight: 600; }
   .staffel-item.highlight { background: rgba(238,125,17,0.15); }
+  /* Je Fachbereich eine eigene Staffelanzeige - der Rabatt gilt nur innerhalb der Fachgruppe.
+     Bei nur einer Gruppe entfällt die Überschrift und es sieht aus wie zuvor. */
+  .staffel-group { margin-bottom: 20px; }
+  .staffel-group .staffel-bar { margin-bottom: 0; }
+  .staffel-fach { font-size: 11px; font-weight: 700; color: var(--navy); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 6px; }
 
   /* Progress steps */
   .staffel-progress { display: flex; gap: 4px; align-items: center; flex-wrap: wrap; margin-top: 6px; }
@@ -167,6 +172,11 @@
   .tag-4c  { display: inline-block; font-size: 10px; background: var(--surface); color: var(--navy); font-weight: 600; padding: 1px 5px; border-radius: 3px; margin-left: 4px; vertical-align: middle; }
   .tag-sw  { display: inline-block; font-size: 10px; background: var(--surface); color: var(--grey-600); padding: 1px 5px; border-radius: 3px; margin-left: 4px; vertical-align: middle; }
   .tag-nr  { display: block; font-size: 10px; color: var(--orange-dark); margin-top: 2px; }
+
+  /* Überschriftzeile je Fachgruppe im Warenkorb; nur bei mehr als einer Gruppe */
+  tbody tr.fach-row td { background: var(--surface); font-size: 11px; font-weight: 700; color: var(--navy); text-transform: uppercase; letter-spacing: 0.4px; padding: 7px 14px; }
+  tbody tr.fach-row:hover td { background: var(--surface); }
+  tbody tr.fach-row .fach-rab { font-weight: 600; color: var(--blue); text-transform: none; letter-spacing: 0; margin-left: 8px; }
 
   .count-inp { width: 56px; padding: 5px 8px; font-size: 13px; text-align: center; border: 1px solid var(--border); border-radius: 4px; font-variant-numeric: tabular-nums; }
   .btn-rm { background: none; border: none; color: var(--grey-500); cursor: pointer; font-size: 15px; padding: 4px 7px; border-radius: 4px; transition: color .15s; }
@@ -204,7 +214,7 @@
         <div class="sm-hero-sub">Paket- und Rabattrechner</div>
       </div>
     </div>
-    <p>Daten laden &rarr; Titel, Kategorie und Format w&auml;hlen &rarr; Positionen ins Paket legen. Der <strong>Staffelrabatt</strong> gilt titel&uuml;bergreifend f&uuml;r alle rabattf&auml;higen Schaltungen.</p>
+    <p>Daten laden &rarr; Titel, Kategorie und Format w&auml;hlen &rarr; Positionen ins Paket legen. Der <strong>Staffelrabatt</strong> gilt titel&uuml;bergreifend, aber nur innerhalb eines Fachbereichs.</p>
   </div>
 </header>
 
@@ -276,7 +286,7 @@
     </div>
     <div class="sep"></div>
     <div style="font-size:12px; color:var(--grey-600);">
-      Staffelrabatt gilt titelübergreifend · nur Normal-, Vorzugs- und Festplatzierungen
+      Staffelrabatt gilt titelübergreifend innerhalb eines Fachbereichs · nur Normal-, Vorzugs- und Festplatzierungen
     </div>
     <button class="btn-clear" onclick="clearAll()">
       <svg width="13" height="13" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true"><path fill-rule="evenodd" d="M4 2a1 1 0 011 1v2.101a7.002 7.002 0 0111.601 2.566 1 1 0 11-1.885.666A5.002 5.002 0 005.999 7H9a1 1 0 010 2H4a1 1 0 01-1-1V3a1 1 0 011-1zm.008 9.057a1 1 0 011.276.61A5.002 5.002 0 0014.001 13H11a1 1 0 110-2h5a1 1 0 011 1v5a1 1 0 11-2 0v-2.101a7.002 7.002 0 01-11.601-2.566 1 1 0 01.61-1.276z" clip-rule="evenodd"/></svg>
@@ -284,34 +294,8 @@
     </button>
   </div>
 
-  <!-- ── Staffel-Anzeige ── -->
-  <div class="staffel-bar" id="staffelBar" style="display:none;">
-    <div class="staffel-item">
-      <div class="s-label">Rabattfähige Schaltungen</div>
-      <div class="s-val" id="sTotalMal">0</div>
-      <div class="staffel-progress" id="sMalProgress"></div>
-    </div>
-    <div class="staffel-item">
-      <div class="s-label">Seiten-Äquivalente</div>
-      <div class="s-val" id="sTotalMenge">0</div>
-      <div class="staffel-progress" id="sMengeProgress"></div>
-    </div>
-    <div class="staffel-item">
-      <div class="s-label">Malstaffel</div>
-      <div class="s-val" id="sMalPct">–</div>
-      <div class="s-note" id="sMalNote"></div>
-    </div>
-    <div class="staffel-item">
-      <div class="s-label">Mengenstaffel</div>
-      <div class="s-val" id="sMengePct">–</div>
-      <div class="s-note" id="sMengeNote"></div>
-    </div>
-    <div class="staffel-item highlight">
-      <div class="s-label">Angewendeter Rabatt</div>
-      <div class="s-val" id="sApplied">–</div>
-      <div class="s-note" id="sAppliedNote"></div>
-    </div>
-  </div>
+  <!-- ── Staffel-Anzeige (je Fachbereich eine Leiste, siehe render()) ── -->
+  <div id="staffelWrap" style="display:none;"></div>
 
   <!-- ── Warenkorb ── -->
   <div class="basket-wrap">
@@ -370,7 +354,7 @@ function cellNum(cell){
 }
 function truthy(s){return /^(ja|j|x|yes|y|true|1|wahr)$/i.test(String(s).trim());}
 
-// Excel-Arbeitsmappe (Blatt „Preise“) -> { jahr: { titel: {categories:{kat:{fmt:{base,s4c,rabatt}}}} } }
+// Excel-Arbeitsmappe (Blatt „Preise“) -> { jahr: { titel: {fach, categories:{kat:{fmt:{base,s4c,rabatt}}}} } }
 function parseWorkbookToDataset(wb){
   const ws=wb.getWorksheet('Preise');
   if(!ws)throw new Error('Im Excel fehlt das Tabellenblatt „Preise“.');
@@ -383,7 +367,12 @@ function parseWorkbookToDataset(wb){
     const base=cellNum(row.getCell(6)), z4c=cellNum(row.getCell(7));
     const rabatt=truthy(cellStr(row.getCell(8)));
     if(!DS[year])DS[year]={};
-    if(!DS[year][titel])DS[year][titel]={categories:{}};
+    if(!DS[year][titel])DS[year][titel]={fach:'',categories:{}};
+    /* Spalte 11 „Fachbereich“: je Titel ein fester Wert, der in jeder Preiszeile erneut
+       steht - wie in der MediaQuote-Vorlage. Fehlt die Spalte, bleibt das Feld leer und
+       alles läuft wie bisher: eine einzige Gruppe. */
+    const fach=cellStr(row.getCell(11));
+    if(fach)DS[year][titel].fach=fach;
     const cats=DS[year][titel].categories;
     if(!cats[kat])cats[kat]={};
     cats[kat][fmt]={base:base, s4c:(z4c>0?z4c:null), rabatt:rabatt};
@@ -511,17 +500,61 @@ function pageEquiv(fn) {
   return 1;
 }
 
+/* Fachbereiche: Titel ohne Angabe (oder eine Preisliste ohne die Spalte) landen
+   gemeinsam in einer Sammelgruppe - dort gilt der Staffelrabatt wie früher über alle
+   diese Titel hinweg. */
+const OHNE_FACH = 'Ohne Fachbereich';
+function esc(s){ return String(s).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])); }
+function fachVon(titel) { return (((DATA[titel] || {}).fach || '').trim()) || OHNE_FACH; }
+
+// Titel-Auswahl: stehen in der Preisliste mindestens zwei Fachbereiche, werden die Titel
+// danach gebündelt - dasselbe optgroup-Muster wie in der MediaQuote-Vorlage. Ohne die
+// Spalte bleibt die Liste flach wie bisher.
+function titelOptionenHtml(titles) {
+  const m = new Map();
+  titles.forEach(t => {
+    const k = fachVon(t);
+    if (!m.has(k)) m.set(k, []);
+    m.get(k).push(t);
+  });
+  const opts = ts => ts.map(t => `<option value="${esc(t)}">${esc(t)}</option>`).join('');
+  if (m.size < 2) return opts(titles);
+  const ls = [...m.keys()].filter(k => k !== OHNE_FACH)
+    .sort((a, b) => a.localeCompare(b, 'de', { numeric: true, sensitivity: 'base' }));
+  if (m.has(OHNE_FACH)) ls.push(OHNE_FACH);
+  return ls.map(l => `<optgroup label="${esc(l)}">` + opts(m.get(l)) + '</optgroup>').join('');
+}
+
+/* Staffel je Fachgruppe: der Rabatt gilt titelübergreifend, aber nur innerhalb einer
+   Fachgruppe - Onkologie zählt nicht zu Urologie und umgekehrt. Die Reihenfolge der
+   Gruppen ist die des Pakets, damit Leiste und Tabelle gleich sortiert sind. */
+function staffelGruppen() {
+  const g = new Map();
+  items.forEach(it => {
+    const k = fachVon(it.journal);
+    if (!g.has(k)) g.set(k, { fach: k, items: [], totalMal: 0, totalMenge: 0 });
+    const e = g.get(k);
+    e.items.push(it);
+    if (it.rabatt) { e.totalMal += it.count; e.totalMenge += it.count * pageEquiv(it.fn); }
+  });
+  return [...g.values()].map(e => {
+    e.totalMenge = round2(e.totalMenge);
+    e.malPct     = getMalRabatt(e.totalMal);
+    e.mengePct   = getMengeRabatt(e.totalMenge);
+    e.applied    = Math.max(e.malPct, e.mengePct);
+    e.whichLabel = e.mengePct > e.malPct ? 'Mengenstaffel' : e.malPct > 0 ? 'Malstaffel' : null;
+    return e;
+  });
+}
+
 // ─── STATE ────────────────────────────────────────────────────────────────────
 let items = [], nextId = 1;
 
 // ─── DROPDOWNS INIT ───────────────────────────────────────────────────────────
 function initDropdowns() {
   const jSel = document.getElementById('aJournal');
-  jSel.innerHTML = '';
   const titles = Object.keys(DATA);
-  titles.forEach(j => {
-    const o = document.createElement('option'); o.value = o.textContent = j; jSel.appendChild(o);
-  });
+  jSel.innerHTML = titelOptionenHtml(titles);
   const hasData = titles.length > 0;
   const addBtn = document.querySelector('.btn-add');
   if (addBtn) addBtn.disabled = !hasData;
@@ -599,45 +632,22 @@ function clearAll() { items = []; render(); saveStand(); }
 function render() {
   const useAE = document.getElementById('optAE').checked;
 
-  // Staffel only from rabatt:true items
-  const ri = items.filter(it => it.rabatt);
-  const totalMal   = ri.reduce((s, it) => s + it.count, 0);
-  const totalMenge = round2(ri.reduce((s, it) => s + it.count * pageEquiv(it.fn), 0));
-  const malPct     = getMalRabatt(totalMal);
-  const mengePct   = getMengeRabatt(totalMenge);
-  const applied    = Math.max(malPct, mengePct);
-  const whichLabel = mengePct > malPct ? 'Mengenstaffel' : malPct > 0 ? 'Malstaffel' : null;
+  // Staffel: je Fachgruppe getrennt, gezählt werden nur rabattfähige Positionen
+  const gruppen = staffelGruppen();
+  const mehrere = gruppen.length > 1;
 
-  // Staffel bar
-  const bar = document.getElementById('staffelBar');
+  // Staffel-Leisten
+  const wrap = document.getElementById('staffelWrap');
   if (items.length > 0) {
-    bar.style.display = 'flex';
-    document.getElementById('sTotalMal').textContent   = totalMal;
-    document.getElementById('sTotalMenge').textContent = totalMenge.toLocaleString('de-DE', { maximumFractionDigits: 2 });
-    document.getElementById('sMalPct').textContent   = malPct   > 0 ? Math.round(malPct*100)   + ' %' : '–';
-    document.getElementById('sMengePct').textContent = mengePct > 0 ? Math.round(mengePct*100) + ' %' : '–';
-    document.getElementById('sApplied').textContent  = applied  > 0 ? Math.round(applied*100)  + ' %' : 'kein Rabatt';
-
-    const malWins   = whichLabel === 'Malstaffel';
-    const mengeWins = whichLabel === 'Mengenstaffel';
-
-    const malNote = document.getElementById('sMalNote');
-    malNote.textContent = malPct > 0 ? (malWins ? '✓ wird angewendet' : '') : totalMal < 3 ? 'ab 3 Schaltungen' : '';
-    malNote.className = 's-note' + (malWins ? ' active' : '');
-
-    const mengeNote = document.getElementById('sMengeNote');
-    mengeNote.textContent = mengePct > 0 ? (mengeWins ? '✓ wird angewendet' : '') : totalMenge < 3 ? 'ab 3 Seiten' : '';
-    mengeNote.className = 's-note' + (mengeWins ? ' active' : '');
-
-    const appNote = document.getElementById('sAppliedNote');
-    appNote.textContent = whichLabel ? '(' + whichLabel + ')' : 'Normal-/Vorzugs-/Festplatz. buchen';
-    appNote.className = 's-note' + (applied > 0 ? ' active' : '');
-
-    // Progress steps
-    renderProgress('sMalProgress',   totalMal,   [[3,'3 %'],[6,'5 %'],[12,'10 %'],[18,'15 %']]);
-    renderProgress('sMengeProgress', totalMenge, [[3,'5 %'],[6,'10 %'],[12,'15 %'],[18,'20 %']]);
+    wrap.style.display = '';
+    wrap.innerHTML = gruppen.map((g, i) => staffelBarHtml(g, mehrere, i)).join('');
+    gruppen.forEach((g, i) => {
+      renderProgress('sMalProgress-' + i,   g.totalMal,   [[3,'3 %'],[6,'5 %'],[12,'10 %'],[18,'15 %']]);
+      renderProgress('sMengeProgress-' + i, g.totalMenge, [[3,'5 %'],[6,'10 %'],[12,'15 %'],[18,'20 %']]);
+    });
   } else {
-    bar.style.display = 'none';
+    wrap.style.display = 'none';
+    wrap.innerHTML = '';
   }
 
   // Empty state
@@ -656,44 +666,54 @@ function render() {
   let sumList = 0, sumRabatt = 0, sumAfter = 0, sumAE = 0, sumNet = 0;
   let rows = '';
 
-  items.forEach(it => {
-    const s4cVal   = it.use4c ? (it.s4c || 0) : 0;
-    const list     = (it.base + s4cVal) * it.count;
-    const rBase    = it.rabatt ? it.base : 0;
-    const rabEuro  = rBase * applied * it.count;
-    const after    = list - rabEuro;
-    const aeEuro   = useAE ? round2(after * 0.10) : 0;
-    const net      = after - aeEuro;
+  const spalten = useAE ? 9 : 8;   // Titel, Format, Anz., Listenpreis, Rabatt, nach Rabatt, [AE], Netto, Entfernen
 
-    sumList   += list;
-    sumRabatt += rabEuro;
-    sumAfter  += after;
-    sumAE     += aeEuro;
-    sumNet    += net;
+  gruppen.forEach(g => {
+    if (mehrere) {
+      const satz = g.applied > 0
+        ? `<span class="fach-rab">Staffelrabatt ${Math.round(g.applied * 100)} % (${g.whichLabel})</span>`
+        : '<span class="fach-rab">kein Staffelrabatt</span>';
+      rows += `<tr class="fach-row"><td colspan="${spalten}">${g.fach}${satz}</td></tr>`;
+    }
+    g.items.forEach(it => {
+      const s4cVal   = it.use4c ? (it.s4c || 0) : 0;
+      const list     = (it.base + s4cVal) * it.count;
+      const rBase    = it.rabatt ? it.base : 0;
+      const rabEuro  = rBase * g.applied * it.count;
+      const after    = list - rabEuro;
+      const aeEuro   = useAE ? round2(after * 0.10) : 0;
+      const net      = after - aeEuro;
 
-    const colorTag = it.s4c ? (it.use4c
-      ? '<span class="tag-4c">4c</span>'
-      : '<span class="tag-sw">s/w</span>') : '';
-    const nrTag = !it.rabatt
-      ? '<span class="tag-nr">nicht rabattfähig</span>' : '';
-    const rabDisp = (it.rabatt && applied > 0)
-      ? `<td class="r save">–${euro(rabEuro)}<br><span style="font-size:10px;color:var(--grey-500);">(${Math.round(applied*100)} %)</span></td>`
-      : `<td class="r" style="color:var(--grey-500);">–</td>`;
-    const aeDisp = useAE
-      ? `<td class="r orange">–${euro(aeEuro)}</td>` : '';
+      sumList   += list;
+      sumRabatt += rabEuro;
+      sumAfter  += after;
+      sumAE     += aeEuro;
+      sumNet    += net;
 
-    rows += `<tr>
-      <td class="journal">${it.journal}</td>
-      <td class="format-cell">${it.fn}${colorTag}${nrTag}</td>
-      <td><input class="count-inp" type="number" min="1" max="99" value="${it.count}"
-        onchange="updateAnz(${it.id},this.value)"></td>
-      <td class="r">${euro(list)}</td>
-      ${rabDisp}
-      <td class="r">${euro(after)}</td>
-      ${aeDisp}
-      <td class="r navy">${euro(net)}</td>
-      <td><button class="btn-rm" onclick="removeItem(${it.id})" title="Entfernen">✕</button></td>
-    </tr>`;
+      const colorTag = it.s4c ? (it.use4c
+        ? '<span class="tag-4c">4c</span>'
+        : '<span class="tag-sw">s/w</span>') : '';
+      const nrTag = !it.rabatt
+        ? '<span class="tag-nr">nicht rabattfähig</span>' : '';
+      const rabDisp = (it.rabatt && g.applied > 0)
+        ? `<td class="r save">–${euro(rabEuro)}<br><span style="font-size:10px;color:var(--grey-500);">(${Math.round(g.applied*100)} %)</span></td>`
+        : `<td class="r" style="color:var(--grey-500);">–</td>`;
+      const aeDisp = useAE
+        ? `<td class="r orange">–${euro(aeEuro)}</td>` : '';
+
+      rows += `<tr>
+        <td class="journal">${it.journal}</td>
+        <td class="format-cell">${it.fn}${colorTag}${nrTag}</td>
+        <td><input class="count-inp" type="number" min="1" max="99" value="${it.count}"
+          onchange="updateAnz(${it.id},this.value)"></td>
+        <td class="r">${euro(list)}</td>
+        ${rabDisp}
+        <td class="r">${euro(after)}</td>
+        ${aeDisp}
+        <td class="r navy">${euro(net)}</td>
+        <td><button class="btn-rm" onclick="removeItem(${it.id})" title="Entfernen">✕</button></td>
+      </tr>`;
+    });
   });
 
   const aeHeader = useAE ? '<th class="r">AE 10 %</th>' : '';
@@ -730,9 +750,49 @@ function render() {
       </table>
     </div>
     <div class="basket-foot-note">
-      Preise ${currentYear} · Staffelrabatt titelübergreifend · nur Normal-, Vorzugs- und Festplatzierungen zählen für die Staffelschwelle ·
+      Preise ${currentYear} · Staffelrabatt titelübergreifend innerhalb eines Fachbereichs · nur Normal-, Vorzugs- und Festplatzierungen zählen für die Staffelschwelle ·
       Seiten-Äquivalente: 1/1 = 1,0 · 1/2 = 0,5 · 1/3 ≈ 0,33 · 1/4 = 0,25 · 2/1 = 2,0 · A5 = 0,5 · Titelseitenfuß = 1,0 · Insel/Insel maxi/Tunnel klein = 0,25
     </div>`;
+}
+
+/* Eine Staffel-Leiste je Fachgruppe. Die Überschrift steht nur da, wo das Paket mehr als
+   eine Fachgruppe enthält - sonst sieht die Anzeige aus wie bisher. */
+function staffelBarHtml(g, mitUeberschrift, i) {
+  const malWins   = g.whichLabel === 'Malstaffel';
+  const mengeWins = g.whichLabel === 'Mengenstaffel';
+  const malNote   = g.malPct   > 0 ? (malWins   ? '✓ wird angewendet' : '') : g.totalMal   < 3 ? 'ab 3 Schaltungen' : '';
+  const mengeNote = g.mengePct > 0 ? (mengeWins ? '✓ wird angewendet' : '') : g.totalMenge < 3 ? 'ab 3 Seiten' : '';
+  const appNote   = g.whichLabel ? '(' + g.whichLabel + ')' : 'Normal-/Vorzugs-/Festplatz. buchen';
+  return `<div class="staffel-group">
+    ${mitUeberschrift ? `<div class="staffel-fach">${esc(g.fach)}</div>` : ''}
+    <div class="staffel-bar">
+      <div class="staffel-item">
+        <div class="s-label">Rabattfähige Schaltungen</div>
+        <div class="s-val">${g.totalMal}</div>
+        <div class="staffel-progress" id="sMalProgress-${i}"></div>
+      </div>
+      <div class="staffel-item">
+        <div class="s-label">Seiten-Äquivalente</div>
+        <div class="s-val">${g.totalMenge.toLocaleString('de-DE', { maximumFractionDigits: 2 })}</div>
+        <div class="staffel-progress" id="sMengeProgress-${i}"></div>
+      </div>
+      <div class="staffel-item">
+        <div class="s-label">Malstaffel</div>
+        <div class="s-val">${g.malPct > 0 ? Math.round(g.malPct*100) + ' %' : '–'}</div>
+        <div class="s-note${malWins ? ' active' : ''}">${malNote}</div>
+      </div>
+      <div class="staffel-item">
+        <div class="s-label">Mengenstaffel</div>
+        <div class="s-val">${g.mengePct > 0 ? Math.round(g.mengePct*100) + ' %' : '–'}</div>
+        <div class="s-note${mengeWins ? ' active' : ''}">${mengeNote}</div>
+      </div>
+      <div class="staffel-item highlight">
+        <div class="s-label">Angewendeter Rabatt</div>
+        <div class="s-val">${g.applied > 0 ? Math.round(g.applied*100) + ' %' : 'kein Rabatt'}</div>
+        <div class="s-note${g.applied > 0 ? ' active' : ''}">${appNote}</div>
+      </div>
+    </div>
+  </div>`;
 }
 
 function renderProgress(elId, val, steps) {
