@@ -33,6 +33,14 @@
     --bg: #f4f6fa;            /* Seitenhintergrund · kühles Off-White */
     --shadow-sm: 0 1px 3px rgba(0,40,90,.08);   /* dezenter Kartenschatten (wie OpenSlots) */
     --shadow-md: 0 2px 8px rgba(0,40,90,.10);
+    /* Eckenradien als Staffel statt gestreuter Einzelwerte, nach dem Vorbild von
+       OpenSlots. sm = Kennzeichen und kleine Felder, md = Knöpfe und Bedienfelder,
+       lg = Karten und Leisten, xl = die Datenleiste im Kopf. Der Schieberegler
+       (20px/50%) bleibt außen vor, seine Form ist keine Abstufung, sondern rund. */
+    --radius-sm: 4px;
+    --radius-md: 6px;
+    --radius-lg: 8px;
+    --radius-xl: 10px;
     --font-body: 'Source Sans 3', system-ui, Arial, Helvetica, sans-serif;
     --font-display: 'Source Sans 3', system-ui, Arial, Helvetica, sans-serif;
     --font-title: 'Playfair Display', Georgia, 'Times New Roman', serif;
@@ -55,26 +63,29 @@
   .sm-hero p { font-size: 12.5px; color: rgba(255,255,255,.72); font-weight: 400; line-height: 1.4; text-wrap: pretty; }
   .sm-hero p strong { color: rgba(255,255,255,.9); font-weight: 600; }
   /* ── Daten-Leiste ── */
-  .data-bar { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 12px 16px; margin-bottom: 20px; box-shadow: var(--shadow-sm); }
-  .btn-data { display: inline-flex; align-items: center; gap: 7px; background: var(--navy); color: var(--white); border: none; border-radius: 7px; padding: 9px 15px; font-size: 13px; font-weight: 600; cursor: pointer; font-family: var(--font-body); }
+  .data-bar { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-xl); padding: 12px 16px; margin-bottom: 20px; box-shadow: var(--shadow-sm); }
+  /* Feste Höhe statt senkrechter Polsterung, wie bei MediaQuote: sonst bekommen die
+     Knöpfe je nach Schriftgröße und Kantenstärke unterschiedliche Höhen. Mit
+     box-sizing: border-box (oben global gesetzt) zählt die Kante nicht zusätzlich. */
+  .btn-data { display: inline-flex; align-items: center; gap: 7px; background: var(--navy); color: var(--white); border: none; border-radius: var(--radius-md); height: 30px; padding: 0 15px; font-size: 13px; font-weight: 600; cursor: pointer; font-family: var(--font-body); }
   .btn-data:hover { background: var(--navy-hover); }
   .data-year { font-size: 13px; color: var(--text); font-weight: 600; display: inline-flex; align-items: center; gap: 6px; }
   /* Nativer Auswahlpfeil wie bei Titel/Kategorie/Format – der Jahrgang zeichnete ihn
      vorher selbst als Hintergrundbild. */
-  .data-year select { font-family: var(--font-body); font-size: 13px; font-weight: 600; padding: 5px 8px; border: 1px solid var(--border); border-radius: 6px; background-color: var(--white); color: var(--text); cursor: pointer; appearance: auto; -webkit-appearance: auto; }
+  .data-year select { font-family: var(--font-body); font-size: 13px; font-weight: 600; padding: 5px 8px; border: 1px solid var(--border); border-radius: var(--radius-md); background-color: var(--white); color: var(--text); cursor: pointer; appearance: auto; -webkit-appearance: auto; }
   .data-status { font-size: 12.5px; color: var(--grey-600); }
   .data-status.loaded { color: var(--navy); font-weight: 600; }
-  .data-error { display: inline-flex; align-items: center; gap: 6px; font-size: 12.5px; font-weight: 600; color: var(--red); background: #fdeaea; border: 1px solid #f3c0c0; border-radius: 6px; padding: 4px 10px; }
+  .data-error { display: inline-flex; align-items: center; gap: 6px; font-size: 12.5px; font-weight: 600; color: var(--red); background: #fdeaea; border: 1px solid #f3c0c0; border-radius: var(--radius-md); padding: 4px 10px; }
   .data-error svg { flex: none; }
   /* Hinweis, kein Fehler: bewusst neutral gehalten. Rot wäre falsch - es ist nichts
      schiefgegangen, es fehlt nur ein Posten in der Preisliste. Das helle Springer-Blau
      bleibt der Ersparnis vorbehalten, deshalb die neutrale Fläche. */
   .data-note { display: inline-flex; align-items: center; gap: 6px; font-size: 12.5px;
     color: var(--grey-600); background: var(--surface); border: 1px solid var(--border);
-    border-radius: 6px; padding: 4px 6px 4px 10px; max-width: 100%; }
+    border-radius: var(--radius-md); padding: 4px 6px 4px 10px; max-width: 100%; }
   .data-note svg { flex: none; color: var(--navy); }
   .note-x { border: none; background: none; cursor: pointer; color: var(--grey-500);
-    font-size: 12px; line-height: 1; padding: 3px 4px; border-radius: 4px; }
+    font-size: 12px; line-height: 1; padding: 3px 4px; border-radius: var(--radius-sm); }
   .note-x:hover { color: var(--navy); background: var(--surface-hover); }
   .note-x:focus-visible { outline: 2px solid var(--navy); outline-offset: 1px; }
   select:disabled, input:disabled, .btn-add:disabled { opacity: 0.5; cursor: not-allowed; }
@@ -83,7 +94,7 @@
   .wrap { max-width: 1240px; margin: 24px auto; padding: 0 20px; }
 
   /* ── Add-item card ── */
-  .add-card { background: var(--white); border-radius: 8px; border: 1px solid var(--border); padding: 20px 24px; margin-bottom: 20px; box-shadow: var(--shadow-sm); }
+  .add-card { background: var(--white); border-radius: var(--radius-lg); border: 1px solid var(--border); padding: 20px 24px; margin-bottom: 20px; box-shadow: var(--shadow-sm); }
   .add-card h2 { font-family: var(--font-display); font-size: 11px; font-weight: 700; color: var(--navy); text-transform: uppercase; letter-spacing: 0.7px; margin-bottom: 14px; padding-bottom: 9px; border-bottom: 2px solid var(--navy); }
 
   .add-row { display: flex; gap: 10px; align-items: flex-end; flex-wrap: wrap; }
@@ -94,7 +105,7 @@
   .add-field.f-format { flex: 1 1 220px; min-width: 180px; }
   .add-field.f-anz    { flex: 0 0 72px; }
 
-  select, input[type=number] { width: 100%; padding: 8px 10px; border: 1px solid var(--border); border-radius: 4px; font-size: 13px; background: var(--white); color: var(--text); appearance: none; outline: none; transition: border-color 0.15s; }
+  select, input[type=number] { width: 100%; padding: 8px 10px; border: 1px solid var(--border); border-radius: var(--radius-sm); font-size: 13px; background: var(--white); color: var(--text); appearance: none; outline: none; transition: border-color 0.15s; }
   /* Handsymbol nur für die Auswahlfelder, nicht für die Zahlenfelder daneben.
      Die Regel select:disabled weiter oben ist genauer und behält bei gesperrten
      Feldern den Verbotszeiger. */
@@ -111,7 +122,7 @@
   label:focus-visible, [tabindex]:focus-visible {
     outline: 2px solid var(--navy);
     outline-offset: 2px;
-    border-radius: 4px;
+    border-radius: var(--radius-sm);
   }
 
   /* 4c toggle inline */
@@ -125,21 +136,21 @@
   input:checked + .slider { background: var(--navy); }
   input:checked + .slider:before { transform: translateX(16px); }
 
-  .btn-add { flex-shrink: 0; padding: 9px 20px; background: var(--navy); color: var(--white); border: none; border-radius: 5px; font-size: 13px; font-weight: 700; cursor: pointer; transition: background .15s; white-space: nowrap; align-self: flex-end; }
+  .btn-add { flex-shrink: 0; display: inline-flex; align-items: center; justify-content: center; height: 30px; padding: 0 15px; background: var(--navy); color: var(--white); border: none; border-radius: var(--radius-md); font-size: 13px; font-weight: 700; cursor: pointer; transition: background .15s; white-space: nowrap; align-self: flex-end; }
   .btn-add:hover { background: var(--navy-hover); }
 
   /* ── Options bar ── */
-  .options-bar { display: flex; align-items: center; gap: 20px; background: var(--white); border-radius: 8px; border: 1px solid var(--border); padding: 12px 24px; margin-bottom: 20px; flex-wrap: wrap; box-shadow: var(--shadow-sm); }
+  .options-bar { display: flex; align-items: center; gap: 20px; background: var(--white); border-radius: var(--radius-lg); border: 1px solid var(--border); padding: 12px 24px; margin-bottom: 20px; flex-wrap: wrap; box-shadow: var(--shadow-sm); }
   .opt-group { display: flex; align-items: center; gap: 8px; }
   .opt-group label { font-size: 13px; font-weight: 500; color: var(--navy); cursor: pointer; display: flex; align-items: center; gap: 7px; }
   .opt-group .tag { font-size: 11px; color: var(--grey-600); font-weight: 400; }
   .sep { width: 1px; height: 24px; background: var(--border); }
-  .btn-clear { margin-left: auto; display: inline-flex; align-items: center; gap: 6px; background: var(--red); border: 1px solid var(--red); color: var(--white); padding: 5px 12px; border-radius: 4px; font-size: 12px; font-weight: 600; cursor: pointer; transition: all .15s; }
+  .btn-clear { margin-left: auto; display: inline-flex; align-items: center; gap: 6px; background: var(--red); border: 1px solid var(--red); color: var(--white); height: 30px; padding: 0 12px; border-radius: var(--radius-md); font-size: 12px; font-weight: 600; cursor: pointer; transition: all .15s; }
   .btn-clear:hover { background: #9c1414; border-color: #9c1414; }
   .btn-data:active, .btn-add:active, .btn-clear:active { transform: translateY(1px); }
 
   /* ── Staffel summary ── */
-  .staffel-bar { display: flex; gap: 0; background: var(--navy); border-radius: 8px; overflow: hidden; margin-bottom: 20px; }
+  .staffel-bar { display: flex; gap: 0; background: var(--navy); border-radius: var(--radius-lg); overflow: hidden; margin-bottom: 20px; }
   .staffel-item { flex: 1; padding: 14px 20px; border-right: 1px solid rgba(255,255,255,0.1); }
   .staffel-item:last-child { border-right: none; }
   .staffel-item .s-label { font-size: 10px; font-weight: 700; color: rgba(255,255,255,0.5); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 4px; }
@@ -155,12 +166,12 @@
 
   /* Progress steps */
   .staffel-progress { display: flex; gap: 4px; align-items: center; flex-wrap: wrap; margin-top: 6px; }
-  .s-step { font-size: 10px; padding: 2px 6px; border-radius: 8px; background: rgba(255,255,255,0.1); color: rgba(255,255,255,0.45); font-weight: 600; }
+  .s-step { font-size: 10px; padding: 2px 6px; border-radius: var(--radius-lg); background: rgba(255,255,255,0.1); color: rgba(255,255,255,0.45); font-weight: 600; }
   .s-step.done { background: var(--blue); color: white; }
   .s-step.current { background: var(--orange); color: white; }
 
   /* ── Basket table ── */
-  .basket-wrap { background: var(--white); border-radius: 8px; border: 1px solid var(--border); overflow: hidden; box-shadow: var(--shadow-sm); }
+  .basket-wrap { background: var(--white); border-radius: var(--radius-lg); border: 1px solid var(--border); overflow: hidden; box-shadow: var(--shadow-sm); }
   .basket-empty { padding: 48px 24px; text-align: center; color: var(--grey-500); }
   .basket-empty p { font-size: 13px; line-height: 1.8; text-wrap: pretty; }
 
@@ -179,8 +190,8 @@
   td.journal { font-weight: 600; color: var(--navy); font-size: 12px; white-space: nowrap; }
   td.format-cell { max-width: 220px; }
 
-  .tag-4c  { display: inline-block; font-size: 10px; background: var(--surface); color: var(--navy); font-weight: 600; padding: 1px 5px; border-radius: 3px; margin-left: 4px; vertical-align: middle; }
-  .tag-sw  { display: inline-block; font-size: 10px; background: var(--surface); color: var(--grey-600); padding: 1px 5px; border-radius: 3px; margin-left: 4px; vertical-align: middle; }
+  .tag-4c  { display: inline-block; font-size: 10px; background: var(--surface); color: var(--navy); font-weight: 600; padding: 1px 5px; border-radius: var(--radius-sm); margin-left: 4px; vertical-align: middle; }
+  .tag-sw  { display: inline-block; font-size: 10px; background: var(--surface); color: var(--grey-600); padding: 1px 5px; border-radius: var(--radius-sm); margin-left: 4px; vertical-align: middle; }
   .tag-nr  { display: block; font-size: 10px; color: var(--orange-dark); margin-top: 2px; }
 
   /* Überschriftzeile je Fachgruppe im Warenkorb; nur bei mehr als einer Gruppe */
@@ -188,8 +199,8 @@
   tbody tr.fach-row:hover td { background: var(--surface); }
   tbody tr.fach-row .fach-rab { font-weight: 600; color: var(--blue); text-transform: none; letter-spacing: 0; margin-left: 8px; }
 
-  .count-inp { width: 56px; padding: 5px 8px; font-size: 13px; text-align: center; border: 1px solid var(--border); border-radius: 4px; font-variant-numeric: tabular-nums; }
-  .btn-rm { background: none; border: none; color: var(--grey-500); cursor: pointer; font-size: 15px; padding: 4px 7px; border-radius: 4px; transition: color .15s; }
+  .count-inp { width: 56px; padding: 5px 8px; font-size: 13px; text-align: center; border: 1px solid var(--border); border-radius: var(--radius-sm); font-variant-numeric: tabular-nums; }
+  .btn-rm { background: none; border: none; color: var(--grey-500); cursor: pointer; font-size: 15px; padding: 4px 7px; border-radius: var(--radius-sm); transition: color .15s; }
   .btn-rm:hover { color: var(--red); background: #fdeaea; }
 
   /* Subtotal row */
