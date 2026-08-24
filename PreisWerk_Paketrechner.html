@@ -96,9 +96,13 @@
   select:focus, input[type=number]:focus { border-color: var(--navy); box-shadow: 0 0 0 2px rgba(0,40,90,.08); }
   /* Titel/Kategorie/Format: nativer Auswahlpfeil wie bei MediaQuote */
   .add-field select { appearance: auto; -webkit-appearance: auto; padding-right: 22px; }
-  /* Sichtbarer Fokus-Ring für Tastaturbedienung (Maus-Klick bleibt ringfrei) */
-  a:focus-visible, button:focus-visible, select:focus-visible,
-  input:focus-visible, label:focus-visible, [tabindex]:focus-visible {
+  /* Sichtbarer Fokus-Ring für Tastaturbedienung. Nur für Knöpfe und Verweise: bei
+     Auswahlfeldern und Zahlenfeldern zieht der Browser :focus-visible auch beim
+     Mausklick heran, der Ring stünde dort also bei jedem Anklicken um das Feld.
+     Diese Felder zeigen den Fokus stattdessen dezent über :focus - Rahmenfarbe und
+     ein weicher Schein, wie in der MediaQuote-Vorlage. */
+  a:focus-visible, button:focus-visible,
+  label:focus-visible, [tabindex]:focus-visible {
     outline: 2px solid var(--navy);
     outline-offset: 2px;
     border-radius: 4px;
