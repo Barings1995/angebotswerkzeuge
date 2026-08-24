@@ -26,6 +26,15 @@
        OpenSlots-Angebotsplaner, damit derselbe Vorgang gleich aussieht. */
     --rot: #c0392b;
     --rot-dunkel: #9c2e22;
+    /* Eckenradien als Staffel statt gestreuter Einzelwerte — gleiche Werte wie in
+       PreisWerk und im Geist der OpenSlots-Staffel. sm = Felder, Kennzeichen und die
+       Knöpfe der Leiste, md = Dialogknöpfe, lg = Hinweisfähnchen, xl = Dialogfenster.
+       Die drei ausdrücklichen Nullen (verbundene Adressfelder, Summenzeile, Druckseite)
+       bleiben Nullen — sie meinen »keine Rundung«, nicht »kleinste Stufe«. */
+    --radius-sm:  4px;
+    --radius-md:  6px;
+    --radius-lg:  8px;
+    --radius-xl: 10px;
   }
 
   /* Kurze Speicher-/Status-Bestätigung (unten rechts, blendet selbst aus) */
@@ -36,7 +45,7 @@
     background: var(--navy);
     color: #fff;
     padding: 12px 18px;
-    border-radius: 8px;
+    border-radius: var(--radius-lg);
     font-size: 13px;
     font-weight: 600;
     box-shadow: 0 6px 24px rgba(0,40,90,0.28);
@@ -69,7 +78,7 @@
   .dlg-box {
     background: #fff;
     border: 1px solid var(--border);
-    border-radius: 10px;
+    border-radius: var(--radius-xl);
     box-shadow: 0 6px 24px rgba(0,40,90,0.28);
     max-width: 520px;
     width: 100%;
@@ -86,7 +95,7 @@
     font-size: 13px;
     font-weight: 600;
     padding: 7px 14px;
-    border-radius: 6px;
+    border-radius: var(--radius-md);
     cursor: pointer;
     border: 1px solid var(--navy);
     background: var(--navy);
@@ -114,7 +123,7 @@
     margin: 0 auto;
     padding: 36px 44px;
     box-shadow: 0 2px 20px rgba(0,40,90,0.12);
-    border-radius: 4px;
+    border-radius: var(--radius-sm);
   }
 
 
@@ -257,7 +266,7 @@
   .adress-box-text {
     width: 100%;
     border: 1px solid var(--border);
-    border-radius: 3px;
+    border-radius: var(--radius-sm);
     padding: 8px;
     font-family: inherit;
     font-size: 12.5px;
@@ -280,7 +289,7 @@
   /* Unterteiltes Empfängerfeld: ein Rahmen, oben Adresse, unten Kampagne/Produkt */
   .empfaenger-box {
     border: 1px solid var(--border);
-    border-radius: 3px;
+    border-radius: var(--radius-sm);
     background: var(--light-bg);
     overflow: hidden;
   }
@@ -367,7 +376,7 @@
   .positions-table td input[type="number"] {
     width: 100%;
     border: 1px solid #ccd3dc;
-    border-radius: 3px;
+    border-radius: var(--radius-sm);
     padding: 4px 5px;
     white-space: normal;
     word-break: break-word;
@@ -401,7 +410,7 @@
     width: 100%;
     margin-top: 4px;
     border: 1px dashed #ccd3dc;
-    border-radius: 3px;
+    border-radius: var(--radius-sm);
     padding: 3px 5px;
     font-size: 10.5px;
     font-family: inherit;
@@ -451,7 +460,7 @@
     background: rgba(255,255,255,0.18);
     border: 1px solid rgba(255,255,255,0.45);
     color: #fff;
-    border-radius: 3px;
+    border-radius: var(--radius-sm);
     width: 17px;
     height: 15px;
     font-size: 9px;
@@ -526,7 +535,7 @@
     font-size: 16px;
     line-height: 1;
     padding: 2px 4px;
-    border-radius: 3px;
+    border-radius: var(--radius-sm);
     transition: background 0.15s;
   }
   .btn-del:hover { background: #fdecea; }
@@ -543,7 +552,7 @@
     color: #fff;
     border: none;
     padding: 8px 18px;
-    border-radius: 4px;
+    border-radius: var(--radius-sm);
     font-size: 12.5px;
     font-weight: 600;
     cursor: pointer;
@@ -614,7 +623,7 @@
   .bemerkungen-text {
     width: 100%;
     border: 1px solid var(--border);
-    border-radius: 3px;
+    border-radius: var(--radius-sm);
     padding: 10px;
     font-family: inherit;
     font-size: 12.5px;
@@ -655,7 +664,7 @@
        box-sizing: border-box (global gesetzt) zählt die Kante hier nicht mit. */
     height: 30px;
     padding: 0 16px;
-    border-radius: 4px;
+    border-radius: var(--radius-sm);
     font-size: 12px;
     font-weight: 600;
     cursor: pointer;
@@ -716,7 +725,7 @@
   #yearSelect {
     cursor: pointer;
     border: 1px solid #ccd3dc;
-    border-radius: 4px;
+    border-radius: var(--radius-sm);
     padding: 4px 9px;
     font-size: 12.5px;
     font-family: inherit;
