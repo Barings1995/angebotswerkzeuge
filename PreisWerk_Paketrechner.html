@@ -235,7 +235,7 @@
         <div class="sm-hero-sub">Paket- und Rabattrechner</div>
       </div>
     </div>
-    <p>Daten laden &rarr; Titel, Kategorie und Format w&auml;hlen &rarr; Positionen ins Paket legen. Der <strong>Staffelrabatt</strong> gilt titel&uuml;bergreifend, aber nur innerhalb eines Fachbereichs.</p>
+    <p>Daten laden &rarr; Titel, Kategorie und Format w&auml;hlen &rarr; Positionen ins Paket legen. Der <strong>Staffelrabatt</strong> gilt <span id="heroRegel">titel&uuml;bergreifend, aber nur innerhalb eines Fachbereichs</span>.</p>
   </div>
 </header>
 
@@ -306,8 +306,15 @@
       </label>
     </div>
     <div class="sep"></div>
+    <div class="opt-group">
+      <label>
+        <span class="switch"><input type="checkbox" id="optGemein" onchange="render(); saveStand();"><span class="slider"></span></span>
+        Gemeinschaftsangebot <span class="tag">(Staffel über Fachbereiche hinweg)</span>
+      </label>
+    </div>
+    <div class="sep"></div>
     <div style="font-size:12px; color:var(--grey-600);">
-      Staffelrabatt gilt titelübergreifend innerhalb eines Fachbereichs · nur Normal-, Vorzugs- und Festplatzierungen
+      nur Normal-, Vorzugs- und Festplatzierungen
     </div>
     <button class="btn-clear" onclick="clearAll()">
       <svg width="13" height="13" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true"><path fill-rule="evenodd" d="M4 2a1 1 0 011 1v2.101a7.002 7.002 0 0111.601 2.566 1 1 0 11-1.885.666A5.002 5.002 0 005.999 7H9a1 1 0 010 2H4a1 1 0 01-1-1V3a1 1 0 011-1zm.008 9.057a1 1 0 011.276.61A5.002 5.002 0 0014.001 13H11a1 1 0 110-2h5a1 1 0 011 1v5a1 1 0 11-2 0v-2.101a7.002 7.002 0 01-11.601-2.566 1 1 0 01.61-1.276z" clip-rule="evenodd"/></svg>
@@ -549,10 +556,25 @@ function titelOptionenHtml(titles) {
 /* Staffel je Fachgruppe: der Rabatt gilt titelübergreifend, aber nur innerhalb einer
    Fachgruppe - Onkologie zählt nicht zu Urologie und umgekehrt. Die Reihenfolge der
    Gruppen ist die des Pakets, damit Leiste und Tabelle gleich sortiert sind. */
+/* Gemeinschaftsangebot: Wird der Schalter gesetzt, wandern alle Positionen in einen
+   einzigen Topf. Die Staffel selbst bleibt unverändert - es ist dieselbe Mal- und
+   Mengenstaffel, sie zählt nur über die Fachgrenzen hinweg. Der Ausnahmefall wird
+   damit zur Regel »eine Gruppe«, es braucht keinen zweiten Rechenweg. */
+function gemeinsameStaffel() {
+  const el = document.getElementById('optGemein');
+  return !!(el && el.checked);
+}
+const GEMEIN_FACH = 'Alle Fachbereiche gemeinsam';
+// Wie viele Fachbereiche das Paket tatsächlich enthält - unabhängig vom Schalter.
+function fachAnzahl() {
+  return new Set(items.map(it => fachVon(it.journal))).size;
+}
+
 function staffelGruppen() {
+  const gemein = gemeinsameStaffel();
   const g = new Map();
   items.forEach(it => {
-    const k = fachVon(it.journal);
+    const k = gemein ? GEMEIN_FACH : fachVon(it.journal);
     if (!g.has(k)) g.set(k, { fach: k, items: [], totalMal: 0, totalMenge: 0 });
     const e = g.get(k);
     e.items.push(it);
@@ -655,7 +677,12 @@ function render() {
 
   // Staffel: je Fachgruppe getrennt, gezählt werden nur rabattfähige Positionen
   const gruppen = staffelGruppen();
-  const mehrere = gruppen.length > 1;
+  const gemein  = gemeinsameStaffel();
+  /* Überschrift immer dann, wenn sie etwas erklärt: bei mehreren Gruppen ohnehin - und
+     beim Gemeinschaftsangebot auch dann, wenn der eine Topf mehrere Fachbereiche
+     zusammenfasst. Sonst wäre am Paket nicht abzulesen, dass die Ausnahme greift. */
+  const mehrere = gruppen.length > 1 || (gemein && fachAnzahl() > 1);
+  setStaffelHinweis(gemein);
 
   // Staffel-Leisten
   const wrap = document.getElementById('staffelWrap');
@@ -771,9 +798,21 @@ function render() {
       </table>
     </div>
     <div class="basket-foot-note">
-      Preise ${currentYear} · Staffelrabatt titelübergreifend innerhalb eines Fachbereichs · nur Normal-, Vorzugs- und Festplatzierungen zählen für die Staffelschwelle ·
+      Preise ${currentYear} · Staffelrabatt ${gemein ? 'titel- und fachbereichsübergreifend (Gemeinschaftsangebot)' : 'titelübergreifend innerhalb eines Fachbereichs'} · nur Normal-, Vorzugs- und Festplatzierungen zählen für die Staffelschwelle ·
       Seiten-Äquivalente: 1/1 = 1,0 · 1/2 = 0,5 · 1/3 ≈ 0,33 · 1/4 = 0,25 · 2/1 = 2,0 · A5 = 0,5 · Titelseitenfuß = 1,0 · Insel/Insel maxi/Tunnel klein = 0,25
     </div>`;
+}
+
+/* Welche Regel gerade gilt, sagt der Satz in der Kopfleiste - er stünde sonst im
+   Widerspruch zum gesetzten Schalter. In der Optionenleiste steht die Regel bewusst
+   nicht mehr: Sie ergibt sich dort aus dem Schalter selbst, aus den Gruppenüberschriften
+   und aus der Fußnote unter der Tabelle, und der lange Text hat die Leiste umbrechen
+   lassen. Übrig bleibt dort nur, was sonst erst unter der Tabelle stünde. */
+function setStaffelHinweis(gemein) {
+  const hero = document.getElementById('heroRegel');
+  if (hero) hero.textContent = gemein
+    ? 'titelübergreifend und über Fachbereiche hinweg (Gemeinschaftsangebot)'
+    : 'titelübergreifend, aber nur innerhalb eines Fachbereichs';
 }
 
 /* Eine Staffel-Leiste je Fachgruppe. Die Überschrift steht nur da, wo das Paket mehr als
@@ -846,9 +885,11 @@ function saveStand(){
     standTimer=null;
     try{
       const ae=document.getElementById('optAE');
+      const gm=document.getElementById('optGemein');
       localStorage.setItem(STAND_KEY,JSON.stringify({
         jahr:currentYear,
         ae:!!(ae&&ae.checked),
+        gemein:!!(gm&&gm.checked),
         posten:items.map(function(it){return {journal:it.journal,cat:it.cat,fn:it.fn,use4c:!!it.use4c,count:it.count};})
       }));
     }catch(e){}
@@ -893,6 +934,10 @@ function restoreStand(){
     if(!neu.length&&!fehlend.length)return;
     items=neu;
     const ae=document.getElementById('optAE');if(ae)ae.checked=!!st.ae;
+    /* Muss vor render() stehen: der Schalter entscheidet mit, wie gerechnet wird.
+       Ältere gemerkte Stände kennen das Feld nicht - dann bleibt es bei der Regel
+       »je Fachbereich«, also beim bisherigen Verhalten. */
+    const gm=document.getElementById('optGemein');if(gm)gm.checked=!!st.gemein;
     render();
     if(fehlend.length){
       standFehlend=fehlend;
