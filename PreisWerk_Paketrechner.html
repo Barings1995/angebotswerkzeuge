@@ -93,6 +93,10 @@
   .add-field.f-anz    { flex: 0 0 72px; }
 
   select, input[type=number] { width: 100%; padding: 8px 10px; border: 1px solid var(--border); border-radius: 4px; font-size: 13px; background: var(--white); color: var(--text); appearance: none; outline: none; transition: border-color 0.15s; }
+  /* Handsymbol nur für die Auswahlfelder, nicht für die Zahlenfelder daneben.
+     Die Regel select:disabled weiter oben ist genauer und behält bei gesperrten
+     Feldern den Verbotszeiger. */
+  select { cursor: pointer; }
   select:focus, input[type=number]:focus { border-color: var(--navy); box-shadow: 0 0 0 2px rgba(0,40,90,.08); }
   /* Titel/Kategorie/Format: nativer Auswahlpfeil wie bei MediaQuote */
   .add-field select { appearance: auto; -webkit-appearance: auto; padding-right: 22px; }
