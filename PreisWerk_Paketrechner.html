@@ -401,9 +401,14 @@ function parseWorkbookToDataset(wb){
        alles läuft wie bisher: eine einzige Gruppe. */
     const fach=cellStr(row.getCell(11));
     if(fach)DS[year][titel].fach=fach;
+    /* Spalte 12 „Seiten-Äquivalent“: je Format frei zu hinterlegen, damit sich ein Wert
+       anpassen lässt, ohne das Werkzeug zu ändern. Leer oder 0 heißt: aus dem Formatnamen
+       ableiten (siehe pageEquivAuto). Fehlt die Spalte ganz, rechnet alles wie bisher. */
+    const eqRoh=cellNum(row.getCell(12));
+    const eq=(eqRoh>0?eqRoh:null);
     const cats=DS[year][titel].categories;
     if(!cats[kat])cats[kat]={};
-    cats[kat][fmt]={base:base, s4c:(z4c>0?z4c:null), rabatt:rabatt};
+    cats[kat][fmt]={base:base, s4c:(z4c>0?z4c:null), rabatt:rabatt, eq:eq};
   });
   if(!Object.keys(DS).length)throw new Error('Es wurden keine Datenzeilen gefunden.');
   return DS;
@@ -516,16 +521,27 @@ const euro = n => n.toLocaleString('de-DE', { minimumFractionDigits: 2, maximumF
 const round2 = n => Math.round((n + Number.EPSILON) * 100) / 100;
 function getMalRabatt(n)   { return n>=18?.15 : n>=12?.10 : n>=6?.05 : n>=3?.03 : 0; }
 function getMengeRabatt(n) { return n>=18?.20 : n>=12?.15 : n>=6?.10 : n>=3?.05 : 0; }
-function pageEquiv(fn) {
-  const f = fn.toLowerCase();
-  if (f.includes('2/1') || f.includes('doppelseite')) return 2;
+/* Seiten-Äquivalent eines Formats. Vorrang hat der Wert, der in der Preisliste in der
+   Spalte „Seiten-Äquivalent“ hinterlegt ist; bleibt die Zelle leer, wird er aus dem
+   Formatnamen abgeleitet. So muss nur dort etwas eingetragen werden, wo der abgeleitete
+   Wert nicht passt. */
+function pageEquivAuto(fn) {
+  const f = String(fn).toLowerCase();
   if (f.includes('eh/dh 4')) return 4;
   if (f.includes('eh/dh 2')) return 2;
-  if (f.includes('1/2') || f.includes('a5') || f.includes('halbe')) return 0.5;
-  if (f.includes('3/4')) return 0.75;
-  if (f.includes('1/3')) return 1/3;
-  if (f.includes('1/4') || f.includes('tunnel klein') || f.startsWith('insel ') || f === 'insel') return 0.25;
+  /* Ein Bruch im Namen zählt als das, was er sagt: 1/1 = 1,0 · 1/2 = 0,5 · 3/4 = 0,75 ·
+     2/1 = 2,0 · 2/10 = 0,2. Früher wurde nur auf einzelne Bruch-Bausteine geprüft; „2/10
+     Seite“ traf dabei auf „2/1“ und wurde wie eine Doppelseite gezählt, also zehnfach. */
+  const br = f.match(/(\d+)\s*\/\s*(\d+)/);
+  if (br && Number(br[2]) > 0) return Number(br[1]) / Number(br[2]);
+  if (f.includes('doppelseite')) return 2;
+  if (f.includes('a5') || f.includes('halbe')) return 0.5;
+  if (f.includes('tunnel klein') || f.startsWith('insel ') || f === 'insel') return 0.25;
   return 1;
+}
+function pageEquiv(it) {
+  if (it && typeof it === 'object') return it.eq != null ? it.eq : pageEquivAuto(it.fn);
+  return pageEquivAuto(it);
 }
 
 /* Fachbereiche: Titel ohne Angabe (oder eine Preisliste ohne die Spalte) landen
@@ -578,7 +594,7 @@ function staffelGruppen() {
     if (!g.has(k)) g.set(k, { fach: k, items: [], totalMal: 0, totalMenge: 0 });
     const e = g.get(k);
     e.items.push(it);
-    if (it.rabatt) { e.totalMal += it.count; e.totalMenge += it.count * pageEquiv(it.fn); }
+    if (it.rabatt) { e.totalMal += it.count; e.totalMenge += it.count * pageEquiv(it); }
   });
   return [...g.values()].map(e => {
     e.totalMenge = round2(e.totalMenge);
@@ -654,7 +670,7 @@ function addItem() {
   const use4c = has4c && document.getElementById('a4c').checked;
   const anz   = Math.min(99, Math.max(1, parseInt(document.getElementById('aAnz').value) || 1));
 
-  items.push({ id: nextId++, journal: j, cat, fn, base: fmt.base, s4c: fmt.s4c, use4c, rabatt: fmt.rabatt, count: anz });
+  items.push({ id: nextId++, journal: j, cat, fn, base: fmt.base, s4c: fmt.s4c, use4c, rabatt: fmt.rabatt, eq: (fmt.eq != null ? fmt.eq : null), count: anz });
   render();
   saveStand();
 
@@ -799,7 +815,7 @@ function render() {
     </div>
     <div class="basket-foot-note">
       Preise ${currentYear} · Staffelrabatt ${gemein ? 'titel- und fachbereichsübergreifend (Gemeinschaftsangebot)' : 'titelübergreifend innerhalb eines Fachbereichs'} · nur Normal-, Vorzugs- und Festplatzierungen zählen für die Staffelschwelle ·
-      Seiten-Äquivalente: 1/1 = 1,0 · 1/2 = 0,5 · 1/3 ≈ 0,33 · 1/4 = 0,25 · 2/1 = 2,0 · A5 = 0,5 · Titelseitenfuß = 1,0 · Insel/Insel maxi/Tunnel klein = 0,25
+      Seiten-Äquivalente aus der Preisliste, sonst aus dem Format: 1/1 = 1,0 · 1/2 = 0,5 · 1/3 ≈ 0,33 · 1/4 = 0,25 · 2/1 = 2,0 · A5 = 0,5 · Insel/Tunnel klein = 0,25 · sonst 1,0
     </div>`;
 }
 
@@ -928,6 +944,7 @@ function restoreStand(){
       const has4c=fmt.s4c!==null&&fmt.s4c>0;
       neu.push({id:nextId++,journal:p.journal,cat:p.cat,fn:p.fn,
                 base:fmt.base,s4c:fmt.s4c,rabatt:fmt.rabatt,
+                eq:(fmt.eq!=null?fmt.eq:null),
                 use4c:has4c&&!!p.use4c,
                 count:Math.min(99,Math.max(1,parseInt(p.count)||1))});
     });
