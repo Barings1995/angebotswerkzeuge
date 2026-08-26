@@ -4,9 +4,13 @@ Vier Werkzeuge für Platzierungs- und Preisangebote der Printtitel, mit einer
 gemeinsamen Preisliste. Reines HTML, CSS und JavaScript — kein Bauvorgang, kein Node,
 keine Zusatzbibliotheken außer ExcelJS, das bei Bedarf nachgeladen wird.
 
-Jede Datei läuft weiterhin auch per Doppelklick vom Rechner. Der einzige Unterschied:
-Über eine Adresse holen sich die Werkzeuge die `Angebotsdaten.xlsx` selbst, per
-Doppelklick wird sie wie bisher von Hand geladen.
+Preise und Termine kommen seit dem 27.08.2026 aus einer Datenbank. Die
+`Angebotsdaten.xlsx` bleibt daneben liegen und springt ein, wenn die Datenbank
+nicht antwortet.
+
+Jede Datei läuft weiterhin auch per Doppelklick vom Rechner — und holt sich dabei
+jetzt ebenfalls die aktuellen Zahlen, weil die Datenbank über https erreichbar ist.
+Nur die Nachbardatei darf der Browser aus `file://` heraus nicht lesen.
 
 ## Örtlich starten
 
@@ -34,7 +38,37 @@ Nicht im Repository, nur im Arbeitsordner: die beiden Änderungslogs, der Ordner
 `Sicherungskopien/` mit den früheren Ständen und `Preisliste abgleichen.command`
 (Doppelklick-Helfer, siehe unten) — interne Arbeitsunterlagen (siehe `.gitignore`).
 
+## Woher die Zahlen kommen
+
+Drei Bezugsquellen, in dieser Reihenfolge:
+
+1. **Datenbank** — Supabase-Projekt `angebotswerkzeuge`, Frankfurt, Kennung
+   `ofvpxgnxwzwxbnhtwupq`, 0 €/Monat. Aufbau in `schema.sql`, Zugang in
+   `konfiguration.js`. Lesen ist offen, Ändern nur für Angemeldete aus der Tabelle
+   `berechtigt`.
+2. **`Angebotsdaten.xlsx`** daneben — der Notweg, wenn die Datenbank schweigt.
+3. **Zwischenspeicher im Browser** — der zuletzt geladene Stand.
+
+Die Statuszeile jedes Werkzeugs nennt die Herkunft: „geladen: Preisliste …" gegenüber
+„geladen: Angebotsdaten.xlsx …".
+
+Konten werden im Supabase-Verwaltungsbereich angelegt (*Authentication → Users →
+Add user*, „Auto Confirm User" einschalten), danach die Kennung in `berechtigt`
+eintragen:
+
+```sql
+insert into berechtigt (benutzer_id, notiz)
+values ('<Kennung aus auth.users>', 'Name');
+```
+
 ## Preisliste aktualisieren
+
+> **Achtung, Übergangszustand.** Der Pflegeschirm (Bauabschnitt 2) ist noch nicht
+> gebaut. Eine Änderung allein an der `Angebotsdaten.xlsx` erreicht die Werkzeuge
+> **nicht** — sie lesen die Datenbank und würden weiter die alten Zahlen zeigen. Bis
+> der Pflegeschirm und der Excel-Eingang stehen, muss jede Änderung zusätzlich in die
+> Datenbank übernommen werden (Skript `werkzeug/einspielen.py`, prüfen mit
+> `werkzeug/nachweis.py` — beide bleiben örtlich, siehe `.gitignore`).
 
 1. `Angebotsdaten.xlsx` in Excel ändern und in diesem Ordner speichern.
 2. Örtlich prüfen (siehe oben): Startseite zeigt den neuen Stand, die Werkzeuge zeigen
