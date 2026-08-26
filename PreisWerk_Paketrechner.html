@@ -336,6 +336,7 @@
 
 </main>
 
+<script src="konfiguration.js"></script>
 <script>
 // ─── DATA (wird per Excel-Import aus „Angebotsdaten.xlsx“ befüllt) ───────
 // Struktur: DATA = { titel: { categories: { kategorie: { format: {base, s4c, rabatt} } } } }
@@ -982,6 +983,97 @@ function restoreStand(){
    gemeldet wird er nur in der Statuszeile.
    Dass applyYear() dabei das Paket leert, fällt nicht ins Gewicht: items wird nicht
    gespeichert, beim Seitenstart ist das Paket ohnehin leer. */
+/* ===== PREISLISTE AUS DER DATENBANK =====
+   Erste Bezugsquelle. Gelingt sie nicht, wird wie bisher die Angebotsdaten.xlsx von der
+   Adresse geholt; gelingt auch das nicht, bleibt der gemerkte Stand aus dem Zwischen-
+   speicher. Die Statuszeile sagt in jedem Fall, woher die Zahlen stammen.
+
+   Gelesen wird ohne Anmeldung - die Zeilenschutz-Regeln der Datenbank geben Preise und
+   Termine frei und lassen nur das Aendern gesperrt. Eine einzige Abfrage bringt alles
+   mit: Titel, Preise, Termine, in der hinterlegten Reihenfolge. Sie ist es, die die
+   Reihenfolge bestimmt - nicht die Datenbank von sich aus.
+
+   Die Form, die hier entsteht, ist Zeichen fuer Zeichen dieselbe wie die aus
+   parseWorkbookToDataset(); nur die Herkunft der Zahlen ist eine andere. */
+const DB_FELDER =
+  'jahr,name,auflage,fachbereich,reihenfolge,' +
+  'preis(reihenfolge,kategorie,format,preis,zuschlag_4c,rabattfaehig,ae_faehig,' +
+  'termin_art,seiten_aequivalent)';
+
+function dbErreichbar(){
+  return typeof SUPABASE_URL === 'string' && typeof SUPABASE_ANON_KEY === 'string'
+      && SUPABASE_URL && SUPABASE_ANON_KEY;
+}
+
+async function dbHolen(pfad){
+  const r = await fetch(SUPABASE_URL + '/rest/v1/' + pfad, {
+    headers:{ apikey: SUPABASE_ANON_KEY, Authorization: 'Bearer ' + SUPABASE_ANON_KEY },
+    cache:'no-cache'
+  });
+  if(!r.ok) throw new Error('HTTP ' + r.status);
+  return r.json();
+}
+
+/* Datenbankzeilen -> dieselbe Form wie parseWorkbookToDataset(). */
+function datenbankZuDataset(titel){
+  const DS={};
+  titel.forEach(t=>{
+    const year=String(t.jahr), name=t.name;
+    if(!year||!name)return;
+    if(!DS[year])DS[year]={};
+    if(!DS[year][name])DS[year][name]={fach:'',categories:{}};
+    if(t.fachbereich)DS[year][name].fach=t.fachbereich;
+    const cats=DS[year][name].categories;
+    (t.preis||[]).forEach(z=>{
+      const kat=z.kategorie||'Sonstige', fmt=z.format;
+      if(!fmt)return;
+      const base=z.preis==null?0:Number(z.preis);
+      const z4c=z.zuschlag_4c==null?0:Number(z.zuschlag_4c);
+      if(!cats[kat])cats[kat]={};
+      cats[kat][fmt]={ base:base, s4c:(z4c>0?z4c:null), rabatt:!!z.rabattfaehig,
+                       eq:(z.seiten_aequivalent==null?null:Number(z.seiten_aequivalent)) };
+    });
+  });
+  return DS;
+}
+
+/* Der Stand kommt aus dem juengsten Aenderungszeitpunkt (Sicht „stand"), so wie er
+   bisher aus dem Speicherzeitpunkt der Arbeitsmappe kam. */
+function standAusDatenbank(zeilen){
+  const d=(zeilen&&zeilen[0]&&zeilen[0].geaendert_am)?new Date(zeilen[0].geaendert_am):null;
+  if(!d||isNaN(d))return '';
+  const q=n=>String(n).padStart(2,'0');
+  return ' · Stand '+q(d.getDate())+'.'+q(d.getMonth()+1)+'.'+d.getFullYear();
+}
+
+async function ladePreislisteAusDatenbank(){
+  if(!dbErreichbar())return false;
+  const st=document.getElementById('dataStatus');
+  if(st&&!isCustomData)st.textContent='Preisliste wird geladen …';
+  try{
+    const [titel,stand]=await Promise.all([
+      dbHolen('titel?select='+encodeURIComponent(DB_FELDER)+
+              '&order=jahr.asc,reihenfolge.asc&preis.order=reihenfolge.asc&limit=500'),
+      dbHolen('stand?select=geaendert_am').catch(()=>[])
+    ]);
+    const ds=datenbankZuDataset(titel);
+    if(!ds||!Object.keys(ds).length)throw new Error('Keine Jahrgänge in der Datenbank.');
+    datenStand=standAusDatenbank(stand);
+    DATASET=ds;isCustomData=true;loadedFileName='Preisliste';
+    const ys=years();
+    if(!currentYear||!DATASET[currentYear])currentYear=ys.includes('2026')?'2026':ys[0];
+    clearDataError();
+    const merk=standAktiv; standAktiv=false;
+    applyYear(currentYear);
+    standAktiv=merk;
+    restoreStand();
+    return true;
+  }catch(e){
+    console.warn('Preisliste nicht aus der Datenbank geholt:',e);
+    return false;   /* kein Fehler, sondern der Uebergang zum naechsten Weg */
+  }
+}
+
 const DATEN_DATEI='Angebotsdaten.xlsx';
 async function ladePreislisteVonServer(){
   if(location.protocol==='file:')return false;
@@ -1027,7 +1119,8 @@ restoreStand();
 standAktiv = true;
 /* Zum Schluss die Preisliste von der Adresse holen. Der Aufbau oben läuft vorher, damit
    ohne Netz sofort der gemerkte Stand dasteht statt einer leeren Seite. */
-ladePreislisteVonServer();
+/* Erst die Datenbank, dann - falls sie schweigt - die Datei daneben. */
+ladePreislisteAusDatenbank().then(ok=>{ if(!ok) ladePreislisteVonServer(); });
 </script>
 </body>
 </html>

@@ -1158,6 +1158,7 @@ Bitte reservieren Sie nur budget- und planungsrelevante Platzierungen.</textarea
   </div>
 </div>
 
+<script src="konfiguration.js"></script>
 <script>
 
 const fmt=n=>n.toLocaleString('de-DE',{minimumFractionDigits:2,maximumFractionDigits:2})+'\u202f\u20ac';
@@ -1348,6 +1349,112 @@ function standAusMappe(wb){
   const d=(wb&&wb.modified)?new Date(wb.modified):null;
   return (!d||isNaN(d))?'':('0'+d.getDate()).slice(-2)+'.'+('0'+(d.getMonth()+1)).slice(-2)+'.'+d.getFullYear();
 }
+/* ===== PREISLISTE AUS DER DATENBANK =====
+   Erste Bezugsquelle. Gelingt sie nicht, wird wie bisher die Angebotsdaten.xlsx von der
+   Adresse geholt; gelingt auch das nicht, bleibt der gemerkte Stand aus dem Zwischen-
+   speicher. Die Statuszeile sagt in jedem Fall, woher die Zahlen stammen.
+
+   Gelesen wird ohne Anmeldung - die Zeilenschutz-Regeln der Datenbank geben Preise und
+   Termine frei und lassen nur das Aendern gesperrt.
+
+   Die Termine kommen als Text („22.01.") wie aus der Preisliste und laufen durch
+   dasselbe dateY() wie bisher: es haengt den Jahrgang an, laesst aber eine eigene
+   Jahreszahl („04.12.25") stehen. So bleibt der Jahreswechsel beim Anzeigenschluss
+   richtig getroffen. */
+const DB_FELDER =
+  'jahr,name,auflage,fachbereich,reihenfolge,' +
+  'preis(reihenfolge,kategorie,format,preis,zuschlag_4c,rabattfaehig,ae_faehig,termin_art),' +
+  'termin(reihenfolge,heft,monat,et,anzeigenschluss,du_schluss,eh_termin,themen,kongresse)';
+
+function dbErreichbar(){
+  return typeof SUPABASE_URL==='string'&&typeof SUPABASE_ANON_KEY==='string'
+      &&SUPABASE_URL&&SUPABASE_ANON_KEY;
+}
+
+async function dbHolen(pfad){
+  const r=await fetch(SUPABASE_URL+'/rest/v1/'+pfad,{
+    headers:{apikey:SUPABASE_ANON_KEY,Authorization:'Bearer '+SUPABASE_ANON_KEY},
+    cache:'no-cache'
+  });
+  if(!r.ok)throw new Error('HTTP '+r.status);
+  return r.json();
+}
+
+/* Datenbankzeilen -> dieselbe Form wie parseWorkbookToDataset(). */
+function datenbankZuDataset(zeilen){
+  const Y={};
+  zeilen.forEach(t=>{
+    const year=String(t.jahr),titel=t.name;
+    if(!year||!titel)return;
+    if(!Y[year]){Y[year]={order:[],t:{}};}
+    if(!Y[year].t[titel]){Y[year].t[titel]={order:[],c:{},a:0,f:'',iss:[]};Y[year].order.push(titel);}
+    const T=Y[year].t[titel];
+    const aufl=Number(t.auflage)||0;
+    if(!T.a&&aufl>0)T.a=aufl;
+    if(!T.f&&t.fachbereich)T.f=t.fachbereich;
+    (t.preis||[]).forEach(z=>{
+      const kat=z.kategorie||'Sonstige',fmt=z.format;
+      if(!fmt)return;
+      const gp=z.preis==null?0:Number(z.preis);
+      const z4c=z.zuschlag_4c==null?0:Number(z.zuschlag_4c);
+      const price=z4c>0?[gp,z4c]:gp;
+      if(!T.c[kat]){T.c[kat]=[];T.order.push(kat);}
+      const eintrag=[fmt,price,!!z.rabattfaehig,!!z.ae_faehig];
+      if(z.termin_art)eintrag.push(z.termin_art);
+      T.c[kat].push(eintrag);
+    });
+    (t.termin||[]).forEach(a=>{
+      const heft=a.heft||'',monat=a.monat||'';
+      const label=(heft&&monat)?(heft+' – '+monat):(heft||monat);
+      T.iss.push([label,dateY(a.et||'',year),dateY(a.anzeigenschluss||'',year),
+                  a.themen||'',a.kongresse||'',
+                  dateY(a.du_schluss||'',year),dateY(a.eh_termin||'',year)]);
+    });
+  });
+  const DS={};
+  Object.keys(Y).forEach(year=>{
+    DS[year]={
+      J:Y[year].order.map(titel=>({n:titel,a:Y[year].t[titel].a||0,f:Y[year].t[titel].f||'',
+        g:Y[year].t[titel].order.map(kat=>({l:kat,i:Y[year].t[titel].c[kat]}))})),
+      ISSUES:Y[year].order.map(titel=>Y[year].t[titel].iss)
+    };
+  });
+  return DS;
+}
+
+/* Der Stand kommt aus dem juengsten Aenderungszeitpunkt (Sicht „stand"), so wie er
+   bisher aus dem Speicherzeitpunkt der Arbeitsmappe kam. */
+function standAusDatenbank(zeilen){
+  const d=(zeilen&&zeilen[0]&&zeilen[0].geaendert_am)?new Date(zeilen[0].geaendert_am):null;
+  return (!d||isNaN(d))?'':('0'+d.getDate()).slice(-2)+'.'+('0'+(d.getMonth()+1)).slice(-2)+'.'+d.getFullYear();
+}
+
+async function ladePreislisteAusDatenbank(){
+  if(!dbErreichbar())return false;
+  const st=document.getElementById('dataStatus');
+  if(st&&!isCustomData)st.textContent='Preisliste wird geladen …';
+  try{
+    const [zeilen,stand]=await Promise.all([
+      dbHolen('titel?select='+encodeURIComponent(DB_FELDER)+
+              '&order=jahr.asc,reihenfolge.asc&preis.order=reihenfolge.asc&termin.order=reihenfolge.asc&limit=500'),
+      dbHolen('stand?select=geaendert_am').catch(()=>[])
+    ]);
+    const ds=datenbankZuDataset(zeilen);
+    if(!ds||!Object.keys(ds).length)throw new Error('Keine Jahrgänge in der Datenbank.');
+    datenStand=standAusDatenbank(stand);
+    DATASET=ds;isCustomData=true;loadedFileName='Preisliste';
+    if(!currentYear||!DATASET[currentYear])currentYear=defaultYear();
+    saveCache();
+    const abgleich=refreshTermineImStand(DATASET);
+    applyYear(currentYear);
+    meldeTerminAbgleich(abgleich);
+    return true;
+  }catch(e){
+    console.warn('Preisliste nicht aus der Datenbank geholt:',e);
+    return false;   /* kein Fehler, sondern der Uebergang zum naechsten Weg */
+  }
+}
+
 async function ladePreislisteVonServer(){
   if(location.protocol==='file:')return false;
   const st=document.getElementById('dataStatus');
@@ -2508,7 +2615,8 @@ restorePreis();
 applyYear(pickStartYear());
 /* Zuletzt: Der Zwischenspeicher ist sofort da, die Preisliste von der Adresse holt
    sich die Seite danach nach und baut mit ihr neu auf. */
-ladePreislisteVonServer();
+/* Erst die Datenbank, dann - falls sie schweigt - die Datei daneben. */
+ladePreislisteAusDatenbank().then(ok=>{ if(!ok) ladePreislisteVonServer(); });
 </script>
 </body>
 </html>

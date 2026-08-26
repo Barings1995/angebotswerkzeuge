@@ -1059,6 +1059,7 @@ Es gelten unsere Allgemeinen Geschäftsbedingungen, einsehbar unter <a href="htt
   </div>
 </div>
 
+<script src="konfiguration.js"></script>
 <script>
 // ─────────────────────────────────────────
 //  PREISDATEN 2026 – aus Preise Onko-Titel.xlsx
@@ -1396,6 +1397,121 @@ async function onDataFileChosen(event) {
 // dann bleibt es beim Laden von Hand wie bisher. Ein Fehlschlag ist deshalb kein Fehler.
 // Aufgerufen wird das vor addPosition() und restoreStand(), damit der zuletzt
 // bearbeitete Stand die Preisdaten schon vorfindet – ohne sie legt er nichts an.
+/* ===== PREISLISTE AUS DER DATENBANK =====
+   Erste Bezugsquelle. Gelingt sie nicht, wird wie bisher die Angebotsdaten.xlsx von der
+   Adresse geholt; gelingt auch das nicht, bleibt der gemerkte Stand aus dem Zwischen-
+   speicher. Die Statuszeile sagt in jedem Fall, woher die Zahlen stammen.
+
+   Gelesen wird ohne Anmeldung - die Zeilenschutz-Regeln der Datenbank geben Preise und
+   Termine frei und lassen nur das Aendern gesperrt. Eine einzige Abfrage bringt Titel,
+   Preise und Termine mit, in der hinterlegten Reihenfolge.
+
+   Ein Unterschied zur Excel-Fassung, bewusst und nachgeprueft: dort bleibt „rab" bzw.
+   „ae" weg, wenn die Zelle leer ist (cellBool liefert undefined), hier steht dann false.
+   Ausgewertet werden beide allein ueber „!== true" - fehlend und false wirken damit
+   gleich. Das Info-Blatt der Preisliste haelt es ebenso: eine leere Zelle wirkt wie nein. */
+const DB_FELDER =
+  'jahr,name,auflage,fachbereich,reihenfolge,' +
+  'preis(reihenfolge,kategorie,format,preis,zuschlag_4c,rabattfaehig,ae_faehig,termin_art),' +
+  'termin(reihenfolge,heft,monat,et,anzeigenschluss,du_schluss,eh_termin)';
+
+function dbErreichbar() {
+  return typeof SUPABASE_URL === 'string' && typeof SUPABASE_ANON_KEY === 'string'
+      && SUPABASE_URL && SUPABASE_ANON_KEY;
+}
+
+async function dbHolen(pfad) {
+  const r = await fetch(SUPABASE_URL + '/rest/v1/' + pfad, {
+    headers: { apikey: SUPABASE_ANON_KEY, Authorization: 'Bearer ' + SUPABASE_ANON_KEY },
+    cache: 'no-cache'
+  });
+  if (!r.ok) throw new Error('HTTP ' + r.status);
+  return r.json();
+}
+
+/* Datenbankzeilen -> dieselbe Form wie parseWorkbookToDataset(). */
+function datenbankZuDataset(titel) {
+  const ds = {};
+  titel.forEach(t => {
+    const jahr = String(t.jahr), name = t.name;
+    if (!jahr || !name) return;
+    if (!ds[jahr]) ds[jahr] = { titel: {}, ausgaben: {} };
+    const T = ds[jahr].titel;
+    if (!T[name]) T[name] = { auflage: Number(t.auflage) || 0, hat4c: false, fach: '', kategorien: {} };
+    if (t.fachbereich) T[name].fach = t.fachbereich;
+    (t.preis || []).forEach(z => {
+      const kat = z.kategorie || 'Sonstige', fmt = z.format;
+      if (!fmt) return;
+      const gp = z.preis == null ? 0 : Number(z.preis);
+      const z4c = z.zuschlag_4c == null ? 0 : Number(z.zuschlag_4c);
+      if (!T[name].kategorien[kat]) T[name].kategorien[kat] = {};
+      const entry = { gp: gp, z4c: z4c };
+      if (z.termin_art) entry.termin = z.termin_art;
+      entry.rab = !!z.rabattfaehig;
+      entry.ae  = !!z.ae_faehig;
+      T[name].kategorien[kat][fmt] = entry;
+      if (z4c > 0) T[name].hat4c = true;
+    });
+  });
+  /* Ausgaben in einem zweiten Durchgang: so folgt ihre Reihenfolge derselben Titelfolge
+     wie die Preise, statt der Reihenfolge des Terminblatts. */
+  titel.forEach(t => {
+    const jahr = String(t.jahr), name = t.name;
+    if (!jahr || !name || !(t.termin || []).length) return;
+    if (!ds[jahr]) ds[jahr] = { titel: {}, ausgaben: {} };
+    if (!ds[jahr].ausgaben[name]) ds[jahr].ausgaben[name] = [];
+    t.termin.forEach(a => ds[jahr].ausgaben[name].push({
+      heft: a.heft, monat: a.monat, et: a.et,
+      as: a.anzeigenschluss, du: a.du_schluss, eh: a.eh_termin
+    }));
+  });
+  return ds;
+}
+
+/* Der Stand kommt aus dem juengsten Aenderungszeitpunkt (Sicht „stand"), so wie er
+   bisher aus dem Speicherzeitpunkt der Arbeitsmappe kam. */
+function standAusDatenbank(zeilen) {
+  const d = (zeilen && zeilen[0] && zeilen[0].geaendert_am) ? new Date(zeilen[0].geaendert_am) : null;
+  if (!d || isNaN(d)) return '';
+  const p = n => String(n).padStart(2, '0');
+  return ` · Stand ${p(d.getDate())}.${p(d.getMonth() + 1)}.${d.getFullYear()}`;
+}
+
+async function ladePreislisteAusDatenbank() {
+  if (!dbErreichbar()) return false;
+  if (!isCustomData) updateDataStatus('Preisliste wird geladen …', false);
+  try {
+    const [zeilen, stand] = await Promise.all([
+      dbHolen('titel?select=' + encodeURIComponent(DB_FELDER) +
+              '&order=jahr.asc,reihenfolge.asc&preis.order=reihenfolge.asc&termin.order=reihenfolge.asc&limit=500'),
+      dbHolen('stand?select=geaendert_am').catch(() => [])
+    ]);
+    const ds = datenbankZuDataset(zeilen);
+    if (!ds || !Object.keys(ds).length) throw new Error('Keine Jahrgänge in der Datenbank.');
+    DATASET        = ds;
+    loadedFileName = 'Preisliste';
+    isCustomData   = true;
+    if (!currentYear || !DATASET[currentYear]) currentYear = activeYears()[0];
+    rebuildYearDropdown();
+    const noDataRow = document.getElementById('no-data-row');
+    if (noDataRow) noDataRow.remove();
+    applyYear(currentYear);
+    const nTitel = Object.keys(DATASET[currentYear].titel).length;
+    datenStand = standAusDatenbank(stand);
+    saveCache();
+    updateDataStatus(`geladen: Preisliste · Jahrgänge ${activeYears().join(', ')} · ${nTitel} Titel${datenStand}`, true);
+    if (datenAbgleichVerloren.length) {
+      alert('Diese Angaben aus den vorhandenen Positionen gibt es in der neu geladenen '
+          + 'Preisliste nicht mehr:\n\n' + datenAbgleichVerloren.join('\n')
+          + '\n\nBitte die betroffenen Positionen prüfen.');
+    }
+    return true;
+  } catch (e) {
+    console.warn('Preisliste nicht aus der Datenbank geholt:', e);
+    return false;   /* kein Fehler, sondern der Uebergang zum naechsten Weg */
+  }
+}
+
 const DATEN_DATEI = 'Angebotsdaten.xlsx';
 
 async function ladePreislisteVonServer() {
@@ -1583,7 +1699,8 @@ window.addEventListener('DOMContentLoaded', async () => {
   // Preisliste von der Adresse holen, bevor die erste Position entsteht.
   // Ohne Adresse (Doppelklick) kehrt der Aufruf sofort zurück und es bleibt beim
   // Zwischenspeicher bzw. beim Laden von Hand.
-  await ladePreislisteVonServer();
+  // Erst die Datenbank, dann - falls sie schweigt - die Datei daneben.
+  if (!await ladePreislisteAusDatenbank()) await ladePreislisteVonServer();
 
   // Start mit einer leeren Position
   addPosition();

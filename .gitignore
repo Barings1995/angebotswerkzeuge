@@ -16,3 +16,7 @@ AV_Angebot_*.json
 
 # Achtung: Angebotsdaten.xlsx ist hier ausdrücklich NICHT ausgeschlossen –
 # sie ist die Preisliste, aus der die Werkzeuge lesen. Ohne sie starten sie leer.
+
+# Die Hilfsskripte der Uebernahme bleiben oertlich: einmalige Werkzeuge, kein
+# Bestandteil der veroeffentlichten Seite.
+werkzeug/
