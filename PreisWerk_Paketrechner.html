@@ -685,7 +685,14 @@ function updateAnz(id, v) {
   const it = items.find(i => i.id === id);
   if (it) { it.count = Math.min(99, Math.max(1, parseInt(v) || 1)); render(); saveStand(); }
 }
-function clearAll() { items = []; render(); saveStand(); }
+/* Vor dem Leeren wird zurueckgefragt, damit ein versehentlicher Klick das Paket nicht
+   verwirft – wie in MediaQuote und OpenSlots. Ist das Paket ohnehin leer, entfaellt
+   die Rueckfrage. */
+function clearAll() {
+  if (items.length === 0) return;
+  if (!confirm('Wirklich alle Positionen aus dem Paket entfernen?\n\nDer aktuelle Paketstand wird gelöscht.')) return;
+  items = []; render(); saveStand();
+}
 
 // ─── RENDER ───────────────────────────────────────────────────────────────────
 function render() {
