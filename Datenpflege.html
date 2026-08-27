@@ -81,6 +81,12 @@
   .btn-gefahr { color: var(--red); border-color: var(--red-border); }
   .btn-gefahr:hover { background: var(--red-bg); }
   .btn:disabled { opacity: .45; cursor: not-allowed; }
+  /* ── DRUCKPUNKT (sichtbare Rückmeldung beim Klicken) ──
+     Die Schaltfläche sinkt beim Drücken um 1 px ab und federt beim Loslassen
+     zurück — wie in den vier übrigen Werkzeugen. Ausgenommen sind gesperrte
+     Knöpfe: was nicht auslöst, soll auch nicht nachgeben. */
+  .btn:active:not(:disabled),
+  .reiter button:active { transform: translateY(1px); }
   .btn-voll { width: 100%; justify-content: center; height: 34px; }
   /* Pfeil hinein/heraus wie in der Jahresvorschau — dieselben zwei Zeichnungen. */
   .btn svg { width: 15px; height: 15px; flex: none; }
@@ -91,7 +97,12 @@
   .leiste label { font-size: 13px; font-weight: 600; display: inline-flex; align-items: center; gap: 6px; }
   .reiter { display: inline-flex; border: 1px solid var(--border); border-radius: var(--radius-md); overflow: hidden; background: var(--white); }
   .reiter button { border: none; background: var(--white); font-family: var(--font-body); font-size: 13px; font-weight: 600; color: var(--grey-600); padding: 0 15px; height: 28px; cursor: pointer; }
-  .reiter button.an { background: var(--navy); color: #fff; }
+  /* Der Schatten liegt 1 px ueber dem Knopf und wandert beim Absetzen mit ihm
+     nach unten — genau in die Luecke, die der gefuellte Knopf sonst am oberen
+     Rand der Gruppe freigibt. Ohne ihn blitzt dort beim Klicken der helle Grund
+     auf. Ungedrueckt liegt der Schatten ausserhalb und wird vom overflow:hidden
+     der Gruppe verdeckt. Geloest wie in der Jahresvorschau (.mode-btn.active). */
+  .reiter button.an { background: var(--navy); color: #fff; box-shadow: 0 -1px 0 var(--navy); }
   .stand-hinweis { font-size: 12.5px; color: var(--grey-600); }
   .offen-hinweis { display: none; align-items: center; gap: 6px; font-size: 12.5px; font-weight: 600; color: var(--orange-dark); background: #fdf3e7; border: 1px solid #f6ddbc; border-radius: var(--radius-md); padding: 3px 10px; }
   .offen-hinweis.an { display: inline-flex; }
