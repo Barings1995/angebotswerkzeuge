@@ -1,0 +1,59 @@
+# ---------------------------------------------------------------------------
+#  Haelt die Angebotsdaten.xlsx auf dem Stand der Datenbank.
+#
+#  Die Datei ist seit dem 27.08.2026 nicht mehr die Quelle, sondern der Notweg:
+#  antwortet die Datenbank nicht, lesen die vier Werkzeuge sie. Dieser Ablauf
+#  erneuert sie taeglich, damit sie nicht veraltet.
+#
+#  Nebenbei haelt der taegliche Abruf das kostenlose Datenbankprojekt wach, das
+#  sonst nach laengerer Ruhe stillgelegt wuerde.
+#
+#  Ein Geheimnis wird nicht gebraucht: Lesen ist offen, Adresse und oeffentlicher
+#  Schluessel stehen in konfiguration.js.
+#
+#  Veroeffentlicht wird nur, wenn sich die Datei tatsaechlich geaendert hat. Der
+#  Erzeuger schreibt sie Byte fuer Byte vorhersagbar - gleiche Daten ergeben
+#  dieselbe Datei -, sonst entstuende jeden Tag ein Commit ohne Inhalt.
+# ---------------------------------------------------------------------------
+name: Preisliste erneuern
+
+on:
+  schedule:
+    # Taeglich 03:17 UTC. Krumme Minute mit Absicht: zur vollen Stunde sind die
+    # Laufzeitrechner von GitHub am staerksten belegt und Laeufe verzoegern sich.
+    - cron: '17 3 * * *'
+  workflow_dispatch:        # laesst sich auch von Hand ausloesen
+
+permissions:
+  contents: write
+
+concurrency:
+  group: preisliste
+  cancel-in-progress: false
+
+jobs:
+  erneuern:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - run: pip install --quiet openpyxl
+
+      - name: Datei aus der Datenbank erzeugen
+        run: python .github/scripts/excel_erzeugen.py
+
+      - name: Veroeffentlichen, falls geaendert
+        run: |
+          if [ -z "$(git status --porcelain Angebotsdaten.xlsx)" ]; then
+            echo "Angebotsdaten.xlsx unveraendert - nichts zu veroeffentlichen."
+            exit 0
+          fi
+          git config user.name  "Preisliste"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add Angebotsdaten.xlsx
+          git commit -m "Preisliste: Notweg auf den Stand der Datenbank gebracht"
+          git push
