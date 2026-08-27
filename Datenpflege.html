@@ -462,11 +462,41 @@ function titelDesJahres(jahr) {
 }
 function titelVonId(id) { return (ARBEIT || []).find(t => t.id === id) || null; }
 
+/* Zahlen, wie sie hier geschrieben werden: das Komma trennt die Nachkommastellen,
+   der Punkt die Tausender. Der Tausenderpunkt muss vor dem Rechnen weg — seit die
+   Felder Preise als „3.475" zeigen, wuerde ein blosses Wieder-Speichern daraus sonst
+   die Zahl 3,475 machen und jeden Preis durch tausend teilen.
+
+   Als Tausenderpunkt gilt ein Punkt, auf den genau drei Ziffern folgen und danach
+   das Ende, ein weiterer Punkt oder ein Komma. „0.5" und „3,5" bleiben damit
+   Nachkommastellen, „1.234.567" wird 1234567. Einzig „3.475" laesst sich nicht mehr
+   als drei Komma vier sieben fuenf schreiben — dafuer gibt es das Komma. */
 function zahlOderNull(wert) {
-  const s = String(wert == null ? '' : wert).trim().replace(',', '.');
+  let s = String(wert == null ? '' : wert).trim().replace(/\s/g, '');
   if (s === '') return null;
+  s = s.replace(/\.(?=\d{3}(?:[.,]|$))/g, '').replace(',', '.');
   const n = Number(s);
   return isNaN(n) ? NaN : n;
+}
+
+/* Preise mit Tausenderpunkt und immer zwei Nachkommastellen: aus 3475 wird „3.475,00",
+   aus 4292,5 wird „4.292,50". Einheitlich auch dort, wo die Stellen „00" lauten — so
+   fluchten die Betraege in der rechtsbuendigen Spalte untereinander. Eine unbrauchbare
+   Eingabe bleibt unveraendert stehen, damit die Pruefung sie zeigt.
+   Nicht fuer das Seiten-Aequivalent: das ist kein Preis, sondern ein Faktor. */
+function preisText(wert) {
+  if (wert == null || wert === '') return '';
+  const n = zahlOderNull(wert);
+  if (n == null || isNaN(n)) return String(wert);
+  return n.toLocaleString('de-DE', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+}
+
+/* Ganze Zahlen mit Tausenderpunkt — fuer die Auflage, die keine Nachkommastellen
+   kennt. Zurueckgelesen wird sie in stammSetzen, das alles ausser Ziffern verwirft;
+   der Punkt faellt dort also von selbst weg. */
+function ganzText(wert) {
+  const n = parseInt(String(wert == null ? '' : wert).replace(/\D/g, ''), 10);
+  return isNaN(n) ? '' : n.toLocaleString('de-DE');
 }
 function zahlText(wert) {
   if (wert == null) return '';
@@ -624,7 +654,7 @@ function inhaltZeichnen() {
 
   html += '<div class="stamm">' +
     '<div class="feld feld-titel"><label>Titel</label><input value="' + esc(t.name) + '" onchange="stammSetzen(\'name\',this.value)"></div>' +
-    '<div class="feld"><label>Auflage</label><input class="zahl" style="width:92px;text-align:right" value="' + esc(t.auflage) + '" onchange="stammSetzen(\'auflage\',this.value)"></div>' +
+    '<div class="feld"><label>Auflage</label><input class="zahl" style="width:92px;text-align:right" value="' + esc(ganzText(t.auflage)) + '" onchange="stammSetzen(\'auflage\',this.value)"></div>' +
     '<div class="feld"><label>Fachbereich</label><input style="width:150px" list="fachListe" value="' + esc(t.fachbereich) + '" onchange="stammSetzen(\'fachbereich\',this.value)"></div>' +
     '<datalist id="fachListe">' + [...new Set((ARBEIT || []).map(x => x.fachbereich).filter(Boolean))].map(f => '<option value="' + esc(f) + '">').join('') + '</datalist>' +
     '</div>';
@@ -652,8 +682,8 @@ function preiseZeichnen(t) {
       const anders = feld => (!u || String(u[feld] == null ? '' : u[feld]) !== String(p[feld] == null ? '' : p[feld])) ? ' class="geaendert"' : '';
       html += '<tr>' +
         '<td' + anders('format') + '><input value="' + esc(p.format) + '" onchange="preisSetzen(\'' + p.id + '\',\'format\',this.value)"></td>' +
-        '<td class="r' + (anders('preis') ? ' geaendert' : '') + '"><input class="zahl' + (isNaN(zahlOderNull(p.preis)) ? ' fehler' : '') + '" value="' + esc(zahlText(p.preis)) + '" onchange="preisSetzen(\'' + p.id + '\',\'preis\',this.value)"></td>' +
-        '<td class="r"><input class="zahl' + (isNaN(zahlOderNull(p.zuschlag_4c)) ? ' fehler' : '') + '" value="' + esc(zahlText(p.zuschlag_4c)) + '" onchange="preisSetzen(\'' + p.id + '\',\'zuschlag_4c\',this.value)"></td>' +
+        '<td class="r' + (anders('preis') ? ' geaendert' : '') + '"><input class="zahl' + (isNaN(zahlOderNull(p.preis)) ? ' fehler' : '') + '" value="' + esc(preisText(p.preis)) + '" onchange="preisSetzen(\'' + p.id + '\',\'preis\',this.value)"></td>' +
+        '<td class="r"><input class="zahl' + (isNaN(zahlOderNull(p.zuschlag_4c)) ? ' fehler' : '') + '" value="' + esc(preisText(p.zuschlag_4c)) + '" onchange="preisSetzen(\'' + p.id + '\',\'zuschlag_4c\',this.value)"></td>' +
         '<td>' + jaNein(p.id, 'rabattfaehig', p.rabattfaehig) + '</td>' +
         '<td>' + jaNein(p.id, 'ae_faehig', p.ae_faehig) + '</td>' +
         '<td><select onchange="preisSetzen(\'' + p.id + '\',\'termin_art\',this.value)">' +
@@ -956,23 +986,37 @@ function preisrundeRechnen() {
     const bsp = beispielPreis(v);
     text = '<b>' + v.mitPreis + ' Preise</b> werden angelegt · ' + v.quellen.length + ' Titel · ' +
            v.ohnePreis + ' Zeilen ohne Preis bleiben leer';
-    if (bsp) text += '<br>Beispiel: ' + esc(bsp.was) + ' ' + bsp.alt.toLocaleString('de-DE') + ' € → <b>' + bsp.neu.toLocaleString('de-DE') + ' €</b>';
+    if (bsp) text += '<br>Beispiel: ' + esc(bsp.was) + ' ' + preisText(bsp.alt) + ' € → <b>' + preisText(bsp.neu) + ' €</b>';
     if (vorhanden) text += '<br><b>Achtung:</b> Der Jahrgang ' + esc(v.ziel) + ' führt bereits Preiszeilen — sie werden ersetzt, auch die von Hand gepflegten. Vorher entsteht ohne Zutun ein Sicherungspunkt.';
   }
   kasten.innerHTML = text;
   knopf.disabled = gesperrt;
 }
 
+/* Das Beispiel soll zeigen, was die gewaehlte Rundung bewirkt. Der schlicht erste
+   Preis taugt dafuer nicht immer: 5.610 € ergibt bei „auf volle 5 €" dasselbe wie
+   bei „auf volle 10 €", naemlich 5.780 € — der Wechsel der Stufe saehe dort
+   folgenlos aus, obwohl er 65 andere Preise sehr wohl bewegt.
+
+   Gesucht wird deshalb der erste Preis, bei dem die gewaehlte Stufe ein anderes
+   Ergebnis liefert als die naechstfeinere (10 gegen 5, 5 gegen 1, 1 gegen den
+   ungerundeten Wert). Bei „nicht runden" gibt es nichts zu zeigen, da bleibt es
+   beim ersten Preis — ebenso, wenn sich kein solcher Preis findet. */
 function beispielPreis(v) {
+  const naechstFeiner = { 10: 5, 5: 1, 1: 0 }[v.stufe];
+  let erster = null;
   for (const t of v.quellen) {
     for (const p of (t.preis || [])) {
       const w = zahlOderNull(p.preis);
-      if (w != null && !isNaN(w) && w > 0) {
-        return { was: t.name + ' · ' + p.format, alt: w, neu: preisrundeStufe(w * (1 + v.prozent / 100), v.stufe, w) };
-      }
+      if (w == null || isNaN(w) || w <= 0) continue;
+      const roh = w * (1 + v.prozent / 100);
+      const eintrag = { was: t.name + ' · ' + p.format, alt: w, neu: preisrundeStufe(roh, v.stufe, w) };
+      if (!erster) erster = eintrag;
+      if (naechstFeiner === undefined) return erster;
+      if (eintrag.neu !== preisrundeStufe(roh, naechstFeiner, w)) return eintrag;
     }
   }
-  return null;
+  return erster;
 }
 
 async function preisrundeAusfuehren() {
