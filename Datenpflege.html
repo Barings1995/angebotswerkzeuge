@@ -230,7 +230,8 @@
       <button class="btn" onclick="excelEingangWaehlen()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 9v10a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V9"/><polyline points="7 8 12 3 17 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>Aus Excel laden …</button>
       <input type="file" id="excelDatei" accept=".xlsx" style="display:none" onchange="excelEingangGewaehlt(event)">
       <button class="btn" onclick="excelSichern()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>Als Excel sichern</button>
-      <button class="btn" onclick="preisrundeOeffnen()">Preisrunde …</button>
+      <button class="btn" onclick="jahrgangAnlegenOeffnen()">Jahrgang anlegen …</button>
+      <button class="btn" onclick="preisrundeOeffnen()">Preise fortschreiben …</button>
       <button class="btn" onclick="sicherungenOeffnen()">Sicherungspunkte …</button>
       <button class="btn" id="verwerfenKnopf" onclick="aenderungenVerwerfen()" disabled>Verwerfen</button>
       <button class="btn btn-primär" id="speichernKnopf" onclick="speichern()" disabled>Speichern</button>
@@ -865,7 +866,7 @@ function dialogZeigen(html) {
     '<div class="schleier"><div class="dialog">' + html + '</div></div>';
 }
 
-/* ── Preisrunde ───────────────────────────────────────────────────────────────
+/* ── Preise fortschreiben ─────────────────────────────────────────────────────
    Der Kraftakt des Jahres: ein Jahrgang bekommt neue Preise. Sie werden selten
    einzeln erfunden, sondern aus dem Vorjahr fortgeschrieben - 2026 auf 2027
    waren es durchgehend 3,0 %. Von Hand nachgebessert wird danach.
@@ -893,7 +894,10 @@ function preisrundeOeffnen() {
     '<div class="dialog-zeile"><span>Zieljahrgang</span><input id="prZiel" class="kurz" value="' + (Number(vorgabe) + 1) + '" oninput="preisrundeRechnen()"></div>' +
     '<div class="dialog-zeile"><span>Anpassung</span><span><input id="prProzent" class="kurz" value="3,0" oninput="preisrundeRechnen()"> %</span></div>' +
     '<div class="dialog-zeile"><span>Rundung</span><select id="prRundung" onchange="preisrundeRechnen()">' +
-      '<option value="5">auf volle 5 €</option><option value="1">auf volle 1 €</option><option value="0">nicht runden</option>' +
+      '<option value="10">auf volle 10 €</option>' +
+      '<option value="5" selected>auf volle 5 €</option>' +
+      '<option value="1">auf volle 1 €</option>' +
+      '<option value="0">nicht runden</option>' +
     '</select></div>' +
     '<div class="dialog-zeile"><span>Umfang</span><select id="prFach" onchange="preisrundeRechnen()">' +
       '<option value="">alle Fachbereiche</option>' +
@@ -909,9 +913,17 @@ function preisrundeOeffnen() {
 
 function preisrundeStufe(wert, stufe, quelle) {
   if (!stufe) return Math.round(wert * 100) / 100;
-  /* Gerechnete Werte behalten ihre Form: was im Vorjahr nicht auf der Stufe stand,
-     wird auch jetzt nicht darauf gezwungen. */
-  if (Math.abs(quelle % stufe) > 1e-9) return Math.round(wert * 100) / 100;
+  /* Gerechnete Werte behalten ihre Form: was im Vorjahr nicht auf dem Raster stand,
+     wird auch jetzt nicht darauf gezwungen. Gemeint sind die Werbebeilagen
+     „(gesamt)" und die Ein-/Durchhefter, die aus einem Tausenderpreis gerechnet
+     sind — 2027 sind es drei von 544 Preisen.
+
+     Geprueft wird gegen das 5-Euro-Raster, nicht gegen die gewaehlte Stufe. Sonst
+     liesse „auf volle 10 €" jeden Preis unberuehrt, der auf 5 endet, und das sind
+     65 der 544 — die Stufe waere dann fast wirkungslos. Fuer die Stufen 5 und 1
+     aendert das nichts, dort ist das Raster die Stufe selbst. */
+  const raster = stufe >= 5 ? 5 : stufe;
+  if (Math.abs(quelle % raster) > 1e-9) return Math.round(wert * 100) / 100;
   return Math.round(wert / stufe) * stufe;
 }
 
@@ -965,14 +977,14 @@ function beispielPreis(v) {
 
 async function preisrundeAusfuehren() {
   const v = preisrundeVorschau();
-  if (offeneAenderungen() && !confirm('Es sind Änderungen offen, die noch nicht gespeichert sind.\n\nDie Preisrunde schreibt unmittelbar in die Datenbank. Offene Änderungen gehen dabei verloren.\n\nTrotzdem fortfahren?')) return;
+  if (offeneAenderungen() && !confirm('Es sind Änderungen offen, die noch nicht gespeichert sind.\n\nDas Fortschreiben schreibt unmittelbar in die Datenbank. Offene Änderungen gehen dabei verloren.\n\nTrotzdem fortfahren?')) return;
   const knopf = document.getElementById('prKnopf');
   knopf.disabled = true; knopf.textContent = 'Wird angelegt …';
   try {
     if (sitzung && sitzung.ablauf && sitzung.ablauf < Date.now() + 60000) await sitzungErneuern();
 
     const zielVorhanden = (ARBEIT || []).some(t => t.jahr === v.ziel);
-    if (zielVorhanden) await sicherungAnlegen(v.ziel, 'vor der Preisrunde ' + v.prozent + ' %', true);
+    if (zielVorhanden) await sicherungAnlegen(v.ziel, 'vor dem Fortschreiben ' + v.prozent + ' %', true);
     else await schreiben('jahrgang', 'POST', { jahr: v.ziel });
 
     for (const q of v.quellen) {
@@ -1010,7 +1022,125 @@ async function preisrundeAusfuehren() {
     reiterWechseln('preise');
     meldung('Jahrgang ' + v.ziel + ' angelegt — ' + v.mitPreis + ' Preise fortgeschrieben.');
   } catch (fehler) {
-    meldung('Preisrunde nicht ausgeführt: ' + fehler.message, true);
+    meldung('Nicht fortgeschrieben: ' + fehler.message, true);
+    knopf.disabled = false; knopf.textContent = 'Anlegen und ansehen';
+  }
+}
+
+/* ── Neuen Jahrgang anlegen ───────────────────────────────────────────────────
+   Der Weg hinein, wenn die Heftplanung vor der Preisliste steht — und das ist
+   der Regelfall. Bis hierher gab es ihn nicht: Jahrgaenge entstanden allein
+   nebenbei, beim Fortschreiben der Preise oder beim Einlesen einer Excel-Datei.
+   Titel liessen sich ueberhaupt nicht anlegen.
+
+   Deshalb bringt ein neuer Jahrgang seine Titel zwingend mit. Ein Jahrgang ohne
+   Titel waere zudem unsichtbar: die Jahrgangsauswahl oben wird aus den Titeln
+   gebildet (jahrgaenge()), nicht aus der Jahrgangstabelle.
+
+   Mit kommen Titel (Name, Auflage, Fachbereich) und das Heftgeruest (Heft und
+   Monat) — die Heftfolge wiederholt sich Jahr fuer Jahr. Termine, Themen und
+   Kongresse bleiben leer: sie einzutragen ist der Grund, warum der Jahrgang
+   angelegt wird. Preiszeilen entstehen keine; die kommen spaeter ueber
+   „Preise fortschreiben".
+
+   Ein bestehender Jahrgang wird nicht angetastet — anlegen heisst anlegen. Zum
+   Ersetzen gibt es das Fortschreiben und den Excel-Eingang, beide mit
+   Sicherungspunkt. */
+function jahrgangAnlegenOeffnen() {
+  const jahre = jahrgaenge();
+  /* Vorlage ist der juengste Jahrgang, der ALLE Titel fuehrt - nicht schlicht der
+     juengste. 2028 steht heute als Geruest mit 6 der 19 Titel da; als Vorlage
+     brachte es einen neuen Jahrgang mit 13 fehlenden Titeln hervor, die sich
+     einzeln nicht nachtragen liessen. Dieselbe Falle wie beim Fortschreiben, wo
+     die Vorgabe aus demselben Grund am Vorhandensein von Preisen haengt. */
+  const zahl = j => (ARBEIT || []).filter(t => t.jahr === j).length;
+  const meisten = jahre.reduce((a, j) => Math.max(a, zahl(j)), 0);
+  const voll = jahre.filter(j => zahl(j) === meisten);
+  const vorlage = voll.length ? voll[voll.length - 1] : (jahre[jahre.length - 1] || '');
+  /* Vorgeschlagen wird das naechste Jahr, das es noch nicht gibt. Schlicht
+     „Vorlage + 1" oeffnete den Dialog heute gesperrt: 2028 besteht bereits. */
+  let ziel = vorlage ? Number(vorlage) + 1 : '';
+  while (ziel && jahre.indexOf(String(ziel)) >= 0) ziel++;
+  dialogZeigen(
+    '<h3>Neuen Jahrgang anlegen</h3>' +
+    '<div class="erklaerung">Die Titel des Vorlagejahrgangs kommen mit, dazu ihre Ausgaben mit Heft und Monat. ' +
+    'Termine, Themen und Kongresse bleiben leer; Preiszeilen entstehen keine.</div>' +
+    '<div class="dialog-zeile"><span>Vorlage</span><select id="jaVorlage" onchange="jahrgangAnlegenRechnen()">' +
+      jahre.map(j => '<option' + (j === vorlage ? ' selected' : '') + '>' + j + '</option>').join('') +
+    '</select></div>' +
+    '<div class="dialog-zeile"><span>Neuer Jahrgang</span><input id="jaZiel" class="kurz" value="' +
+      ziel + '" oninput="jahrgangAnlegenRechnen()"></div>' +
+    '<div class="dialog-summe" id="jaSumme"></div>' +
+    '<div class="dialog-knoepfe">' +
+      '<button class="btn" onclick="dialogSchliessen()">Abbrechen</button>' +
+      '<button class="btn btn-primär" id="jaKnopf" onclick="jahrgangAnlegenAusfuehren()">Anlegen und ansehen</button>' +
+    '</div>');
+  jahrgangAnlegenRechnen();
+}
+
+function jahrgangAnlegenVorschau() {
+  const vorlage = document.getElementById('jaVorlage').value;
+  const ziel    = String(document.getElementById('jaZiel').value || '').trim();
+  const quellen = (ARBEIT || []).filter(t => t.jahr === vorlage);
+  let ausgaben = 0;
+  quellen.forEach(t => { ausgaben += (t.termin || []).length; });
+  return { vorlage, ziel, quellen, ausgaben };
+}
+
+function jahrgangAnlegenRechnen() {
+  const v = jahrgangAnlegenVorschau();
+  const kasten = document.getElementById('jaSumme');
+  const knopf  = document.getElementById('jaKnopf');
+  let text, gesperrt = false;
+  if (!/^\d{4}$/.test(v.ziel)) {
+    text = 'Der Jahrgang muss eine vierstellige Jahreszahl sein.'; gesperrt = true;
+  } else if ((ARBEIT || []).some(t => t.jahr === v.ziel)) {
+    text = 'Der Jahrgang ' + esc(v.ziel) + ' besteht bereits. Anlegen legt an — ersetzt wird über ' +
+           '„Preise fortschreiben" oder den Excel-Eingang, beide mit Sicherungspunkt.'; gesperrt = true;
+  } else if (!v.quellen.length) {
+    text = 'Der Vorlagejahrgang enthält keine Titel.'; gesperrt = true;
+  } else {
+    text = '<b>' + v.quellen.length + ' Titel</b> und <b>' + v.ausgaben + ' Ausgaben</b> werden angelegt.' +
+           '<br>Termine, Themen und Kongresse bleiben leer, Preiszeilen entstehen keine.';
+  }
+  kasten.innerHTML = text;
+  knopf.disabled = gesperrt;
+}
+
+async function jahrgangAnlegenAusfuehren() {
+  const v = jahrgangAnlegenVorschau();
+  if (offeneAenderungen() && !confirm('Es sind Änderungen offen, die noch nicht gespeichert sind.\n\nDas Anlegen schreibt unmittelbar in die Datenbank. Offene Änderungen gehen dabei verloren.\n\nTrotzdem fortfahren?')) return;
+  const knopf = document.getElementById('jaKnopf');
+  knopf.disabled = true; knopf.textContent = 'Wird angelegt …';
+  try {
+    if (sitzung && sitzung.ablauf && sitzung.ablauf < Date.now() + 60000) await sitzungErneuern();
+    await schreiben('jahrgang', 'POST', { jahr: v.ziel });
+    let nA = 0;
+    for (const q of v.quellen) {
+      const angelegt = await schreiben('titel', 'POST',
+        { jahr: v.ziel, reihenfolge: q.reihenfolge, name: q.name, auflage: q.auflage, fachbereich: q.fachbereich });
+      const tid = angelegt[0].id;
+      /* Nur Heft und Monat wandern mit; alles Uebrige steht leer. */
+      const termine = (q.termin || []).map((a, i) => ({
+        titel_id: tid, reihenfolge: i + 1, heft: a.heft, monat: a.monat || '',
+        et: '', anzeigenschluss: '', du_schluss: '', eh_termin: '', themen: '', kongresse: ''
+      }));
+      for (let i = 0; i < termine.length; i += 250) {
+        const teil = termine.slice(i, i + 250);
+        await schreiben('termin', 'POST', teil, teil.length);
+      }
+      nA += termine.length;
+    }
+    dialogSchliessen();
+    await ladenAusDatenbank();
+    gewJahr = v.ziel;
+    jahrAuswahlAufbauen();
+    const erste = titelDesJahres()[0];
+    gewTitel = erste ? erste.id : null;
+    reiterWechseln('termine');
+    meldung('Jahrgang ' + v.ziel + ' angelegt — ' + v.quellen.length + ' Titel, ' + nA + ' Ausgaben.');
+  } catch (fehler) {
+    meldung('Nicht angelegt: ' + fehler.message, true);
     knopf.disabled = false; knopf.textContent = 'Anlegen und ansehen';
   }
 }

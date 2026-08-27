@@ -80,11 +80,22 @@ Zwei Reiter:
   Kongresse über die ganze Breite. Termine in der Form `TT.MM.`; fällt einer ins Vor-
   oder Folgejahr, die Jahreszahl mitschreiben (`22.12.2026`).
 
-**Preisrunde.** *Preisrunde …* schreibt die Preise eines Jahrgangs fort: Vorlage,
-Prozentsatz, Rundung, Umfang. Gerundet wird nur dort, wo der Ausgangspreis selbst auf
-der Rundungsstufe stand — gerechnete Werte wie die Werbebeilagen „(gesamt)" behalten
-ihre Form. Führt der Zieljahrgang schon Preiszeilen, werden sie ersetzt; vorher
-entsteht ohne Zutun ein Sicherungspunkt.
+**Jahrgang anlegen.** *Jahrgang anlegen …* beginnt ein neues Jahr. Die Titel des
+Vorlagejahrgangs kommen mit, dazu ihre Ausgaben mit Heft und Monat; Termine, Themen
+und Kongresse bleiben leer, Preiszeilen entstehen keine. Damit lässt sich ein Jahrgang
+beginnen, für den erst die Heftplanung feststeht — der Regelfall, die Preisliste kommt
+später. Ein bestehender Jahrgang wird nicht angetastet: der Knopf bleibt dann gesperrt.
+
+**Titel** entstehen ausschließlich hier, beim Fortschreiben (im Zieljahrgang) und über
+den Excel-Eingang — einzeln lassen sie sich nicht hinzufügen. Ein zusätzlicher Titel
+mitten im Jahr kommt deshalb nur über den Excel-Eingang herein.
+
+**Preise fortschreiben.** *Preise fortschreiben …* schreibt die Preise eines Jahrgangs
+fort: Vorlage, Prozentsatz, Rundung (auf volle 10, 5 oder 1 €, oder gar nicht) und
+Umfang. Gerundet wird nur dort, wo der Ausgangspreis auf dem 5-Euro-Raster lag —
+gerechnete Werte wie die Werbebeilagen „(gesamt)" behalten ihre Form. Führt der
+Zieljahrgang schon Preiszeilen, werden sie ersetzt; vorher entsteht ohne Zutun ein
+Sicherungspunkt.
 
 **Sicherungspunkte.** Schnappschüsse eines Jahrgangs, anlegen und zurückspielen. Beim
 Zurückspielen werden Titel, Preise und Termine des Jahrgangs ersetzt.
