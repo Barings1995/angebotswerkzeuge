@@ -6,7 +6,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700&family=Source+Sans+3:wght@400;500;600;700&display=swap" rel="stylesheet">
-<title>Preispflege – Preise und Termine · Springer Medizin</title>
+<title>Datenpflege – Preise und Termine · Springer Medizin</title>
 <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%2300285a'/%3E%3Cpath d='M9 22.5l3.2-1 9-9a2.1 2.1 0 00-3-3l-9 9-1 3.2z' fill='%23e6eaf0'/%3E%3Cpath d='M8 25.5h16' stroke='%23ee7d11' stroke-width='2' stroke-linecap='round'/%3E%3C/svg%3E">
 <style>
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -63,7 +63,7 @@
   .hero-konto button { margin-top: 3px; background: none; border: 1px solid rgba(255,255,255,.35); color: #fff; border-radius: var(--radius-md); font-size: 11.5px; font-family: var(--font-body); padding: 2px 9px; cursor: pointer; }
   .hero-konto button:hover { background: rgba(255,255,255,.12); }
 
-  .wrap { max-width: 1320px; margin: 22px auto; padding: 0 20px; }
+  .wrap { max-width: none; margin: 18px 0 40px; padding: 0 1.5rem; }
 
   /* ── Anmeldung ── */
   .anmeldung { max-width: 400px; margin: 60px auto; background: var(--white); border: 1px solid var(--border); border-radius: var(--radius-xl); box-shadow: var(--shadow-md); padding: 26px 28px 24px; }
@@ -82,6 +82,8 @@
   .btn-gefahr:hover { background: var(--red-bg); }
   .btn:disabled { opacity: .45; cursor: not-allowed; }
   .btn-voll { width: 100%; justify-content: center; height: 34px; }
+  /* Pfeil hinein/heraus wie in der Jahresvorschau — dieselben zwei Zeichnungen. */
+  .btn svg { width: 15px; height: 15px; flex: none; }
 
   /* ── Leiste ── */
   .leiste { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-xl); padding: 11px 15px; margin-bottom: 16px; box-shadow: var(--shadow-sm); }
@@ -115,6 +117,8 @@
   .feld label { font-size: 10.5px; font-weight: 700; color: var(--navy); text-transform: uppercase; letter-spacing: .4px; }
   .feld input, .feld select { padding: 5px 8px; border: 1px solid var(--border); border-radius: var(--radius-sm); font-size: 13px; font-family: var(--font-body); color: var(--text); background: var(--white); }
   .feld input:focus, .feld select:focus { outline: none; border-color: var(--navy); box-shadow: 0 0 0 2px rgba(0,40,90,.08); }
+  .feld-titel { flex: 1 1 360px; min-width: 360px; max-width: 620px; }
+  .feld-titel input { width: 100%; }
 
   .kat-kopf { font-size: 10.5px; font-weight: 700; color: var(--grey-600); text-transform: uppercase; letter-spacing: .1em; padding: 14px 2px 5px; display: flex; justify-content: space-between; align-items: center; }
   table { width: 100%; border-collapse: collapse; font-size: 13px; }
@@ -164,6 +168,14 @@
   .fehlerkasten { display: none; align-items: flex-start; gap: 8px; font-size: 12.5px; color: var(--red); background: var(--red-bg); border: 1px solid var(--red-border); border-radius: var(--radius-md); padding: 8px 12px; margin-bottom: 14px; }
   .fehlerkasten.an { display: flex; }
 
+  /* Unter rund 820 px steht die Titelliste ueber dem Arbeitsbereich statt daneben
+     — dieselbe Grenze wie in OpenSlots. Bei zwei Spalten blieben sonst keine
+     300 px fuer die Formattabelle uebrig. */
+  @media (max-width: 820px) {
+    .arbeit { grid-template-columns: minmax(0,1fr); }
+    .titelliste { max-height: 320px; }
+  }
+
   .verborgen { display: none !important; }
 </style>
 </head>
@@ -175,7 +187,7 @@
       <svg style="display:block;height:28px;width:auto" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 157.207 26.299"><defs><style>.cls-1{fill:#fff;stroke-width:0px;}</style></defs><path class="cls-1" d="M20.733,20.18H3.744v-1.044h1.44c.252-3.384,3.491-4.644,5.291-7.379h-2.087c-1.008.36-2.52,2.591-2.52,3.887h-2.627l.036-1.08-.864.72L.108,12.621s-.108-.144-.108-.252.036-.18.036-.18l3.636-4.931.647-1.944.972-.36,1.008-1.404-.36-2.448c.972-.36,1.908-.036,2.375.432.036-.72-.036-1.512-.036-1.512,1.728-.18,2.339.756,2.627,1.8.468.036.9.108,1.296.18.072-.216.288-.396.54-.396.324,0,.539.252.539.54v.144c.756.252,1.476.612,2.124,1.008.108-.144.252-.216.432-.216.324,0,.54.252.54.54,0,.144-.036.252-.108.324.612.504,1.116,1.116,1.584,1.764.072-.036.18-.072.252-.072.324,0,.576.252.576.54,0,.216-.108.396-.288.468.36.648.647,1.368.864,2.124.036-.036.108-.036.144-.036.324,0,.54.252.54.54s-.18.504-.395.54c.143.756.252,1.512.324,2.304.324,0,.576.252.576.54,0,.324-.252.539-.539.576,0,.756-.036,1.584-.108,2.376.288.036.504.288.504.576s-.252.54-.576.54h-.036c-.143.792-.288,1.583-.468,2.412h1.512v1.044ZM18.142,19.172c2.088-8.603-.36-15.442-7.019-16.234.036.36.036.648.036.936,0,.432-.036.792-.036.792l-1.043-.18c.036-.36.108-2.808-.756-3.347,0,0,0,1.295-.288,2.591l-.972-.18c0-.9-.396-1.26-.936-1.512l.252,1.764-.612.9.288.828-1.908.648-.54,1.548-3.348,4.608,1.26,1.512,1.404-1.188.324.216v1.764h.756c.324-1.26,1.368-2.736,2.34-3.456l-.54-.648.792-.684.756.936s2.7,0,2.7-.036c.396-.864.648-1.908.648-3.131h1.044c0,4.104-2.052,5.723-4.607,8.243-.936.936-1.764,1.943-1.872,3.311h11.878ZM3.132,11.217c.036.468-.036,1.188-.288,1.548l-.756-.288c.252-.36.396-.864.396-1.296l.648.036ZM7.271,7.221l-1.62.864-.108-1.332,1.692-.18.036.648Z"/><path class="cls-1" d="M20.733,25.507H3.744v-2.088h16.99v2.088Z"/><path class="cls-1" d="M32.399,20.468c-1.368,0-2.448-.324-3.492-.792-.216-.936-.288-2.196-.36-3.492l.828-.144c.468,1.764,1.116,3.492,3.275,3.492,1.512,0,2.412-.936,2.412-2.34,0-3.708-6.155-2.879-6.155-7.163,0-1.944,1.584-3.708,4.392-3.708.936,0,1.944.252,2.952.612.072.756.144,1.62.18,3.132l-.756.036c-.36-1.26-.935-2.808-2.771-2.808-1.368,0-2.052.936-2.052,2.052,0,3.42,6.263,2.7,6.263,7.163,0,2.124-1.908,3.96-4.715,3.96ZM42.658,20.324c-.576-.036-1.044-.144-1.332-.252v3.383c0,1.224.144,1.332,1.8,1.476v.684h-5.075v-.684c1.296-.144,1.404-.252,1.404-1.476v-9.611c0-1.26-.036-1.296-1.26-1.404v-.612c1.08-.216,2.087-.54,3.131-.9v1.368l1.944-1.008c.252-.144.504-.18.756-.18,2.232,0,3.492,1.943,3.492,3.815,0,3.024-2.16,5.075-4.859,5.4ZM43.125,12.441c-.576,0-1.332.396-1.8.684v5.327c.396.432,1.044.756,1.836.756,1.044,0,2.412-.792,2.412-3.491,0-2.268-1.08-3.276-2.448-3.276ZM54.356,13.341c-.216-.288-.504-.36-.864-.36-.468,0-1.044.54-1.44,1.656v3.348c0,1.224.144,1.332,1.692,1.44v.72h-4.895v-.72c1.224-.108,1.368-.216,1.368-1.44v-4.067c0-1.224-.108-1.224-1.224-1.44v-.612c1.08-.216,2.124-.432,3.059-.792v2.16h.036c.648-1.188,1.548-2.124,2.375-2.124.72,0,1.224.54,1.224,1.116,0,.828-.864,1.548-1.332,1.116ZM61.231,20.144h-4.607v-.72c1.224-.108,1.404-.216,1.404-1.512v-3.888c0-1.404-.108-1.404-1.296-1.548v-.612c1.116-.216,2.231-.468,3.131-.792v6.839c0,1.296.108,1.404,1.368,1.512v.72ZM58.855,9.165c-.684,0-1.224-.54-1.224-1.224,0-.72.54-1.26,1.224-1.26.72,0,1.26.54,1.26,1.26,0,.684-.539,1.224-1.26,1.224ZM72.246,20.144h-4.248v-.72c1.008-.108,1.152-.216,1.152-1.368v-3.527c0-1.296-.576-2.088-1.656-2.088-.684,0-1.476.504-2.016,1.008v4.607c0,1.152.108,1.26,1.116,1.368v.72h-4.392v-.72c1.224-.108,1.404-.216,1.404-1.368v-4.139c0-1.224-.072-1.296-1.152-1.44v-.612c1.08-.216,2.088-.432,3.023-.792v1.44c.468-.396,1.836-1.404,2.88-1.404,1.62,0,2.627,1.116,2.627,2.772v4.175c0,1.152.18,1.26,1.26,1.368v.72ZM82.504,11.577c-.144.324-.54.936-.864,1.116l-1.044-.108c.288.396.504,1.188.504,1.8,0,2.196-1.979,3.384-3.779,3.384-.108,0-.396-.036-.648-.036-.432.144-.792.648-.792.972s.324.72,1.188.72h2.16c1.26,0,2.952.612,2.952,2.627,0,2.304-2.412,4.248-5.219,4.248-2.448,0-3.744-1.512-3.744-2.736,0-.792.396-1.404,2.088-2.7-.612-.216-1.692-.828-1.62-1.98.828-.36,1.584-1.008,1.908-1.404-.972-.324-1.872-1.476-1.872-2.771,0-2.34,2.088-3.6,3.815-3.6.756,0,1.476.18,2.088.504.936-.036,1.872-.144,2.736-.252l.144.216ZM79.661,21.224c-.504-.18-1.188-.216-2.304-.216-1.548,0-2.232,1.152-2.232,2.016,0,1.224,1.08,2.16,2.7,2.16,1.8,0,2.808-1.188,2.808-2.376,0-.756-.432-1.368-.972-1.583ZM77.357,11.973c-.756,0-1.62.792-1.62,2.304s.792,2.592,1.872,2.592c.791,0,1.548-.684,1.548-2.34,0-1.404-.684-2.556-1.8-2.556ZM90.063,15.14c-.324.036-2.808.216-5.075.288.072,2.375,1.476,3.383,2.88,3.383.791,0,1.368-.216,2.087-.936l.468.648c-1.188,1.476-2.592,1.835-3.24,1.835-2.556,0-4.032-1.943-4.032-4.247,0-2.808,2.124-5.003,4.248-5.003,1.764,0,3.167,1.512,3.167,3.204,0,.54-.108.756-.504.828ZM87.004,12.009c-.828,0-1.692.9-1.908,2.447l3.096-.072c.396,0,.468-.108.468-.468,0-.972-.684-1.908-1.656-1.908ZM97.371,13.341c-.252-.252-.576-.36-.864-.36-.468,0-1.08.54-1.476,1.656v3.348c0,1.224.144,1.332,1.691,1.44v.72h-4.931v-.72c1.26-.108,1.368-.216,1.368-1.44v-4.067c0-1.224-.072-1.224-1.224-1.44v-.612c1.152-.216,2.16-.432,3.096-.792v2.16h.036c.612-1.188,1.512-2.124,2.376-2.124.684,0,1.224.54,1.224,1.116,0,.828-.9,1.548-1.296,1.116Z"/><path class="cls-1" d="M113.758,20.144l-.396-6.083c-.144-1.908-.288-4.068-.216-5.759-.54,1.62-1.009,3.06-1.692,4.895l-2.628,6.947h-.647l-2.448-6.731c-.684-1.872-1.224-3.384-1.655-5.039-.036,1.764-.144,3.815-.288,5.831l-.36,5.939h-.971l.936-12.814h1.115l2.664,7.127c.611,1.656,1.008,2.88,1.403,4.284.324-1.368.756-2.556,1.404-4.248l2.699-7.163h1.188l.863,12.814h-.972Z"/><path class="cls-1" d="M117.72,15.573c.035,2.987,1.547,3.923,3.239,3.923,1.116,0,1.764-.216,2.304-.504l.216.756c-.432.252-1.332.54-2.664.54-2.556,0-4.067-1.872-4.067-4.427,0-2.916,1.62-4.752,3.888-4.752,2.771,0,3.311,2.556,3.311,3.887,0,.216,0,.396-.036.576h-6.19ZM117.791,14.817h5.147c0-1.476-.684-2.952-2.447-2.952-1.728,0-2.556,1.584-2.7,2.952Z"/><path class="cls-1" d="M131.974,20.144l-.036-1.512c-.504.936-1.512,1.692-2.987,1.692-2.052,0-3.708-1.692-3.708-4.5,0-3.024,1.8-4.751,3.851-4.751,1.26,0,2.196.612,2.7,1.44v-5.363h.972v10.979c0,.576.036,1.44.072,2.016h-.864ZM131.794,14.744c0-.216-.036-.504-.072-.756-.288-1.152-1.26-2.088-2.556-2.088-1.836,0-2.916,1.692-2.916,3.852,0,1.98.9,3.816,2.844,3.816,1.08,0,2.196-.684,2.628-2.232.036-.216.072-.396.072-.648v-1.944Z"/><path class="cls-1" d="M135.683,9.669c-.396,0-.72-.36-.72-.792s.323-.792.791-.792c.396,0,.721.36.721.792s-.324.792-.756.792h-.036ZM135.215,20.144v-8.855h.972v8.855h-.972Z"/><path class="cls-1" d="M137.842,20.144v-.576l4.608-6.299c.287-.396.611-.756.971-1.188h-5.147v-.792h6.299v.612l-4.607,6.264c-.288.395-.576.791-.9,1.224h5.507v.756h-6.731Z"/><path class="cls-1" d="M147.274,9.669c-.396,0-.721-.36-.721-.792s.324-.792.791-.792c.396,0,.721.36.721.792s-.324.792-.756.792h-.035ZM146.805,20.144v-8.855h.973v8.855h-.973Z"/><path class="cls-1" d="M156.237,20.144v-5.363c0-1.512-.541-2.844-2.268-2.844-1.152,0-2.16.792-2.449,1.908-.07.216-.107.504-.107.792v5.507h-1.008v-6.731c0-.864-.035-1.368-.072-2.124h.936l.037,1.404c.504-.9,1.584-1.584,2.879-1.584,1.008,0,3.023.504,3.023,3.491v5.543h-.971Z"/></svg>
       <div class="sm-hero-div"></div>
       <div>
-        <h1>Preis<span class="sm-hero-mark">pflege</span></h1>
+        <h1>Daten<span class="sm-hero-mark">pflege</span></h1>
         <div class="sm-hero-sub">Preise und Termine</div>
       </div>
       <div class="hero-konto verborgen" id="kontoBox">
@@ -214,9 +226,9 @@
       <span class="stand-hinweis" id="standHinweis"></span>
       <span class="offen-hinweis" id="offenHinweis"></span>
       <span style="flex:1"></span>
-      <button class="btn" onclick="excelEingangWaehlen()">Aus Excel laden …</button>
+      <button class="btn" onclick="excelEingangWaehlen()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 9v10a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V9"/><polyline points="7 8 12 3 17 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>Aus Excel laden …</button>
       <input type="file" id="excelDatei" accept=".xlsx" style="display:none" onchange="excelEingangGewaehlt(event)">
-      <button class="btn" onclick="excelSichern()">Als Excel sichern</button>
+      <button class="btn" onclick="excelSichern()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>Als Excel sichern</button>
       <button class="btn" onclick="preisrundeOeffnen()">Preisrunde …</button>
       <button class="btn" onclick="sicherungenOeffnen()">Sicherungspunkte …</button>
       <button class="btn" id="verwerfenKnopf" onclick="aenderungenVerwerfen()" disabled>Verwerfen</button>
@@ -238,7 +250,7 @@
 <script src="konfiguration.js"></script>
 <script>
 /* ===========================================================================
-   Preispflege — Preise und Termine der Angebotswerkzeuge
+   Datenpflege — Preise und Termine der Angebotswerkzeuge
 
    Vierter Bauabschnitt des Vorhabens „Datenbank statt Excel-Datei": die vier
    Werkzeuge lesen bereits aus der Datenbank, hier wird sie gepflegt.
@@ -253,6 +265,8 @@
    =========================================================================== */
 
 /* ── Zustand ──────────────────────────────────────────────────────────────── */
+/* Der Name traegt noch „preispflege". Er bleibt so: Er steht im Zwischenspeicher
+   des Browsers, und ein neuer Name wuerde die laufende Anmeldung wegwerfen. */
 const SITZUNG_SCHLUESSEL = 'preispflege_sitzung_v1';
 let sitzung = null;          // { zugang, erneuerung, ablauf, benutzer }
 let URSPRUNG = null;         // Stand, wie er aus der Datenbank kam
@@ -607,7 +621,7 @@ function inhaltZeichnen() {
              (reiter === 'preise' ? ' Formate' : ' Ausgaben') + '</span></div>';
 
   html += '<div class="stamm">' +
-    '<div class="feld"><label>Titel</label><input style="width:250px" value="' + esc(t.name) + '" onchange="stammSetzen(\'name\',this.value)"></div>' +
+    '<div class="feld feld-titel"><label>Titel</label><input value="' + esc(t.name) + '" onchange="stammSetzen(\'name\',this.value)"></div>' +
     '<div class="feld"><label>Auflage</label><input class="zahl" style="width:92px;text-align:right" value="' + esc(t.auflage) + '" onchange="stammSetzen(\'auflage\',this.value)"></div>' +
     '<div class="feld"><label>Fachbereich</label><input style="width:150px" list="fachListe" value="' + esc(t.fachbereich) + '" onchange="stammSetzen(\'fachbereich\',this.value)"></div>' +
     '<datalist id="fachListe">' + [...new Set((ARBEIT || []).map(x => x.fachbereich).filter(Boolean))].map(f => '<option value="' + esc(f) + '">').join('') + '</datalist>' +
@@ -636,7 +650,7 @@ function preiseZeichnen(t) {
       const anders = feld => (!u || String(u[feld] == null ? '' : u[feld]) !== String(p[feld] == null ? '' : p[feld])) ? ' class="geaendert"' : '';
       html += '<tr>' +
         '<td' + anders('format') + '><input value="' + esc(p.format) + '" onchange="preisSetzen(\'' + p.id + '\',\'format\',this.value)"></td>' +
-        '<td class="r"' + (anders('preis') ? ' class="r geaendert"' : '') + '><input class="zahl' + (isNaN(zahlOderNull(p.preis)) ? ' fehler' : '') + '" value="' + esc(zahlText(p.preis)) + '" onchange="preisSetzen(\'' + p.id + '\',\'preis\',this.value)"></td>' +
+        '<td class="r' + (anders('preis') ? ' geaendert' : '') + '"><input class="zahl' + (isNaN(zahlOderNull(p.preis)) ? ' fehler' : '') + '" value="' + esc(zahlText(p.preis)) + '" onchange="preisSetzen(\'' + p.id + '\',\'preis\',this.value)"></td>' +
         '<td class="r"><input class="zahl' + (isNaN(zahlOderNull(p.zuschlag_4c)) ? ' fehler' : '') + '" value="' + esc(zahlText(p.zuschlag_4c)) + '" onchange="preisSetzen(\'' + p.id + '\',\'zuschlag_4c\',this.value)"></td>' +
         '<td>' + jaNein(p.id, 'rabattfaehig', p.rabattfaehig) + '</td>' +
         '<td>' + jaNein(p.id, 'ae_faehig', p.ae_faehig) + '</td>' +
@@ -1141,11 +1155,11 @@ async function excelMappeBauen() {
     const info = mappe.addWorksheet('Info');
     info.getColumn(1).width = 82.71;
     [
-      'Angebotsdaten – Abzug aus der Preispflege',
+      'Angebotsdaten – Abzug aus der Datenpflege',
       '',
       'Dieser Abzug gibt den Stand der Datenbank zum Zeitpunkt des Sicherns wieder.',
       'Änderungen daran erreichen die Werkzeuge nicht von selbst — die Datei muss in',
-      'der Preispflege über »Aus Excel laden« wieder eingelesen werden.',
+      'der Datenpflege über »Aus Excel laden« wieder eingelesen werden.',
       '',
       'Blatt »Preise« – eine Zeile je Format:',
       '   ' + PREIS_KOPF.join(' · '),
@@ -1335,7 +1349,7 @@ function excelBerichtZeigen() {
       (schlimm
         ? '<b>' + st.beanstandet.length + ' Beanstandungen.</b> Es wird nichts übernommen.<br>' +
           st.beanstandet.slice(0, 5).map(esc).join('<br>') + (st.beanstandet.length > 5 ? '<br>…' : '')
-        : 'Die aufgeführten Jahrgänge werden <b>im Ganzen ersetzt</b> — auch alles, was seit dem Abzug in der Preispflege geändert wurde. Vor jedem entsteht ohne Zutun ein Sicherungspunkt.') +
+        : 'Die aufgeführten Jahrgänge werden <b>im Ganzen ersetzt</b> — auch alles, was seit dem Abzug in der Datenpflege geändert wurde. Vor jedem entsteht ohne Zutun ein Sicherungspunkt.') +
     '</div>' +
     '<div class="dialog-knoepfe">' +
       '<button class="btn" onclick="dialogSchliessen()">Abbrechen</button>' +

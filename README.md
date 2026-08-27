@@ -31,7 +31,7 @@ Browser aus `file://` heraus keine Nachbardateien lesen darf.
 | `MediaQuote_Angebotsvorlage_4C.html` | dieselbe Vorlage mit einer einzigen Preisspalte (nur 4c-Preis) |
 | `PreisWerk_Paketrechner.html` | Formate mehrerer Titel zu einem Paket rechnen: Staffelrabatt titelübergreifend innerhalb eines Fachbereichs, AE-Provision, Ersparnis |
 | `Angebotsvorlage_Print*.html` | nur Weiterleitungen: die Vorlagen hießen bis zum 14.08.2026 so. Können entfallen, sobald keine Lesezeichen mehr darauf zeigen |
-| `Preispflege.html` | Preise und Termine pflegen — mit Anmeldung, siehe unten |
+| `Datenpflege.html` | Preise und Termine pflegen — mit Anmeldung, siehe unten |
 | `.github/` | der tägliche Ablauf, der die `Angebotsdaten.xlsx` erneuert |
 | `Angebotsdaten.xlsx` | die gemeinsame Preisliste (Blätter „Preise", „Termine", „Info") — Notweg |
 | `manifest.webmanifest` | Name und Symbol beim Ablegen im Dock |
@@ -65,7 +65,7 @@ values ('<Kennung aus auth.users>', 'Name');
 
 ## Preise und Termine pflegen
 
-Der übliche Weg ist die **Preispflege** (`Preispflege.html`), erreichbar über den
+Der übliche Weg ist die **Datenpflege** (`Datenpflege.html`), erreichbar über den
 Verweis unten auf der Startseite. Gespeichert wird auf Knopfdruck, nie nebenbei —
 und was gespeichert ist, steht sofort in allen Werkzeugen. Ein dritter Schritt zum
 Veröffentlichen entfällt.
@@ -101,7 +101,7 @@ insert into berechtigt (benutzer_id, notiz)
 values ('<Kennung aus auth.users>', 'Name');
 ```
 
-Ohne diesen Eintrag meldet die Preispflege beim Speichern, dass die Datenbank nichts
+Ohne diesen Eintrag meldet die Datenpflege beim Speichern, dass die Datenbank nichts
 geändert hat — der Zeilenschutz wirft keinen Fehler, er lässt die Anfrage ins Leere
 laufen. Das Werkzeug zählt die geschriebenen Zeilen nach und meldet es deshalb
 trotzdem als Fehlschlag.
@@ -114,9 +114,9 @@ gehen beim nächsten Lauf verloren, wenn sie nicht eingelesen wurden.
 
 Wer trotzdem in Excel arbeiten möchte:
 
-1. In der Preispflege **Als Excel sichern** — ein Abzug des heutigen Standes.
+1. In der Datenpflege **Als Excel sichern** — ein Abzug des heutigen Standes.
 2. In Excel ändern.
-3. In der Preispflege **Aus Excel laden …**, Datei wählen. Es erscheint ein
+3. In der Datenpflege **Aus Excel laden …**, Datei wählen. Es erscheint ein
    Prüfbericht: je Jahrgang, wie viele Titel, Preise und Termine die Datei enthält
    und wie viele bisher in der Datenbank stehen. Steht etwas nicht in Ordnung, wird
    es aufgeführt und **gar nichts** übernommen.
