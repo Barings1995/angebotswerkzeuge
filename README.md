@@ -31,7 +31,8 @@ Browser aus `file://` heraus keine Nachbardateien lesen darf.
 | `MediaQuote_Angebotsvorlage_4C.html` | dieselbe Vorlage mit einer einzigen Preisspalte (nur 4c-Preis) |
 | `PreisWerk_Paketrechner.html` | Formate mehrerer Titel zu einem Paket rechnen: Staffelrabatt titelübergreifend innerhalb eines Fachbereichs, AE-Provision, Ersparnis |
 | `Angebotsvorlage_Print*.html` | nur Weiterleitungen: die Vorlagen hießen bis zum 14.08.2026 so. Können entfallen, sobald keine Lesezeichen mehr darauf zeigen |
-| `Angebotsdaten.xlsx` | die gemeinsame Preisliste (Blätter „Preise", „Termine", „Info") |
+| `Preispflege.html` | Preise und Termine pflegen — mit Anmeldung, siehe unten |
+| `Angebotsdaten.xlsx` | die gemeinsame Preisliste (Blätter „Preise", „Termine", „Info") — Notweg |
 | `manifest.webmanifest` | Name und Symbol beim Ablegen im Dock |
 
 Nicht im Repository, nur im Arbeitsordner: die beiden Änderungslogs, der Ordner
@@ -61,14 +62,57 @@ insert into berechtigt (benutzer_id, notiz)
 values ('<Kennung aus auth.users>', 'Name');
 ```
 
-## Preisliste aktualisieren
+## Preise und Termine pflegen
 
-> **Achtung, Übergangszustand.** Der Pflegeschirm (Bauabschnitt 2) ist noch nicht
-> gebaut. Eine Änderung allein an der `Angebotsdaten.xlsx` erreicht die Werkzeuge
-> **nicht** — sie lesen die Datenbank und würden weiter die alten Zahlen zeigen. Bis
-> der Pflegeschirm und der Excel-Eingang stehen, muss jede Änderung zusätzlich in die
-> Datenbank übernommen werden (Skript `werkzeug/einspielen.py`, prüfen mit
-> `werkzeug/nachweis.py` — beide bleiben örtlich, siehe `.gitignore`).
+Der übliche Weg ist die **Preispflege** (`Preispflege.html`), erreichbar über den
+Verweis unten auf der Startseite. Gespeichert wird auf Knopfdruck, nie nebenbei —
+und was gespeichert ist, steht sofort in allen Werkzeugen. Ein dritter Schritt zum
+Veröffentlichen entfällt.
+
+Zwei Reiter:
+
+* **Preise** — links die Titel nach Fachbereich, mit einem Vermerk bei Titeln, deren
+  Preise noch offen sind; rechts die Formate nach Kategorie. Geprüft wird beim
+  Eintragen: ein Preis muss eine Zahl sein, ein Format je Titel und Kategorie nur
+  einmal vorkommen. Solange etwas beanstandet ist, bleibt *Speichern* gesperrt.
+* **Termine** — je Ausgabe die Termine nebeneinander, darunter Themenschwerpunkt und
+  Kongresse über die ganze Breite. Termine in der Form `TT.MM.`; fällt einer ins Vor-
+  oder Folgejahr, die Jahreszahl mitschreiben (`22.12.2026`).
+
+**Preisrunde.** *Preisrunde …* schreibt die Preise eines Jahrgangs fort: Vorlage,
+Prozentsatz, Rundung, Umfang. Gerundet wird nur dort, wo der Ausgangspreis selbst auf
+der Rundungsstufe stand — gerechnete Werte wie die Werbebeilagen „(gesamt)" behalten
+ihre Form. Führt der Zieljahrgang schon Preiszeilen, werden sie ersetzt; vorher
+entsteht ohne Zutun ein Sicherungspunkt.
+
+**Sicherungspunkte.** Schnappschüsse eines Jahrgangs, anlegen und zurückspielen. Beim
+Zurückspielen werden Titel, Preise und Termine des Jahrgangs ersetzt.
+
+### Konto
+
+Ändern darf nur, wer angemeldet **und** in der Tabelle `berechtigt` eingetragen ist.
+Konten werden im Supabase-Verwaltungsbereich angelegt (*Authentication → Users → Add
+user*, E-Mail und Kennwort eintragen, **„Auto Confirm User" einschalten**), danach die
+Kennung eintragen:
+
+```sql
+insert into berechtigt (benutzer_id, notiz)
+values ('<Kennung aus auth.users>', 'Name');
+```
+
+Ohne diesen Eintrag meldet die Preispflege beim Speichern, dass die Datenbank nichts
+geändert hat — der Zeilenschutz wirft keinen Fehler, er lässt die Anfrage ins Leere
+laufen. Das Werkzeug zählt die geschriebenen Zeilen nach und meldet es deshalb
+trotzdem als Fehlschlag.
+
+## Preisliste über die Excel-Datei ändern
+
+> **Übergangszustand.** Der Excel-Eingang (Bauabschnitt 3) ist noch nicht gebaut. Eine
+> Änderung allein an der `Angebotsdaten.xlsx` erreicht die Werkzeuge **nicht** — sie
+> lesen die Datenbank. Wer trotzdem über Excel arbeitet, muss die Änderung zusätzlich
+> in die Datenbank übernehmen (`werkzeug/einspielen.py`, prüfen mit
+> `werkzeug/nachweis.py` — beide bleiben örtlich, siehe `.gitignore`). Der einfache
+> Weg ist bis dahin die Preispflege.
 
 1. `Angebotsdaten.xlsx` in Excel ändern und in diesem Ordner speichern.
 2. Örtlich prüfen (siehe oben): Startseite zeigt den neuen Stand, die Werkzeuge zeigen
