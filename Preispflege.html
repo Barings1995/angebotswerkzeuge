@@ -214,6 +214,9 @@
       <span class="stand-hinweis" id="standHinweis"></span>
       <span class="offen-hinweis" id="offenHinweis"></span>
       <span style="flex:1"></span>
+      <button class="btn" onclick="excelEingangWaehlen()">Aus Excel laden …</button>
+      <input type="file" id="excelDatei" accept=".xlsx" style="display:none" onchange="excelEingangGewaehlt(event)">
+      <button class="btn" onclick="excelSichern()">Als Excel sichern</button>
       <button class="btn" onclick="preisrundeOeffnen()">Preisrunde …</button>
       <button class="btn" onclick="sicherungenOeffnen()">Sicherungspunkte …</button>
       <button class="btn" id="verwerfenKnopf" onclick="aenderungenVerwerfen()" disabled>Verwerfen</button>
@@ -1080,6 +1083,311 @@ async function sicherungZurueck(id, wann) {
     zeichnen();
     meldung('Jahrgang ' + gewJahr + ' auf den Stand vom ' + wann + ' zurückgesetzt.');
   } catch (fehler) { meldung('Nicht zurückgesetzt: ' + fehler.message, true); }
+}
+
+/* ── Excel: Aufbau der Mappe ──────────────────────────────────────────────────
+   Dieselben drei Blätter und dieselbe Spaltenfolge wie die Datei, die der
+   tägliche Ablauf auf GitHub erzeugt (.github/scripts/excel_erzeugen.py). Beide
+   müssen zusammenpassen: die vier Werkzeuge lesen nach Position, nicht nach
+   Spaltenüberschrift. */
+const PREIS_KOPF = ['Jahrgang', 'Titel', 'Auflage', 'Kategorie', 'Format',
+  'Grundpreis / 4c-Preis (€)', '4c-Zuschlag (€)', 'rabattfähig', 'AE-fähig',
+  'Termin (DU/EH)', 'Fachbereich', 'Seiten-Äquivalent'];
+const PREIS_BREITE = [10, 40, 10.29, 30, 34, 25.14, 16.57, 13.14, 10.86, 16, 12.86, 17.43];
+const TERMIN_KOPF = ['Jahrgang', 'Titel', 'Heft', 'Monat', 'ET', 'AS', 'DU-Schluss',
+  'EH-Termin', 'Themenschwerpunkte', 'Kongresse'];
+const TERMIN_BREITE = [10, 43.29, 6.86, 10.29, 10.14, 10.29, 13.14, 12.14, 122, 60.43];
+
+function ensureExcelJS() {
+  if (window.ExcelJS) return Promise.resolve();
+  return new Promise((res, rej) => {
+    const s = document.createElement('script');
+    s.src = 'https://cdn.jsdelivr.net/npm/exceljs@4.3.0/dist/exceljs.min.js';
+    s.onload = res;
+    s.onerror = () => rej(new Error('ExcelJS konnte nicht geladen werden (Internetverbindung?).'));
+    document.head.appendChild(s);
+  });
+}
+
+function zelleText(zelle) {
+  const v = zelle ? zelle.value : null;
+  if (v === null || v === undefined) return '';
+  if (typeof v === 'object') {
+    if (v instanceof Date) return ('0' + v.getDate()).slice(-2) + '.' + ('0' + (v.getMonth() + 1)).slice(-2) + '.' + String(v.getFullYear()).slice(-2);
+    if ('result' in v) return String(v.result).trim();
+    if ('text' in v) return String(v.text).trim();
+    if ('richText' in v) return v.richText.map(t => t.text).join('').trim();
+  }
+  return String(v).trim();
+}
+function zelleZahl(zelle) {
+  const t = zelleText(zelle).replace(/\s/g, '').replace(',', '.');
+  if (t === '') return null;
+  const n = Number(t);
+  return isNaN(n) ? NaN : Math.round(n * 100) / 100;
+}
+
+/* ── Excel: Ausgang ───────────────────────────────────────────────────────────
+   Ein Abzug des heutigen Standes zum Weiterarbeiten in Excel. Was hier
+   herauskommt, lässt sich über „Aus Excel laden" wieder einlesen. */
+/* Das Bauen der Mappe steht für sich, getrennt vom Herunterladen: nur so lässt
+   sich nachmessen, ob die erzeugte Datei dieselben Zahlen ergibt wie die
+   Datenbank. Geprüft wird genau das (siehe Änderungslog). */
+async function excelMappeBauen() {
+  await ensureExcelJS();
+  const mappe = new ExcelJS.Workbook();
+  {
+
+    const info = mappe.addWorksheet('Info');
+    info.getColumn(1).width = 82.71;
+    [
+      'Angebotsdaten – Abzug aus der Preispflege',
+      '',
+      'Dieser Abzug gibt den Stand der Datenbank zum Zeitpunkt des Sicherns wieder.',
+      'Änderungen daran erreichen die Werkzeuge nicht von selbst — die Datei muss in',
+      'der Preispflege über »Aus Excel laden« wieder eingelesen werden.',
+      '',
+      'Blatt »Preise« – eine Zeile je Format:',
+      '   ' + PREIS_KOPF.join(' · '),
+      'Blatt »Termine« – eine Zeile je Ausgabe:',
+      '   ' + TERMIN_KOPF.join(' · '),
+      '',
+      'Spaltenreihenfolge NICHT ändern – gelesen wird nach Position.'
+    ].forEach(z => info.addRow([z]));
+    info.getRow(1).font = { bold: true };
+
+    const preise = mappe.addWorksheet('Preise');
+    preise.addRow(PREIS_KOPF).font = { bold: true };
+    PREIS_BREITE.forEach((b, i) => { preise.getColumn(i + 1).width = b; });
+    preise.views = [{ state: 'frozen', ySplit: 1 }];
+
+    const termine = mappe.addWorksheet('Termine');
+    termine.addRow(TERMIN_KOPF).font = { bold: true };
+    TERMIN_BREITE.forEach((b, i) => { termine.getColumn(i + 1).width = b; });
+    termine.views = [{ state: 'frozen', ySplit: 1 }];
+
+    let nP = 0, nT = 0;
+    (ARBEIT || []).forEach(t => {
+      (t.preis || []).forEach(p => {
+        preise.addRow([Number(t.jahr), t.name, Number(t.auflage) || 0, p.kategorie, p.format,
+          p.preis == null ? null : Number(p.preis),
+          p.zuschlag_4c == null ? null : Number(p.zuschlag_4c),
+          p.rabattfaehig ? 'ja' : 'nein', p.ae_faehig ? 'ja' : 'nein',
+          p.termin_art || null, t.fachbereich || null,
+          p.seiten_aequivalent == null ? null : Number(p.seiten_aequivalent)]);
+        nP++;
+      });
+      (t.termin || []).forEach(a => {
+        termine.addRow([Number(t.jahr), t.name, a.heft, a.monat || null, a.et || null,
+          a.anzeigenschluss || null, a.du_schluss || null, a.eh_termin || null,
+          a.themen || null, a.kongresse || null]);
+        nT++;
+      });
+    });
+    preise.autoFilter = 'A1:L' + (nP + 1);
+    termine.autoFilter = 'A1:J' + (nT + 1);
+    return { mappe: mappe, preise: nP, termine: nT };
+  }
+}
+
+async function excelSichern() {
+  try {
+    meldung('Datei wird erzeugt …');
+    const { mappe, preise: nP, termine: nT } = await excelMappeBauen();
+    const puffer = await mappe.xlsx.writeBuffer();
+    const brocken = new Blob([puffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+    const heute = new Date(), z = n => String(n).padStart(2, '0');
+    const a = Object.assign(document.createElement('a'), {
+      href: URL.createObjectURL(brocken),
+      download: 'Angebotsdaten_' + heute.getFullYear() + '-' + z(heute.getMonth() + 1) + '-' + z(heute.getDate()) + '.xlsx'
+    });
+    document.body.appendChild(a);
+    a.click();
+    setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 100);
+    meldung('Abzug gesichert — ' + nP + ' Preise, ' + nT + ' Termine.');
+  } catch (fehler) {
+    meldung('Nicht gesichert: ' + fehler.message, true);
+  }
+}
+
+/* ── Excel: Eingang ───────────────────────────────────────────────────────────
+   Jeder Jahrgang, der in der Datei vorkommt, wird in der Datenbank im Ganzen
+   ersetzt. Nur so verschwinden gestrichene Formate und Ausgaben wirklich —
+   zeilenweises Mischen ließe sie stehen. Jahrgänge, die nicht in der Datei
+   stehen, bleiben unangetastet. Vor jedem entsteht ohne Zutun ein
+   Sicherungspunkt. */
+let excelStapel = null;
+
+function excelEingangWaehlen() {
+  if (offeneAenderungen() && !confirm('Es sind Änderungen offen, die noch nicht gespeichert sind.\n\nDer Excel-Eingang schreibt unmittelbar in die Datenbank. Offene Änderungen gehen dabei verloren.\n\nTrotzdem fortfahren?')) return;
+  document.getElementById('excelDatei').click();
+}
+
+async function excelEingangGewaehlt(ereignis) {
+  const datei = ereignis.target.files && ereignis.target.files[0];
+  ereignis.target.value = '';
+  if (!datei) return;
+  try {
+    meldung('Datei wird gelesen …');
+    await ensureExcelJS();
+    const mappe = new ExcelJS.Workbook();
+    await mappe.xlsx.load(await datei.arrayBuffer());
+    excelStapel = excelLesen(mappe, datei.name);
+    excelBerichtZeigen();
+  } catch (fehler) {
+    meldung('Datei nicht gelesen: ' + fehler.message, true);
+  }
+}
+
+function excelLesen(mappe, dateiname) {
+  const bP = mappe.getWorksheet('Preise');
+  if (!bP) throw new Error('In der Datei fehlt das Tabellenblatt „Preise".');
+  const bT = mappe.getWorksheet('Termine');
+
+  const jahre = {};
+  const beanstandet = [];
+  const gesehen = new Set();
+
+  bP.eachRow((zeile, nr) => {
+    if (nr === 1) return;
+    const jahr = zelleText(zeile.getCell(1)), name = zelleText(zeile.getCell(2));
+    const fmt = zelleText(zeile.getCell(5));
+    if (!jahr || !name || !fmt) return;
+    const kat = zelleText(zeile.getCell(4)) || 'Sonstige';
+    const schl = jahr + '|' + name + '|' + kat + '|' + fmt;
+    if (gesehen.has(schl)) { beanstandet.push('Zeile ' + nr + ': „' + fmt + '" steht bei ' + name + ' zweimal in derselben Kategorie'); return; }
+    gesehen.add(schl);
+    const preis = zelleZahl(zeile.getCell(6)), zuschlag = zelleZahl(zeile.getCell(7));
+    const eq = zelleZahl(zeile.getCell(12));
+    if (isNaN(preis)) beanstandet.push('Zeile ' + nr + ': Preis ist keine Zahl');
+    if (isNaN(zuschlag)) beanstandet.push('Zeile ' + nr + ': 4c-Zuschlag ist keine Zahl');
+    if (isNaN(eq) || (eq != null && eq <= 0)) beanstandet.push('Zeile ' + nr + ': Seiten-Äquivalent muss größer als 0 sein');
+    const art = zelleText(zeile.getCell(10)).toUpperCase();
+    if (art && art !== 'DU' && art !== 'EH') beanstandet.push('Zeile ' + nr + ': Termin muss DU, EH oder leer sein');
+
+    if (!jahre[jahr]) jahre[jahr] = { titel: [], nachName: {} };
+    let t = jahre[jahr].nachName[name];
+    if (!t) {
+      t = { name: name, auflage: parseInt(zelleText(zeile.getCell(3)).replace(/\D/g, ''), 10) || 0,
+            fachbereich: zelleText(zeile.getCell(11)), preise: [], termine: [] };
+      jahre[jahr].nachName[name] = t;
+      jahre[jahr].titel.push(t);
+    }
+    if (!t.fachbereich) t.fachbereich = zelleText(zeile.getCell(11));
+    t.preise.push({ reihenfolge: t.preise.length + 1, kategorie: kat, format: fmt,
+      preis: isNaN(preis) ? null : preis, zuschlag_4c: isNaN(zuschlag) ? null : zuschlag,
+      rabattfaehig: /^ja$/i.test(zelleText(zeile.getCell(8))),
+      ae_faehig: /^ja$/i.test(zelleText(zeile.getCell(9))),
+      termin_art: (art === 'DU' || art === 'EH') ? art : null,
+      seiten_aequivalent: (isNaN(eq) || eq == null || eq <= 0) ? null : eq });
+  });
+
+  const ohneTitel = [];
+  if (bT) bT.eachRow((zeile, nr) => {
+    if (nr === 1) return;
+    const jahr = zelleText(zeile.getCell(1)), name = zelleText(zeile.getCell(2));
+    if (!jahr || !name) return;
+    const heft = zelleText(zeile.getCell(3));
+    if (!heft) { beanstandet.push('Termine, Zeile ' + nr + ': ohne Heftnummer'); return; }
+    if (!jahre[jahr] || !jahre[jahr].nachName[name]) { ohneTitel.push(jahr + ' · ' + name); return; }
+    const t = jahre[jahr].nachName[name];
+    if (t.termine.some(a => a.heft === heft)) { beanstandet.push('Termine, Zeile ' + nr + ': Heft ' + heft + ' steht bei ' + name + ' zweimal'); return; }
+    ['et', 'anzeigenschluss', 'du_schluss', 'eh_termin'].forEach((f, i) => {
+      const w = zelleText(zeile.getCell(5 + i));
+      if (!terminGueltig(w)) beanstandet.push('Termine, Zeile ' + nr + ': „' + w + '" ist kein Termin der Form TT.MM.');
+    });
+    t.termine.push({ reihenfolge: t.termine.length + 1, heft: heft,
+      monat: zelleText(zeile.getCell(4)), et: zelleText(zeile.getCell(5)),
+      anzeigenschluss: zelleText(zeile.getCell(6)), du_schluss: zelleText(zeile.getCell(7)),
+      eh_termin: zelleText(zeile.getCell(8)), themen: zelleText(zeile.getCell(9)),
+      kongresse: zelleText(zeile.getCell(10)) });
+  });
+
+  if (!Object.keys(jahre).length) throw new Error('In der Datei wurden keine Preiszeilen gefunden.');
+  return { dateiname, jahre, beanstandet, ohneTitel: [...new Set(ohneTitel)] };
+}
+
+function excelBerichtZeigen() {
+  const st = excelStapel;
+  const jahre = Object.keys(st.jahre).sort();
+  let zeilen = '';
+  jahre.forEach(j => {
+    const neu = st.jahre[j];
+    const nP = neu.titel.reduce((s, t) => s + t.preise.length, 0);
+    const nT = neu.titel.reduce((s, t) => s + t.termine.length, 0);
+    const alt = (ARBEIT || []).filter(t => t.jahr === j);
+    const aP = alt.reduce((s, t) => s + (t.preis || []).length, 0);
+    const aT = alt.reduce((s, t) => s + (t.termin || []).length, 0);
+    const pfeil = (a, b) => a === b ? String(b) : (a + ' → <b>' + b + '</b>');
+    zeilen += '<div class="dialog-zeile"><span>Jahrgang ' + esc(j) + '</span><span style="color:var(--text)">' +
+      pfeil(alt.length, neu.titel.length) + ' Titel · ' + pfeil(aP, nP) + ' Preise · ' + pfeil(aT, nT) + ' Termine</span></div>';
+  });
+  const unberuehrt = jahrgaenge().filter(j => jahre.indexOf(j) < 0);
+  const schlimm = st.beanstandet.length > 0;
+
+  dialogZeigen(
+    '<h3>Aus Excel laden</h3>' +
+    '<div class="erklaerung">' + esc(st.dateiname) + '</div>' +
+    zeilen +
+    (unberuehrt.length ? '<div class="dialog-zeile"><span>Nicht in der Datei</span><span style="color:var(--grey-600)">Jahrgang ' + unberuehrt.map(esc).join(', ') + ' bleibt unangetastet</span></div>' : '') +
+    (st.ohneTitel.length ? '<div class="dialog-zeile"><span>Termine ohne Titel</span><span style="color:var(--orange-dark)">' + st.ohneTitel.slice(0, 3).map(esc).join(' · ') + (st.ohneTitel.length > 3 ? ' …' : '') + ' — übergangen</span></div>' : '') +
+    '<div class="dialog-summe">' +
+      (schlimm
+        ? '<b>' + st.beanstandet.length + ' Beanstandungen.</b> Es wird nichts übernommen.<br>' +
+          st.beanstandet.slice(0, 5).map(esc).join('<br>') + (st.beanstandet.length > 5 ? '<br>…' : '')
+        : 'Die aufgeführten Jahrgänge werden <b>im Ganzen ersetzt</b> — auch alles, was seit dem Abzug in der Preispflege geändert wurde. Vor jedem entsteht ohne Zutun ein Sicherungspunkt.') +
+    '</div>' +
+    '<div class="dialog-knoepfe">' +
+      '<button class="btn" onclick="dialogSchliessen()">Abbrechen</button>' +
+      (schlimm ? '' : '<button class="btn btn-primär" id="exKnopf" onclick="excelUebernehmen()">Übernehmen</button>') +
+    '</div>');
+}
+
+async function excelUebernehmen() {
+  const st = excelStapel;
+  if (!st) return;
+  const knopf = document.getElementById('exKnopf');
+  knopf.disabled = true; knopf.textContent = 'Wird übernommen …';
+  try {
+    if (sitzung && sitzung.ablauf && sitzung.ablauf < Date.now() + 60000) await sitzungErneuern();
+    const jahre = Object.keys(st.jahre).sort();
+    let nP = 0, nT = 0;
+    for (const jahr of jahre) {
+      const vorhanden = (ARBEIT || []).some(t => t.jahr === jahr);
+      if (vorhanden) await sicherungAnlegen(jahr, 'vor dem Einlesen von ' + st.dateiname, true);
+      else await schreiben('jahrgang', 'POST', { jahr: jahr });
+
+      if (vorhanden) await schreiben('titel?jahr=eq.' + encodeURIComponent(jahr), 'DELETE');
+
+      let rf = 0;
+      for (const t of st.jahre[jahr].titel) {
+        rf++;
+        const angelegt = await schreiben('titel', 'POST',
+          { jahr: jahr, reihenfolge: rf, name: t.name, auflage: t.auflage, fachbereich: t.fachbereich });
+        const tid = angelegt[0].id;
+        for (let i = 0; i < t.preise.length; i += 250) {
+          const teil = t.preise.slice(i, i + 250).map(p => Object.assign({ titel_id: tid }, p));
+          await schreiben('preis', 'POST', teil, teil.length);
+          nP += teil.length;
+        }
+        if (t.termine.length) {
+          const teil = t.termine.map(a => Object.assign({ titel_id: tid }, a));
+          await schreiben('termin', 'POST', teil, teil.length);
+          nT += teil.length;
+        }
+      }
+    }
+    dialogSchliessen();
+    excelStapel = null;
+    await ladenAusDatenbank();
+    if (!titelVonId(gewTitel)) { const e = titelDesJahres()[0]; gewTitel = e ? e.id : null; }
+    jahrAuswahlAufbauen();
+    zeichnen();
+    meldung('Übernommen — ' + nP + ' Preise und ' + nT + ' Termine aus ' + st.dateiname + '.');
+  } catch (fehler) {
+    meldung('Nicht übernommen: ' + fehler.message + ' — der Sicherungspunkt steht.', true);
+    if (knopf) { knopf.disabled = false; knopf.textContent = 'Übernehmen'; }
+  }
 }
 
 /* ── Start ────────────────────────────────────────────────────────────────── */

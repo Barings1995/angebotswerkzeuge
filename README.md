@@ -32,6 +32,7 @@ Browser aus `file://` heraus keine Nachbardateien lesen darf.
 | `PreisWerk_Paketrechner.html` | Formate mehrerer Titel zu einem Paket rechnen: Staffelrabatt titelübergreifend innerhalb eines Fachbereichs, AE-Provision, Ersparnis |
 | `Angebotsvorlage_Print*.html` | nur Weiterleitungen: die Vorlagen hießen bis zum 14.08.2026 so. Können entfallen, sobald keine Lesezeichen mehr darauf zeigen |
 | `Preispflege.html` | Preise und Termine pflegen — mit Anmeldung, siehe unten |
+| `.github/` | der tägliche Ablauf, der die `Angebotsdaten.xlsx` erneuert |
 | `Angebotsdaten.xlsx` | die gemeinsame Preisliste (Blätter „Preise", „Termine", „Info") — Notweg |
 | `manifest.webmanifest` | Name und Symbol beim Ablegen im Dock |
 
@@ -105,14 +106,48 @@ geändert hat — der Zeilenschutz wirft keinen Fehler, er lässt die Anfrage in
 laufen. Das Werkzeug zählt die geschriebenen Zeilen nach und meldet es deshalb
 trotzdem als Fehlschlag.
 
-## Preisliste über die Excel-Datei ändern
+## Der Weg über Excel
 
-> **Übergangszustand.** Der Excel-Eingang (Bauabschnitt 3) ist noch nicht gebaut. Eine
-> Änderung allein an der `Angebotsdaten.xlsx` erreicht die Werkzeuge **nicht** — sie
-> lesen die Datenbank. Wer trotzdem über Excel arbeitet, muss die Änderung zusätzlich
-> in die Datenbank übernehmen (`werkzeug/einspielen.py`, prüfen mit
-> `werkzeug/nachweis.py` — beide bleiben örtlich, siehe `.gitignore`). Der einfache
-> Weg ist bis dahin die Preispflege.
+Die `Angebotsdaten.xlsx` ist nicht mehr die Quelle, sondern **Abzug und Notweg**. Sie
+wird täglich aus der Datenbank neu erzeugt; von Hand hineingeschriebene Änderungen
+gehen beim nächsten Lauf verloren, wenn sie nicht eingelesen wurden.
+
+Wer trotzdem in Excel arbeiten möchte:
+
+1. In der Preispflege **Als Excel sichern** — ein Abzug des heutigen Standes.
+2. In Excel ändern.
+3. In der Preispflege **Aus Excel laden …**, Datei wählen. Es erscheint ein
+   Prüfbericht: je Jahrgang, wie viele Titel, Preise und Termine die Datei enthält
+   und wie viele bisher in der Datenbank stehen. Steht etwas nicht in Ordnung, wird
+   es aufgeführt und **gar nichts** übernommen.
+4. *Übernehmen*. Jeder Jahrgang, der in der Datei vorkommt, wird **im Ganzen
+   ersetzt** — nur so verschwinden gestrichene Formate und Ausgaben wirklich.
+   Jahrgänge, die nicht in der Datei stehen, bleiben unangetastet. Vor jedem
+   entsteht ohne Zutun ein Sicherungspunkt.
+
+### Der tägliche Ablauf
+
+`.github/workflows/preisliste.yml` erzeugt die Datei jede Nacht um 03:17 UTC neu
+(`.github/scripts/excel_erzeugen.py`) und veröffentlicht sie, **wenn sie sich geändert
+hat**. Der Erzeuger schreibt Byte für Byte vorhersagbar — gleiche Daten ergeben
+dieselbe Datei —, sonst entstünde jeden Tag ein Commit ohne Inhalt. Der
+Speicherzeitpunkt der Mappe wird auf den jüngsten Änderungszeitpunkt der Daten
+gesetzt; daraus bilden die Werkzeuge ihren „Stand".
+
+Ein Geheimnis wird nicht gebraucht: Lesen ist offen, Adresse und öffentlicher
+Schlüssel stehen in `konfiguration.js`.
+
+Nebenbei hält der tägliche Abruf das kostenlose Datenbankprojekt wach, das sonst nach
+längerer Ruhe stillgelegt würde. **Aber:** GitHub schaltet geplante Abläufe in
+Repositorys ohne Aktivität nach 60 Tagen ab. Ändert sich die Preisliste zwei Monate
+lang nicht, ist der Ablauf von Hand wieder einzuschalten (*Actions* → *Preisliste
+erneuern* → *Enable workflow*).
+
+Von Hand auslösen: *Actions* → *Preisliste erneuern* → *Run workflow*.
+
+## Die Datei von Hand austauschen
+
+Nur noch als Notbehelf gedacht — der reguläre Weg ist der Excel-Eingang oben.
 
 1. `Angebotsdaten.xlsx` in Excel ändern und in diesem Ordner speichern.
 2. Örtlich prüfen (siehe oben): Startseite zeigt den neuen Stand, die Werkzeuge zeigen
