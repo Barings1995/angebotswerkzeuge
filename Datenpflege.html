@@ -895,7 +895,7 @@ function termineZeichnen(t) {
      Rest. Zuvor standen Thema und Kongresse in einer zweiten Zeile darunter —
      bequemer zu bearbeiten, aber die Liste war doppelt so lang. */
   let html = '<table class="termin-tab"><colgroup><col style="width:58px"><col style="width:100px"><col style="width:84px"><col style="width:100px"><col style="width:96px"><col style="width:96px"><col><col><col style="width:34px"></colgroup>' +
-    '<tr><th>Heft</th><th>Monat</th><th>ET</th><th>Anz.-schluss</th><th>DU-Schluss</th><th>EH-Termin</th><th>Themenschwerpunkt</th><th>Kongresse</th><th></th></tr>';
+    '<tr><th>Heft</th><th>Monat</th><th>ET</th><th>AS</th><th>DU-Schluss</th><th>EH-Termin</th><th>Themenschwerpunkt</th><th>Kongresse</th><th></th></tr>';
   liste.forEach(a => {
     const f = feld => terminGueltig(a[feld]) ? '' : ' fehler';
     html += '<tr>' +
