@@ -88,7 +88,13 @@
   .btn:active:not(:disabled),
   .reiter button:active { transform: translateY(1px); }
   .btn-voll { width: 100%; justify-content: center; height: 34px; }
-  /* Pfeil hinein/heraus wie in der Jahresvorschau — dieselben zwei Zeichnungen. */
+  /* Sinnbilder derselben Zeichenfamilie: duenne Striche, runde Enden, 24er Raster.
+     Pfeil hinein/heraus stammen aus der Jahresvorschau, dieselben zwei Zeichnungen.
+     Dazu Kalenderblatt mit Plus (ein Jahrgang ist ein Jahr, keine Datei), steigende
+     Linie (alle Preise steigen um einen Satz) und Pfeil zurueck (Staende
+     zurueckspielen). Bewusst keine Uhr fuer die Sicherungspunkte: „Termine" meint
+     im selben Werkzeug etwas ganz anderes. Die dritte Gruppe bleibt ohne —
+     „Verwerfen" und „Speichern" sind durch Farbe und Sperrung schon unterschieden. */
   .btn svg { width: 15px; height: 15px; flex: none; }
 
   /* ── Leiste ── */
@@ -103,6 +109,30 @@
      auf. Ungedrueckt liegt der Schatten ausserhalb und wird vom overflow:hidden
      der Gruppe verdeckt. Geloest wie in der Jahresvorschau (.mode-btn.active). */
   .reiter button.an { background: var(--navy); color: #fff; box-shadow: 0 -1px 0 var(--navy); }
+  /* Die Leiste traegt dreierlei: den Austausch mit der Excel-Datei, Eingriffe am
+     Jahrgang und die offenen Aenderungen. Jede Gruppe steht in einer eigenen
+     Huelle, getrennt durch einen feinen Strich in der vorhandenen Randfarbe —
+     geloest wie in OpenSlots (.ang-wrap), ohne weitere Farbe. Innen enger als
+     aussen: der Abstand traegt die Gruppierung mit.
+
+     Die drei Gruppen stehen zusammen in .aktionen. Damit bricht die Leiste bei
+     schmalem Fenster zwischen den Gruppen um und nicht mehr mitten in einer.
+
+     Der Strich ist ein aufgesetztes Element links ausserhalb der Gruppe, nicht
+     deren Rand. Grund: bei einem Rand haengt der Strich am Zeilenanfang in der
+     Luft, sobald eine Gruppe umbricht — gemessen bei 1400, 1200, 1000, 820 und
+     700 px. So liegt er dort ausserhalb von .aktionen und wird vom
+     overflow:hidden verdeckt; steht die Gruppe mitten in der Zeile, liegt er
+     innen und ist zu sehen.
+
+     Die zwei Punkte Luft unten samt gleich grossem negativem Aussenabstand
+     halten die Hoehe unveraendert und lassen den Druckpunkt (1 px) heil:
+     ohne sie schnitte overflow:hidden dem gedrueckten Knopf die Unterkante ab. */
+  .aktionen { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; row-gap: 9px;
+              overflow: hidden; padding-bottom: 2px; margin-bottom: -2px; }
+  .gruppe { position: relative; display: inline-flex; align-items: center; gap: 7px; }
+  .gruppe::before { content: ''; position: absolute; left: -7px; top: 3px; bottom: 3px;
+                    width: 1px; background: var(--border); }
   .stand-hinweis { font-size: 12.5px; color: var(--grey-600); }
   .offen-hinweis { display: none; align-items: center; gap: 6px; font-size: 12.5px; font-weight: 600; color: var(--orange-dark); background: #fdf3e7; border: 1px solid #f6ddbc; border-radius: var(--radius-md); padding: 3px 10px; }
   .offen-hinweis.an { display: inline-flex; }
@@ -238,14 +268,22 @@
       <span class="stand-hinweis" id="standHinweis"></span>
       <span class="offen-hinweis" id="offenHinweis"></span>
       <span style="flex:1"></span>
-      <button class="btn" onclick="excelEingangWaehlen()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 9v10a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V9"/><polyline points="7 8 12 3 17 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>Aus Excel laden …</button>
-      <input type="file" id="excelDatei" accept=".xlsx" style="display:none" onchange="excelEingangGewaehlt(event)">
-      <button class="btn" onclick="excelSichern()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>Als Excel sichern</button>
-      <button class="btn" onclick="jahrgangAnlegenOeffnen()">Jahrgang anlegen …</button>
-      <button class="btn" onclick="preisrundeOeffnen()">Preise fortschreiben …</button>
-      <button class="btn" onclick="sicherungenOeffnen()">Sicherungspunkte …</button>
-      <button class="btn" id="verwerfenKnopf" onclick="aenderungenVerwerfen()" disabled>Verwerfen</button>
-      <button class="btn btn-primär" id="speichernKnopf" onclick="speichern()" disabled>Speichern</button>
+      <div class="aktionen">
+        <div class="gruppe">
+          <button class="btn" onclick="excelEingangWaehlen()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 9v10a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V9"/><polyline points="7 8 12 3 17 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>Aus Excel laden …</button>
+          <input type="file" id="excelDatei" accept=".xlsx" style="display:none" onchange="excelEingangGewaehlt(event)">
+          <button class="btn" onclick="excelSichern()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>Als Excel sichern</button>
+        </div>
+        <div class="gruppe">
+          <button class="btn" onclick="jahrgangAnlegenOeffnen()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/><line x1="12" y1="13" x2="12" y2="19"/><line x1="9" y1="16" x2="15" y2="16"/></svg>Jahrgang anlegen …</button>
+          <button class="btn" onclick="preisrundeOeffnen()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg>Preise fortschreiben …</button>
+          <button class="btn" onclick="sicherungenOeffnen()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"/></svg>Sicherungspunkte …</button>
+        </div>
+        <div class="gruppe">
+          <button class="btn" id="verwerfenKnopf" onclick="aenderungenVerwerfen()" disabled>Verwerfen</button>
+          <button class="btn btn-primär" id="speichernKnopf" onclick="speichern()" disabled>Speichern</button>
+        </div>
+      </div>
     </div>
 
     <div class="fehlerkasten" id="pruefKasten"><span id="pruefText"></span></div>
