@@ -140,7 +140,11 @@
   /* ── Zweispaltiger Arbeitsbereich ── */
   .arbeit { display: grid; grid-template-columns: 268px minmax(0,1fr); gap: 16px; align-items: start; }
   .spalte { background: var(--white); border: 1px solid var(--border); border-radius: var(--radius-lg); box-shadow: var(--shadow-sm); overflow: hidden; }
-  .titelliste { padding: 6px 0 10px; max-height: calc(100vh - 220px); overflow-y: auto; }
+  .titelliste { padding: 6px 0 10px; max-height: calc(100vh - 264px); overflow-y: auto; }
+  /* Der Knopf steht unter der rollenden Liste, nicht darin: bei 19 Titeln waere er
+     sonst weggerollt, gerade wenn ein zwanzigster hinzukommen soll. */
+  .titel-fuss { border-top: 1px solid var(--border); padding: 9px 12px; background: var(--surface); }
+  .titel-fuss .btn { width: 100%; justify-content: center; }
   .fach-kopf { font-size: 10.5px; font-weight: 700; color: var(--grey-600); text-transform: uppercase; letter-spacing: .1em; padding: 12px 14px 4px; }
   .titel-zeile { display: flex; justify-content: space-between; align-items: center; gap: 8px; padding: 5px 14px; font-size: 13px; cursor: pointer; border-left: 3px solid transparent; }
   .titel-zeile:hover { background: var(--surface-hover); }
@@ -315,6 +319,7 @@
           <button class="btn" onclick="jahrgangAnlegenOeffnen()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/><line x1="12" y1="13" x2="12" y2="19"/><line x1="9" y1="16" x2="15" y2="16"/></svg>Jahrgang anlegen …</button>
           <button class="btn" onclick="preisrundeOeffnen()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg>Preise fortschreiben …</button>
           <button class="btn" onclick="sicherungenOeffnen()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"/></svg>Sicherungspunkte …</button>
+          <button class="btn btn-gefahr" onclick="jahrgangLoeschenOeffnen()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>Jahrgang löschen …</button>
         </div>
         <div class="gruppe">
           <button class="btn" id="verwerfenKnopf" onclick="aenderungenVerwerfen()" disabled>Verwerfen</button>
@@ -326,7 +331,10 @@
     <div class="fehlerkasten" id="pruefKasten"><span id="pruefText"></span></div>
 
     <div class="arbeit">
-      <div class="spalte"><div class="titelliste" id="titelListe"></div></div>
+      <div class="spalte">
+        <div class="titelliste" id="titelListe"></div>
+        <div class="titel-fuss"><button class="btn" onclick="titelAnlegenOeffnen()">+ Titel anlegen …</button></div>
+      </div>
       <div class="spalte"><div class="inhalt" id="inhalt"></div></div>
     </div>
   </section>
@@ -527,7 +535,7 @@ async function starten() {
   const jahre = jahrgaenge();
   if (!gewJahr || jahre.indexOf(gewJahr) < 0) gewJahr = jahre.includes('2026') ? '2026' : jahre[0];
   jahrAuswahlAufbauen();
-  const erste = titelDesJahres()[0];
+  const erste = titelNachAnzeige()[0];
   gewTitel = erste ? erste.id : null;
   zeichnen();
 }
@@ -545,6 +553,40 @@ function jahrgaenge() {
 function titelDesJahres(jahr) {
   return (ARBEIT || []).filter(t => t.jahr === (jahr || gewJahr))
                        .sort((a, b) => a.reihenfolge - b.reihenfolge);
+}
+/* Angezeigt wird alphabetisch, gespeichert bleibt die Reihenfolge der Preisliste.
+   Die vier Werkzeuge sortieren die Titel laengst selbst und genau so - sortedYear
+   in OpenSlots, localeCompare in PreisWerk und beiden MediaQuote-Fassungen. Allein
+   die Datenpflege folgte bisher der gespeicherten Reihenfolge; das fiel als
+   Unterschied auf. titel.reihenfolge anzuruehren waere der falsche Weg: sie haengt
+   an „Jahrgang anlegen" und „Preise fortschreiben", die sie mitnehmen, und kein
+   Werkzeug haette etwas davon. */
+const NACH_NAMEN = (a, b) => String(a.name || '').localeCompare(String(b.name || ''), 'de', { numeric: true, sensitivity: 'base' });
+function titelSortiert(jahr) { return titelDesJahres(jahr).sort(NACH_NAMEN); }
+
+/* Fachbereiche alphabetisch, „Ohne Fachbereich" immer zuletzt - wie fachbereiche()
+   in OpenSlots. */
+const FACH_OHNE = 'Ohne Fachbereich';
+function fachbereicheSortiert(titel) {
+  const namen = [...new Set(titel.map(t => t.fachbereich || FACH_OHNE))];
+  const ohne = namen.includes(FACH_OHNE);
+  const liste = namen.filter(f => f !== FACH_OHNE)
+                     .sort((a, b) => a.localeCompare(b, 'de', { numeric: true, sensitivity: 'base' }));
+  if (ohne) liste.push(FACH_OHNE);
+  return liste;
+}
+
+/* Die Reihenfolge, in der die Titelliste sie tatsaechlich zeigt: erst nach
+   Fachbereich, darin nach Namen. „Der erste Titel" - beim Start, beim Wechsel des
+   Jahrgangs, nach dem Speichern - ist der oberste der Liste und nicht der
+   alphabetisch erste ueber alle Bereiche hinweg. */
+function titelNachAnzeige(jahr) {
+  const titel = titelSortiert(jahr);
+  const raus = [];
+  fachbereicheSortiert(titel).forEach(fach => {
+    titel.forEach(t => { if ((t.fachbereich || FACH_OHNE) === fach) raus.push(t); });
+  });
+  return raus;
 }
 function titelVonId(id) { return (ARBEIT || []).find(t => t.id === id) || null; }
 
@@ -648,7 +690,15 @@ function knoepfeAuffrischen() {
 /* ── Prüfung ──────────────────────────────────────────────────────────────── */
 function alleFehler() {
   const fehler = [];
+  /* Namen je Jahrgang, genau so verglichen wie „unique (jahr, name)" es tut - die
+     Pruefung soll nichts sperren, was die Datenbank annaehme. */
+  const namenJeJahr = {};
   (ARBEIT || []).forEach(t => {
+    const name = String(t.name || '').trim();
+    const menge = namenJeJahr[t.jahr] = namenJeJahr[t.jahr] || new Set();
+    if (!name) fehler.push('Jahrgang ' + t.jahr + ': ein Titel ohne Namen');
+    else if (menge.has(name)) fehler.push('Der Titel „' + name + '" steht zweimal im Jahrgang ' + t.jahr + '.');
+    else menge.add(name);
     const gesehen = new Set();
     (t.preis || []).forEach(p => {
       const wo = t.name + ' · ' + (p.format || '(ohne Format)');
@@ -682,7 +732,7 @@ function jahrAuswahlAufbauen() {
 
 function jahrWechseln(jahr) {
   gewJahr = jahr;
-  const erste = titelDesJahres()[0];
+  const erste = titelNachAnzeige()[0];
   gewTitel = erste ? erste.id : null;
   zeichnen();
 }
@@ -701,6 +751,13 @@ function esc(s) {
 
 function zeichnen() {
   document.getElementById('standHinweis').textContent = standText;
+  /* Die Jahrgangsauswahl wird aus den Titeln gebildet, nicht aus der
+     Jahrgangstabelle. Sie gehoert deshalb hierher: faellt mit dem letzten Titel
+     ein Jahrgang weg oder kommt er durch „Verwerfen" zurueck, muss die Auswahl
+     mitgehen. Zuvor wurde sie nur beim Start und aus zwei Dialogen aufgebaut -
+     nach dem Zuruecknehmen einer Loeschung fehlte der Jahrgang in der Liste,
+     obwohl seine Titel wieder dastanden. */
+  jahrAuswahlAufbauen();
   titellisteZeichnen();
   inhaltZeichnen();
   knoepfeAuffrischen();
@@ -709,11 +766,11 @@ function zeichnen() {
 function titellisteZeichnen() {
   const liste = document.getElementById('titelListe');
   const merkeRollen = liste.scrollTop;
-  const titel = titelDesJahres();
+  const titel = titelSortiert();
   const nachFach = {};
-  titel.forEach(t => { const f = t.fachbereich || 'Ohne Fachbereich'; (nachFach[f] = nachFach[f] || []).push(t); });
+  titel.forEach(t => { const f = t.fachbereich || FACH_OHNE; (nachFach[f] = nachFach[f] || []).push(t); });
   let html = '';
-  Object.keys(nachFach).forEach(fach => {
+  fachbereicheSortiert(titel).forEach(fach => {
     html += '<div class="fach-kopf">' + esc(fach) + '</div>';
     nachFach[fach].forEach(t => {
       const ohnePreis = (t.preis || []).filter(p => p.preis == null || Number(p.preis) === 0).length;
@@ -743,6 +800,13 @@ function inhaltZeichnen() {
     '<div class="feld"><label>Auflage</label><input class="zahl" style="width:92px;text-align:right" value="' + esc(ganzText(t.auflage)) + '" onchange="stammSetzen(\'auflage\',this.value)"></div>' +
     '<div class="feld"><label>Fachbereich</label><input style="width:150px" list="fachListe" value="' + esc(t.fachbereich) + '" onchange="stammSetzen(\'fachbereich\',this.value)"></div>' +
     '<datalist id="fachListe">' + [...new Set((ARBEIT || []).map(x => x.fachbereich).filter(Boolean))].map(f => '<option value="' + esc(f) + '">').join('') + '</datalist>' +
+    /* Nur solange der Titel neu und ungespeichert ist. Ohne diesen Weg zurueck
+       bliebe gegen einen versehentlich angelegten Titel allein „Verwerfen", und
+       das naehme jede andere offene Aenderung mit. Gespeicherte Titel zu loeschen
+       ist damit nicht gemeint - dafuer gibt es hier nichts. */
+    (istNeu(t.id)
+      ? '<button class="btn" onclick="titelNeuEntfernen()">Diesen neuen Titel entfernen</button>'
+      : '<button class="btn btn-gefahr" onclick="titelLoeschenOeffnen()">Titel löschen …</button>') +
     '</div>';
 
   html += reiter === 'preise' ? preiseZeichnen(t) : termineZeichnen(t);
@@ -973,7 +1037,7 @@ function terminAnlegen() {
 function aenderungenVerwerfen() {
   if (!confirm('Alle offenen Änderungen verwerfen?\n\nDer zuletzt gespeicherte Stand wird wiederhergestellt.')) return;
   ARBEIT = JSON.parse(JSON.stringify(URSPRUNG));
-  if (!titelVonId(gewTitel)) { const e = titelDesJahres()[0]; gewTitel = e ? e.id : null; }
+  if (!titelVonId(gewTitel)) { const e = titelNachAnzeige()[0]; gewTitel = e ? e.id : null; }
   zeichnen();
   meldung('Änderungen verworfen.');
 }
@@ -997,8 +1061,40 @@ async function speichern() {
   try {
     if (sitzung && sitzung.ablauf && sitzung.ablauf < Date.now() + 60000) await sitzungErneuern();
     let n = 0;
+    /* Zuerst die geloeschten Titel, dann erst die uebrigen Aenderungen: wird ein
+       Titel geloescht und im selben Zug ein anderer auf dessen Namen umbenannt,
+       verletzte die umgekehrte Reihenfolge „unique (jahr, name)". Preise und
+       Termine gehen per Kaskade mit. */
+    const bleiben = new Set((ARBEIT || []).map(t => t.id));
+    const jahreLeer = new Set();
+    for (const u of (URSPRUNG || [])) {
+      if (bleiben.has(u.id)) continue;
+      await schreiben('titel?id=eq.' + u.id, 'DELETE');
+      if (!(ARBEIT || []).some(t => t.jahr === u.jahr)) jahreLeer.add(u.jahr);
+      n++;
+    }
+    /* Faellt mit dem letzten Titel der ganze Jahrgang, geht seine Jahrgangszeile
+       mit. Sonst bliebe sie titellos zurueck - und ein spaeteres „Jahrgang
+       anlegen" fuer dasselbe Jahr scheiterte am Primaerschluessel, weil alle
+       drei Anlegestellen das Vorhandensein an den Titeln pruefen, nicht an der
+       Tabelle. mindestens 0, weil die Zeile auch schon fehlen darf. */
+    for (const jahr of jahreLeer) {
+      await schreiben('jahrgang?jahr=eq.' + encodeURIComponent(jahr), 'DELETE', undefined, 0);
+    }
     for (const t of ARBEIT) {
-      const u = ursprungTitel(t.id);
+      let u = ursprungTitel(t.id);
+      /* Ein neu angelegter Titel hat noch keine Kennung aus der Datenbank. Er wird
+         hier zuerst geschrieben; danach gilt er als Titel ohne alle Preis- und
+         Terminzeilen, sodass zeilenSchreiben sie sammt und sonders anlegt. */
+      if (!u && istNeu(t.id)) {
+        const angelegt = await schreiben('titel', 'POST',
+          { jahr: t.jahr, reihenfolge: t.reihenfolge, name: t.name, auflage: t.auflage, fachbereich: t.fachbereich });
+        const alteKennung = t.id;
+        t.id = angelegt[0].id;
+        if (gewTitel === alteKennung) gewTitel = t.id;
+        u = { id: t.id, name: t.name, auflage: t.auflage, fachbereich: t.fachbereich, preis: [], termin: [] };
+        n++;
+      }
       if (!u) continue;
       if (u.name !== t.name || u.auflage !== t.auflage || u.fachbereich !== t.fachbereich) {
         await schreiben('titel?id=eq.' + t.id, 'PATCH',
@@ -1009,7 +1105,7 @@ async function speichern() {
       n += await zeilenSchreiben('termin', t, u, 'termin', TERMIN_FELDER);
     }
     await ladenAusDatenbank();
-    if (!titelVonId(gewTitel)) { const e = titelDesJahres()[0]; gewTitel = e ? e.id : null; }
+    if (!titelVonId(gewTitel)) { const e = titelNachAnzeige()[0]; gewTitel = e ? e.id : null; }
     zeichnen();
     meldung(n === 0 ? 'Nichts zu speichern.' : ('Gespeichert — ' + n + (n === 1 ? ' Änderung' : ' Änderungen') + ' stehen jetzt in allen Werkzeugen.'));
   } catch (fehler) {
@@ -1057,6 +1153,274 @@ function dialogSchliessen() { document.getElementById('dialogPlatz').innerHTML =
 function dialogZeigen(html) {
   document.getElementById('dialogPlatz').innerHTML =
     '<div class="schleier"><div class="dialog">' + html + '</div></div>';
+}
+
+/* ── Titel anlegen ────────────────────────────────────────────────────────────
+   Bis hierher entstanden Titel nur nebenbei: beim Anlegen eines Jahrgangs, beim
+   Fortschreiben der Preise und ueber den Excel-Eingang. Kam eine Zeitschrift neu
+   hinzu, fuehrte kein Weg hinein.
+
+   Dieses Fenster schreibt als einziges NICHT unmittelbar in die Datenbank.
+   „Jahrgang anlegen" und „Preise fortschreiben" tun das, weil sie Kraftakte sind
+   und mit einem Sicherungspunkt einhergehen. Ein einzelner Titel gehoert in den
+   gewoehnlichen Arbeitsgang - sonst stuende ein halbfertiger Titel augenblicklich
+   in allen vier Werkzeugen, entgegen dem Grundsatz „Gespeichert wird auf
+   Knopfdruck, nie nebenbei".
+
+   Mit kommt das Format-Geruest eines Vorbilds OHNE Preise: bei 46 Formaten je
+   Titel erspart das die Tipparbeit, und die Preise gehoeren einzeln gesetzt.
+   Ausgaben entstehen keine. */
+function titelAnlegenOeffnen() {
+  const titel = titelSortiert();
+  const gew = titelVonId(gewTitel);
+  const faecher = [...new Set((ARBEIT || []).map(x => x.fachbereich).filter(Boolean))]
+    .sort((a, b) => a.localeCompare(b, 'de', { numeric: true, sensitivity: 'base' }));
+  const vorFach = (gew && gew.fachbereich) || '';
+  dialogZeigen('<h3>Titel anlegen</h3>' +
+    '<div class="erklaerung">Der Titel entsteht im Jahrgang ' + esc(gewJahr) +
+      '. Wirksam wird er erst mit „Speichern".</div>' +
+    '<div class="dialog-zeile"><span>Titel</span>' +
+      '<input id="taName" style="width:240px" oninput="titelAnlegenRechnen()"></div>' +
+    '<div class="dialog-zeile"><span>Fachbereich</span><select id="taFach" onchange="titelAnlegenRechnen()">' +
+      faecher.map(f => '<option value="' + esc(f) + '"' + (f === vorFach ? ' selected' : '') + '>' + esc(f) + '</option>').join('') +
+      '<option>Neuer Fachbereich …</option></select></div>' +
+    '<div class="dialog-zeile" id="taFachNeuZeile" style="display:none"><span>Name des Fachbereichs</span>' +
+      '<input id="taFachNeu" style="width:240px" oninput="titelAnlegenRechnen()"></div>' +
+    '<div class="dialog-zeile"><span>Auflage</span>' +
+      '<input id="taAuflage" class="kurz" value="0" oninput="titelAnlegenRechnen()"></div>' +
+    '<div class="dialog-zeile"><span>Formate übernehmen von</span><select id="taVorbild" onchange="titelAnlegenRechnen()">' +
+      '<option value="">(ohne Vorbild)</option>' +
+      titel.map(t => '<option value="' + t.id + '"' + (t.id === gewTitel ? ' selected' : '') + '>' + esc(t.name) + '</option>').join('') +
+      '</select></div>' +
+    '<div class="dialog-summe" id="taSumme"></div>' +
+    '<div class="dialog-knoepfe">' +
+      '<button class="btn" onclick="dialogSchliessen()">Abbrechen</button>' +
+      '<button class="btn btn-primär" id="taKnopf" onclick="titelAnlegenAusfuehren()">Anlegen</button>' +
+    '</div>');
+  titelAnlegenRechnen();
+  const feld = document.getElementById('taName');
+  if (feld) feld.focus();
+}
+
+function titelAnlegenVorschau() {
+  /* „Neuer Fachbereich …" ist stets der letzte Eintrag der Liste. Erkannt wird er
+     an seinem Platz, nicht an einem Kennwert - jeder Kennwert waere ein Name, den
+     ein Fachbereich eines Tages selbst tragen koennte. */
+  const auswahl = document.getElementById('taFach');
+  const neuerFach = auswahl.selectedIndex === auswahl.options.length - 1;
+  const fach = neuerFach ? String(document.getElementById('taFachNeu').value || '').trim() : auswahl.value;
+  const vorbild = titelVonId(document.getElementById('taVorbild').value) || null;
+  return {
+    name: String(document.getElementById('taName').value || '').trim(),
+    fach: fach, neuerFach: neuerFach, vorbild: vorbild,
+    auflage: parseInt(String(document.getElementById('taAuflage').value || '').replace(/\D/g, ''), 10) || 0,
+    formate: vorbild ? (vorbild.preis || []).length : 0
+  };
+}
+
+function titelAnlegenRechnen() {
+  const zeile = document.getElementById('taFachNeuZeile');
+  const v = titelAnlegenVorschau();
+  zeile.style.display = v.neuerFach ? '' : 'none';
+  const kasten = document.getElementById('taSumme');
+  const knopf  = document.getElementById('taKnopf');
+  let text, gesperrt = false;
+  if (!v.name) {
+    text = 'Der Titel braucht einen Namen.'; gesperrt = true;
+  } else if (titelDesJahres().some(t => String(t.name || '').trim() === v.name)) {
+    text = 'Der Titel „' + esc(v.name) + '" steht bereits im Jahrgang ' + esc(gewJahr) + '.'; gesperrt = true;
+  } else if (v.neuerFach && !v.fach) {
+    text = 'Der neue Fachbereich braucht einen Namen.'; gesperrt = true;
+  } else {
+    text = '<b>' + esc(v.name) + '</b> wird angelegt' +
+      (v.fach ? ', im Fachbereich <b>' + esc(v.fach) + '</b>' : ', ohne Fachbereich') + '.<br>' +
+      (v.formate
+        ? '<b>' + v.formate + ' Formate</b> kommen ohne Preise von „' + esc(v.vorbild.name) + '" mit'
+        : 'Formate entstehen keine') +
+      '; Ausgaben entstehen keine.<br>Wirksam wird das erst mit „Speichern".';
+  }
+  kasten.innerHTML = text;
+  knopf.disabled = gesperrt;
+}
+
+function titelAnlegenAusfuehren() {
+  const v = titelAnlegenVorschau();
+  const hoechste = titelDesJahres().reduce((m, t) => Math.max(m, Number(t.reihenfolge) || 0), 0);
+  const neu = {
+    id: neueKennung(), jahr: gewJahr, reihenfolge: hoechste + 1,
+    name: v.name, auflage: v.auflage, fachbereich: v.fach,
+    preis: (v.vorbild ? (v.vorbild.preis || []) : []).map((p, i) => ({
+      id: neueKennung(), reihenfolge: i + 1, kategorie: p.kategorie, format: p.format,
+      preis: null, zuschlag_4c: null,
+      rabattfaehig: !!p.rabattfaehig, ae_faehig: !!p.ae_faehig,
+      termin_art: p.termin_art || null,
+      seiten_aequivalent: (p.seiten_aequivalent == null ? null : p.seiten_aequivalent)
+    })),
+    termin: []
+  };
+  ARBEIT.push(neu);
+  gewTitel = neu.id;
+  dialogSchliessen();
+  reiterWechseln('preise');
+  meldung('Titel „' + neu.name + '" angelegt — noch nicht gespeichert.');
+}
+
+function titelNeuEntfernen() {
+  const t = titelVonId(gewTitel);
+  if (!t || !istNeu(t.id)) return;
+  if (!confirm('Den neu angelegten Titel „' + (t.name || '') + '" wieder entfernen?\n\n' +
+    'Er ist noch nicht gespeichert; andere offene Änderungen bleiben unberührt.')) return;
+  ARBEIT = ARBEIT.filter(x => x.id !== t.id);
+  const e = titelNachAnzeige()[0];
+  gewTitel = e ? e.id : null;
+  zeichnen();
+  meldung('Titel entfernt.');
+}
+
+/* ── Titel loeschen ───────────────────────────────────────────────────────────
+   Der erste wirklich zerstoerende Eingriff auf Titelebene: preis und termin
+   haengen mit „on delete cascade" am Titel, Formate und Ausgaben gehen mit.
+
+   Deshalb kein blankes confirm(), sondern ein Fenster, das die Zahlen und die
+   Reichweite nennt, bevor jemand zustimmt. Und deshalb wirksam erst mit
+   „Speichern": bis dahin holt „Verwerfen" den Titel zurueck - ein Weg zurueck,
+   den es danach nicht mehr gibt. Ein selbsttaetiger Sicherungspunkt entsteht
+   nicht; den gibt es bei den Kraftakten, die einen ganzen Jahrgang unmittelbar
+   ersetzen.
+
+   Geloescht wird allein im angezeigten Jahrgang. In den uebrigen bleibt der
+   Titel stehen, und das Fenster nennt sie beim Namen - es ist die naechst-
+   liegende Sorge. */
+function titelLoeschenOeffnen() {
+  const t = titelVonId(gewTitel);
+  if (!t || istNeu(t.id)) return;
+  const formate = (t.preis || []).length, ausgaben = (t.termin || []).length;
+  const andere = (ARBEIT || []).filter(x => x.name === t.name && x.jahr !== t.jahr)
+                               .map(x => x.jahr).sort();
+  const letzter = titelDesJahres(t.jahr).length === 1;
+  const zahl = (n, ein, viele) => '<b>' + n + '</b> ' + (n === 1 ? ein : viele);
+  dialogZeigen('<h3>Titel löschen</h3>' +
+    '<div class="erklaerung">' + esc(t.name) + ' — Jahrgang ' + esc(t.jahr) + '</div>' +
+    '<div class="dialog-summe">' +
+      'Mit dem Titel gehen ' + zahl(formate, 'Format', 'Formate') + ' und ' +
+      zahl(ausgaben, 'Ausgabe', 'Ausgaben') + ' verloren.<br>' +
+      (andere.length
+        ? 'In ' + (andere.length === 1 ? 'Jahrgang ' : 'den Jahrgängen ') + '<b>' + andere.join(', ') +
+          '</b> bleibt der Titel unberührt.'
+        : 'In keinem anderen Jahrgang steht dieser Titel.') +
+      (letzter ? '<br>Es ist der <b>letzte Titel des Jahrgangs ' + esc(t.jahr) +
+        '</b> — mit ihm verschwindet der Jahrgang aus der Auswahl.' : '') +
+      '<br>Wirksam wird das erst mit „Speichern"; bis dahin holt „Verwerfen" den Titel zurück.' +
+    '</div>' +
+    '<div class="dialog-knoepfe">' +
+      '<button class="btn" onclick="dialogSchliessen()">Abbrechen</button>' +
+      '<button class="btn btn-gefahr" onclick="titelLoeschenAusfuehren()">Löschen</button>' +
+    '</div>');
+}
+
+function titelLoeschenAusfuehren() {
+  const t = titelVonId(gewTitel);
+  if (!t || istNeu(t.id)) { dialogSchliessen(); return; }
+  const name = t.name;
+  ARBEIT = ARBEIT.filter(x => x.id !== t.id);
+  /* Faellt mit ihm der letzte Titel des Jahrgangs, ist der Jahrgang nicht mehr
+     zu sehen: jahrgaenge() bildet die Auswahl aus den Titeln, nicht aus der
+     Jahrgangstabelle. Dann muss die Anzeige auf einen Jahrgang zurueckfallen,
+     den es noch gibt; die Auswahlliste selbst zieht zeichnen() nach. */
+  const jahre = jahrgaenge();
+  if (!jahre.includes(gewJahr)) gewJahr = jahre[0] || '';
+  const e = titelNachAnzeige()[0];
+  gewTitel = e ? e.id : null;
+  dialogSchliessen();
+  zeichnen();
+  meldung('„' + name + '" gelöscht — wirksam mit „Speichern", zurück mit „Verwerfen".');
+}
+
+/* ── Jahrgang loeschen ────────────────────────────────────────────────────────
+   Der groesste Eingriff, den das Werkzeug kennt. Ein einziger Aufruf genuegt:
+   titel haengt mit „on delete cascade" an jahrgang, preis und termin wiederum
+   am Titel - mit der Jahrgangszeile geht alles.
+
+   Anders als beim Titel wird hier UNMITTELBAR geschrieben; „Verwerfen" hilft
+   nicht mehr. Deshalb drei Sperren statt einer Rueckfrage: die Jahreszahl ist
+   einzutippen, offene Aenderungen muessen zuvor entschieden sein, und der
+   letzte verbliebene Jahrgang laesst sich nicht loeschen.
+
+   Offene Aenderungen sperren, statt nur zu warnen wie die uebrigen Kraftakte:
+   sicherungAnlegen baut den Schnappschuss aus ARBEIT. Waeren Aenderungen offen,
+   enthielte der „Stand vor dem Loeschen" Dinge, die nie gespeichert waren.
+
+   Der letzte Jahrgang bleibt stehen, weil jahrgangAnlegenOeffnen ohne Titel
+   keine Vorlage haette und gesperrt aufginge - das Werkzeug waere eine
+   Sackgasse ohne Weg zurueck.
+
+   Die Sicherungspunkte des Jahrgangs bleiben erhalten: sicherung haengt an
+   keinem Fremdschluessel. Erreichbar sind sie erst wieder, wenn der Jahrgang
+   neu angelegt ist - sicherungenLaden fragt nach gewJahr. Genau das ist der
+   Weg zurueck. */
+function jahrgangLoeschenOeffnen() {
+  const jahr = gewJahr;
+  const titel = titelDesJahres(jahr);
+  let formate = 0, ausgaben = 0;
+  titel.forEach(t => { formate += (t.preis || []).length; ausgaben += (t.termin || []).length; });
+  const letzter = jahrgaenge().length <= 1;
+  const offen = offeneAenderungen();
+  const zahl = (n, ein, viele) => '<b>' + n + '</b> ' + (n === 1 ? ein : viele);
+  let sperrgrund = '';
+  if (letzter) sperrgrund = 'Es ist der einzige Jahrgang. Der letzte lässt sich nicht löschen — ohne ' +
+    'einen Jahrgang als Vorlage ließe sich auch keiner mehr anlegen.';
+  else if (offen) sperrgrund = 'Es sind Änderungen offen. Erst speichern oder verwerfen — sonst trüge ' +
+    'der Sicherungspunkt einen Stand, den es so nie gab.';
+  dialogZeigen('<h3>Jahrgang löschen</h3>' +
+    '<div class="erklaerung">Jahrgang ' + esc(jahr) + '</div>' +
+    '<div class="dialog-summe">' +
+      (sperrgrund ? sperrgrund :
+        'Es gehen ' + zahl(titel.length, 'Titel', 'Titel') + ', ' +
+        zahl(formate, 'Format', 'Formate') + ' und ' + zahl(ausgaben, 'Ausgabe', 'Ausgaben') + ' verloren.' +
+        '<br>Vor dem Löschen entsteht ein Sicherungspunkt. Die Sicherungspunkte dieses Jahrgangs ' +
+        'bleiben erhalten, sind aber erst wieder erreichbar, wenn der Jahrgang neu angelegt ist — ' +
+        'das ist der Weg zurück.' +
+        '<br><b>Gelöscht wird sofort.</b> „Verwerfen" hilft hier nicht.') +
+    '</div>' +
+    (sperrgrund ? '' :
+      '<div class="dialog-zeile"><span>Zur Bestätigung die Jahreszahl eintippen</span>' +
+      '<input id="jlProbe" class="kurz" oninput="jahrgangLoeschenRechnen()"></div>') +
+    '<div class="dialog-knoepfe">' +
+      '<button class="btn" onclick="dialogSchliessen()">Abbrechen</button>' +
+      '<button class="btn btn-gefahr" id="jlKnopf" onclick="jahrgangLoeschenAusfuehren()" disabled>Löschen</button>' +
+    '</div>');
+  const feld = document.getElementById('jlProbe');
+  if (feld) feld.focus();
+}
+
+function jahrgangLoeschenRechnen() {
+  const feld = document.getElementById('jlProbe');
+  document.getElementById('jlKnopf').disabled = !feld || String(feld.value).trim() !== gewJahr;
+}
+
+async function jahrgangLoeschenAusfuehren() {
+  const feld = document.getElementById('jlProbe');
+  const jahr = gewJahr;
+  if (!feld || String(feld.value).trim() !== jahr) return;
+  if (jahrgaenge().length <= 1 || offeneAenderungen()) return;
+  const knopf = document.getElementById('jlKnopf');
+  knopf.disabled = true; knopf.textContent = 'Wird gelöscht …';
+  try {
+    if (sitzung && sitzung.ablauf && sitzung.ablauf < Date.now() + 60000) await sitzungErneuern();
+    await sicherungAnlegen(jahr, 'vor dem Löschen des Jahrgangs ' + jahr, true);
+    await schreiben('jahrgang?jahr=eq.' + encodeURIComponent(jahr), 'DELETE');
+    dialogSchliessen();
+    await ladenAusDatenbank();
+    const jahre = jahrgaenge();
+    gewJahr = jahre[0] || '';
+    const e = titelNachAnzeige()[0];
+    gewTitel = e ? e.id : null;
+    zeichnen();
+    meldung('Jahrgang ' + jahr + ' gelöscht. Der Sicherungspunkt bleibt erhalten.');
+  } catch (fehler) {
+    meldung('Nicht gelöscht: ' + fehler.message, true);
+    knopf.disabled = false; knopf.textContent = 'Löschen';
+  }
 }
 
 /* ── Preise fortschreiben ─────────────────────────────────────────────────────
@@ -1224,7 +1588,7 @@ async function preisrundeAusfuehren() {
     await ladenAusDatenbank();
     gewJahr = v.ziel;
     jahrAuswahlAufbauen();
-    const erste = titelDesJahres()[0];
+    const erste = titelNachAnzeige()[0];
     gewTitel = erste ? erste.id : null;
     reiterWechseln('preise');
     meldung('Jahrgang ' + v.ziel + ' angelegt — ' + v.mitPreis + ' Preise fortgeschrieben.');
@@ -1342,7 +1706,7 @@ async function jahrgangAnlegenAusfuehren() {
     await ladenAusDatenbank();
     gewJahr = v.ziel;
     jahrAuswahlAufbauen();
-    const erste = titelDesJahres()[0];
+    const erste = titelNachAnzeige()[0];
     gewTitel = erste ? erste.id : null;
     reiterWechseln('termine');
     meldung('Jahrgang ' + v.ziel + ' angelegt — ' + v.quellen.length + ' Titel, ' + nA + ' Ausgaben.');
@@ -1430,7 +1794,7 @@ async function sicherungZurueck(id, wann) {
     }
     dialogSchliessen();
     await ladenAusDatenbank();
-    const erste = titelDesJahres()[0];
+    const erste = titelNachAnzeige()[0];
     gewTitel = erste ? erste.id : null;
     zeichnen();
     meldung('Jahrgang ' + gewJahr + ' auf den Stand vom ' + wann + ' zurückgesetzt.');
@@ -1735,7 +2099,7 @@ async function excelUebernehmen() {
     dialogSchliessen();
     excelStapel = null;
     await ladenAusDatenbank();
-    if (!titelVonId(gewTitel)) { const e = titelDesJahres()[0]; gewTitel = e ? e.id : null; }
+    if (!titelVonId(gewTitel)) { const e = titelNachAnzeige()[0]; gewTitel = e ? e.id : null; }
     jahrAuswahlAufbauen();
     zeichnen();
     meldung('Übernommen — ' + nP + ' Preise und ' + nT + ' Termine aus ' + st.dateiname + '.');
