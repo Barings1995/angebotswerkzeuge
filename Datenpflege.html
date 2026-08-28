@@ -161,7 +161,34 @@
   .feld-titel { flex: 1 1 360px; min-width: 360px; max-width: 620px; }
   .feld-titel input { width: 100%; }
 
-  .kat-kopf { font-size: 10.5px; font-weight: 700; color: var(--grey-600); text-transform: uppercase; letter-spacing: .1em; padding: 14px 2px 5px; display: flex; justify-content: space-between; align-items: center; }
+  /* Der Kategoriekopf ist bearbeitbar. Eine Kategorie ist keine eigene Tabelle:
+     sie besteht aus den Formaten, die sie nennen. Umbenennen heisst deshalb, alle
+     ihre Formate umzubenennen, Entfernen heisst, sie mitzunehmen — und eine
+     Kategorie ohne Formate kann es nicht geben, beim Anlegen entsteht darum
+     gleich eine leere Formatzeile mit. */
+  .kat-kopf { font-size: 10.5px; font-weight: 700; color: var(--grey-600); text-transform: uppercase; letter-spacing: .1em; padding: 14px 2px 5px; display: flex; align-items: center; gap: 6px; }
+  .kat-kopf .kat-name { flex: 1 1 auto; min-width: 0; font: inherit; letter-spacing: inherit;
+    color: inherit; text-transform: inherit; padding: 2px 6px; background: transparent;
+    border: 1px solid transparent; border-radius: var(--radius-sm); }
+  .kat-kopf .kat-name:hover { border-color: var(--border); background: var(--white); }
+  .kat-kopf .kat-name:focus { outline: none; border-color: var(--navy); background: var(--white); box-shadow: 0 0 0 2px rgba(0,40,90,.08); }
+  .kat-kopf.geaendert .kat-name { color: var(--orange); }
+  .kat-kopf .kat-zahl { flex: none; }
+  .kat-kopf .kat-tat { flex: none; font: inherit; letter-spacing: .06em; color: var(--grey-500);
+    background: none; border: none; cursor: pointer; padding: 2px 6px; border-radius: var(--radius-sm); }
+  .kat-kopf .kat-tat:hover { color: var(--navy); background: var(--surface-hover); }
+  .kat-kopf .kat-tat:active { transform: translateY(1px); }
+  .kat-kopf .kat-weg:hover { color: var(--red); background: var(--red-bg); }
+  /* „+ Format" steht als letzte Zeile in der Tabelle — dort, wo die Formate
+     aufhoeren und wo man beim Anfuegen hinsieht. Im Kategoriekopf stand es
+     rechts aussen neben „Entfernen" und war zu leicht zu uebersehen.
+     Anklickbar ist die ganze Zeilenbreite, nicht bloss die Schrift. */
+  .neu-format td { padding: 0; }
+  .neu-format button { display: block; width: 100%; text-align: left; padding: 6px;
+    font-family: var(--font-body); font-size: 12.5px; font-weight: 600; color: var(--navy);
+    background: none; border: none; border-radius: var(--radius-sm); cursor: pointer; }
+  .neu-format button:hover { background: var(--surface-hover); }
+  .neu-format button:active { transform: translateY(1px); }
   table { width: 100%; border-collapse: collapse; font-size: 13px; }
   th { text-align: left; font-size: 10px; font-weight: 700; color: var(--grey-600); text-transform: uppercase; letter-spacing: .07em; padding: 6px 6px; border-bottom: 1px solid var(--border); background: var(--surface-hover); white-space: nowrap; }
   th.r, td.r { text-align: right; }
@@ -723,18 +750,31 @@ function inhaltZeichnen() {
   hoehenAuffrischen();
 }
 
-function preiseZeichnen(t) {
-  const liste = t.preis || [];
-  if (!liste.length) return '<table><tr class="leer-zeile"><td>Noch keine Formate hinterlegt.</td></tr></table>' + neuKnopf('Format');
-  const nachKat = [];
-  liste.forEach(p => {
-    let g = nachKat.find(x => x.kat === p.kategorie);
-    if (!g) { g = { kat: p.kategorie, zeilen: [] }; nachKat.push(g); }
+/* Die Kategorien in der Reihenfolge ihres ersten Auftretens. Ueber den Platz in
+   dieser Liste werden sie angesprochen — nicht ueber ihren Namen, der auch ein
+   Hochkomma enthalten duerfte. */
+function katGruppen(t) {
+  const gruppen = [];
+  (t.preis || []).forEach(p => {
+    let g = gruppen.find(x => x.kat === p.kategorie);
+    if (!g) { g = { kat: p.kategorie, zeilen: [] }; gruppen.push(g); }
     g.zeilen.push(p);
   });
+  return gruppen;
+}
+
+function preiseZeichnen(t) {
+  const liste = t.preis || [];
+  if (!liste.length) return '<table><tr class="leer-zeile"><td>Noch keine Formate hinterlegt.</td></tr></table>' + katKnopf();
+  const nachKat = katGruppen(t);
   let html = '';
-  nachKat.forEach(g => {
-    html += '<div class="kat-kopf"><span>' + esc(g.kat) + '</span><span>' + g.zeilen.length + '</span></div>';
+  nachKat.forEach((g, i) => {
+    const umbenannt = g.zeilen.some(p => { const u = ursprungPreis(t, p.id); return u && u.kategorie !== p.kategorie; });
+    html += '<div class="kat-kopf' + (umbenannt ? ' geaendert' : '') + '">' +
+      '<input class="kat-name" value="' + esc(g.kat) + '" onchange="kategorieUmbenennen(' + i + ',this.value)">' +
+      '<span class="kat-zahl">' + g.zeilen.length + '</span>' +
+      '<button class="kat-tat kat-weg" title="Diese Kategorie mit allen ihren Formaten entfernen" onclick="kategorieEntfernen(' + i + ')">Entfernen</button>' +
+      '</div>';
     html += '<table><colgroup><col style="width:34%"><col style="width:13%"><col style="width:13%"><col style="width:9%"><col style="width:9%"><col style="width:9%"><col style="width:10%"><col style="width:36px"></colgroup>' +
       '<tr><th>Format</th><th class="r">Preis €</th><th class="r">4c-Zuschlag €</th><th>rabatt</th><th>AE</th><th>Termin</th><th class="r">Seiten-Äqu.</th><th></th></tr>';
     g.zeilen.forEach(p => {
@@ -753,9 +793,15 @@ function preiseZeichnen(t) {
         '<td><button class="zeilen-x" title="Format entfernen" onclick="preisEntfernen(\'' + p.id + '\')">×</button></td>' +
       '</tr>';
     });
-    html += '</table>';
+    html += '<tr class="neu-format"><td colspan="8">' +
+      '<button title="Ein Format in dieser Kategorie anlegen" onclick="formatAnlegen(' + i + ')">+ Format</button>' +
+      '</td></tr></table>';
   });
-  return html + neuKnopf('Format');
+  return html + katKnopf();
+}
+
+function katKnopf() {
+  return '<div class="neu-zeile"><button class="btn" onclick="kategorieAnlegen()">+ Kategorie anlegen</button></div>';
 }
 
 function jaNein(id, feld, wert) {
@@ -809,8 +855,7 @@ function hoehenAuffrischen() {
 }
 
 function neuKnopf(was) {
-  return '<div class="neu-zeile"><button class="btn" onclick="' +
-    (was === 'Format' ? 'preisAnlegen()' : 'terminAnlegen()') + '">+ ' + was + ' anlegen</button></div>';
+  return '<div class="neu-zeile"><button class="btn" onclick="terminAnlegen()">+ ' + was + ' anlegen</button></div>';
 }
 
 function ursprungPreis(t, id) {
@@ -862,14 +907,58 @@ function terminEntfernen(id) {
 }
 let neuZaehler = 0;
 function neueKennung() { return 'neu-' + (++neuZaehler); }
-function preisAnlegen() {
-  const t = titelVonId(gewTitel); if (!t) return;
-  const letzte = (t.preis || [])[t.preis.length - 1];
+/* Neue Zeilen haengen sich hinten an, auch wenn ihre Kategorie weiter oben
+   steht: angezeigt wird nach Kategorie gruppiert, und die Reihenfolge wird beim
+   Speichern aus der Reihenfolge im Feld gebildet. Eine Einsortierung mitten
+   hinein wuerde jede folgende Zeile umnummerieren und damit neu schreiben. */
+function preisZeileAnhaengen(t, kat, vorbild) {
   t.preis = t.preis || [];
   t.preis.push({ id: neueKennung(), reihenfolge: t.preis.length + 1,
-    kategorie: letzte ? letzte.kategorie : 'Normalplatzierungen', format: '',
-    preis: null, zuschlag_4c: null, rabattfaehig: true, ae_faehig: true,
-    termin_art: letzte ? letzte.termin_art : null, seiten_aequivalent: null });
+    kategorie: kat, format: '', preis: null, zuschlag_4c: null,
+    rabattfaehig: vorbild ? vorbild.rabattfaehig : true,
+    ae_faehig: vorbild ? vorbild.ae_faehig : true,
+    termin_art: vorbild ? vorbild.termin_art : null, seiten_aequivalent: null });
+}
+function formatAnlegen(i) {
+  const t = titelVonId(gewTitel); if (!t) return;
+  const g = katGruppen(t)[i]; if (!g) return;
+  preisZeileAnhaengen(t, g.kat, g.zeilen[g.zeilen.length - 1]);
+  zeichnen();
+}
+function kategorieAnlegen() {
+  const t = titelVonId(gewTitel); if (!t) return;
+  const schon = katGruppen(t).map(g => g.kat);
+  let name = 'Neue Kategorie', n = 2;
+  while (schon.includes(name)) name = 'Neue Kategorie ' + (n++);
+  preisZeileAnhaengen(t, name, null);
+  zeichnen();
+  /* Der Name ist gleich zum Ueberschreiben ausgewaehlt — „Neue Kategorie" ist
+     ein Platzhalter, kein Vorschlag. Die leere Formatzeile darunter haelt das
+     Speichern ohnehin auf, bis beides ausgefuellt ist. */
+  const felder = document.querySelectorAll('#inhalt .kat-name');
+  const letztes = felder[felder.length - 1];
+  if (letztes) { letztes.focus(); letztes.select(); }
+}
+function kategorieUmbenennen(i, wert) {
+  const t = titelVonId(gewTitel); if (!t) return;
+  const g = katGruppen(t)[i]; if (!g) return;
+  const name = String(wert).trim();
+  if (!name) { meldung('Eine Kategorie braucht einen Namen.', true); zeichnen(); return; }
+  if (name === g.kat) return;
+  /* Traegt eine Kategorie den Namen einer anderen, verschmelzen beide. Das ist
+     erlaubt und manchmal gewollt; fuehren dann zwei Formate denselben Namen,
+     beanstandet es die Pruefung vor dem Speichern. */
+  g.zeilen.forEach(p => { p.kategorie = name; });
+  zeichnen();
+}
+function kategorieEntfernen(i) {
+  const t = titelVonId(gewTitel); if (!t) return;
+  const g = katGruppen(t)[i]; if (!g) return;
+  const n = g.zeilen.length;
+  if (!confirm('Kategorie „' + g.kat + '" mit ' + n + (n === 1 ? ' Format' : ' Formaten') +
+      ' entfernen?\n\nWirksam wird das erst mit „Speichern".')) return;
+  const weg = new Set(g.zeilen.map(p => p.id));
+  t.preis = t.preis.filter(p => !weg.has(p.id));
   zeichnen();
 }
 function terminAnlegen() {
