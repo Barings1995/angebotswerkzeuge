@@ -1673,8 +1673,9 @@ function jahrgangAnlegenRechnen() {
   } else if (!v.quellen.length) {
     text = 'Der Vorlagejahrgang enthält keine Titel.'; gesperrt = true;
   } else {
-    text = '<b>' + v.quellen.length + ' Titel</b> und <b>' + v.ausgaben + ' Ausgaben</b> werden angelegt.' +
-           '<br>Termine, Themen und Kongresse bleiben leer, Preiszeilen entstehen keine.';
+    /* Was leer bleibt, steht bereits in der Erklaerung ueber den Feldern; der
+       Kasten traegt allein die Zahlen. */
+    text = '<b>' + v.quellen.length + ' Titel</b> und <b>' + v.ausgaben + ' Ausgaben</b> werden angelegt.';
   }
   kasten.innerHTML = text;
   knopf.disabled = gesperrt;
