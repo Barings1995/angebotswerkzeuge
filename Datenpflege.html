@@ -99,40 +99,51 @@
 
   /* ── Leiste ── */
   .leiste { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-xl); padding: 11px 15px; margin-bottom: 16px; box-shadow: var(--shadow-sm); }
-  .leiste select { font-family: var(--font-body); font-size: 13px; font-weight: 600; padding: 5px 8px; border: 1px solid var(--border); border-radius: var(--radius-md); background: var(--white); color: var(--text); cursor: pointer; }
+  /* Auswahl und Umschalter sind so hoch wie die Kacheln der Aktionen (38 px):
+     nur so laufen die Aussenkanten der Leiste auf einer Linie durch. Eine eigene
+     Kachel bekommen sie nicht — sie waehlen aus, sie loesen nichts aus. */
+  .leiste select { font-family: var(--font-body); font-size: 13px; font-weight: 600; height: 38px; padding: 0 10px; border: 1px solid var(--border); border-radius: var(--radius-md); background: var(--white); color: var(--text); cursor: pointer; }
   .leiste label { font-size: 13px; font-weight: 600; display: inline-flex; align-items: center; gap: 6px; }
   .reiter { display: inline-flex; border: 1px solid var(--border); border-radius: var(--radius-md); overflow: hidden; background: var(--white); }
-  .reiter button { border: none; background: var(--white); font-family: var(--font-body); font-size: 13px; font-weight: 600; color: var(--grey-600); padding: 0 15px; height: 28px; cursor: pointer; }
+  /* Die inneren Knoepfe tragen jetzt selbst eine Rundung, statt von der Huelle
+     beschnitten zu werden: 4 px innen zu 6 px aussen, so wie die Huelle nach
+     Abzug ihres Randes ohnehin freilaesst. Beschnitten fiel das nur am
+     gefuellten Knopf auf — dort fehlt gegen das Dunkelblau die weiche
+     Randlinie, die den Bogen sonst zeichnet. */
+  .reiter button { border: none; background: var(--white); font-family: var(--font-body); font-size: 13px; font-weight: 600; color: var(--grey-600); padding: 0 15px; height: 36px; border-radius: var(--radius-sm); cursor: pointer; }
   /* Der Schatten liegt 1 px ueber dem Knopf und wandert beim Absetzen mit ihm
      nach unten — genau in die Luecke, die der gefuellte Knopf sonst am oberen
      Rand der Gruppe freigibt. Ohne ihn blitzt dort beim Klicken der helle Grund
      auf. Ungedrueckt liegt der Schatten ausserhalb und wird vom overflow:hidden
      der Gruppe verdeckt. Geloest wie in der Jahresvorschau (.mode-btn.active). */
   .reiter button.an { background: var(--navy); color: #fff; box-shadow: 0 -1px 0 var(--navy); }
-  /* Die Leiste traegt dreierlei: den Austausch mit der Excel-Datei, Eingriffe am
-     Jahrgang und die offenen Aenderungen. Jede Gruppe steht in einer eigenen
-     Huelle, getrennt durch einen feinen Strich in der vorhandenen Randfarbe —
-     geloest wie in OpenSlots (.ang-wrap), ohne weitere Farbe. Innen enger als
-     aussen: der Abstand traegt die Gruppierung mit.
+  /* Die Leiste traegt viererlei: den Austausch mit der Excel-Datei, das Aufbauen
+     eines neuen Jahrgangs (Hefte und Preise — die zwei Haelften desselben
+     Vorgangs), Eingriffe am bestehenden Jahrgang (einen Stand zurueckholen oder
+     ihn ganz entfernen) und die offenen Aenderungen. Jede Gruppe steht auf einer eigenen
+     weissen Kachel. Der feine Strich zwischen den Gruppen genuegte nicht: 1 px
+     Randfarbe auf dem blaugrauen Grund der Leiste ging neben acht weissen
+     Knopfrandern unter. Jetzt traegt die Flaeche die Gruppierung, und die
+     Knoepfe darin kommen ohne eigenen Rand aus — statt acht Kaesten stehen
+     drei Felder in der Leiste.
 
      Die drei Gruppen stehen zusammen in .aktionen. Damit bricht die Leiste bei
      schmalem Fenster zwischen den Gruppen um und nicht mehr mitten in einer.
-
-     Der Strich ist ein aufgesetztes Element links ausserhalb der Gruppe, nicht
-     deren Rand. Grund: bei einem Rand haengt der Strich am Zeilenanfang in der
-     Luft, sobald eine Gruppe umbricht — gemessen bei 1400, 1200, 1000, 820 und
-     700 px. So liegt er dort ausserhalb von .aktionen und wird vom
-     overflow:hidden verdeckt; steht die Gruppe mitten in der Zeile, liegt er
-     innen und ist zu sehen.
 
      Die zwei Punkte Luft unten samt gleich grossem negativem Aussenabstand
      halten die Hoehe unveraendert und lassen den Druckpunkt (1 px) heil:
      ohne sie schnitte overflow:hidden dem gedrueckten Knopf die Unterkante ab. */
   .aktionen { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; row-gap: 9px;
               overflow: hidden; padding-bottom: 2px; margin-bottom: -2px; }
-  .gruppe { position: relative; display: inline-flex; align-items: center; gap: 7px; }
-  .gruppe::before { content: ''; position: absolute; left: -7px; top: 3px; bottom: 3px;
-                    width: 1px; background: var(--border); }
+  .gruppe { display: inline-flex; align-items: center; gap: 2px; background: var(--white);
+            border: 1px solid var(--border); border-radius: var(--radius-lg); padding: 3px; }
+  /* In der Kachel ist die Flaeche der Kasten, der Knopf nur noch das Feld darin.
+     Ausgenommen bleibt „Speichern": der eine gefuellte Knopf der Leiste. Beim
+     Ueberfahren traegt der Knopf wieder eine Flaeche — den Grund der Leiste, und
+     bei „Jahrgang loeschen" weiterhin dessen Rot. */
+  .gruppe .btn:not(.btn-primär) { border-color: transparent; background: transparent; }
+  .gruppe .btn:not(.btn-primär):not(.btn-gefahr):hover:not(:disabled) { background: var(--surface); }
+  .gruppe .btn-gefahr:hover:not(:disabled) { background: var(--red-bg); }
   .stand-hinweis { font-size: 12.5px; color: var(--grey-600); }
   .offen-hinweis { display: none; align-items: center; gap: 6px; font-size: 12.5px; font-weight: 600; color: var(--orange-dark); background: #fdf3e7; border: 1px solid #f6ddbc; border-radius: var(--radius-md); padding: 3px 10px; }
   .offen-hinweis.an { display: inline-flex; }
@@ -318,6 +329,8 @@
         <div class="gruppe">
           <button class="btn" onclick="jahrgangAnlegenOeffnen()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/><line x1="12" y1="13" x2="12" y2="19"/><line x1="9" y1="16" x2="15" y2="16"/></svg>Heftplanung anlegen …</button>
           <button class="btn" onclick="preisrundeOeffnen()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg>Preise fortschreiben …</button>
+        </div>
+        <div class="gruppe">
           <button class="btn" onclick="sicherungenOeffnen()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"/></svg>Sicherungspunkte …</button>
           <button class="btn btn-gefahr" onclick="jahrgangLoeschenOeffnen()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>Jahrgang löschen …</button>
         </div>
