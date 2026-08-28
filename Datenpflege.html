@@ -177,15 +177,25 @@
   .zeilen-x:hover { color: var(--red); background: var(--red-bg); }
   .fehlertext { color: var(--red); font-size: 11.5px; padding: 1px 6px 5px; }
   .leer-zeile td { color: var(--grey-500); font-style: italic; padding: 14px 6px; }
-  /* Zwei Zeilen je Ausgabe: oben die Termine, darunter Thema und Kongresse über die
-     ganze Breite. Die Trennlinie steht nur unter der zweiten Zeile, damit beide als
-     eine Ausgabe zusammenbleiben. */
-  .termin-tab tr.termin-oben td { border-bottom: none; padding-top: 6px; }
-  .termin-tab tr.termin-unten td { padding-bottom: 7px; }
-  .termin-tab tr.termin-unten td.marke { font-size: 10px; font-weight: 700; color: var(--grey-500);
-    text-transform: uppercase; letter-spacing: .06em; text-align: right; padding-right: 8px; white-space: nowrap; }
-  .termin-tab tr.termin-oben:hover td, .termin-tab tr.termin-oben:hover + tr.termin-unten td,
-  .termin-tab tr.termin-unten:hover td { background: var(--surface-hover); }
+  /* Eine Zeile je Ausgabe. Themenschwerpunkte und Kongresse stehen als eigene
+     Spalten neben den Terminen und teilen sich zu gleichen Teilen, was nach den
+     festen Spalten übrig bleibt — dafür sorgt table-layout: fixed.
+     Beide Felder sind mehrzeilig: jedes Thema und jeder Kongress steht in einer
+     eigenen Zeile. Das Feld wächst nach unten mit, statt in die Breite zu gehen
+     (hoeheAnpassen setzt die Höhe nach dem Inhalt). Die Zeile wird dadurch höher,
+     die Tabelle aber schmaler — und nichts bleibt verborgen.
+     Die Terminfelder stehen oben bündig, damit sie neben einem hohen Feld auf
+     der Höhe der ersten Zeile bleiben. */
+  .termin-tab { table-layout: fixed; }
+  .termin-tab td { padding-top: 4px; padding-bottom: 4px; vertical-align: top; }
+  .termin-tab td input, .termin-tab td textarea { line-height: 1.5; }
+  .termin-tab td textarea { display: block; width: 100%; padding: 3px 6px;
+    border: 1px solid transparent; border-radius: var(--radius-sm);
+    font-size: 13px; font-family: var(--font-body); color: var(--text);
+    background: transparent; resize: none; overflow: hidden; }
+  .termin-tab td textarea:hover { border-color: var(--border); background: var(--white); }
+  .termin-tab td textarea:focus { outline: none; border-color: var(--navy);
+    background: var(--white); box-shadow: 0 0 0 2px rgba(0,40,90,.08); }
   .neu-zeile { padding: 8px 2px 2px; }
 
   /* ── Rückfragen und Dialoge ── */
@@ -710,6 +720,7 @@ function inhaltZeichnen() {
 
   html += reiter === 'preise' ? preiseZeichnen(t) : termineZeichnen(t);
   ziel.innerHTML = html;
+  hoehenAuffrischen();
 }
 
 function preiseZeichnen(t) {
@@ -756,33 +767,45 @@ function jaNein(id, feld, wert) {
 function termineZeichnen(t) {
   const liste = t.termin || [];
   if (!liste.length) return '<table><tr class="leer-zeile"><td>Noch keine Ausgaben hinterlegt.</td></tr></table>' + neuKnopf('Ausgabe');
-  /* Zwei Zeilen je Ausgabe. Die Termine stehen nebeneinander, damit sie sich
-     überfliegen lassen; Themenschwerpunkte und Kongresse bekommen darunter die
-     ganze Breite. In einer Spalte von 190 Pixeln waren sie nicht zu bearbeiten -
-     man sah nur den Anfang. */
-  let html = '<table class="termin-tab"><colgroup><col style="width:64px"><col style="width:112px"><col style="width:92px"><col style="width:110px"><col style="width:104px"><col style="width:104px"><col><col style="width:34px"></colgroup>' +
-    '<tr><th>Heft</th><th>Monat</th><th>ET</th><th>Anz.-schluss</th><th>DU-Schluss</th><th>EH-Termin</th><th></th><th></th></tr>';
+  /* Eine Zeile je Ausgabe, Themenschwerpunkte und Kongresse als eigene Spalten.
+     Die sechs vorderen Spalten sind fest, die beiden hinteren teilen sich den
+     Rest. Zuvor standen Thema und Kongresse in einer zweiten Zeile darunter —
+     bequemer zu bearbeiten, aber die Liste war doppelt so lang. */
+  let html = '<table class="termin-tab"><colgroup><col style="width:58px"><col style="width:100px"><col style="width:84px"><col style="width:100px"><col style="width:96px"><col style="width:96px"><col><col><col style="width:34px"></colgroup>' +
+    '<tr><th>Heft</th><th>Monat</th><th>ET</th><th>Anz.-schluss</th><th>DU-Schluss</th><th>EH-Termin</th><th>Themenschwerpunkt</th><th>Kongresse</th><th></th></tr>';
   liste.forEach(a => {
     const f = feld => terminGueltig(a[feld]) ? '' : ' fehler';
-    html += '<tr class="termin-oben">' +
+    html += '<tr>' +
       '<td><input value="' + esc(a.heft) + '" onchange="terminSetzen(\'' + a.id + '\',\'heft\',this.value)"></td>' +
       '<td><input value="' + esc(a.monat) + '" onchange="terminSetzen(\'' + a.id + '\',\'monat\',this.value)"></td>' +
       '<td><input class="' + f('et') + '" value="' + esc(a.et) + '" onchange="terminSetzen(\'' + a.id + '\',\'et\',this.value)"></td>' +
       '<td><input class="' + f('anzeigenschluss') + '" value="' + esc(a.anzeigenschluss) + '" onchange="terminSetzen(\'' + a.id + '\',\'anzeigenschluss\',this.value)"></td>' +
       '<td><input class="' + f('du_schluss') + '" value="' + esc(a.du_schluss) + '" onchange="terminSetzen(\'' + a.id + '\',\'du_schluss\',this.value)"></td>' +
       '<td><input class="' + f('eh_termin') + '" value="' + esc(a.eh_termin) + '" onchange="terminSetzen(\'' + a.id + '\',\'eh_termin\',this.value)"></td>' +
-      '<td></td>' +
+      '<td>' + mehrzeilig(a.id, 'themen', a.themen) + '</td>' +
+      '<td>' + mehrzeilig(a.id, 'kongresse', a.kongresse) + '</td>' +
       '<td><button class="zeilen-x" title="Ausgabe entfernen" onclick="terminEntfernen(\'' + a.id + '\')">×</button></td>' +
-    '</tr>' +
-    '<tr class="termin-unten"><td class="marke">Thema</td><td colspan="3">' +
-      '<input value="' + esc(a.themen) + '" placeholder="Themenschwerpunkt dieser Ausgabe" onchange="terminSetzen(\'' + a.id + '\',\'themen\',this.value)"></td>' +
-      '<td class="marke">Kongresse</td><td colspan="3">' +
-      '<input value="' + esc((a.kongresse || '').replace(/\n/g, ' ⏎ ')) + '" placeholder="mehrere mit ⏎ trennen" onchange="terminSetzen(\'' + a.id + '\',\'kongresse\',this.value)"></td>' +
     '</tr>';
   });
   html += '</table>';
-  html += '<div class="fehlertext" style="color:var(--grey-600)">Termine in der Form <b>TT.MM.</b> — der Jahrgang wird von den Werkzeugen ergänzt. Fällt ein Termin ins Vor- oder Folgejahr, die Jahreszahl mitschreiben: <b>22.12.2026</b>. Mehrere Kongresse mit ⏎ trennen.</div>';
+  html += '<div class="fehlertext" style="color:var(--grey-600)">Termine in der Form <b>TT.MM.</b> — der Jahrgang wird von den Werkzeugen ergänzt. Fällt ein Termin ins Vor- oder Folgejahr, die Jahreszahl mitschreiben: <b>22.12.2026</b>. Mehrere Themen und mehrere Kongresse jeweils in eine eigene Zeile — Zeilenumbruch mit der Eingabetaste.</div>';
   return html + neuKnopf('Ausgabe');
+}
+
+/* Mehrzeiliges Feld für Themen und Kongresse. Ein Eintrag je Zeile; die Höhe
+   richtet sich nach dem Inhalt und wird beim Tippen sofort nachgeführt. */
+function mehrzeilig(id, feld, wert) {
+  return '<textarea rows="1" oninput="hoeheAnpassen(this)" onchange="terminSetzen(\'' +
+    id + '\',\'' + feld + '\',this.value)">' + esc(wert) + '</textarea>';
+}
+function hoeheAnpassen(el) {
+  el.style.height = 'auto';
+  /* box-sizing ist border-box: scrollHeight kennt den Rahmen nicht, ohne die
+     beiden Pixel bliebe die letzte Zeile angeschnitten. */
+  el.style.height = (el.scrollHeight + el.offsetHeight - el.clientHeight) + 'px';
+}
+function hoehenAuffrischen() {
+  document.querySelectorAll('.termin-tab textarea').forEach(hoeheAnpassen);
 }
 
 function neuKnopf(was) {
@@ -816,7 +839,9 @@ function preisSetzen(id, feld, wert) {
 function terminSetzen(id, feld, wert) {
   const t = titelVonId(gewTitel); if (!t) return;
   const a = (t.termin || []).find(x => x.id === id); if (!a) return;
-  a[feld] = feld === 'kongresse' ? String(wert).split('⏎').map(s => s.trim()).filter(Boolean).join('\n') : String(wert).trim();
+  a[feld] = (feld === 'kongresse' || feld === 'themen')
+    ? String(wert).split('\n').map(s => s.trim()).filter(Boolean).join('\n')
+    : String(wert).trim();
   zeichnen();
 }
 function preisEntfernen(id) {
@@ -1402,6 +1427,9 @@ async function excelMappeBauen() {
     const termine = mappe.addWorksheet('Termine');
     termine.addRow(TERMIN_KOPF).font = { bold: true };
     TERMIN_BREITE.forEach((b, i) => { termine.getColumn(i + 1).width = b; });
+    /* Themenschwerpunkte und Kongresse können mehrere Zeilen führen — ohne
+       Umbruch zeigte Excel nur die erste. */
+    [9, 10].forEach(i => { termine.getColumn(i).alignment = { wrapText: true, vertical: 'top' }; });
     termine.views = [{ state: 'frozen', ySplit: 1 }];
 
     let nP = 0, nT = 0;
