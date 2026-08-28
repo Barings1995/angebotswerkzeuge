@@ -316,7 +316,7 @@
           <button class="btn" onclick="excelSichern()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>Als Excel sichern</button>
         </div>
         <div class="gruppe">
-          <button class="btn" onclick="jahrgangAnlegenOeffnen()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/><line x1="12" y1="13" x2="12" y2="19"/><line x1="9" y1="16" x2="15" y2="16"/></svg>Jahrgang anlegen …</button>
+          <button class="btn" onclick="jahrgangAnlegenOeffnen()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/><line x1="12" y1="13" x2="12" y2="19"/><line x1="9" y1="16" x2="15" y2="16"/></svg>Heftplanung anlegen …</button>
           <button class="btn" onclick="preisrundeOeffnen()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg>Preise fortschreiben …</button>
           <button class="btn" onclick="sicherungenOeffnen()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"/></svg>Sicherungspunkte …</button>
           <button class="btn btn-gefahr" onclick="jahrgangLoeschenOeffnen()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>Jahrgang löschen …</button>
@@ -559,7 +559,7 @@ function titelDesJahres(jahr) {
    in OpenSlots, localeCompare in PreisWerk und beiden MediaQuote-Fassungen. Allein
    die Datenpflege folgte bisher der gespeicherten Reihenfolge; das fiel als
    Unterschied auf. titel.reihenfolge anzuruehren waere der falsche Weg: sie haengt
-   an „Jahrgang anlegen" und „Preise fortschreiben", die sie mitnehmen, und kein
+   an „Heftplanung anlegen" und „Preise fortschreiben", die sie mitnehmen, und kein
    Werkzeug haette etwas davon. */
 const NACH_NAMEN = (a, b) => String(a.name || '').localeCompare(String(b.name || ''), 'de', { numeric: true, sensitivity: 'base' });
 function titelSortiert(jahr) { return titelDesJahres(jahr).sort(NACH_NAMEN); }
@@ -1161,7 +1161,7 @@ function dialogZeigen(html) {
    hinzu, fuehrte kein Weg hinein.
 
    Dieses Fenster schreibt als einziges NICHT unmittelbar in die Datenbank.
-   „Jahrgang anlegen" und „Preise fortschreiben" tun das, weil sie Kraftakte sind
+   „Heftplanung anlegen" und „Preise fortschreiben" tun das, weil sie Kraftakte sind
    und mit einem Sicherungspunkt einhergehen. Ein einzelner Titel gehoert in den
    gewoehnlichen Arbeitsgang - sonst stuende ein halbfertiger Titel augenblicklich
    in allen vier Werkzeugen, entgegen dem Grundsatz „Gespeichert wird auf
@@ -1444,7 +1444,8 @@ function preisrundeOeffnen() {
   dialogZeigen(
     '<h3>Preise aus einem Jahrgang fortschreiben</h3>' +
     '<div class="erklaerung">Die Preise des Vorlagejahrgangs werden übernommen und angepasst. ' +
-    'Nachbessern lässt sich anschließend jede Zeile.</div>' +
+    'Nachbessern lässt sich anschließend jede Zeile. Sofern der Zieljahrgang noch nicht besteht, ' +
+    'wird dieser mit angelegt; Hefte und Termine bleiben dabei leer.</div>' +
     '<div class="dialog-zeile"><span>Vorlage</span><select id="prVorlage" onchange="preisrundeRechnen()">' +
       jahre.map(j => '<option' + (j === vorgabe ? ' selected' : '') + '>' + j + '</option>').join('') +
     '</select></div>' +
@@ -1598,7 +1599,7 @@ async function preisrundeAusfuehren() {
   }
 }
 
-/* ── Neuen Jahrgang anlegen ───────────────────────────────────────────────────
+/* ── Heftplanung fuer einen neuen Jahrgang ───────────────────────────────────────────────────
    Der Weg hinein, wenn die Heftplanung vor der Preisliste steht — und das ist
    der Regelfall. Bis hierher gab es ihn nicht: Jahrgaenge entstanden allein
    nebenbei, beim Fortschreiben der Preise oder beim Einlesen einer Excel-Datei.
@@ -1633,9 +1634,10 @@ function jahrgangAnlegenOeffnen() {
   let ziel = vorlage ? Number(vorlage) + 1 : '';
   while (ziel && jahre.indexOf(String(ziel)) >= 0) ziel++;
   dialogZeigen(
-    '<h3>Neuen Jahrgang anlegen</h3>' +
-    '<div class="erklaerung">Die Titel des Vorlagejahrgangs kommen mit, dazu ihre Ausgaben mit Heft und Monat. ' +
-    'Termine, Themen und Kongresse bleiben leer; Preiszeilen entstehen keine.</div>' +
+    '<h3>Heftplanung für einen neuen Jahrgang</h3>' +
+    '<div class="erklaerung">Die Titel des Vorlagejahrgangs werden übernommen, dazu deren Ausgaben mit Heft und Monat. ' +
+    'Termine, Themen und Kongresse bleiben leer. Preiszeilen werden dabei nicht angelegt; ' +
+    'diese entstehen über „Preise fortschreiben“.</div>' +
     '<div class="dialog-zeile"><span>Vorlage</span><select id="jaVorlage" onchange="jahrgangAnlegenRechnen()">' +
       jahre.map(j => '<option' + (j === vorlage ? ' selected' : '') + '>' + j + '</option>').join('') +
     '</select></div>' +
