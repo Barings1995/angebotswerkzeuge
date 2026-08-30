@@ -50,15 +50,30 @@
   /* ── Kopfleiste, wie in den vier Werkzeugen ── */
   .sm-hero { background: linear-gradient(135deg, #002050 0%, var(--navy) 60%, #004080 100%); padding: 1.1rem 0 1rem; border-bottom: 3px solid var(--orange); }
   .sm-hero-inner { padding: 0 1.5rem; }
-  .sm-hero-head { display: flex; align-items: center; gap: 1rem; margin-bottom: 8px; }
+  /* Umbruch erlaubt: die Kopfzeile der Datenpflege ist die vollste der fuenf
+     Werkzeuge — Logo, Titel, Rueckweg und die Konto-Box mit der Mailadresse.
+     In sehr schmalen Fenstern lief die Konto-Box bisher ueber den rechten Rand
+     hinaus; jetzt rutscht sie in eine zweite Zeile. */
+  .sm-hero-head { display: flex; flex-wrap: wrap; align-items: center; gap: 1rem; margin-bottom: 8px; }
   .sm-hero-head svg { flex: none; }
   .sm-hero-div { width: 1px; align-self: stretch; background: rgba(255,255,255,.28); flex: none; }
+
+  /* Rueckweg zur Startseite. Die Startseite verlinkt alle fuenf Werkzeuge, der
+     Weg zurueck fehlte bisher — er traegt vor allem beim Wechsel von einem
+     Werkzeug ins naechste. Optik wie „Abmelden" in der Datenpflege: weisser
+     Rand auf Blau, gefuellt erst beim Ueberfahren. Schrift bewusst geerbt,
+     nicht ueber ein Token — nicht jedes Werkzeug fuehrt --font-body. */
+  .hero-zurueck { margin-left: auto; display: inline-flex; align-items: center; gap: 6px;
+    background: none; border: 1px solid rgba(255,255,255,.35); color: #fff;
+    border-radius: var(--radius-md); font-size: 11.5px; font-weight: 600;
+    padding: 5px 11px; text-decoration: none; white-space: nowrap; flex: none; }
+  .hero-zurueck:hover { background: rgba(255,255,255,.12); }
   .sm-hero h1 { font-family: var(--font-title); font-size: 25px; font-weight: 700; color: #fff; line-height: 1.2; margin-bottom: 2px; letter-spacing: -.01em; }
   .sm-hero h1 .sm-hero-mark { color: var(--orange); }
   .sm-hero-sub { font-size: 12px; font-weight: 600; color: rgba(255,255,255,.72); letter-spacing: .16em; text-transform: uppercase; }
   .sm-hero p { font-size: 12.5px; color: rgba(255,255,255,.72); line-height: 1.4; }
   .sm-hero p strong { color: rgba(255,255,255,.9); font-weight: 600; }
-  .hero-konto { margin-left: auto; text-align: right; font-size: 12px; color: rgba(255,255,255,.72); }
+  .hero-konto { margin-left: 14px; text-align: right; font-size: 12px; color: rgba(255,255,255,.72); }
   .hero-konto b { display: block; color: #fff; font-weight: 600; font-size: 12.5px; }
   .hero-konto button { margin-top: 3px; background: none; border: 1px solid rgba(255,255,255,.35); color: #fff; border-radius: var(--radius-md); font-size: 11.5px; font-family: var(--font-body); padding: 2px 9px; cursor: pointer; }
   .hero-konto button:hover { background: rgba(255,255,255,.12); }
@@ -283,6 +298,10 @@
         <h1>Daten<span class="sm-hero-mark">pflege</span></h1>
         <div class="sm-hero-sub">Preise und Termine</div>
       </div>
+      <a class="hero-zurueck" href="index.html" title="Zur Übersicht der Angebotswerkzeuge">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 12H5"/><path d="m12 19-7-7 7-7"/></svg>
+        Angebotswerkzeuge
+      </a>
       <div class="hero-konto verborgen" id="kontoBox">
         <b id="kontoName"></b>
         <button onclick="abmelden()">Abmelden</button>
