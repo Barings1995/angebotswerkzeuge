@@ -410,7 +410,14 @@ function dbErreichbar() {
       && SUPABASE_URL && SUPABASE_ANON_KEY;
 }
 
+/* Die Sitzung laeuft nach einer Stunde ab. Erneuert wird sie hier, an der einen
+   Stelle, durch die jede Anfrage laeuft - frueher stand die Zeile in jeder
+   aufrufenden Funktion einzeln, und beim Laden der Sicherungspunkte fehlte sie.
+   Steht das Werkzeug lange offen, meldete die Datenbank dort „JWT expired",
+   waehrend alles andere weiterlief. Nachgemessen am 01.09.2026. */
 async function ruf(pfad, einstellungen = {}, mitAnmeldung = true) {
+  if (mitAnmeldung && sitzung && sitzung.ablauf && sitzung.ablauf < Date.now() + 60000)
+    await sitzungErneuern();
   const kopf = Object.assign({ apikey: SUPABASE_ANON_KEY }, einstellungen.headers || {});
   if (mitAnmeldung && sitzung) kopf.Authorization = 'Bearer ' + sitzung.zugang;
   else kopf.Authorization = 'Bearer ' + SUPABASE_ANON_KEY;
