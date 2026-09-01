@@ -293,6 +293,14 @@ body {
 .dlg-tx p:last-child { margin-bottom: 0; }
 .dlg-tx b { font-weight: 600; }
 .dlg-row { display: flex; gap: 8px; justify-content: flex-end; margin-top: 16px; flex-wrap: wrap; }
+/* Aufzählungen im Hinweisfenster: alert() konnte nur Zeilenumbrüche in einem
+   Fließtext, hier stehen die betroffenen Ausgaben als Liste. Die Höhe reicht für
+   die zwölf Zeilen, die aufgezählt werden – auf kleinen Schirmen rollt die Liste
+   in sich, damit der Knopf sichtbar bleibt. Der Punkt vor der Zeile muss gesetzt
+   werden: der Vorspann des Werkzeugs nimmt allen Listen Einzug und Markierung. */
+.dlg-tx ul { margin: 6px 0 8px; padding-left: 1.25em; list-style: disc; }
+.dlg-tx li { margin-bottom: 2px; }
+.dlg-tx ul.dlg-liste { max-height: min(300px, 34vh); overflow-y: auto; }
 
 /* ── KONGRESS-AUSWAHL ── */
 .kg-wrap { position: relative; display: inline-flex; }
@@ -1204,6 +1212,48 @@ function esc(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').repl
 function escNl(s){return esc(s).replace(/\r?\n/g,'<br>');}
 function flatNl(s){return String(s).replace(/\r?\n/g,'; ').trim();}
 
+/* ── HINWEISFENSTER ───────────────────────────────────────────────────────────
+   Tritt an die Stelle von alert(). Dieselbe Hülle wie die Rückfrage nach dem
+   Datenstand (.dlg-back/.dlg-box) – die Meldung steht damit in der Optik des
+   Werkzeugs statt in der des Browsers, hat eine Überschrift, und Aufzählungen
+   lassen sich als Liste setzen statt als Zeilenumbrüche im Fließtext.
+   Wie dort schließt ein Klick daneben nicht: die Meldung soll gelesen und nicht
+   versehentlich weggewischt werden. Escape und der Knopf schließen.
+   Zurück kommt ein Versprechen, das beim Schließen einlöst – so wartet der
+   Aufrufer wie zuvor bei alert(), bis die Meldung zur Kenntnis genommen ist.
+   Das Fenster wird bei jedem Aufruf neu angelegt und beim Schließen wieder
+   entfernt; im Ruhezustand steht nichts davon im Seitengerüst. */
+function hinweis(titel,html){
+  return new Promise(res=>{
+    const back=document.createElement('div');
+    back.className='dlg-back';
+    back.innerHTML='<div class="dlg-box" role="alertdialog" aria-modal="true">'+
+      '<div class="dlg-hd"></div><div class="dlg-tx"></div>'+
+      '<div class="dlg-row"><button class="data-btn">Verstanden</button></div></div>';
+    back.querySelector('.dlg-box').setAttribute('aria-label',titel);
+    back.querySelector('.dlg-hd').textContent=titel;
+    back.querySelector('.dlg-tx').innerHTML=html;
+    const knopf=back.querySelector('button');
+    const zu=()=>{
+      document.removeEventListener('keydown',escHinweis,true);
+      back.remove();
+      res();
+    };
+    function escHinweis(e){if(e.key==='Escape'){e.stopPropagation();zu();}}
+    knopf.onclick=zu;
+    document.addEventListener('keydown',escHinweis,true);
+    document.body.appendChild(back);
+    knopf.focus();
+  });
+}
+
+/* Aufzählung für das Hinweisfenster – höchstens zwölf Zeilen wie zuvor, der
+   Rest wird gezählt. */
+function hinweisListe(a,max=12){
+  return '<ul class="dlg-liste">'+a.slice(0,max).map(x=>'<li>'+esc(x)+'</li>').join('')+'</ul>'+
+    (a.length>max?'<p>… und '+(a.length-max)+' weitere</p>':'');
+}
+
 function buildCollapsed(){
   const s=new Set();
   J.forEach((j,ji)=>j.g.forEach((g,gi)=>{s.add(ji+'_'+gi);}));
@@ -1337,10 +1387,14 @@ async function onDataFileChosen(ev){
        restoreState() gleich darauf liest. */
     const abgleich=refreshTermineImStand(DATASET);
     applyYear(currentYear);
-    meldeTerminAbgleich(abgleich);
+    await meldeTerminAbgleich(abgleich);
   }catch(e){
     console.error(e);
-    alert('Die Datei konnte nicht gelesen werden:\n'+(e.message||e)+'\n\nBitte ein Excel mit den Blättern „Preise" und „Termine" verwenden (z. B. die Angebotsdaten der Angebotsvorlage).');
+    await hinweis('Datei nicht lesbar',
+      '<p>Die Datei konnte nicht gelesen werden:</p>'+
+      '<p><b>'+esc(e.message||e)+'</b></p>'+
+      '<p>Bitte ein Excel mit den Blättern „Preise" und „Termine" verwenden '+
+      '(z. B. die Angebotsdaten der Angebotsvorlage).</p>');
     syncDataUI();
   }finally{ev.target.value='';}
 }
@@ -1462,7 +1516,7 @@ async function ladePreislisteAusDatenbank(){
     saveCache();
     const abgleich=refreshTermineImStand(DATASET);
     applyYear(currentYear);
-    meldeTerminAbgleich(abgleich);
+    await meldeTerminAbgleich(abgleich);
     return true;
   }catch(e){
     console.warn('Preisliste nicht aus der Datenbank geholt:',e);
@@ -1490,7 +1544,7 @@ async function ladePreislisteVonServer(){
     saveCache();
     const abgleich=refreshTermineImStand(DATASET);
     applyYear(currentYear);
-    meldeTerminAbgleich(abgleich);
+    await meldeTerminAbgleich(abgleich);
     return true;
   }catch(e){
     console.warn('Preisliste nicht von der Adresse geholt:',e);
@@ -1619,21 +1673,19 @@ function refreshTermineImStand(neuDs){
 
 /* Meldung nach dem Laden einer neuen Preisliste. Erscheint nur, wenn sich am
    Arbeitsstand tatsaechlich etwas geaendert hat. */
-function meldeTerminAbgleich(b){
+async function meldeTerminAbgleich(b){
   if(!b||(!b.geaendert.length&&!b.entfallen.length))return;
-  const liste=a=>a.slice(0,12).join('\n')+(a.length>12?'\n… und '+(a.length-12)+' weitere':'');
   let t='';
   if(b.geaendert.length){
-    t+='In '+b.geaendert.length+' Ausgabe(n) wurden die Termine an die neu geladene '+
-       'Preisliste angepasst:\n'+liste(b.geaendert);
+    t+='<p>In '+b.geaendert.length+' Ausgabe(n) wurden die Termine an die neu geladene '+
+       'Preisliste angepasst:</p>'+hinweisListe(b.geaendert);
   }
   if(b.entfallen.length){
-    if(t)t+='\n\n';
-    t+=b.entfallen.length+' Ausgabe(n) aus dem Arbeitsstand gibt es in der neuen '+
+    t+='<p>'+b.entfallen.length+' Ausgabe(n) aus dem Arbeitsstand gibt es in der neuen '+
        'Preisliste nicht mehr. Die Heftzuordnung wurde geleert, die angekreuzten '+
-       'Platzierungen bleiben stehen:\n'+liste(b.entfallen);
+       'Platzierungen bleiben stehen:</p>'+hinweisListe(b.entfallen);
   }
-  alert(t);
+  await hinweis('Preisliste abgeglichen',t);
 }
 
 function restoreState(){
@@ -1730,7 +1782,10 @@ function angebotDateiname(){
 }
 
 async function saveAngebot(){
-  if(!isCustomData){alert('Es sind noch keine Daten geladen.');return;}
+  if(!isCustomData){
+    await hinweis('Speichern nicht möglich','<p>Es sind noch keine Daten geladen.</p>');
+    return;
+  }
   const json=JSON.stringify(collectAngebot(),null,2);
   if(window.showSaveFilePicker){
     try{
@@ -1774,7 +1829,10 @@ async function openAngebot(){
       return;
     }catch(e){
       if(e&&e.name==='AbortError')return;
-      if(e instanceof SyntaxError){alert('Die Datei ist keine gültige Angebotsdatei.');return;}
+      if(e instanceof SyntaxError){
+        await hinweis('Datei nicht lesbar','<p>Die Datei ist keine gültige Angebotsdatei.</p>');
+        return;
+      }
       // sonst: Rückfall auf das versteckte Dateifeld
     }
   }
@@ -1793,7 +1851,10 @@ function onAngebotFileChosen(ev){
         angebotFileName=file.name;
         updAngStatus();
       }
-    }catch(e){alert('Die Datei konnte nicht gelesen werden. Ist es eine gespeicherte Angebotsdatei?');}
+    }catch(e){
+      await hinweis('Datei nicht lesbar',
+        '<p>Die Datei konnte nicht gelesen werden. Ist es eine gespeicherte Angebotsdatei?</p>');
+    }
   };
   r.readAsText(file);
 }
@@ -1843,7 +1904,8 @@ function findIssIdx(rows,ausgabe){
 /* Gespeichertes Angebot wiederherstellen. Rückgabe: true, wenn es geklappt hat. */
 async function applyAngebot(data){
   if(!data||typeof data!=='object'){
-    alert('Diese Datei ist keine gültige Angebotsdatei.');return false;
+    await hinweis('Datei nicht lesbar','<p>Diese Datei ist keine gültige Angebotsdatei.</p>');
+    return false;
   }
   /* Herkunft zuerst prüfen: Eine Datei aus MediaQuote soll die zutreffende
      Meldung bekommen und nicht die allgemeine. Die Kennung im Inneren der Datei
@@ -1851,13 +1913,16 @@ async function applyAngebot(data){
      und darf nicht angepasst werden, sonst lassen sich gespeicherte Angebote
      nicht mehr zuordnen. */
   if(data.app!==ANGEBOT_APP){
-    alert(data.app==='Angebotsvorlage'
-      ? 'Diese Datei stammt aus MediaQuote und kann hier nicht geöffnet werden.'
-      : 'Diese Datei stammt nicht aus dem Angebotsplaner.');
+    await hinweis('Datei passt nicht zum Angebotsplaner',
+      data.app==='Angebotsvorlage'
+        ? '<p>Diese Datei stammt aus MediaQuote und kann hier nicht geöffnet werden.</p>'
+        : '<p>Diese Datei stammt nicht aus dem Angebotsplaner.</p>');
     return false;
   }
   if(!Array.isArray(data.titel)){
-    alert('Diese Angebotsdatei ist unvollständig – die Titelliste fehlt.');return false;
+    await hinweis('Angebotsdatei unvollständig',
+      '<p>Diese Angebotsdatei ist unvollständig – die Titelliste fehlt.</p>');
+    return false;
   }
   const jahr=data.jahrgang||'';
   const ausDatei=data.dataset&&data.dataset[jahr];
@@ -1878,7 +1943,11 @@ async function applyAngebot(data){
     datenStand='';
     saveCache();
   }
-  if(!DATASET[jahr]){alert('Der Jahrgang '+jahr+' steckt weder in der Datei noch in den geladenen Daten.');return false;}
+  if(!DATASET[jahr]){
+    await hinweis('Jahrgang nicht vorhanden',
+      '<p>Der Jahrgang '+esc(jahr)+' steckt weder in der Datei noch in den geladenen Daten.</p>');
+    return false;
+  }
 
   currentYear=jahr;
   applyYear(jahr);            // baut Titel + Ausgabenraster auf (holt den Zwischenspeicher)
@@ -1910,7 +1979,10 @@ async function applyAngebot(data){
   buildTabs();
   setJ(0);                    // zeichnet Matrix + Vorschau und sichert den Stand
   syncDataUI();
-  if(fehlend)alert(fehlend+' Platzierung(en) aus dem gespeicherten Angebot gibt es in der aktuellen Preisliste nicht mehr und wurden weggelassen.');
+  if(fehlend)
+    await hinweis('Nicht alle Platzierungen übernommen',
+      '<p>'+fehlend+' Platzierung(en) aus dem gespeicherten Angebot gibt es in der '+
+      'aktuellen Preisliste nicht mehr und wurden weggelassen.</p>');
   return true;
 }
 
