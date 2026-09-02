@@ -523,8 +523,10 @@ async function sitzungErneuern() {
   } catch (e) { sitzungVergessen(); return false; }
 }
 
-function abmelden() {
-  if (offeneAenderungen() && !confirm('Es sind Änderungen offen, die noch nicht gespeichert sind.\n\nWirklich abmelden? Die Änderungen gehen verloren.')) return;
+async function abmelden() {
+  if (offeneAenderungen() && !await frage('Abmelden?',
+    '<p>Es sind Änderungen offen, die noch nicht gespeichert sind. Beim Abmelden gehen sie verloren.</p>',
+    'Abmelden')) return;
   sitzungVergessen();
   URSPRUNG = ARBEIT = null;
   document.getElementById('arbeitSchirm').classList.add('verborgen');
@@ -992,19 +994,25 @@ function terminSetzen(id, feld, wert) {
     : String(wert).trim();
   zeichnen();
 }
-function preisEntfernen(id) {
+async function preisEntfernen(id) {
   const t = titelVonId(gewTitel); if (!t) return;
   const p = (t.preis || []).find(x => x.id === id);
   if (!p) return;
-  if (!confirm('Format „' + (p.format || '') + '" aus der Preisliste entfernen?\n\nWirksam wird das erst mit „Speichern".')) return;
+  if (!await frage('Format entfernen?',
+    '<p>„' + esc(p.format || '') + '" wird aus der Preisliste genommen.</p>' +
+    '<p>Wirksam wird das erst mit „Speichern"; bis dahin holt „Verwerfen" es zurück.</p>',
+    'Entfernen')) return;
   t.preis = t.preis.filter(x => x.id !== id);
   zeichnen();
 }
-function terminEntfernen(id) {
+async function terminEntfernen(id) {
   const t = titelVonId(gewTitel); if (!t) return;
   const a = (t.termin || []).find(x => x.id === id);
   if (!a) return;
-  if (!confirm('Ausgabe „Heft ' + (a.heft || '') + '" entfernen?\n\nWirksam wird das erst mit „Speichern".')) return;
+  if (!await frage('Ausgabe entfernen?',
+    '<p>Heft ' + esc(a.heft || '') + ' wird mit seinen Terminen, Themen und Kongressen entfernt.</p>' +
+    '<p>Wirksam wird das erst mit „Speichern"; bis dahin holt „Verwerfen" es zurück.</p>',
+    'Entfernen')) return;
   t.termin = t.termin.filter(x => x.id !== id);
   zeichnen();
 }
@@ -1054,12 +1062,15 @@ function kategorieUmbenennen(i, wert) {
   g.zeilen.forEach(p => { p.kategorie = name; });
   zeichnen();
 }
-function kategorieEntfernen(i) {
+async function kategorieEntfernen(i) {
   const t = titelVonId(gewTitel); if (!t) return;
   const g = katGruppen(t)[i]; if (!g) return;
   const n = g.zeilen.length;
-  if (!confirm('Kategorie „' + g.kat + '" mit ' + n + (n === 1 ? ' Format' : ' Formaten') +
-      ' entfernen?\n\nWirksam wird das erst mit „Speichern".')) return;
+  if (!await frage('Kategorie entfernen?',
+    '<p>„' + esc(g.kat) + '" wird mit <b>' + n + '</b> ' + (n === 1 ? 'Format' : 'Formaten') +
+    ' aus der Preisliste genommen.</p>' +
+    '<p>Wirksam wird das erst mit „Speichern"; bis dahin holt „Verwerfen" sie zurück.</p>',
+    'Entfernen')) return;
   const weg = new Set(g.zeilen.map(p => p.id));
   t.preis = t.preis.filter(p => !weg.has(p.id));
   zeichnen();
@@ -1073,8 +1084,10 @@ function terminAnlegen() {
   zeichnen();
 }
 
-function aenderungenVerwerfen() {
-  if (!confirm('Alle offenen Änderungen verwerfen?\n\nDer zuletzt gespeicherte Stand wird wiederhergestellt.')) return;
+async function aenderungenVerwerfen() {
+  if (!await frage('Änderungen verwerfen?',
+    '<p>Alle offenen Änderungen werden verworfen. Der zuletzt gespeicherte Stand wird wiederhergestellt.</p>',
+    'Verwerfen')) return;
   ARBEIT = JSON.parse(JSON.stringify(URSPRUNG));
   if (!titelVonId(gewTitel)) { const e = titelNachAnzeige()[0]; gewTitel = e ? e.id : null; }
   zeichnen();
@@ -1194,6 +1207,62 @@ function dialogZeigen(html) {
     '<div class="schleier"><div class="dialog">' + html + '</div></div>';
 }
 
+/* ── Rueckfragefenster ────────────────────────────────────────────────────────
+   Tritt an die Stelle von confirm(). Der Vorteil liegt weniger in der Optik als
+   in der Beschriftung: der Browser konnte nur „OK" und „Abbrechen" anbieten,
+   hier steht auf dem Knopf, was er tut - und die Rueckfrage sieht aus wie die
+   uebrigen Fenster des Werkzeugs.
+
+   Anders als dialogZeigen belegt sie nicht den Dialogplatz, sondern legt ein
+   eigenes Element an und raeumt es wieder weg. Das ist noetig, weil zwei der
+   Rueckfragen aus einem offenen Fenster heraus kommen (die Sicherungspunkte):
+   ueber den Dialogplatz zu gehen wuerde das Fenster darunter loeschen. Der
+   hoehere z-Wert legt die Rueckfrage darueber.
+
+   Zurueck kommt ein Versprechen mit true (bestaetigt) oder false (abgelehnt).
+   Abgelehnt wird auch durch Escape - wie bei confirm(), wo Escape „Abbrechen"
+   entsprach. Der Fokus liegt auf dem abweisenden Knopf: die Rueckfrage steht
+   vor einer Handlung, die etwas verwirft, und die Eingabetaste soll dann nichts
+   ausloesen, was nicht ausdruecklich gewollt ist. */
+function frage(titel, html, jaText, neinText = 'Abbrechen') {
+  return new Promise(res => {
+    const platz = document.createElement('div');
+    platz.innerHTML =
+      '<div class="schleier" style="z-index:60"><div class="dialog" role="dialog" aria-modal="true">' +
+        '<h3></h3><div class="erklaerung"></div>' +
+        '<div class="dialog-knoepfe">' +
+          '<button class="btn" data-w="nein"></button>' +
+          '<button class="btn btn-gefahr" data-w="ja"></button>' +
+        '</div>' +
+      '</div></div>';
+    platz.querySelector('h3').textContent = titel;
+    platz.querySelector('.erklaerung').innerHTML = html;
+    const bJa = platz.querySelector('[data-w="ja"]'), bNein = platz.querySelector('[data-w="nein"]');
+    bJa.textContent = jaText;
+    bNein.textContent = neinText;
+    const zu = w => {
+      document.removeEventListener('keydown', escFrage, true);
+      platz.remove();
+      res(w);
+    };
+    function escFrage(e) { if (e.key === 'Escape') { e.stopPropagation(); zu(false); } }
+    bJa.onclick = () => zu(true);
+    bNein.onclick = () => zu(false);
+    document.addEventListener('keydown', escFrage, true);
+    document.body.appendChild(platz);
+    bNein.focus();
+  });
+}
+
+/* Die immer gleiche Warnung vor den drei Kraftakten, die unmittelbar in die
+   Datenbank schreiben. Der Satz stand wortgleich in drei confirm()-Aufrufen. */
+function frageOffeneAenderungen(was) {
+  return frage('Offene Änderungen gehen verloren',
+    '<p>Es sind Änderungen offen, die noch nicht gespeichert sind. ' + was +
+    ' schreibt unmittelbar in die Datenbank; die offenen Änderungen gehen dabei verloren.</p>',
+    'Trotzdem fortfahren');
+}
+
 /* ── Titel anlegen ────────────────────────────────────────────────────────────
    Bis hierher entstanden Titel nur nebenbei: beim Anlegen eines Jahrgangs, beim
    Fortschreiben der Preise und ueber den Excel-Eingang. Kam eine Zeitschrift neu
@@ -1304,11 +1373,13 @@ function titelAnlegenAusfuehren() {
   meldung('Titel „' + neu.name + '" angelegt — noch nicht gespeichert.');
 }
 
-function titelNeuEntfernen() {
+async function titelNeuEntfernen() {
   const t = titelVonId(gewTitel);
   if (!t || !istNeu(t.id)) return;
-  if (!confirm('Den neu angelegten Titel „' + (t.name || '') + '" wieder entfernen?\n\n' +
-    'Er ist noch nicht gespeichert; andere offene Änderungen bleiben unberührt.')) return;
+  if (!await frage('Neuen Titel entfernen?',
+    '<p>„' + esc(t.name || '') + '" wird wieder entfernt.</p>' +
+    '<p>Der Titel ist noch nicht gespeichert; andere offene Änderungen bleiben unberührt.</p>',
+    'Entfernen')) return;
   ARBEIT = ARBEIT.filter(x => x.id !== t.id);
   const e = titelNachAnzeige()[0];
   gewTitel = e ? e.id : null;
@@ -1588,7 +1659,7 @@ function beispielPreis(v) {
 
 async function preisrundeAusfuehren() {
   const v = preisrundeVorschau();
-  if (offeneAenderungen() && !confirm('Es sind Änderungen offen, die noch nicht gespeichert sind.\n\nDas Fortschreiben schreibt unmittelbar in die Datenbank. Offene Änderungen gehen dabei verloren.\n\nTrotzdem fortfahren?')) return;
+  if (offeneAenderungen() && !await frageOffeneAenderungen('Das Fortschreiben')) return;
   const knopf = document.getElementById('prKnopf');
   knopf.disabled = true; knopf.textContent = 'Wird angelegt …';
   try {
@@ -1722,7 +1793,7 @@ function jahrgangAnlegenRechnen() {
 
 async function jahrgangAnlegenAusfuehren() {
   const v = jahrgangAnlegenVorschau();
-  if (offeneAenderungen() && !confirm('Es sind Änderungen offen, die noch nicht gespeichert sind.\n\nDas Anlegen schreibt unmittelbar in die Datenbank. Offene Änderungen gehen dabei verloren.\n\nTrotzdem fortfahren?')) return;
+  if (offeneAenderungen() && !await frageOffeneAenderungen('Das Anlegen')) return;
   const knopf = document.getElementById('jaKnopf');
   knopf.disabled = true; knopf.textContent = 'Wird angelegt …';
   try {
@@ -1807,13 +1878,18 @@ async function sicherungJetztAnlegen() {
 }
 
 async function sicherungEntfernen(id) {
-  if (!confirm('Diesen Sicherungspunkt endgültig entfernen?')) return;
+  if (!await frage('Sicherungspunkt entfernen?',
+    '<p>Der Sicherungspunkt wird endgültig entfernt. Der darin gesicherte Stand ist danach nicht mehr zu erreichen.</p>',
+    'Entfernen')) return;
   try { await schreiben('sicherung?id=eq.' + id, 'DELETE'); await sicherungenLaden(); }
   catch (fehler) { meldung('Nicht entfernt: ' + fehler.message, true); }
 }
 
 async function sicherungZurueck(id, wann) {
-  if (!confirm('Den Jahrgang ' + gewJahr + ' auf den Stand vom ' + wann + ' zurücksetzen?\n\nTitel, Preise und Termine dieses Jahrgangs werden ersetzt. Alles seither Geänderte geht verloren.')) return;
+  if (!await frage('Jahrgang zurücksetzen?',
+    '<p>Der Jahrgang ' + esc(gewJahr) + ' wird auf den Stand vom ' + esc(wann) + ' zurückgesetzt.</p>' +
+    '<p>Titel, Preise und Termine dieses Jahrgangs werden ersetzt. Alles seither Geänderte geht verloren.</p>',
+    'Zurücksetzen')) return;
   try {
     if (sitzung && sitzung.ablauf && sitzung.ablauf < Date.now() + 60000) await sitzungErneuern();
     const s = await daten('sicherung?select=inhalt&id=eq.' + id);
@@ -1979,8 +2055,8 @@ async function excelSichern() {
    Sicherungspunkt. */
 let excelStapel = null;
 
-function excelEingangWaehlen() {
-  if (offeneAenderungen() && !confirm('Es sind Änderungen offen, die noch nicht gespeichert sind.\n\nDer Excel-Eingang schreibt unmittelbar in die Datenbank. Offene Änderungen gehen dabei verloren.\n\nTrotzdem fortfahren?')) return;
+async function excelEingangWaehlen() {
+  if (offeneAenderungen() && !await frageOffeneAenderungen('Der Excel-Eingang')) return;
   document.getElementById('excelDatei').click();
 }
 

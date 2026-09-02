@@ -1255,6 +1255,44 @@ function hinweisListe(a,max=0){
     (max&&a.length>max?'<p>… und '+(a.length-max)+' weitere</p>':'');
 }
 
+/* ── RÜCKFRAGEFENSTER ─────────────────────────────────────────────────────────
+   Tritt an die Stelle von confirm(). Aufbau wie das Hinweisfenster darüber, nur
+   mit zwei Knöpfen. Der Vorteil gegenüber confirm() liegt weniger in der Optik
+   als in der Beschriftung: der Browser konnte nur „OK" und „Abbrechen" anbieten,
+   hier steht auf dem Knopf, was er tut.
+   Zurück kommt ein Versprechen mit true (bestätigt) oder false (abgelehnt).
+   Abgelehnt wird auch durch Escape – wie bei confirm(), wo Escape „Abbrechen"
+   entsprach. Der Fokus liegt auf dem abweisenden Knopf: die Rückfrage steht vor
+   einer Handlung, die etwas verwirft, und die Eingabetaste soll dann nichts
+   auslösen, was nicht ausdrücklich gewollt ist. */
+function frage(titel,html,jaText,neinText='Abbrechen'){
+  return new Promise(res=>{
+    const back=document.createElement('div');
+    back.className='dlg-back';
+    back.innerHTML='<div class="dlg-box" role="dialog" aria-modal="true">'+
+      '<div class="dlg-hd"></div><div class="dlg-tx"></div>'+
+      '<div class="dlg-row"><button class="data-btn ang-btn" data-w="nein"></button>'+
+      '<button class="data-btn danger" data-w="ja"></button></div></div>';
+    back.querySelector('.dlg-box').setAttribute('aria-label',titel);
+    back.querySelector('.dlg-hd').textContent=titel;
+    back.querySelector('.dlg-tx').innerHTML=html;
+    const bJa=back.querySelector('[data-w="ja"]'),bNein=back.querySelector('[data-w="nein"]');
+    bJa.textContent=jaText;
+    bNein.textContent=neinText;
+    const zu=w=>{
+      document.removeEventListener('keydown',escFrage,true);
+      back.remove();
+      res(w);
+    };
+    function escFrage(e){if(e.key==='Escape'){e.stopPropagation();zu(false);}}
+    bJa.onclick=()=>zu(true);
+    bNein.onclick=()=>zu(false);
+    document.addEventListener('keydown',escFrage,true);
+    document.body.appendChild(back);
+    bNein.focus();
+  });
+}
+
 function buildCollapsed(){
   const s=new Set();
   J.forEach((j,ji)=>j.g.forEach((g,gi)=>{s.add(ji+'_'+gi);}));
@@ -2622,9 +2660,12 @@ function updResetBtn(){
   const any=isCustomData&&ST.some(s=>s.issues.length>0);
   btn.style.display=any?'inline-flex':'none';
 }
-function resetAll(){
+async function resetAll(){
   if(!ST.some(s=>s.issues.length>0))return;
-  if(!confirm('Wirklich alle Platzierungen, Ausgaben und Optionen für alle Titel entfernen?\n\nDer aktuelle Angebotsstand wird gelöscht.'))return;
+  if(!await frage('Alles entfernen?',
+    '<p>Alle Platzierungen, Ausgaben und Optionen für alle Titel werden entfernt.</p>'+
+    '<p>Der aktuelle Angebotsstand wird gelöscht.</p>',
+    'Alles entfernen'))return;
   ST=J.map(()=>({issues:[],nid:1}));
   /* setzt zugleich kgPick auf „alle Kongresse" zurück */
   applyOptionen(OPTIONEN_LEER);

@@ -225,6 +225,34 @@
 
   .basket-foot-note { padding: 10px 20px; font-size: 11px; color: var(--grey-500); border-top: 1px solid var(--border); }
 
+  /* ── RÜCKFRAGEFENSTER ──
+     Aufbau wie in OpenSlots und MediaQuote, damit die drei Werkzeuge auch beim
+     Nachfragen gleich aussehen. Bewusst ohne Klick-daneben-schließt: die Frage
+     soll beantwortet und nicht versehentlich weggeklickt werden; Escape bleibt
+     als Ausweg. Die Schrift wird gesetzt und nicht geerbt - PreisWerk fuehrt
+     zwar dieselbe Grundschrift, aber die Zeile haelt das Fenster unabhaengig
+     davon, was am Blatt spaeter geaendert wird. */
+  .dlg-back { position: fixed; inset: 0; z-index: 10000; background: rgba(0,40,90,.32);
+    display: flex; align-items: center; justify-content: center; padding: 20px; }
+  .dlg-box { font-family: var(--font-body); background: var(--white);
+    border: 1px solid var(--border); border-radius: var(--radius-lg);
+    box-shadow: 0 6px 24px rgba(0,40,90,.28); max-width: 520px; width: 100%;
+    padding: 18px 22px 17px; }
+  .dlg-hd { font-size: 15px; font-weight: 700; color: var(--navy); margin-bottom: 9px; }
+  .dlg-tx { font-size: 13px; color: var(--text); line-height: 1.55; }
+  .dlg-tx p { margin-bottom: 8px; }
+  .dlg-tx p:last-child { margin-bottom: 0; }
+  .dlg-row { display: flex; gap: 8px; justify-content: flex-end; margin-top: 16px; flex-wrap: wrap; }
+  .dlg-btn { font-family: var(--font-body); font-size: 13px; font-weight: 600;
+    padding: 7px 14px; border-radius: var(--radius-md); cursor: pointer;
+    border: 1px solid var(--navy); background: var(--navy); color: var(--white); }
+  .dlg-btn.sekundaer { background: var(--white); color: var(--navy); border-color: var(--border); }
+  .dlg-btn.sekundaer:hover { border-color: var(--navy); }
+  /* Der bestaetigende Knopf einer Rueckfrage, die etwas verwirft - in derselben
+     Farbe wie der Knopf „Paket leeren", der die Rueckfrage ausloest. */
+  .dlg-btn.gefahr { background: var(--red); border-color: var(--red); color: var(--white); }
+  .dlg-btn.gefahr:hover { background: #9c1414; border-color: #9c1414; }
+
   @media (max-width: 760px) {
     .add-row { flex-direction: column; }
     .add-field { flex: 1 1 100% !important; }
@@ -564,6 +592,44 @@ function pageEquiv(it) {
    gemeinsam in einer Sammelgruppe - dort gilt der Staffelrabatt wie früher über alle
    diese Titel hinweg. */
 const OHNE_FACH = 'Ohne Fachbereich';
+/* ── RÜCKFRAGEFENSTER ─────────────────────────────────────────────────────────
+   Tritt an die Stelle von confirm(). Gleicher Baustein wie in OpenSlots und
+   MediaQuote. Der Vorteil gegenüber confirm() liegt weniger in der Optik als in
+   der Beschriftung: der Browser konnte nur „OK" und „Abbrechen" anbieten, hier
+   steht auf dem Knopf, was er tut.
+   Zurück kommt ein Versprechen mit true (bestätigt) oder false (abgelehnt).
+   Abgelehnt wird auch durch Escape – wie bei confirm(), wo Escape „Abbrechen"
+   entsprach. Der Fokus liegt auf dem abweisenden Knopf: die Rückfrage steht vor
+   einer Handlung, die etwas verwirft, und die Eingabetaste soll dann nichts
+   auslösen, was nicht ausdrücklich gewollt ist. */
+function frage(titel, html, jaText, neinText = 'Abbrechen') {
+  return new Promise(res => {
+    const back = document.createElement('div');
+    back.className = 'dlg-back';
+    back.innerHTML = '<div class="dlg-box" role="dialog" aria-modal="true">'
+      + '<div class="dlg-hd"></div><div class="dlg-tx"></div>'
+      + '<div class="dlg-row"><button type="button" class="dlg-btn sekundaer" data-w="nein"></button>'
+      + '<button type="button" class="dlg-btn gefahr" data-w="ja"></button></div></div>';
+    back.querySelector('.dlg-box').setAttribute('aria-label', titel);
+    back.querySelector('.dlg-hd').textContent = titel;
+    back.querySelector('.dlg-tx').innerHTML = html;
+    const bJa = back.querySelector('[data-w="ja"]'), bNein = back.querySelector('[data-w="nein"]');
+    bJa.textContent = jaText;
+    bNein.textContent = neinText;
+    const zu = w => {
+      document.removeEventListener('keydown', escFrage, true);
+      back.remove();
+      res(w);
+    };
+    function escFrage(e) { if (e.key === 'Escape') { e.stopPropagation(); zu(false); } }
+    bJa.onclick = () => zu(true);
+    bNein.onclick = () => zu(false);
+    document.addEventListener('keydown', escFrage, true);
+    document.body.appendChild(back);
+    bNein.focus();
+  });
+}
+
 function esc(s){ return String(s).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])); }
 function fachVon(titel) { return (((DATA[titel] || {}).fach || '').trim()) || OHNE_FACH; }
 
@@ -704,9 +770,12 @@ function updateAnz(id, v) {
 /* Vor dem Leeren wird zurueckgefragt, damit ein versehentlicher Klick das Paket nicht
    verwirft – wie in MediaQuote und OpenSlots. Ist das Paket ohnehin leer, entfaellt
    die Rueckfrage. */
-function clearAll() {
+async function clearAll() {
   if (items.length === 0) return;
-  if (!confirm('Wirklich alle Positionen aus dem Paket entfernen?\n\nDer aktuelle Paketstand wird gelöscht.')) return;
+  if (!await frage('Paket leeren?',
+    '<p>Alle Positionen werden aus dem Paket entfernt.</p>'
+    + '<p>Der aktuelle Paketstand wird gelöscht.</p>',
+    'Paket leeren')) return;
   items = []; render(); saveStand();
 }
 
