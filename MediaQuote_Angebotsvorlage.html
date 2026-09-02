@@ -90,6 +90,13 @@
   .dlg-tx p:last-child { margin-bottom: 0; }
   .dlg-tx b { font-weight: 600; }
   .dlg-row { display: flex; gap: 8px; justify-content: flex-end; margin-top: 16px; flex-wrap: wrap; }
+  /* Aufzählungen im Hinweisfenster: alert() konnte nur Zeilenumbrüche in einem
+     Fließtext, hier stehen die betroffenen Angaben als Liste. Einzug und Punkt
+     müssen gesetzt werden – der Vorspann nimmt allen Listen beides. Lange Listen
+     rollen in sich, damit der Knopf sichtbar bleibt. */
+  .dlg-tx ul { margin: 6px 0 8px; padding-left: 1.25em; list-style: disc; }
+  .dlg-tx li { margin-bottom: 2px; }
+  .dlg-tx ul.dlg-liste { max-height: min(300px, 34vh); overflow-y: auto; }
   .dlg-btn {
     font-family: inherit;
     font-size: 13px;
@@ -1069,6 +1076,49 @@ Es gelten unsere Allgemeinen Geschäftsbedingungen, einsehbar unter <a href="htt
 // Dropdown-/Options-HTML eingesetzt werden (verhindert, dass z. B. ein " oder <
 // in einer Zelle ein Dropdown zerschießt). Der DOM liefert die .value-Property
 // entkodiert zurück, daher bleibt der spätere Abgleich (Auswahl merken) intakt.
+/* ── HINWEISFENSTER ───────────────────────────────────────────────────────────
+   Tritt an die Stelle von alert(). Dieselbe Hülle wie die Rückfrage nach dem
+   Datenstand (.dlg-back/.dlg-box) – die Meldung steht damit in der Optik des
+   Werkzeugs statt in der des Browsers, hat eine Überschrift, und Aufzählungen
+   lassen sich als Liste setzen statt als Zeilenumbrüche im Fließtext.
+   Wie dort schließt ein Klick daneben nicht: die Meldung soll gelesen und nicht
+   versehentlich weggewischt werden. Escape und der Knopf schließen.
+   Zurück kommt ein Versprechen, das beim Schließen einlöst – so wartet der
+   Aufrufer wie zuvor bei alert(), bis die Meldung zur Kenntnis genommen ist.
+   Das Fenster wird bei jedem Aufruf neu angelegt und beim Schließen wieder
+   entfernt; im Ruhezustand steht nichts davon im Seitengerüst. */
+function hinweis(titel, html) {
+  return new Promise(res => {
+    const back = document.createElement('div');
+    back.className = 'dlg-back';
+    back.innerHTML = '<div class="dlg-box" role="alertdialog" aria-modal="true">'
+      + '<div class="dlg-hd"></div><div class="dlg-tx"></div>'
+      + '<div class="dlg-row"><button type="button" class="dlg-btn">Verstanden</button></div></div>';
+    back.querySelector('.dlg-box').setAttribute('aria-label', titel);
+    back.querySelector('.dlg-hd').textContent = titel;
+    back.querySelector('.dlg-tx').innerHTML = html;
+    const knopf = back.querySelector('button');
+    const zu = () => {
+      document.removeEventListener('keydown', escHinweis, true);
+      back.remove();
+      res();
+    };
+    function escHinweis(e) { if (e.key === 'Escape') { e.stopPropagation(); zu(); } }
+    knopf.onclick = zu;
+    document.addEventListener('keydown', escHinweis, true);
+    document.body.appendChild(back);
+    knopf.focus();
+  });
+}
+
+/* Aufzählung für das Hinweisfenster. Ohne `max` stehen alle Zeilen darin und die
+   Liste rollt in sich; mit `max` wird gedeckelt und der Rest gezählt. */
+function hinweisListe(a, max = 0) {
+  const zeigen = max ? a.slice(0, max) : a;
+  return '<ul class="dlg-liste">' + zeigen.map(x => '<li>' + esc(x) + '</li>').join('') + '</ul>'
+    + (max && a.length > max ? '<p>… und ' + (a.length - max) + ' weitere</p>' : '');
+}
+
 function esc(s) {
   return String(s == null ? '' : s)
     .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
@@ -1399,14 +1449,17 @@ async function onDataFileChosen(event) {
     // Angaben, die es in der neuen Preisliste nicht mehr gibt. Ohne Hinweis bliebe eine
     // Position still ohne Ausgabe stehen – oder, fehlt der Titel, auf dem ersten der Liste.
     if (datenAbgleichVerloren.length) {
-      alert('Diese Angaben aus den vorhandenen Positionen gibt es in der neu geladenen '
-          + 'Preisliste nicht mehr:\n\n' + datenAbgleichVerloren.join('\n')
-          + '\n\nBitte die betroffenen Positionen prüfen.');
+      await hinweis('Preisliste abgeglichen',
+        '<p>Diese Angaben aus den vorhandenen Positionen gibt es in der neu geladenen '
+        + 'Preisliste nicht mehr:</p>' + hinweisListe(datenAbgleichVerloren)
+        + '<p>Bitte die betroffenen Positionen prüfen.</p>');
     }
   } catch (e) {
     console.error(e);
-    alert('Die Datei konnte nicht gelesen werden:\n' + (e.message || e) +
-          '\n\nBitte eine Excel-Datei mit den Tabellenblättern „Preise" und „Termine" verwenden.');
+    await hinweis('Datei nicht lesbar',
+      '<p>Die Datei konnte nicht gelesen werden:</p>'
+      + '<p><b>' + esc(e.message || e) + '</b></p>'
+      + '<p>Bitte eine Excel-Datei mit den Tabellenblättern „Preise" und „Termine" verwenden.</p>');
     updateDataStatus(isCustomData ? `geladen: ${loadedFileName}` : 'Bitte zuerst über „Daten laden" die Angebotsdaten.xlsx laden.', isCustomData);
   } finally {
     event.target.value = '';                     // erlaubt erneutes Laden derselben Datei
@@ -1524,9 +1577,10 @@ async function ladePreislisteAusDatenbank() {
     saveCache();
     updateDataStatus(`geladen: Preisliste · Jahrgänge ${activeYears().join(', ')} · ${nTitel} Titel${datenStand}`, true);
     if (datenAbgleichVerloren.length) {
-      alert('Diese Angaben aus den vorhandenen Positionen gibt es in der neu geladenen '
-          + 'Preisliste nicht mehr:\n\n' + datenAbgleichVerloren.join('\n')
-          + '\n\nBitte die betroffenen Positionen prüfen.');
+      await hinweis('Preisliste abgeglichen',
+        '<p>Diese Angaben aus den vorhandenen Positionen gibt es in der neu geladenen '
+        + 'Preisliste nicht mehr:</p>' + hinweisListe(datenAbgleichVerloren)
+        + '<p>Bitte die betroffenen Positionen prüfen.</p>');
     }
     return true;
   } catch (e) {
@@ -1564,9 +1618,10 @@ async function ladePreislisteVonServer() {
     updateDataStatus(`geladen: ${DATEN_DATEI} · Jahrgänge ${activeYears().join(', ')} · ${nTitel} Titel${datenStand}`, true);
     // Wie beim Laden von Hand: nur melden, wenn an vorhandenen Positionen etwas verlorenging.
     if (datenAbgleichVerloren.length) {
-      alert('Diese Angaben aus den vorhandenen Positionen gibt es in der neu geladenen '
-          + 'Preisliste nicht mehr:\n\n' + datenAbgleichVerloren.join('\n')
-          + '\n\nBitte die betroffenen Positionen prüfen.');
+      await hinweis('Preisliste abgeglichen',
+        '<p>Diese Angaben aus den vorhandenen Positionen gibt es in der neu geladenen '
+        + 'Preisliste nicht mehr:</p>' + hinweisListe(datenAbgleichVerloren)
+        + '<p>Bitte die betroffenen Positionen prüfen.</p>');
     }
     return true;
   } catch (e) {
@@ -2341,7 +2396,10 @@ async function openAngebot() {
       return;
     } catch (e) {
       if (e && e.name === 'AbortError') return;
-      if (e instanceof SyntaxError) { alert('Die Datei ist keine gültige Angebotsdatei.'); return; }
+      if (e instanceof SyntaxError) {
+        await hinweis('Datei nicht lesbar', '<p>Die Datei ist keine gültige Angebotsdatei.</p>');
+        return;
+      }
       // sonst: Fallback über verstecktes Datei-Feld
     }
   }
@@ -2360,7 +2418,8 @@ function onAngebotFileChosen(evt) {
         angebotFileName   = file.name;
       }
     } catch (e) {
-      alert('Die Datei konnte nicht gelesen werden. Ist es eine gespeicherte Angebotsdatei?');
+      await hinweis('Datei nicht lesbar',
+        '<p>Die Datei konnte nicht gelesen werden. Ist es eine gespeicherte Angebotsdatei?</p>');
     }
   };
   reader.readAsText(file);
@@ -2405,7 +2464,7 @@ let fehlendeAngaben = [];
 // Gespeichertes Angebot vollständig wiederherstellen. Rückgabe: true, wenn es geklappt hat.
 async function applyAngebot(data) {
   if (!data || data.app !== 'Angebotsvorlage' || !data.form) {
-    alert('Diese Datei ist keine gültige Angebotsdatei.');
+    await hinweis('Datei nicht lesbar', '<p>Diese Datei ist keine gültige Angebotsdatei.</p>');
     return false;
   }
 
@@ -2482,9 +2541,10 @@ async function applyAngebot(data) {
   saveStand();   // programmatisch gesetzte Felder lösen keine Eingabe-Ereignisse aus
 
   if (fehlendeAngaben.length) {
-    alert('Diese Angaben aus dem gespeicherten Angebot gibt es in den geladenen '
-        + 'Angebotsdaten nicht mehr:\n\n' + fehlendeAngaben.join('\n')
-        + '\n\nBitte die betroffenen Positionen prüfen.');
+    await hinweis('Angebot geöffnet, mit Abweichungen',
+      '<p>Diese Angaben aus dem gespeicherten Angebot gibt es in den geladenen '
+      + 'Angebotsdaten nicht mehr:</p>' + hinweisListe(fehlendeAngaben)
+      + '<p>Bitte die betroffenen Positionen prüfen.</p>');
   }
   return true;
 }
@@ -2531,7 +2591,8 @@ async function exportToExcel() {
   // Lazy-load ExcelJS
   try { await ensureExcelJS(); }
   catch (e) {
-    alert('Excel-Bibliothek konnte nicht geladen werden. Bitte prüfen Sie Ihre Internetverbindung.');
+    await hinweis('Export nicht möglich',
+      '<p>Excel-Bibliothek konnte nicht geladen werden. Bitte prüfen Sie Ihre Internetverbindung.</p>');
     return;
   }
 

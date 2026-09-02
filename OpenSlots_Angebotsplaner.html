@@ -1247,11 +1247,12 @@ function hinweis(titel,html){
   });
 }
 
-/* Aufzählung für das Hinweisfenster – höchstens zwölf Zeilen wie zuvor, der
-   Rest wird gezählt. */
-function hinweisListe(a,max=12){
-  return '<ul class="dlg-liste">'+a.slice(0,max).map(x=>'<li>'+esc(x)+'</li>').join('')+'</ul>'+
-    (a.length>max?'<p>… und '+(a.length-max)+' weitere</p>':'');
+/* Aufzählung für das Hinweisfenster. Ohne `max` stehen alle Zeilen darin und die
+   Liste rollt in sich; mit `max` wird gedeckelt und der Rest gezählt. */
+function hinweisListe(a,max=0){
+  const zeigen=max?a.slice(0,max):a;
+  return '<ul class="dlg-liste">'+zeigen.map(x=>'<li>'+esc(x)+'</li>').join('')+'</ul>'+
+    (max&&a.length>max?'<p>… und '+(a.length-max)+' weitere</p>':'');
 }
 
 function buildCollapsed(){
@@ -1678,12 +1679,12 @@ async function meldeTerminAbgleich(b){
   let t='';
   if(b.geaendert.length){
     t+='<p>In '+b.geaendert.length+' Ausgabe(n) wurden die Termine an die neu geladene '+
-       'Preisliste angepasst:</p>'+hinweisListe(b.geaendert);
+       'Preisliste angepasst:</p>'+hinweisListe(b.geaendert,12);
   }
   if(b.entfallen.length){
     t+='<p>'+b.entfallen.length+' Ausgabe(n) aus dem Arbeitsstand gibt es in der neuen '+
        'Preisliste nicht mehr. Die Heftzuordnung wurde geleert, die angekreuzten '+
-       'Platzierungen bleiben stehen:</p>'+hinweisListe(b.entfallen);
+       'Platzierungen bleiben stehen:</p>'+hinweisListe(b.entfallen,12);
   }
   await hinweis('Preisliste abgeglichen',t);
 }
