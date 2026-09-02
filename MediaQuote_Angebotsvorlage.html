@@ -76,6 +76,11 @@
     padding: 20px;
   }
   .dlg-box {
+    /* Schrift der Fenster wie in OpenSlots (Source Sans 3), nicht wie im Blatt.
+       Ohne diese Zeile erben sie die Aptos des Angebots - dieselbe Abweichung, die
+       fuer die Kopfleiste weiter unten schon einmal zurueckgeholt wurde. Die Fenster
+       gehoeren zum Werkzeug und nicht zum Angebot; im Druck sind sie ohnehin weg. */
+    font-family: 'Source Sans 3', system-ui, sans-serif;
     background: #fff;
     border: 1px solid var(--border);
     border-radius: var(--radius-xl);
