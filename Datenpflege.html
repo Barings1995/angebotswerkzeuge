@@ -1254,6 +1254,49 @@ function frage(titel, html, jaText, neinText = 'Abbrechen') {
   });
 }
 
+/* Eingabefenster, an der Stelle von prompt(). Aufbau wie frage(), nur mit einem
+   Textfeld zwischen Erklaerung und Knoepfen. Zurueck kommt der eingetippte Text
+   oder null, wenn abgebrochen wurde - genau wie bei prompt(). Leer ist erlaubt
+   und nicht dasselbe wie abgebrochen.
+   Die Eingabetaste im Feld bestaetigt, Escape bricht ab. Anders als bei der
+   Rueckfrage liegt der Fokus im Feld: hier wird etwas angelegt, nichts
+   verworfen, und der vorgeschlagene Text steht zum Ueberschreiben bereit. */
+function eingabe(titel, erklaerung, beschriftung, vorgabe, jaText) {
+  return new Promise(res => {
+    const platz = document.createElement('div');
+    platz.innerHTML =
+      '<div class="schleier" style="z-index:60"><div class="dialog" role="dialog" aria-modal="true">' +
+        '<h3></h3><div class="erklaerung"></div>' +
+        '<div class="dialog-zeile"><span></span>' +
+          '<input type="text" style="width:240px"></div>' +
+        '<div class="dialog-knoepfe">' +
+          '<button class="btn" data-w="nein">Abbrechen</button>' +
+          '<button class="btn btn-primär" data-w="ja"></button>' +
+        '</div>' +
+      '</div></div>';
+    platz.querySelector('h3').textContent = titel;
+    platz.querySelector('.erklaerung').textContent = erklaerung;
+    platz.querySelector('.dialog-zeile span').textContent = beschriftung;
+    const feld = platz.querySelector('input');
+    feld.value = vorgabe || '';
+    const bJa = platz.querySelector('[data-w="ja"]'), bNein = platz.querySelector('[data-w="nein"]');
+    bJa.textContent = jaText;
+    const zu = w => {
+      document.removeEventListener('keydown', escEingabe, true);
+      platz.remove();
+      res(w);
+    };
+    function escEingabe(e) { if (e.key === 'Escape') { e.stopPropagation(); zu(null); } }
+    feld.onkeydown = e => { if (e.key === 'Enter') { e.preventDefault(); zu(feld.value); } };
+    bJa.onclick = () => zu(feld.value);
+    bNein.onclick = () => zu(null);
+    document.addEventListener('keydown', escEingabe, true);
+    document.body.appendChild(platz);
+    feld.focus();
+    feld.select();
+  });
+}
+
 /* Die immer gleiche Warnung vor den drei Kraftakten, die unmittelbar in die
    Datenbank schreiben. Der Satz stand wortgleich in drei confirm()-Aufrufen. */
 function frageOffeneAenderungen(was) {
@@ -1871,7 +1914,10 @@ async function sicherungenLaden() {
 }
 
 async function sicherungJetztAnlegen() {
-  const bezeichnung = prompt('Bezeichnung des Sicherungspunkts (darf leer bleiben):', 'Stand ' + new Date().toLocaleDateString('de-DE'));
+  const bezeichnung = await eingabe('Sicherungspunkt anlegen',
+    'Der Sicherungspunkt hält den gespeicherten Stand des Jahrgangs ' + gewJahr +
+    ' fest. Die Bezeichnung darf leer bleiben.',
+    'Bezeichnung', 'Stand ' + new Date().toLocaleDateString('de-DE'), 'Anlegen');
   if (bezeichnung === null) return;
   try { await sicherungAnlegen(gewJahr, bezeichnung); await sicherungenLaden(); }
   catch (fehler) { meldung('Nicht angelegt: ' + fehler.message, true); }
