@@ -192,7 +192,12 @@
     letter-spacing: -.01em;
   }
   .sm-hero h1 .sm-hero-mark { color: var(--orange); }
+  /* Zeilenhöhe fest, nicht vom Blatt geerbt. PreisWerk und Datenpflege führen im
+     body ein line-height von 1.5, OpenSlots und MediaQuote nicht — die Unterzeile
+     war dadurch 18 statt 17,5 px hoch und die ganze Leiste in zwei Werkzeugen
+     0,5 px höher als in den anderen drei. */
   .sm-hero-sub {
+    line-height: 17.5px;
     font-size: 12px;
     font-weight: 600;
     color: rgba(255,255,255,.72);
