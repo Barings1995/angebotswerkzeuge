@@ -48,6 +48,16 @@
 
   /* Hintergrund am Wurzelelement, damit er bei kurzem Inhalt bis zum Fensterrand
      durchläuft (robuster als min-height:100vh am body – vgl. OpenSlots). */
+/* Bedienfelder erben die Schrift nicht von selbst - Knoepfe, Eingabe- und
+   Auswahlfelder bekommen sie vom Browser, wenn die Datei schweigt, und das ist
+   Arial. Sichtbar wurde es an "Paket leeren" und "Angebot speichern": in Arial
+   fallen die Beschriftungen 9 bis 12 Prozent breiter aus als in der Schrift des
+   Werkzeugs. Diese Regel laesst jedes Feld die Schrift seiner Umgebung
+   uebernehmen; wo eine Klasse eine eigene Schrift setzt, behaelt sie Vorrang.
+   Sie steht in allen fuenf Dateien, auch in denen, in denen zurzeit nichts
+   danebenliegt - die Luecke soll nicht wiederkehren. */
+button, input, select, textarea { font-family: inherit; }
+
   html { background: var(--bg); }
   body { font-family: var(--font-body); background: var(--bg); color: var(--text); font-size: 14px; line-height: 1.5; }
 
@@ -62,10 +72,14 @@
      Weg zurueck fehlte bisher — er traegt vor allem beim Wechsel von einem
      Werkzeug ins naechste. Optik wie „Abmelden" in der Datenpflege: weisser
      Rand auf Blau, gefuellt erst beim Ueberfahren. Schrift bewusst geerbt,
-     nicht ueber ein Token — nicht jedes Werkzeug fuehrt --font-body. */
+     nicht ueber ein Token — nicht jedes Werkzeug fuehrt --font-body.
+     Zeilenhoehe fest, nicht geerbt: ohne sie war der Knopf in PreisWerk und der
+     Datenpflege 29,25 statt 28,5 px hoch, weil diese beiden im body ein
+     line-height von 1.5 fuehren. 16,5 px ist der Wert, den 'normal' bei Source
+     Sans 3 in 11,5 px ergibt - dieselbe Angleichung wie bei der Unterzeile. */
   .hero-zurueck { margin-left: auto; display: inline-flex; align-items: center; gap: 6px;
     background: none; border: 1px solid rgba(255,255,255,.35); color: #fff;
-    border-radius: var(--radius-md); font-size: 11.5px; font-weight: 600;
+    border-radius: var(--radius-md); font-size: 11.5px; line-height: 16.5px; font-weight: 600;
     padding: 5px 11px; text-decoration: none; white-space: nowrap; flex: none; }
   .hero-zurueck:hover { background: rgba(255,255,255,.12); }
   .sm-hero h1 { font-family: var(--font-title); font-size: 25px; font-weight: 700; color: #fff; line-height: 1.2; margin-bottom: 2px; letter-spacing: -.01em; }

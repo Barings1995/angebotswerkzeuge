@@ -134,6 +134,27 @@
     padding: 20px;
   }
 
+/* Bedienfelder erben die Schrift nicht von selbst - Knoepfe, Eingabe- und
+   Auswahlfelder bekommen sie vom Browser, wenn die Datei schweigt, und das ist
+   Arial. Sichtbar wurde es an "Paket leeren" und "Angebot speichern": in Arial
+   fallen die Beschriftungen 9 bis 12 Prozent breiter aus als in der Schrift des
+   Werkzeugs. Diese Regel laesst jedes Feld die Schrift seiner Umgebung
+   uebernehmen; wo eine Klasse eine eigene Schrift setzt, behaelt sie Vorrang.
+   Sie steht in allen fuenf Dateien, auch in denen, in denen zurzeit nichts
+   danebenliegt - die Luecke soll nicht wiederkehren. */
+button, input, select, textarea { font-family: inherit; }
+
+  /* Was der Druck ausblendet, gehoert dem Werkzeug, nicht dem Angebot - und
+     traegt deshalb die Schrift des Werkzeugs. Kopfleiste (14.08.2026) und
+     Dialogfenster (02.09.2026) wurden aus genau diesem Grund schon einzeln
+     umgestellt; diese Regel zieht die uebrigen Stuecke nach, die dabei
+     uebrigblieben. Die Auswahl ist nicht geraten: es sind dieselben Selektoren,
+     die weiter unten im @media print auf display:none stehen. Das Angebot
+     selbst bleibt bei Aptos. */
+  .actions, .data-bar, .mwst-toggle, .toast, .btn-add, .btn-del {
+    font-family: 'Source Sans 3', system-ui, sans-serif;
+  }
+
   .page {
     background: #fff;
     max-width: 1220px;
@@ -175,10 +196,14 @@
      Weg zurueck fehlte bisher — er traegt vor allem beim Wechsel von einem
      Werkzeug ins naechste. Optik wie „Abmelden" in der Datenpflege: weisser
      Rand auf Blau, gefuellt erst beim Ueberfahren. Schrift bewusst geerbt,
-     nicht ueber ein Token — nicht jedes Werkzeug fuehrt --font-body. */
+     nicht ueber ein Token — nicht jedes Werkzeug fuehrt --font-body.
+     Zeilenhoehe fest, nicht geerbt: ohne sie war der Knopf in PreisWerk und der
+     Datenpflege 29,25 statt 28,5 px hoch, weil diese beiden im body ein
+     line-height von 1.5 fuehren. 16,5 px ist der Wert, den 'normal' bei Source
+     Sans 3 in 11,5 px ergibt - dieselbe Angleichung wie bei der Unterzeile. */
   .hero-zurueck { margin-left: auto; display: inline-flex; align-items: center; gap: 6px;
     background: none; border: 1px solid rgba(255,255,255,.35); color: #fff;
-    border-radius: var(--radius-md); font-size: 11.5px; font-weight: 600;
+    border-radius: var(--radius-md); font-size: 11.5px; line-height: 16.5px; font-weight: 600;
     padding: 5px 11px; text-decoration: none; white-space: nowrap; flex: none; }
   .hero-zurueck:hover { background: rgba(255,255,255,.12); }
   .sm-hero h1 {
