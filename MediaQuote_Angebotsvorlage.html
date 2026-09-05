@@ -2463,7 +2463,12 @@ async function saveAngebot() {
       updAngStatus();
       return;
     } catch (e) {
-      if (e && e.name === 'AbortError') return;   // Dialog abgebrochen
+      // Vom Nutzer abgebrochen — entweder der Auswahl-Dialog (AbortError) oder
+      // die Schreiberlaubnis, die der Browser beim ersten Speichern in eine
+      // geöffnete Datei erfragt (NotAllowedError). In beiden Fällen ist nichts
+      // zu tun: ein Rückfall auf den Download legte eine ungewollte zweite Datei
+      // an. Die geöffnete Datei bleibt verknüpft, der nächste Klick fragt erneut.
+      if (e && (e.name === 'AbortError' || e.name === 'NotAllowedError')) return;
       angebotFileHandle = null;                    // sonst: Download-Fallback
     }
   }
