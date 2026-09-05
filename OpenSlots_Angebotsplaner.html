@@ -302,16 +302,31 @@ button, input, select, textarea { font-family: inherit; }
   background: var(--sm-white);
   border: 1px solid var(--sm-border);
   border-radius: var(--radius-lg);
-  box-shadow: var(--shadow-md);
+  /* Eigener Schatten statt --shadow-md: die Fenster in MediaQuote und PreisWerk
+     stehen mit 0/6/24 px bei 28 % deutlich klarer vom Blatt ab. Die Marke selbst
+     bleibt unberührt, sie trägt anderswo im Werkzeug. */
+  box-shadow: 0 6px 24px rgba(0,40,90,.28);
   max-width: 520px; width: 100%;
   padding: 1.15rem 1.35rem 1.1rem;
 }
-.dlg-hd { font-size: 14.5px; font-weight: 700; color: var(--sm-navy); margin-bottom: 9px; }
-.dlg-tx { font-size: 12.5px; color: var(--sm-text); line-height: 1.55; }
+/* Zeilenhöhe fest, nicht vom Blatt geerbt — dieselbe Lücke wie bei der Unterzeile
+   der Kopfleiste und beim Rückweg-Knopf. In PreisWerk stand die Überschrift
+   dadurch 22,5 statt 21,5 px hoch. 21,5 px ist der Wert, den „normal" bei Source
+   Sans 3 in 15 px ergibt, gemessen. */
+.dlg-hd { font-size: 15px; line-height: 21.5px; font-weight: 700; color: var(--sm-navy); margin-bottom: 9px; }
+.dlg-tx { font-size: 13px; color: var(--sm-text); line-height: 1.55; }
 .dlg-tx p { margin-bottom: 8px; }
 .dlg-tx p:last-child { margin-bottom: 0; }
 .dlg-tx b { font-weight: 600; }
 .dlg-row { display: flex; gap: 8px; justify-content: flex-end; margin-top: 16px; flex-wrap: wrap; }
+/* Die Knöpfe der Fenster tragen dieselbe Klasse wie die der Datenleiste; hier
+   bekommen sie das Maß, das MediaQuote und PreisWerk ihren .dlg-btn geben —
+   13 px statt 12, Polster 7/14 statt 5/12, also 34,5 statt 30,5 px hoch. Nur im
+   Fenster: die Datenleiste bleibt, wie sie ist. */
+.dlg-row .data-btn { font-size: 13px; padding: 7px 14px; border-width: 1px; }
+/* Der Rand muss mit: .data-btn trägt 1,5 px, .dlg-btn der beiden anderen
+   Werkzeuge 1 px — ohne diese Zeile bliebe der Knopf 35,5 statt 34,5 px hoch.
+   Nur im Fenster; in der Datenleiste bleiben die 1,5 px stehen. */
 /* Aufzählungen im Hinweisfenster: alert() konnte nur Zeilenumbrüche in einem
    Fließtext, hier stehen die betroffenen Ausgaben als Liste. Die Höhe reicht für
    die zwölf Zeilen, die aufgezählt werden – auf kleinen Schirmen rollt die Liste

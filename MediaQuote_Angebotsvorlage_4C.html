@@ -20,6 +20,12 @@
     --springer-blue-dark: #015d96;
     --light-bg: #f5f7fa;
     --border: #dde2ea;
+    /* Rand der Fenster. Eigene Marke, weil --border die Linien des
+       Angebotsblatts traegt (Empfaengerfeld, Positions- und Summentabelle,
+       Bemerkungen, Fusszeile) und damit im gedruckten Angebot erscheint.
+       Die Fenster gehoeren zum Werkzeug: dort gilt der Wert, den OpenSlots,
+       PreisWerk und die Datenpflege fuehren. */
+    --dlg-border: #d6dbe8;
     --text: #1a1a2e;
     --muted: #6b7280;
     /* Rot für „Zurücksetzen" – keine Brandfarbe, aber dieselbe wie im
@@ -82,14 +88,18 @@
        gehoeren zum Werkzeug und nicht zum Angebot; im Druck sind sie ohnehin weg. */
     font-family: 'Source Sans 3', system-ui, sans-serif;
     background: #fff;
-    border: 1px solid var(--border);
+    border: 1px solid var(--dlg-border);
     border-radius: var(--radius-xl);
     box-shadow: 0 6px 24px rgba(0,40,90,0.28);
     max-width: 520px;
     width: 100%;
     padding: 18px 22px 17px;
   }
-  .dlg-hd { font-size: 15px; font-weight: 700; color: var(--navy); margin-bottom: 9px; }
+  /* Zeilenhöhe fest, nicht vom Blatt geerbt — dieselbe Lücke wie bei der Unterzeile
+  der Kopfleiste und beim Rückweg-Knopf. In PreisWerk stand die Überschrift
+  dadurch 22,5 statt 21,5 px hoch. 21,5 px ist der Wert, den „normal" bei Source
+  Sans 3 in 15 px ergibt, gemessen. */
+  .dlg-hd { font-size: 15px; line-height: 21.5px; font-weight: 700; color: var(--navy); margin-bottom: 9px; }
   .dlg-tx { font-size: 13px; color: var(--text); line-height: 1.55; }
   .dlg-tx p { margin-bottom: 8px; }
   .dlg-tx p:last-child { margin-bottom: 0; }
@@ -113,7 +123,7 @@
     background: var(--navy);
     color: #fff;
   }
-  .dlg-btn.sekundaer { background: #fff; color: var(--navy); border-color: var(--border); }
+  .dlg-btn.sekundaer { background: #fff; color: var(--navy); border-color: var(--dlg-border); }
   .dlg-btn.sekundaer:hover { border-color: var(--navy); }
   /* Der bestaetigende Knopf einer Rueckfrage, die etwas verwirft - in derselben
      Farbe wie der Knopf „Zuruecksetzen" in der Werkzeugleiste, der die Rueckfrage

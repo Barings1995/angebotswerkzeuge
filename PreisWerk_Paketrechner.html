@@ -253,10 +253,14 @@ button, input, select, textarea { font-family: inherit; }
   .dlg-back { position: fixed; inset: 0; z-index: 10000; background: rgba(0,40,90,.32);
     display: flex; align-items: center; justify-content: center; padding: 20px; }
   .dlg-box { font-family: var(--font-body); background: var(--white);
-    border: 1px solid var(--border); border-radius: var(--radius-lg);
+    border: 1px solid var(--border); border-radius: var(--radius-xl);
     box-shadow: 0 6px 24px rgba(0,40,90,.28); max-width: 520px; width: 100%;
     padding: 18px 22px 17px; }
-  .dlg-hd { font-size: 15px; font-weight: 700; color: var(--navy); margin-bottom: 9px; }
+  /* Zeilenhöhe fest, nicht vom Blatt geerbt — dieselbe Lücke wie bei der Unterzeile
+  der Kopfleiste und beim Rückweg-Knopf. In PreisWerk stand die Überschrift
+  dadurch 22,5 statt 21,5 px hoch. 21,5 px ist der Wert, den „normal" bei Source
+  Sans 3 in 15 px ergibt, gemessen. */
+  .dlg-hd { font-size: 15px; line-height: 21.5px; font-weight: 700; color: var(--navy); margin-bottom: 9px; }
   .dlg-tx { font-size: 13px; color: var(--text); line-height: 1.55; }
   .dlg-tx p { margin-bottom: 8px; }
   .dlg-tx p:last-child { margin-bottom: 0; }
