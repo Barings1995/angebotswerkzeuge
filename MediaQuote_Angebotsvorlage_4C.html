@@ -26,8 +26,8 @@
        Die Fenster gehoeren zum Werkzeug: dort gilt der Wert, den OpenSlots,
        PreisWerk und die Datenpflege fuehren. */
     --dlg-border: #d6dbe8;
-    --text: #1a1a2e;
-    --muted: #6b7280;
+    --text: #1a2340;
+    --muted: #6b7a99;
     /* Rot für „Zurücksetzen" – keine Brandfarbe, aber dieselbe wie im
        OpenSlots-Angebotsplaner, damit derselbe Vorgang gleich aussieht. */
     --rot: #c0392b;
@@ -42,31 +42,6 @@
     --radius-lg:  8px;
     --radius-xl: 10px;
   }
-
-  /* Kurze Speicher-/Status-Bestätigung (unten rechts, blendet selbst aus) */
-  .toast {
-    position: fixed;
-    bottom: 24px;
-    right: 24px;
-    background: var(--navy);
-    color: #fff;
-    padding: 12px 18px;
-    border-radius: var(--radius-lg);
-    font-size: 13px;
-    font-weight: 600;
-    box-shadow: 0 6px 24px rgba(0,40,90,0.28);
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    max-width: 360px;
-    opacity: 0;
-    transform: translateY(12px);
-    transition: opacity .25s ease, transform .25s ease;
-    z-index: 9999;
-    pointer-events: none;
-  }
-  .toast.show { opacity: 1; transform: translateY(0); }
-  .toast-check { color: #4ade80; font-weight: 800; font-size: 15px; line-height: 1; }
 
   /* Rückfragefenster „Welche Angebotsdaten sollen gelten?"
      Bewusst ohne Klick-daneben-schließt: die Frage soll beantwortet und nicht
@@ -161,7 +136,7 @@ button, input, select, textarea { font-family: inherit; }
      uebrigblieben. Die Auswahl ist nicht geraten: es sind dieselben Selektoren,
      die weiter unten im @media print auf display:none stehen. Das Angebot
      selbst bleibt bei Aptos. */
-  .actions, .data-bar, .mwst-toggle, .toast, .btn-add, .btn-del {
+  .actions, .data-bar, .mwst-toggle, .btn-add, .btn-del {
     font-family: 'Source Sans 3', system-ui, sans-serif;
   }
 
@@ -771,9 +746,9 @@ button, input, select, textarea { font-family: inherit; }
   .btn-action svg { width: 14px; height: 14px; }
   .btn-print { background: var(--orange); color: #fff; }
   .btn-print:hover { background: #d46e0d; }
-  /* „Zurücksetzen" löscht das ganze Formular und ist damit der einzige Knopf mit
-     Folgen. Gefüllt in demselben Rot, das der OpenSlots-Angebotsplaner für
-     „Auswahl zurücksetzen" verwendet – gleiche Wirkung, gleiche Farbe. */
+  /* „Alles zurücksetzen" löscht das ganze Formular und ist damit der einzige
+     Knopf mit Folgen. Gefüllt in demselben Rot, das OpenSlots und PreisWerk für
+     denselben Knopf verwenden – gleiche Wirkung, gleiche Farbe. */
   /* Ohne Kante, sonst wäre der Knopf durch sie 2 px höher als seine Nachbarn –
      bisher fiel das bei weißem Grund nicht auf, bei einer Fläche schon. */
   .btn-reset { background: var(--rot); color: #fff; border: none; }
@@ -794,15 +769,26 @@ button, input, select, textarea { font-family: inherit; }
   .col-toggles label { display: inline-flex; align-items: center; gap: 4px; cursor: pointer; font-weight: 600; color: var(--navy); }
   .col-toggles input { accent-color: var(--navy); cursor: pointer; margin: 0; }
 
-  /* ── Daten laden / Jahrgang ── */
+  /* ── Jahrgang / Spalten / Status ──
+     Die Leiste gehoert zum Werkzeug, nicht zum Angebot: sie steht deshalb ueber
+     dem Blatt und nicht darin. Flaeche, Rand und Masse wie die Datenleiste im
+     OpenSlots-Angebotsplaner; die Breite folgt dem Blatt darunter, damit beide
+     buendig stehen. Im Druck ist sie weg (siehe @media print). */
   .data-bar {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    gap: 12px;
+    gap: 10px;
     flex-wrap: wrap;
-    margin-bottom: 10px;
+    max-width: 1220px;
+    margin: 0 auto 10px;
+    background: #fff;
+    border: 1px solid var(--dlg-border);
+    border-radius: var(--radius-md);
+    padding: 7px 12px;
+    box-shadow: 0 1px 3px rgba(0,40,90,.08);
   }
+  .data-bar-right { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
   .data-bar-left { display: flex; align-items: center; gap: 8px; }
   .data-bar-left label { font-size: 12px; font-weight: 600; color: var(--navy); }
   #yearSelect {
@@ -818,8 +804,28 @@ button, input, select, textarea { font-family: inherit; }
     outline: none;
   }
   #yearSelect:focus { border-color: var(--navy); box-shadow: 0 0 0 2px rgba(0,40,90,0.1); }
-  .data-status { font-size: 11.5px; color: var(--muted); font-style: italic; }
-  .data-status.loaded { color: var(--springer-blue); font-style: normal; font-weight: 600; }
+  .data-status { font-size: 11.5px; color: var(--muted); }
+  .data-status.loaded { color: var(--navy); font-weight: 600; }
+
+  /* ── Punkt 6 · Hinweis auf die geoeffnete Angebotsdatei ──
+     Wortgleich und gleich gebaut wie im OpenSlots-Angebotsplaner. Er nennt auch
+     den Speicherzeitpunkt, weil ein aelteres Angebot die Preise von damals
+     enthaelt und nicht die heutigen. */
+  .ang-status {
+    font-size: 11.5px;
+    color: var(--navy);
+    font-weight: 600;
+    font-variant-numeric: tabular-nums;
+    display: none;
+    align-items: center;
+    gap: 5px;
+    padding: 3px 9px;
+    border-radius: var(--radius-sm);
+    background: #e6eaf0;
+    white-space: nowrap;
+  }
+  .ang-status.on { display: inline-flex; }
+  .ang-status .ang-time { font-weight: 400; color: var(--muted); }
 
 
   /* ── Print ── */
@@ -839,7 +845,7 @@ button, input, select, textarea { font-family: inherit; }
        sie am Ende des Inhalts auf der letzten Seite (nicht auf jeder Seite). */
     .page { box-shadow: none; padding: 12px 16px; max-width: 100%; border-radius: 0;
             display: flex; flex-direction: column; min-height: 100vh; }
-    .sm-hero, .actions, .btn-del, .btn-add, .mwst-toggle, .toast { display: none !important; }
+    .sm-hero, .actions, .btn-del, .btn-add, .mwst-toggle { display: none !important; }
     .positions-table td select,
     .positions-table td input[type="text"],
     .positions-table td input[type="number"] {
@@ -931,12 +937,31 @@ button, input, select, textarea { font-family: inherit; }
   </div>
 </div>
 
+<!-- Werkzeugleiste: Jahrgang, Spalten und Datenstand. Sie gehoert nicht zum
+     Angebot und steht deshalb ueber dem Blatt; im Druck ist sie ausgeblendet. -->
+<div class="data-bar">
+  <div class="data-bar-left">
+    <label for="yearSelect">Jahrgang</label>
+    <select id="yearSelect" onchange="onYearChange()"></select>
+    <span class="data-bar-sep"></span>
+    <span class="col-toggles" title="Spalten Rabatt / AE ein- oder ausblenden">
+      <span class="ct-label">Spalten:</span>
+      <label><input type="checkbox" id="colchk-rabatt" checked onchange="onColToggle('rabatt', this.checked)"> Rabatt</label>
+      <label><input type="checkbox" id="colchk-ae" checked onchange="onColToggle('ae', this.checked)"> AE</label>
+    </span>
+  </div>
+  <div class="data-bar-right">
+    <span class="ang-status" id="angStatus"></span>
+    <div class="data-status" id="dataStatus">Keine Daten geladen – bitte Angebotsdaten.xlsx laden</div>
+  </div>
+</div>
+
 <div class="page">
 
   <!-- Action buttons (screen only) -->
   <div class="actions">
     <input type="file" id="dataFileInput" accept=".xlsx" style="display:none" onchange="onDataFileChosen(event)">
-    <button class="btn-action btn-load" onclick="document.getElementById('dataFileInput').click()" title="Daten (Preise &amp; Termine) aus Excel laden">
+    <button class="btn-action btn-load" onclick="document.getElementById('dataFileInput').click()" title="Preis- und Termindaten aus Excel laden (Blätter „Preise“ + „Termine“)">
       <svg viewBox="0 0 20 20" fill="currentColor" width="14" height="14"><path d="M3 5a2 2 0 012-2h3.586a1 1 0 01.707.293l1.414 1.414A1 1 0 0011.414 5H15a2 2 0 012 2v1H3V5z"/><path d="M3 9h14v5a2 2 0 01-2 2H5a2 2 0 01-2-2V9zm7 1a1 1 0 00-1 1v1.586l-.293-.293a1 1 0 10-1.414 1.414l2 2a1 1 0 001.414 0l2-2a1 1 0 00-1.414-1.414l-.293.293V11a1 1 0 00-1-1z"/></svg>
       Daten laden
     </button>
@@ -948,7 +973,7 @@ button, input, select, textarea { font-family: inherit; }
       <svg viewBox="0 0 20 20" fill="currentColor" width="14" height="14"><path d="M2 6a2 2 0 012-2h4l2 2h6a2 2 0 012 2v6a2 2 0 01-2 2H4a2 2 0 01-2-2V6z"/></svg>
       Angebot öffnen
     </button>
-    <button class="btn-action btn-angebot" onclick="saveAngebot()" title="Dieses Angebot speichern (überschreibt beim erneuten Speichern dieselbe Datei)">
+    <button class="btn-action btn-angebot" onclick="saveAngebot()" title="Diesen Angebotsstand als Datei speichern (beim erneuten Speichern wird dieselbe Datei überschrieben)">
       <svg viewBox="0 0 20 20" fill="currentColor" width="14" height="14"><path d="M3 4a1 1 0 011-1h9l4 4v9a1 1 0 01-1 1H4a1 1 0 01-1-1V4zm4 0v4h6V4H7zm1 1h2v2H8V5zm-1 8a1 1 0 011-1h4a1 1 0 011 1v3H7v-3z"/></svg>
       Angebot speichern
     </button>
@@ -966,9 +991,9 @@ button, input, select, textarea { font-family: inherit; }
 
     <span class="actions-sep"></span>
 
-    <button class="btn-action btn-reset" onclick="resetForm()">
+    <button class="btn-action btn-reset" onclick="resetForm()" title="Alle Eingaben entfernen: Positionen, Empfänger, Kampagne und Bemerkungen">
       <svg viewBox="0 0 20 20" fill="currentColor" width="13" height="13"><path fill-rule="evenodd" d="M4 2a1 1 0 011 1v2.101a7.002 7.002 0 0111.601 2.566 1 1 0 11-1.885.666A5.002 5.002 0 005.999 7H9a1 1 0 010 2H4a1 1 0 01-1-1V3a1 1 0 011-1zm.008 9.057a1 1 0 011.276.61A5.002 5.002 0 0014.001 13H11a1 1 0 110-2h5a1 1 0 011 1v5a1 1 0 11-2 0v-2.101a7.002 7.002 0 01-11.601-2.566 1 1 0 01.61-1.276z" clip-rule="evenodd"/></svg>
-      Zurücksetzen
+      Alles zurücksetzen
     </button>
 
   </div>
@@ -1024,20 +1049,6 @@ button, input, select, textarea { font-family: inherit; }
 
   <!-- Positions -->
   <div class="section-title">Angebotsübersicht</div>
-
-  <div class="data-bar">
-    <div class="data-bar-left">
-      <label for="yearSelect">Mediadaten-Jahrgang:</label>
-      <select id="yearSelect" onchange="onYearChange()"></select>
-      <span class="data-bar-sep"></span>
-      <span class="col-toggles" title="Spalten Rabatt / AE ein- oder ausblenden">
-        <span class="ct-label">Spalten:</span>
-        <label><input type="checkbox" id="colchk-rabatt" checked onchange="onColToggle('rabatt', this.checked)"> Rabatt</label>
-        <label><input type="checkbox" id="colchk-ae" checked onchange="onColToggle('ae', this.checked)"> AE</label>
-      </span>
-    </div>
-    <div class="data-status" id="dataStatus">Keine Daten geladen – bitte Angebotsdaten.xlsx laden</div>
-  </div>
 
   <table class="positions-table" id="posTable">
     <thead>
@@ -1397,7 +1408,7 @@ function showNoDataRow() {
   const tbody = document.getElementById('posBody');
   if (!tbody) return;
   if (document.getElementById('no-data-row')) return;
-  tbody.innerHTML = '<tr id="no-data-row"><td colspan="99" style="text-align:center; padding:22px; color:var(--muted); font-style:italic;">Bitte zuerst über „Daten laden" die Angebotsdaten.xlsx laden.</td></tr>';
+  tbody.innerHTML = '<tr id="no-data-row"><td colspan="99" style="text-align:center; padding:22px; color:var(--muted); font-style:italic;">Keine Daten geladen — bitte oben auf „Daten laden“ klicken und die Angebotsdaten.xlsx wählen.</td></tr>';
 }
 
 // ── ExcelJS bei Bedarf (lazy) laden ──
@@ -2272,39 +2283,40 @@ function plainPaste(e) {
   }
 }
 
-// ─────────────────────────────────────────
-//  Kurze Bestätigungsmeldung (Toast) unten rechts
-// ─────────────────────────────────────────
-let _toastTimer = null;
 let _origPrintTitle = null;   // Fenster-Titel während Druck/PDF zwischenspeichern
-function showToast(msg) {
-  let t = document.getElementById('appToast');
-  if (!t) {
-    t = document.createElement('div');
-    t.id = 'appToast';
-    t.className = 'toast';
-    document.body.appendChild(t);
+
+// ─────────────────────────────────────────
+//  Hinweis auf die geöffnete Angebotsdatei
+// ─────────────────────────────────────────
+/* Steht dauerhaft in der Werkzeugleiste, wie im OpenSlots-Angebotsplaner: Er
+   quittiert das Speichern und beantwortet zugleich die Frage, welche Datei
+   gerade offen ist. Ein kurz aufblendendes Fähnchen tat nur das erste. */
+function updAngStatus() {
+  const el = document.getElementById('angStatus');
+  if (!el) return;
+  el.textContent = '';
+  if (!angebotFileName) { el.classList.remove('on'); return; }
+  el.textContent = 'Angebot: ' + angebotFileName;   // reiner Text (Dateiname sicher)
+  if (angebotSavedAt) {
+    const d = new Date(angebotSavedAt);
+    if (!isNaN(d)) {
+      const p = n => ('0' + n).slice(-2);
+      const t = document.createElement('span');
+      t.className = 'ang-time';
+      t.textContent = ' · Stand ' + p(d.getDate()) + '.' + p(d.getMonth() + 1) + '.' + d.getFullYear();
+      el.appendChild(t);
+    }
   }
-  t.innerHTML = '';
-  const chk = document.createElement('span');
-  chk.className = 'toast-check';
-  chk.textContent = '✓';
-  const m = document.createElement('span');
-  m.textContent = msg;                 // reiner Text (Dateiname sicher)
-  t.append(chk, m);
-  void t.offsetWidth;                   // Reflow erzwingen, damit die Animation greift
-  t.classList.add('show');
-  clearTimeout(_toastTimer);
-  _toastTimer = setTimeout(() => t.classList.remove('show'), 2800);
+  el.classList.add('on');
 }
 
 // ─────────────────────────────────────────
 //  Reset form
 // ─────────────────────────────────────────
 async function resetForm() {
-  if (!await frage('Formular zurücksetzen?',
+  if (!await frage('Alles zurücksetzen?',
     '<p>Alle Eingaben gehen verloren: Positionen, Empfänger, Kampagne und Bemerkungen.</p>',
-    'Zurücksetzen')) return;
+    'Alles zurücksetzen')) return;
   document.getElementById('posBody').innerHTML = '';
   posCounter = 0;
   document.getElementById('kundeText').innerHTML = '';
@@ -2315,6 +2327,8 @@ async function resetForm() {
   // legt ein eigenständiges, neues Angebot an (überschreibt nicht das alte).
   angebotFileHandle = null;
   angebotFileName   = '';
+  angebotSavedAt    = '';
+  updAngStatus();
   recalcTotal();
   addPosition();
   clearStand();   // nach addPosition(), sonst schreibt der laufende Sammelauftrag zurück
@@ -2327,6 +2341,7 @@ async function resetForm() {
 // ─────────────────────────────────────────
 let angebotFileHandle = null;   // Datei-Handle (Chrome/Edge) für Überschreiben
 let angebotFileName   = '';     // zuletzt verwendeter Dateiname (Fallback-Download)
+let angebotSavedAt    = '';     // Zeitpunkt des letzten Speicherns (für die Hinweiszeile)
 const ANGEBOT_VERSION = 1;
 
 // Spalten-Sichtbarkeit (Rabatt/AE) gezielt setzen – ohne zu toggeln
@@ -2423,7 +2438,8 @@ async function saveAngebot() {
       await writable.write(json);
       await writable.close();
       angebotFileName = angebotFileHandle.name || '';
-      showToast('Gespeichert: ' + (angebotFileName || 'Angebot'));
+      angebotSavedAt  = new Date().toISOString();
+      updAngStatus();
       return;
     } catch (e) {
       if (e && e.name === 'AbortError') return;   // Dialog abgebrochen
@@ -2443,7 +2459,9 @@ function downloadAngebotFallback(json) {
   document.body.appendChild(a);
   a.click();
   setTimeout(() => { URL.revokeObjectURL(a.href); document.body.removeChild(a); }, 100);
-  showToast('Gespeichert: ' + name);
+  angebotFileName = name;
+  angebotSavedAt  = new Date().toISOString();
+  updAngStatus();
 }
 
 async function openAngebot() {
@@ -2454,10 +2472,13 @@ async function openAngebot() {
         types: [{ description: 'Angebot', accept: { 'application/json': ['.json'] } }],
         multiple: false,
       });
-      const file = await handle.getFile();
-      if (await applyAngebot(JSON.parse(await file.text()))) {
+      const file  = await handle.getFile();
+      const daten = JSON.parse(await file.text());
+      if (await applyAngebot(daten)) {
         angebotFileHandle = handle;             // ab jetzt überschreibt „Speichern" diese Datei
         angebotFileName   = handle.name || '';
+        angebotSavedAt    = daten.savedAt || '';
+        updAngStatus();
       }
       return;
     } catch (e) {
@@ -2479,9 +2500,12 @@ function onAngebotFileChosen(evt) {
   const reader = new FileReader();
   reader.onload = async () => {
     try {
-      if (await applyAngebot(JSON.parse(reader.result))) {
+      const daten = JSON.parse(reader.result);
+      if (await applyAngebot(daten)) {
         angebotFileHandle = null;    // Fallback-Weg kann nicht in dieselbe Datei zurückschreiben
         angebotFileName   = file.name;
+        angebotSavedAt    = daten.savedAt || '';
+        updAngStatus();
       }
     } catch (e) {
       await hinweis('Datei nicht lesbar',
@@ -2665,7 +2689,7 @@ async function exportToExcel() {
   try { await ensureExcelJS(); }
   catch (e) {
     await hinweis('Export nicht möglich',
-      '<p>Excel-Bibliothek konnte nicht geladen werden. Bitte prüfen Sie Ihre Internetverbindung.</p>');
+      '<p>Excel-Bibliothek konnte nicht geladen werden (Internetverbindung?).</p>');
     return;
   }
 

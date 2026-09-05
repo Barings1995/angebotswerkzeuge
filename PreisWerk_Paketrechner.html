@@ -92,7 +92,7 @@ button, input, select, textarea { font-family: inherit; }
   .sm-hero p { font-size: 12.5px; color: rgba(255,255,255,.72); font-weight: 400; line-height: 1.4; text-wrap: pretty; }
   .sm-hero p strong { color: rgba(255,255,255,.9); font-weight: 600; }
   /* ── Daten-Leiste ── */
-  .data-bar { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-xl); padding: 12px 16px; margin-bottom: 20px; box-shadow: var(--shadow-sm); }
+  .data-bar { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-md); padding: 7px 12px; margin-bottom: 20px; box-shadow: var(--shadow-sm); }
   /* Feste Höhe statt senkrechter Polsterung, wie bei MediaQuote: sonst bekommen die
      Knöpfe je nach Schriftgröße und Kantenstärke unterschiedliche Höhen. Mit
      box-sizing: border-box (oben global gesetzt) zählt die Kante nicht zusätzlich. */
@@ -102,7 +102,7 @@ button, input, select, textarea { font-family: inherit; }
   /* Nativer Auswahlpfeil wie bei Titel/Kategorie/Format – der Jahrgang zeichnete ihn
      vorher selbst als Hintergrundbild. */
   .data-year select { font-family: var(--font-body); font-size: 13px; font-weight: 600; padding: 5px 8px; border: 1px solid var(--border); border-radius: var(--radius-md); background-color: var(--white); color: var(--text); cursor: pointer; appearance: auto; -webkit-appearance: auto; }
-  .data-status { font-size: 12.5px; color: var(--grey-600); }
+  .data-status { font-size: 11.5px; color: var(--grey-600); }
   .data-status.loaded { color: var(--navy); font-weight: 600; }
   .data-error { display: inline-flex; align-items: center; gap: 6px; font-size: 12.5px; font-weight: 600; color: var(--red); background: #fdeaea; border: 1px solid #f3c0c0; border-radius: var(--radius-md); padding: 4px 10px; }
   .data-error svg { flex: none; }
@@ -271,7 +271,7 @@ button, input, select, textarea { font-family: inherit; }
   .dlg-btn.sekundaer { background: var(--white); color: var(--navy); border-color: var(--border); }
   .dlg-btn.sekundaer:hover { border-color: var(--navy); }
   /* Der bestaetigende Knopf einer Rueckfrage, die etwas verwirft - in derselben
-     Farbe wie der Knopf „Paket leeren", der die Rueckfrage ausloest. */
+     Farbe wie der Knopf „Alles zuruecksetzen", der die Rueckfrage ausloest. */
   .dlg-btn.gefahr { background: var(--red); border-color: var(--red); color: var(--white); }
   .dlg-btn.gefahr:hover { background: #9c1414; border-color: #9c1414; }
 
@@ -381,9 +381,9 @@ button, input, select, textarea { font-family: inherit; }
     <div style="font-size:12px; color:var(--grey-600);">
       nur Normal-, Vorzugs- und Festplatzierungen
     </div>
-    <button class="btn-clear" onclick="clearAll()">
+    <button class="btn-clear" onclick="clearAll()" title="Alle Positionen aus dem Paket entfernen">
       <svg width="13" height="13" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true"><path fill-rule="evenodd" d="M4 2a1 1 0 011 1v2.101a7.002 7.002 0 0111.601 2.566 1 1 0 11-1.885.666A5.002 5.002 0 005.999 7H9a1 1 0 010 2H4a1 1 0 01-1-1V3a1 1 0 011-1zm.008 9.057a1 1 0 011.276.61A5.002 5.002 0 0014.001 13H11a1 1 0 110-2h5a1 1 0 011 1v5a1 1 0 11-2 0v-2.101a7.002 7.002 0 01-11.601-2.566 1 1 0 01.61-1.276z" clip-rule="evenodd"/></svg>
-      Paket leeren
+      Alles zurücksetzen
     </button>
   </div>
 
@@ -420,7 +420,7 @@ function ensureExcelJS(){
   return new Promise((res,rej)=>{
     const s=document.createElement('script');
     s.src='https://cdn.jsdelivr.net/npm/exceljs@4.3.0/dist/exceljs.min.js';
-    s.onload=res;s.onerror=()=>rej(new Error('ExcelJS konnte nicht geladen werden (Internetverbindung?).'));
+    s.onload=res;s.onerror=()=>rej(new Error('Excel-Bibliothek konnte nicht geladen werden (Internetverbindung?).'));
     document.head.appendChild(s);
   });
 }
@@ -794,10 +794,10 @@ function updateAnz(id, v) {
    die Rueckfrage. */
 async function clearAll() {
   if (items.length === 0) return;
-  if (!await frage('Paket leeren?',
+  if (!await frage('Alles zurücksetzen?',
     '<p>Alle Positionen werden aus dem Paket entfernt.</p>'
     + '<p>Der aktuelle Paketstand wird gelöscht.</p>',
-    'Paket leeren')) return;
+    'Alles zurücksetzen')) return;
   items = []; render(); saveStand();
 }
 
@@ -832,7 +832,7 @@ function render() {
   if (items.length === 0) {
     const emptyMsg = isCustomData
       ? 'Noch keine Positionen im Paket.<br>Oben Titel, Kategorie und Format auswählen und auf <strong>+ Hinzufügen</strong> klicken.'
-      : 'Noch keine Daten geladen.<br>Bitte oben auf <strong>Daten laden</strong> klicken und die <strong>Angebotsdaten.xlsx</strong> wählen.';
+      : 'Keine Daten geladen — bitte oben auf „Daten laden“ klicken und die Angebotsdaten.xlsx wählen.';
     document.getElementById('basketContent').innerHTML = `
       <div class="basket-empty">
         <p>${emptyMsg}</p>
