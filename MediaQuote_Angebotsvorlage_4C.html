@@ -1036,7 +1036,7 @@ button, input, select, textarea { font-family: inherit; }
         <label><input type="checkbox" id="colchk-ae" checked onchange="onColToggle('ae', this.checked)"> AE</label>
       </span>
     </div>
-    <div class="data-status" id="dataStatus">Bitte zuerst über „Daten laden" die Angebotsdaten.xlsx laden.</div>
+    <div class="data-status" id="dataStatus">Keine Daten geladen – bitte Angebotsdaten.xlsx laden</div>
   </div>
 
   <table class="positions-table" id="posTable">
@@ -1522,10 +1522,9 @@ async function onDataFileChosen(event) {
     if (noDataRow) noDataRow.remove();           // Hinweiszeile entfernen, bevor die erste Position erscheint
     applyYear(currentYear);                      // stellt Zeilen um + speichert Cache
     if (!document.querySelector('#posBody tr')) addPosition();  // beim ersten Laden eine Position anlegen
-    const nTitel = Object.keys(DATASET[currentYear].titel).length;
     datenStand = standAusMappe(wb);
     saveCache();                                 // Stand nachtragen: applyYear() hat ihn noch nicht gekannt
-    updateDataStatus(`geladen: ${file.name} · Jahrgänge ${activeYears().join(', ')} · ${nTitel} Titel${datenStand}`, true);
+    updateDataStatus(`geladen: ${file.name} · ${activeYears().join('/')}${datenStand}`, true);
     // Angaben, die es in der neuen Preisliste nicht mehr gibt. Ohne Hinweis bliebe eine
     // Position still ohne Ausgabe stehen – oder, fehlt der Titel, auf dem ersten der Liste.
     if (datenAbgleichVerloren.length) {
@@ -1540,7 +1539,7 @@ async function onDataFileChosen(event) {
       '<p>Die Datei konnte nicht gelesen werden:</p>'
       + '<p><b>' + esc(e.message || e) + '</b></p>'
       + '<p>Bitte eine Excel-Datei mit den Tabellenblättern „Preise" und „Termine" verwenden.</p>');
-    updateDataStatus(isCustomData ? `geladen: ${loadedFileName}` : 'Bitte zuerst über „Daten laden" die Angebotsdaten.xlsx laden.', isCustomData);
+    updateDataStatus(isCustomData ? `geladen: ${loadedFileName}` : 'Keine Daten geladen – bitte Angebotsdaten.xlsx laden', isCustomData);
   } finally {
     event.target.value = '';                     // erlaubt erneutes Laden derselben Datei
   }
@@ -1652,10 +1651,9 @@ async function ladePreislisteAusDatenbank() {
     const noDataRow = document.getElementById('no-data-row');
     if (noDataRow) noDataRow.remove();
     applyYear(currentYear);
-    const nTitel = Object.keys(DATASET[currentYear].titel).length;
     datenStand = standAusDatenbank(stand);
     saveCache();
-    updateDataStatus(`geladen: Preisliste · Jahrgänge ${activeYears().join(', ')} · ${nTitel} Titel${datenStand}`, true);
+    updateDataStatus(`geladen: Preisliste · ${activeYears().join('/')}${datenStand}`, true);
     if (datenAbgleichVerloren.length) {
       await hinweis('Preisliste abgeglichen',
         '<p>Diese Angaben aus den vorhandenen Positionen gibt es in der neu geladenen '
@@ -1692,10 +1690,9 @@ async function ladePreislisteVonServer() {
     const noDataRow = document.getElementById('no-data-row');
     if (noDataRow) noDataRow.remove();
     applyYear(currentYear);
-    const nTitel = Object.keys(DATASET[currentYear].titel).length;
     datenStand = standAusMappe(wb);
     saveCache();                                 // Stand nachtragen: applyYear() hat ihn noch nicht gekannt
-    updateDataStatus(`geladen: ${DATEN_DATEI} · Jahrgänge ${activeYears().join(', ')} · ${nTitel} Titel${datenStand}`, true);
+    updateDataStatus(`geladen: ${DATEN_DATEI} · ${activeYears().join('/')}${datenStand}`, true);
     // Wie beim Laden von Hand: nur melden, wenn an vorhandenen Positionen etwas verlorenging.
     if (datenAbgleichVerloren.length) {
       await hinweis('Preisliste abgeglichen',
@@ -1706,7 +1703,7 @@ async function ladePreislisteVonServer() {
     return true;
   } catch (e) {
     console.warn('Preisliste nicht von der Adresse geholt:', e);
-    if (!isCustomData) updateDataStatus('Preisliste nicht erreichbar – bitte über „Daten laden" die Angebotsdaten.xlsx laden.', false);
+    if (!isCustomData) updateDataStatus('Preisliste nicht erreichbar – bitte Angebotsdaten.xlsx laden', false);
     return false;
   }
 }
@@ -1813,7 +1810,7 @@ window.addEventListener('DOMContentLoaded', async () => {
   updateDataStatus(
     fromCache
       ? (loadedFileName ? `aus Browser-Speicher: ${loadedFileName}${datenStand}` : `zuletzt geladene Daten (Browser-Speicher)${datenStand}`)
-      : 'Bitte zuerst über „Daten laden" die Angebotsdaten.xlsx laden.',
+      : 'Keine Daten geladen – bitte Angebotsdaten.xlsx laden',
     fromCache);
 
   // Gespeicherte Kontaktdaten (Absender) übernehmen + bei Änderung automatisch merken
