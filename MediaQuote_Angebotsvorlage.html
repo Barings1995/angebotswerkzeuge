@@ -2574,6 +2574,54 @@ function frageDatenstand(savedAt, dateiName) {
   });
 }
 
+// ── Betrifft ein anderer Datenstand dieses Angebot? ──────────────────────────
+/* Verglichen wird nur, was die Positionen wirklich benutzen: den Titel, das gewählte
+   Format mit Preis, 4c-Zuschlag, Rabatt- und AE-Merkmal und Terminart, und die gewählte
+   Ausgabe mit ihren Terminen. Alles andere — weitere Titel, andere Formate, andere
+   Hefte, Auflage und Fachbereich — steht in diesem Angebot nicht und löst deshalb keine
+   Rückfrage aus.
+   Verglichen wird Feld für Feld statt als Text: die beiden Wege zur Preisliste
+   (Datenbank und Excel) legen dieselben Angaben in unterschiedlicher Reihenfolge ab,
+   ein Textvergleich meldete deshalb Unterschiede, wo keine sind. */
+function formatMerkmale(jahrgang, titel, fmt) {
+  const t = (jahrgang && jahrgang.titel) ? jahrgang.titel[titel] : null;
+  if (!t) return null;
+  for (const formate of Object.values(t.kategorien || {})) {
+    const e = formate[fmt];
+    if (e !== undefined) return [
+      Number(e.gp)  || 0,
+      Number(e.z4c) || 0,
+      e.rab === true,
+      e.ae  === true,
+      (typeof e.termin === 'string') ? e.termin.trim().toUpperCase() : ''
+    ].join('|');
+  }
+  return null;
+}
+
+/* Die Ausgabe wird über dieselbe Bezeichnung wiedergefunden, die auch im Auswahlfeld
+   steht (siehe buildAusgabeOptions) — die Platznummer verschiebt sich, sobald ein Heft
+   dazukommt oder wegfällt. */
+function ausgabeMerkmale(jahrgang, titel, datum) {
+  const liste = ((jahrgang && jahrgang.ausgaben) ? jahrgang.ausgaben[titel] : null) || [];
+  const a = liste.find(x => 'Heft ' + x.heft + '/' + String(x.monat || '').slice(0, 3) + '.' === datum);
+  if (!a) return null;
+  return [a.et || '', a.as || '', a.du || '', a.eh || ''].join('|');
+}
+
+function angebotBetroffen(ausDatei, geladen, positionen) {
+  return (positionen || []).some(p => {
+    if (!p || !p.titel) return false;                                  // leere Zeile
+    const tDatei   = ausDatei.titel ? ausDatei.titel[p.titel] : null;
+    const tGeladen = geladen.titel  ? geladen.titel[p.titel]  : null;
+    if (!tGeladen || !tDatei) return true;                             // Titel nur auf einer Seite
+    if (!!tDatei.hat4c !== !!tGeladen.hat4c) return true;              // entscheidet über s/w-Preis und 4c-Auswahl
+    if (p.fmt && formatMerkmale(ausDatei, p.titel, p.fmt) !== formatMerkmale(geladen, p.titel, p.fmt)) return true;
+    if (p.datum && ausgabeMerkmale(ausDatei, p.titel, p.datum) !== ausgabeMerkmale(geladen, p.titel, p.datum)) return true;
+    return false;
+  });
+}
+
 // Positionen, die beim Öffnen nicht zum geltenden Datenstand passen
 let fehlendeAngaben = [];
 
@@ -2584,15 +2632,18 @@ async function applyAngebot(data) {
     return false;
   }
 
-  // 1) Welcher Datenstand gilt? Die Angebotsdatei bringt ihren eigenen mit. Ist für
-  //    denselben Jahrgang inzwischen etwas anderes geladen, wird gefragt; sind beide
-  //    gleich – der Regelfall –, läuft alles ohne Rückfrage durch.
+  // 1) Welcher Datenstand gilt? Die Angebotsdatei bringt ihren eigenen mit. Gefragt wird
+  //    nur, wenn der geladene Stand die Positionen dieses Angebots anders beziffert oder
+  //    terminiert (siehe angebotBetroffen). Betrifft der Unterschied nur Titel, Formate
+  //    oder Hefte, die hier nicht vorkommen, gilt stillschweigend der geladene Stand —
+  //    er ist der jüngere, und am Angebot ändert er nichts. Ist für den Jahrgang gar
+  //    nichts geladen, bleibt nur die Datei.
   const dsDatei = (data.dataset && Object.keys(data.dataset).length) ? data.dataset : null;
   const jahr    = dsDatei
     ? ((data.currentYear && dsDatei[data.currentYear]) ? data.currentYear : Object.keys(dsDatei)[0])
     : '';
-  let nimmDatei = true;
-  if (dsDatei && DATASET[jahr] && JSON.stringify(dsDatei[jahr]) !== JSON.stringify(DATASET[jahr])) {
+  let nimmDatei = !(dsDatei && DATASET[jahr]);
+  if (dsDatei && DATASET[jahr] && angebotBetroffen(dsDatei[jahr], DATASET[jahr], data.positions)) {
     nimmDatei = await frageDatenstand(data.savedAt, loadedFileName);
     if (nimmDatei === null) return false;            // abgebrochen: nichts ändern
   }
@@ -2622,8 +2673,8 @@ async function applyAngebot(data) {
     const ys = document.getElementById('yearSelect');
     if (ys) ys.value = currentYear;
     updateDataStatus(nimmDatei
-      ? (loadedFileName ? `aus Angebot: ${loadedFileName}` : 'Daten aus geladenem Angebot')
-      : (loadedFileName ? `geladen: ${loadedFileName}` : 'geladene Angebotsdaten'), true);
+      ? (loadedFileName ? `aus Angebot: ${loadedFileName} · ${activeYears().join('/')}` : 'Daten aus geladenem Angebot')
+      : (loadedFileName ? `geladen: ${loadedFileName} · ${activeYears().join('/')}${datenStand}` : 'geladene Angebotsdaten'), true);
   }
 
   // 2) Kopf-/Kontaktfelder

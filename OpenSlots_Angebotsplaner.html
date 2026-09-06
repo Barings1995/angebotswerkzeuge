@@ -1338,6 +1338,11 @@ let collapsedCats=buildCollapsed();
 
 /* ===== EXCEL-DATENIMPORT (Blätter „Preise" + „Termine", wie Angebotsvorlage) ===== */
 let DATASET={}, isCustomData=false, loadedFileName='', currentYear='';
+/* Kommen die Preise aus einer geoeffneten Angebotsdatei statt aus der geladenen
+   Preisliste? Die Statuszeile sagt es dann ausdruecklich - „geladen“ waere hier
+   nicht wahr. Der Merker wandert in den Zwischenspeicher mit, sonst behauptete die
+   Zeile nach dem naechsten Start wieder das Falsche. */
+let datenAusAngebot=false;
 /* v6: Datensatz enthält jetzt die Auflage je Titel (Feld „a"). Der hochgezählte
    Schlüssel sorgt dafür, dass ein älterer Zwischenspeicher ohne Auflage nicht
    weiterverwendet wird – die Excel wird dann einmal neu geladen. */
@@ -1452,7 +1457,7 @@ async function onDataFileChosen(ev){
     await wb.xlsx.load(await file.arrayBuffer());
     const ds=parseWorkbookToDataset(wb);
     datenStand=standAusMappe(wb);
-    DATASET=ds;isCustomData=true;loadedFileName=file.name;
+    DATASET=ds;isCustomData=true;loadedFileName=file.name;datenAusAngebot=false;
     /* Neue Preisgrundlage: Die Verknüpfung zu einer offenen Angebotsdatei wird
        gelöst, damit „Speichern" nicht ungefragt in die alte Datei schreibt. */
     clearAngebotDatei();
@@ -1586,7 +1591,7 @@ async function ladePreislisteAusDatenbank(){
     const ds=datenbankZuDataset(zeilen);
     if(!ds||!Object.keys(ds).length)throw new Error('Keine Jahrgänge in der Datenbank.');
     datenStand=standAusDatenbank(stand);
-    DATASET=ds;isCustomData=true;loadedFileName='Preisliste';
+    DATASET=ds;isCustomData=true;loadedFileName='Preisliste';datenAusAngebot=false;
     if(!currentYear||!DATASET[currentYear])currentYear=defaultYear();
     saveCache();
     const abgleich=refreshTermineImStand(DATASET);
@@ -1613,7 +1618,7 @@ async function ladePreislisteVonServer(){
     const ds=parseWorkbookToDataset(wb);
     if(!ds||!Object.keys(ds).length)throw new Error('Keine Jahrgänge in der Datei.');
     datenStand=standAusMappe(wb);
-    DATASET=ds;isCustomData=true;loadedFileName=DATEN_DATEI;
+    DATASET=ds;isCustomData=true;loadedFileName=DATEN_DATEI;datenAusAngebot=false;
     /* Der gemerkte Jahrgang bleibt stehen, solange die Preisliste ihn kennt. */
     if(!currentYear||!DATASET[currentYear])currentYear=defaultYear();
     saveCache();
@@ -1633,7 +1638,7 @@ function saveCache(){
   /* Der Stand wandert mit in den Zwischenspeicher: sonst stünde nach einem Neustart
      der Seite eine Preisliste ohne Datum da, solange die Datei noch nicht wieder von
      der Adresse geholt ist - und ohne Netz bliebe das Datum ganz weg. */
-  try{localStorage.setItem(CACHE_KEY,JSON.stringify({ds:DATASET,year:currentYear,file:loadedFileName,stand:datenStand,yearSetIn:String(new Date().getFullYear())}));}catch(e){}
+  try{localStorage.setItem(CACHE_KEY,JSON.stringify({ds:DATASET,year:currentYear,file:loadedFileName,stand:datenStand,ausAngebot:datenAusAngebot,yearSetIn:String(new Date().getFullYear())}));}catch(e){}
 }
 function saveCacheYear(){
   if(!isCustomData||!currentYear)return;
@@ -1650,7 +1655,7 @@ function loadCache(){
     const raw=localStorage.getItem(CACHE_KEY);if(!raw)return;
     const o=JSON.parse(raw);
     if(o&&o.ds&&Object.keys(o.ds).length){
-      DATASET=o.ds;isCustomData=true;loadedFileName=o.file||'';datenStand=o.stand||'';
+      DATASET=o.ds;isCustomData=true;loadedFileName=o.file||'';datenStand=o.stand||'';datenAusAngebot=!!o.ausAngebot;
       /* Der zuletzt gewählte Jahrgang wird gemerkt, aber nur innerhalb desselben
          Kalenderjahres. Beim ersten Start im neuen Jahr gilt wieder die Voreinstellung. */
       const gemerkt=(o.year&&o.ds[o.year]&&o.yearSetIn===String(new Date().getFullYear()))?o.year:'';
@@ -1981,6 +1986,38 @@ function findIssIdx(rows,ausgabe){
   return k>-1?k:null;
 }
 
+/* ── Betrifft ein anderer Datenstand dieses Angebot? ──
+   Verglichen wird nur, was im Angebot steht: die Titel mit Ausgaben oder angekreuzten
+   Platzierungen, deren Auflage (sie steht in der Titelzeile), die angekreuzten
+   Platzierungen mit Preis, Rabatt- und AE-Merkmal und Terminart, und ob es die
+   gewählte Ausgabe noch gibt. Weitere Titel, andere Platzierungen und andere Hefte
+   ändern am Angebot nichts und lösen deshalb keine Rückfrage mehr aus.
+   Die Termine selbst (ET, AS, DU, Anlieferung) stehen in der Angebotsdatei und werden
+   beim Öffnen von dort übernommen – der Datenstand ändert sie nicht. */
+function titelIndex(y,name){const k=((y&&y.J)||[]).findIndex(j=>j.n===name);return k>-1?k:null;}
+function plMerkmale(y,ji,name){
+  const j=y.J[ji];if(!j)return null;
+  for(const g of (j.g||[]))for(const e of (g.i||[]))if(e[0]===name)
+    return JSON.stringify([e[1],e[2]===true,e[3]===true,(typeof e[4]==='string')?e[4].trim().toUpperCase():'']);
+  return null;
+}
+function angebotBetroffen(ausDatei,geladen,titelListe){
+  return (titelListe||[]).some(t=>{
+    if(!t||!t.n)return false;
+    const benutzt=(t.issues||[]).filter(i=>i&&(((i.sel||[]).length>0)||i.ausgabe));
+    if(!benutzt.length)return false;                        /* Titel steht nicht im Angebot */
+    const a=titelIndex(ausDatei,t.n),b=titelIndex(geladen,t.n);
+    if(a==null||b==null)return true;                        /* Titel nur auf einer Seite */
+    if((ausDatei.J[a].a||0)!==(geladen.J[b].a||0))return true;   /* Auflage steht in der Titelzeile */
+    return benutzt.some(i=>{
+      /* Ausgabe über ihre Bezeichnung: fehlt sie in den geladenen Daten, bleibt die
+         Heftauswahl der Zeile leer – das ist sichtbar. */
+      if(i.ausgabe&&findIssIdx(ausDatei.ISSUES[a],i.ausgabe)!=null&&findIssIdx(geladen.ISSUES[b],i.ausgabe)==null)return true;
+      return (i.sel||[]).some(n=>plMerkmale(ausDatei,a,n)!==plMerkmale(geladen,b,n));
+    });
+  });
+}
+
 /* Gespeichertes Angebot wiederherstellen. Rückgabe: true, wenn es geklappt hat. */
 async function applyAngebot(data){
   if(!data||typeof data!=='object'){
@@ -2006,10 +2043,13 @@ async function applyAngebot(data){
   }
   const jahr=data.jahrgang||'';
   const ausDatei=data.dataset&&data.dataset[jahr];
-  /* Nur fragen, wenn für diesen Jahrgang etwas anderes geladen ist als in der Datei
-     steckt. Im Regelfall sind beide gleich – dann läuft alles wie bisher durch. */
-  let nimmDatei=true;
-  if(ausDatei&&DATASET[jahr]&&JSON.stringify(ausDatei)!==JSON.stringify(DATASET[jahr])){
+  /* Gefragt wird nur, wenn der geladene Stand die Titel und Platzierungen dieses
+     Angebots anders beziffert (siehe angebotBetroffen). Betrifft der Unterschied nur
+     Titel, Platzierungen oder Hefte, die hier nicht vorkommen, gilt stillschweigend der
+     geladene Stand – er ist der jüngere, und am Angebot ändert er nichts. Ist für den
+     Jahrgang gar nichts geladen, bleibt nur die Datei. */
+  let nimmDatei=!(ausDatei&&DATASET[jahr]);
+  if(ausDatei&&DATASET[jahr]&&angebotBetroffen(ausDatei,DATASET[jahr],data.titel)){
     nimmDatei=await frageDatenstand(data.savedAt,loadedFileName);
     if(nimmDatei===null)return false;                 // abgebrochen: nichts ändern
   }
@@ -2017,6 +2057,7 @@ async function applyAngebot(data){
     DATASET=Object.assign({},DATASET,data.dataset);   // andere Jahrgänge bleiben erhalten
     isCustomData=true;
     if(data.loadedFileName)loadedFileName=data.loadedFileName;
+    datenAusAngebot=true;
     /* Die Preise kommen jetzt aus der Angebotsdatei, nicht mehr aus der geladenen
        Preisliste. Deren Stand würde etwas Falsches behaupten und wird deshalb
        weggelassen - lieber kein Datum als ein unzutreffendes. */
@@ -2194,7 +2235,7 @@ function syncDataUI(){
   updAngStatus();
   const st=document.getElementById('dataStatus');
   if(st){
-    st.textContent=isCustomData?('geladen: '+loadedFileName+' · '+ys.join('/')+(datenStand?' · Stand '+datenStand:'')):'Keine Daten geladen – bitte Angebotsdaten.xlsx laden';
+    st.textContent=isCustomData?((datenAusAngebot?'aus Angebot: ':'geladen: ')+loadedFileName+' · '+ys.join('/')+(datenStand?' · Stand '+datenStand:'')):'Keine Daten geladen – bitte Angebotsdaten.xlsx laden';
     st.className='data-status'+(isCustomData?' loaded':'');
   }
 }
