@@ -26,6 +26,12 @@
        Die Fenster gehoeren zum Werkzeug: dort gilt der Wert, den OpenSlots,
        PreisWerk und die Datenpflege fuehren. */
     --dlg-border: #d6dbe8;
+    /* Seitenhintergrund hinter dem Angebotsblatt. Derselbe Wert, den OpenSlots,
+       PreisWerk, die Datenpflege und die Startseite fuehren — MediaQuote stand
+       zuvor als einziges Werkzeug auf einem dunkleren Grund (#e8edf3).
+       Nicht zu verwechseln mit --light-bg (#f5f7fa): das sind die hellen
+       Flaechen auf dem weissen Blatt (Adressfeld, Zebrastreifen, Bemerkungen). */
+    --grund: #f4f6fa;
     --text: #1a2340;
     --muted: #6b7a99;
     /* Rot für „Zurücksetzen" – keine Brandfarbe, aber dieselbe wie im
@@ -110,11 +116,16 @@
 
   * { box-sizing: border-box; margin: 0; padding: 0; }
 
+  /* Der Grund gehoert auch ans html-Element: sonst blitzt beim Ueberziehen am
+     Seitenende Weiss durch, weil der body nur so hoch ist wie sein Inhalt.
+     OpenSlots, PreisWerk und die Datenpflege halten es ebenso. */
+  html { background: var(--grund); }
+
   body {
     font-family: 'Aptos', 'Segoe UI', Arial, sans-serif;
     font-size: 13px;
     color: var(--text);
-    background: #e8edf3;
+    background: var(--grund);
     min-height: 100vh;
     padding: 20px;
   }
@@ -872,7 +883,10 @@ button, input, select, textarea { font-family: inherit; }
     print-color-adjust: exact !important;
   }
   @media print {
-    body { background: #fff; padding: 0; }
+    /* Auch das html-Element zuruecksetzen: es traegt am Bildschirm jetzt den
+       Grund, und wegen „print-color-adjust: exact" wuerde er sonst im PDF als
+       graue Seitenflaeche mitgedruckt. */
+    html, body { background: #fff; padding: 0; }
     /* Eine Position nicht über den Seitenumbruch zerreißen; Summenblock zusammenhalten */
     .positions-table tr { break-inside: avoid; }
     .summary-block { break-inside: avoid; }
