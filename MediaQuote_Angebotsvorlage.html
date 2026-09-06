@@ -1281,6 +1281,7 @@ let AUSGABEN_DATA  = {};
 let loadedFileName = '';
 let isCustomData   = false;          // true, sobald eine Datei geladen wurde
 let datenStand     = '';             // Stand der Preisliste als fertiger Textzusatz, siehe standAusMappe()
+let datenAusAngebot = false;         // true, solange die Zahlen aus einer geöffneten Angebotsdatei stammen
 const CACHE_KEY    = 'onkoAngebotDaten';
 const ABSENDER_KEY = 'onkoAbsender';
 
@@ -1535,6 +1536,7 @@ async function onDataFileChosen(event) {
     DATASET        = ds;
     loadedFileName = file.name;
     isCustomData   = true;
+    datenAusAngebot = false;
     currentYear    = activeYears()[0];
     rebuildYearDropdown();
     const noDataRow = document.getElementById('no-data-row');
@@ -1665,6 +1667,7 @@ async function ladePreislisteAusDatenbank() {
     DATASET        = ds;
     loadedFileName = 'Preisliste';
     isCustomData   = true;
+    datenAusAngebot = false;
     if (!currentYear || !DATASET[currentYear]) currentYear = activeYears()[0];
     rebuildYearDropdown();
     const noDataRow = document.getElementById('no-data-row');
@@ -1703,6 +1706,7 @@ async function ladePreislisteVonServer() {
     DATASET        = ds;
     loadedFileName = DATEN_DATEI;
     isCustomData   = true;
+    datenAusAngebot = false;
     // Der gemerkte Jahrgang bleibt stehen, solange die Preisliste ihn kennt.
     if (!currentYear || !DATASET[currentYear]) currentYear = activeYears()[0];
     rebuildYearDropdown();
@@ -1734,7 +1738,7 @@ function saveCache() {
     // Der Stand wandert mit: sonst stünde nach einem Neustart der Seite eine Preisliste
     // ohne Datum da, solange die Datei noch nicht wieder von der Adresse geholt ist –
     // und ohne Netz bliebe das Datum ganz weg.
-    localStorage.setItem(CACHE_KEY, JSON.stringify({ ds: DATASET, year: currentYear, file: loadedFileName, stand: datenStand }));
+    localStorage.setItem(CACHE_KEY, JSON.stringify({ ds: DATASET, year: currentYear, file: loadedFileName, stand: datenStand, ausAngebot: datenAusAngebot }));
   } catch (e) {}
 }
 function loadCache() {
@@ -1747,6 +1751,7 @@ function loadCache() {
       currentYear    = (obj.year && obj.ds[obj.year]) ? obj.year : Object.keys(obj.ds).sort()[0];
       loadedFileName = obj.file || '';
       datenStand     = obj.stand || '';
+      datenAusAngebot = !!obj.ausAngebot;
       isCustomData   = true;
       return true;
     }
@@ -2356,6 +2361,13 @@ async function resetForm() {
   angebotFileName   = '';
   angebotSavedAt    = '';
   updAngStatus();
+  // Standen die Zahlen aus einer geöffneten Angebotsdatei, gilt nach dem Zurücksetzen
+  // wieder die aktuelle Preisliste – erst die Datenbank, dann die Datei daneben.
+  // Ist keine von beiden erreichbar, bleiben die Zahlen aus dem Angebot stehen und
+  // die Datenleiste sagt das unverändert weiter.
+  if (datenAusAngebot) {
+    if (!await ladePreislisteAusDatenbank()) await ladePreislisteVonServer();
+  }
   recalcTotal();
   addPosition();
   clearStand();   // nach addPosition(), sonst schreibt der laufende Sammelauftrag zurück
@@ -2655,6 +2667,7 @@ async function applyAngebot(data) {
       : dsDatei;
     isCustomData   = true;
     loadedFileName = data.loadedFileName || '';
+    datenAusAngebot = true;
     // Die Preise kommen jetzt aus der Angebotsdatei, nicht mehr aus der geladenen
     // Preisliste. Deren Stand würde etwas Falsches behaupten und wird deshalb
     // weggelassen – lieber kein Datum als ein unzutreffendes.

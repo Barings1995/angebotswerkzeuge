@@ -2761,6 +2761,15 @@ async function resetAll(){
   clearAngebotDatei();
   collapsedCats=buildCollapsed();
   setJ(0);
+  /* Standen die Zahlen aus einer geöffneten Angebotsdatei, gilt nach dem Zurücksetzen
+     wieder die aktuelle Preisliste – erst die Datenbank, dann die Datei daneben. Ist
+     keine von beiden erreichbar, bleiben die Zahlen aus dem Angebot stehen und die
+     Datenleiste sagt das unverändert weiter. Das Neuladen steht bewusst hinter setJ(0):
+     dessen render() schreibt den nun leeren Stand in den Zwischenspeicher, sonst holte
+     ihn applyYear() über restoreState() gleich wieder zurück. */
+  if(datenAusAngebot){
+    if(!await ladePreislisteAusDatenbank())await ladePreislisteVonServer();
+  }
 }
 
 function render(){
