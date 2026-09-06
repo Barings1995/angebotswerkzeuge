@@ -147,7 +147,7 @@ button, input, select, textarea { font-family: inherit; }
      uebrigblieben. Die Auswahl ist nicht geraten: es sind dieselben Selektoren,
      die weiter unten im @media print auf display:none stehen. Das Angebot
      selbst bleibt bei Aptos. */
-  .data-bar, .mwst-toggle, .btn-add, .btn-del {
+  .data-bar, .btn-add, .btn-del {
     font-family: 'Source Sans 3', system-ui, sans-serif;
   }
 
@@ -626,16 +626,6 @@ button, input, select, textarea { font-family: inherit; }
     margin-top: 20px;
   }
   .summary-inner { display: flex; flex-direction: column; }
-  .mwst-toggle {
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    margin-bottom: 8px;
-    font-size: 12px;
-    color: var(--muted);
-    cursor: pointer;
-  }
-  .mwst-toggle input { cursor: pointer; }
   .summary-table {
     min-width: 280px;
     border-collapse: collapse;
@@ -744,11 +734,6 @@ button, input, select, textarea { font-family: inherit; }
      denselben Knopf verwenden – gleiche Wirkung, gleiche Farbe. */
   .btn-reset { background: var(--rot); border-color: var(--rot); color: #fff; }
   .btn-reset:hover { background: var(--rot-dunkel); border-color: var(--rot-dunkel); }
-  /* Excel-Export: eigene Klasse. Vorher borgte sich der Knopf die Klasse der
-     Spaltenschalter und überschrieb ihre Farben im style-Attribut – daher auch
-     die abweichende Kantenstärke von 1,5 px. */
-  .btn-excel { background: #1d6f42; border-color: #1d6f42; color: #fff; }
-  .btn-excel:hover { background: #175a36; border-color: #175a36; }
   /* „Daten laden" und die beiden Angebotsknöpfe gibt es im
      OpenSlots-Angebotsplaner genauso - sie tragen deshalb auch dessen Farben:
      der Hauptweg navy gefüllt, die Angebotsdateien ruhig in Weiß mit grauer
@@ -761,6 +746,21 @@ button, input, select, textarea { font-family: inherit; }
   .col-toggles .ct-label { color: var(--navy); font-weight: 600; }
   .col-toggles label { display: inline-flex; align-items: center; gap: 4px; cursor: pointer; font-weight: 600; color: var(--navy); }
   .col-toggles input { accent-color: var(--navy); cursor: pointer; margin: 0; }
+
+  /* Haken „Auslandskunde - ohne MwSt.": Er stand bis zum 06.09.2026 im Blatt
+     ueber der Summentabelle, obwohl er dem Werkzeug gehoert - er trug schon
+     immer die Werkzeugschrift und war im Druck ausgeblendet, das gedruckte
+     Angebot zeigte den Summenblock also ohnehin ohne ihn. Jetzt steht er in
+     der Leiste neben den Spaltenhaken: beide gelten fuer das ganze Angebot,
+     beide rechnen mit, beide gehoeren nicht aufs Kundenblatt. Er bekommt eine
+     eigene Gruppe mit kurzem Strich davor, damit er nicht als dritte Spalte
+     hinter „Spalten: Rabatt / AE" gelesen wird. Masse wie .col-toggles label.
+     Der Zustand bleibt im Blatt sichtbar: die Steuerzeile heisst dann
+     „Umsatzsteuerfrei (Ausland)". */
+  .mwst-toggle { display: inline-flex; align-items: center; gap: 4px;
+                 font-size: 12px; font-weight: 600; color: var(--navy);
+                 cursor: pointer; }
+  .mwst-toggle input { accent-color: var(--navy); cursor: pointer; margin: 0; }
 
   /* ── Jahrgang / Spalten / Status ──
      Die Leiste gehoert zum Werkzeug, nicht zum Angebot: sie steht deshalb ueber
@@ -881,7 +881,7 @@ button, input, select, textarea { font-family: inherit; }
        sie am Ende des Inhalts auf der letzten Seite (nicht auf jeder Seite). */
     .page { box-shadow: none; padding: 12px 16px; max-width: 100%; border-radius: 0;
             display: flex; flex-direction: column; min-height: 100vh; }
-    .sm-hero, .btn-del, .btn-add, .mwst-toggle { display: none !important; }
+    .sm-hero, .btn-del, .btn-add { display: none !important; }
     .positions-table td select,
     .positions-table td input[type="text"],
     .positions-table td input[type="number"] {
@@ -965,8 +965,8 @@ button, input, select, textarea { font-family: inherit; }
   </div>
 </div>
 
-<!-- Werkzeugleiste: Daten holen, Angebotsdatei, Jahrgang, Spalten, Ausgabe und
-     Datenstand. Sie gehoert nicht zum Angebot und steht deshalb ueber dem Blatt;
+<!-- Werkzeugleiste: Daten holen, Angebotsdatei, Jahrgang, Spalten, Auslandshaken,
+     Ausgabe und Datenstand. Sie gehoert nicht zum Angebot und steht deshalb ueber dem Blatt;
      im Druck ist sie ausgeblendet. Aufbau, Reihenfolge und Masse wie die
      Datenleiste im OpenSlots-Angebotsplaner: eine flache Reihe, Gruppen durch
      einen kurzen Strich getrennt, und die beiden Hinweiszeilen stehen
@@ -999,15 +999,17 @@ button, input, select, textarea { font-family: inherit; }
       <label><input type="checkbox" id="colchk-ae" checked onchange="onColToggle('ae', this.checked)"> AE</label>
     </span>
   </span>
+  <span class="bar-grp">
+    <label class="mwst-toggle" title="Bei Kunden im Ausland: Gesamtbetrag ohne Mehrwertsteuer">
+      <input type="checkbox" id="auslandMwst" onchange="recalcTotal()">
+      Auslandskunde – ohne MwSt.
+    </label>
+  </span>
   <span class="bar-status">
     <span class="ang-status" id="angStatus"></span>
     <span class="data-status" id="dataStatus">Keine Daten geladen – bitte Angebotsdaten.xlsx laden</span>
   </span>
   <span class="bar-grp">
-    <button class="btn-action btn-excel" onclick="exportToExcel()">
-      <svg viewBox="0 0 20 20" fill="currentColor" width="13" height="13"><path fill-rule="evenodd" d="M3 4a1 1 0 011-1h4a1 1 0 010 2H6.414l2.293 2.293a1 1 0 11-1.414 1.414L5 6.414V8a1 1 0 01-2 0V4zm9 1a1 1 0 010-2h4a1 1 0 011 1v4a1 1 0 01-2 0V6.414l-2.293 2.293a1 1 0 11-1.414-1.414L13.586 5H12zm-9 7a1 1 0 012 0v1.586l2.293-2.293a1 1 0 111.414 1.414L6.414 15H8a1 1 0 010 2H4a1 1 0 01-1-1v-4zm13-1a1 1 0 011 1v4a1 1 0 01-1 1h-4a1 1 0 010-2h1.586l-2.293-2.293a1 1 0 111.414-1.414L15 13.586V12a1 1 0 011-1z" clip-rule="evenodd"/></svg>
-      Als Excel exportieren
-    </button>
     <button class="btn-action btn-print" onclick="window.print()">
       <svg viewBox="0 0 20 20" fill="currentColor" width="14" height="14"><path d="M5 4a1 1 0 00-1 1v2H3a2 2 0 00-2 2v5a2 2 0 002 2h1v2a1 1 0 001 1h10a1 1 0 001-1v-2h1a2 2 0 002-2V9a2 2 0 00-2-2h-1V5a1 1 0 00-1-1H5zm8 2H7V5h6v1zm-1 9H8v-3h4v3zm3-4H5V9h10v2z"/></svg>
       Drucken / PDF
@@ -1120,10 +1122,6 @@ button, input, select, textarea { font-family: inherit; }
 
   <div class="summary-block">
     <div class="summary-inner">
-      <label class="mwst-toggle">
-        <input type="checkbox" id="auslandMwst" onchange="recalcTotal()">
-        Auslandskunde – ohne MwSt.
-      </label>
       <table class="summary-table">
         <tbody>
           <tr class="netto">
@@ -2810,304 +2808,6 @@ function restorePosition(pos) {
     z4cSel.value = String(pos.z4c);
   }
   onZ4cChange(id);         // 4c-Preis aktualisieren + onAnzahlChange
-}
-
-// ─────────────────────────────────────────
-//  Excel Export (ExcelJS – mit Farben & Logo)
-// ─────────────────────────────────────────
-async function exportToExcel() {
-  // Lazy-load ExcelJS
-  try { await ensureExcelJS(); }
-  catch (e) {
-    await hinweis('Export nicht möglich',
-      '<p>Excel-Bibliothek konnte nicht geladen werden (Internetverbindung?).</p>');
-    return;
-  }
-
-  // SVG-Element -> PNG base64
-  async function svgToBase64(svgEl, w, h) {
-    try {
-      const data = new XMLSerializer().serializeToString(svgEl);
-      const blob = new Blob([data], { type: 'image/svg+xml;charset=utf-8' });
-      const url  = URL.createObjectURL(blob);
-      return await new Promise(res => {
-        const img = new Image();
-        img.onload = () => {
-          const c = document.createElement('canvas');
-          c.width = w; c.height = h;
-          c.getContext('2d').drawImage(img, 0, 0, w, h);
-          URL.revokeObjectURL(url);
-          res(c.toDataURL('image/png').split(',')[1]);
-        };
-        img.onerror = () => { URL.revokeObjectURL(url); res(null); };
-        img.src = url;
-      });
-    } catch(e) { return null; }
-  }
-
-  function parseEur(s) {
-    if (!s || s.trim() === '–' || s.trim() === '') return null;
-    const n = parseFloat(s.replace(/\./g, '').replace(',', '.').replace(/[^\d.\-]/g, ''));
-    return isNaN(n) ? null : n;
-  }
-  function divText(id) { return (document.getElementById(id)?.innerText || '').trim(); }
-
-  // Daten sammeln
-  const datum = document.getElementById('datumField')?.value || '';
-  let datumDE = datum;
-  if (datum) { const [y,m,d] = datum.split('-'); datumDE = `${d}.${m}.${y}`; }
-  const kundeLines    = divText('kundeText').split('\n').filter(Boolean);
-  const kampagneLines = divText('kampagneText').split('\n').filter(Boolean);
-  const absenderLines = divText('absenderText').split('\n').filter(Boolean);
-  const bemerk        = divText('bemerkungen');
-
-  // Markenfarben (ARGB)
-  const NAVY   = 'FF00285A';
-  const ORANGE = 'FFEE7D11';
-  const ALT    = 'FFF5F7FA';
-  const WHITE  = 'FFFFFFFF';
-  const TEXT   = 'FF333333';
-  const BORDER = 'FFD0D5DD';
-  const N = 10; // Spaltenanzahl
-
-  const wb = new ExcelJS.Workbook();
-  wb.creator = 'Springer Medizin';
-  const ws = wb.addWorksheet('Angebot', {
-    pageSetup: { paperSize: 9, orientation: 'landscape', fitToPage: true, fitToWidth: 1, fitToHeight: 0 }
-  });
-
-  ws.columns = [
-    { width: 6 }, { width: 28 }, { width: 32 }, { width: 20 },
-    { width: 14 }, { width: 14 }, { width: 14 }, { width: 11 }, { width: 11 }, { width: 15 }
-  ];
-
-  // Hilfsfunktion: Zelle formatieren
-  function sc(cell, { bg, fg = TEXT, bold = false, size = 10, align = 'left', vAlign = 'middle', wrap = false, numFmt } = {}) {
-    if (bg) cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: bg } };
-    cell.font      = { name: 'Arial', size, bold, color: { argb: fg } };
-    cell.alignment = { horizontal: align, vertical: vAlign, wrapText: wrap };
-    if (numFmt) cell.numFmt = numFmt;
-  }
-
-  const hairBorder = {
-    top:    { style: 'hair',   color: { argb: BORDER } },
-    bottom: { style: 'hair',   color: { argb: BORDER } },
-    left:   { style: 'hair',   color: { argb: BORDER } },
-    right:  { style: 'hair',   color: { argb: BORDER } },
-  };
-
-  let r = 1;
-
-  // ── Zeile 1: Logo-Bereich + "Angebot" ──
-  ws.getRow(r).height = 55;
-  sc(ws.getCell(r, 9), { fg: NAVY, bold: true, size: 22, align: 'right', vAlign: 'bottom' });
-  ws.getCell(r, 9).value = 'Angebot';
-  ws.mergeCells(r, 9, r, N);
-  r++;
-
-  // ── Zeile 2: Oranger Balken ──
-  ws.getRow(r).height = 4;
-  for (let c = 1; c <= N; c++)
-    ws.getCell(r, c).fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: ORANGE } };
-  r++;
-
-  // ── Zeile 3: Abstand ──
-  ws.getRow(r).height = 8; r++;
-
-  // ── Zeile 4: Datum ──
-  ws.getRow(r).height = 16;
-  ws.getCell(r, 1).value = 'Datum:';
-  sc(ws.getCell(r, 1), { fg: NAVY, bold: true });
-  ws.getCell(r, 2).value = datumDE;
-  sc(ws.getCell(r, 2), {});
-  ws.mergeCells(r, 2, r, N);
-  r++;
-
-  // ── Zeile 5: Abstand ──
-  ws.getRow(r).height = 8; r++;
-
-  // ── Zeile 6: Adress-Labels ──
-  ws.getRow(r).height = 14;
-  ws.getCell(r, 2).value = 'Empfänger';
-  sc(ws.getCell(r, 2), { fg: NAVY, bold: true, size: 9 });
-  ws.getCell(r, 2).border = { bottom: { style: 'thin', color: { argb: ORANGE } } };
-  ws.mergeCells(r, 2, r, 5);
-  ws.getCell(r, 6).value = 'Ihre Ansprechperson bei Springer Medizin';
-  sc(ws.getCell(r, 6), { fg: NAVY, bold: true, size: 9 });
-  ws.getCell(r, 6).border = { bottom: { style: 'thin', color: { argb: ORANGE } } };
-  ws.mergeCells(r, 6, r, N);
-  r++;
-
-  // ── Adresszeilen ──
-  const maxAddr = Math.max(kundeLines.length, absenderLines.length, 1);
-  for (let i = 0; i < maxAddr; i++, r++) {
-    ws.getRow(r).height = 14;
-    ws.getCell(r, 2).value = kundeLines[i] || '';
-    sc(ws.getCell(r, 2), {});
-    ws.mergeCells(r, 2, r, 5);
-    ws.getCell(r, 6).value = absenderLines[i] || '';
-    sc(ws.getCell(r, 6), {});
-    ws.mergeCells(r, 6, r, N);
-  }
-
-  // ── Kampagne / Produkt (nur linke Spalte) ──
-  if (kampagneLines.length) {
-    ws.getRow(r).height = 13;
-    ws.getCell(r, 2).value = 'Kampagne / Produkt';
-    sc(ws.getCell(r, 2), { fg: NAVY, bold: true, size: 8 });
-    ws.mergeCells(r, 2, r, 5);
-    r++;
-    for (let i = 0; i < kampagneLines.length; i++, r++) {
-      ws.getRow(r).height = 14;
-      ws.getCell(r, 2).value = kampagneLines[i];
-      sc(ws.getCell(r, 2), {});
-      ws.mergeCells(r, 2, r, 5);
-    }
-  }
-
-  ws.getRow(r).height = 10; r++; // Abstand
-
-  // ── Tabellen-Header ──
-  const hAligns = ['center','left','left','left','right','right','right','right','right','right'];
-  const hLabels = ['Pos.','Titel','Format / Platzierung','Ausgabe / Termine',
-                   's/w-Preis (€)','4c-Zuschlag (€)','4c-Preis (€)','Rabatt','AE','GP netto (€)'];
-  ws.getRow(r).height = 28;
-  hLabels.forEach((h, i) => {
-    const cell = ws.getCell(r, i + 1);
-    cell.value = h;
-    sc(cell, { bg: NAVY, fg: WHITE, bold: true, size: 9, align: hAligns[i], vAlign: 'middle', wrap: true });
-    cell.border = {
-      top:    { style: 'thin',   color: { argb: NAVY } },
-      left:   { style: 'thin',   color: { argb: NAVY } },
-      right:  { style: 'thin',   color: { argb: NAVY } },
-      bottom: { style: 'medium', color: { argb: ORANGE } },
-    };
-  });
-  r++;
-
-  // ── Datenzeilen ──
-  document.querySelectorAll('#posBody tr').forEach((tr, idx) => {
-    if (!/^row-\d+$/.test(tr.id)) return;   // Hinweiszeile („Bitte zuerst … laden") nicht exportieren
-    const id = tr.id.replace('row-', '');
-    const fmtTxt = document.getElementById('fmt-lbl-' + id)?.textContent.trim() || '';
-    const umfTxt = document.getElementById('umfeld-' + id)?.value.trim() || '';
-    const fmtCell = umfTxt ? fmtTxt + '\n' + umfTxt : fmtTxt;
-    const datumTxt  = document.getElementById('datum-lbl-' + id)?.textContent.trim() || '';
-    const terminTxt = document.getElementById('termin-lbl-' + id)?.textContent.trim() || '';
-    const datumCell = terminTxt ? datumTxt + '\n' + terminTxt : datumTxt;
-    const rowData = [
-      tr.querySelector('.col-pos')?.textContent.trim() || '',
-      document.getElementById('titel-lbl-' + id)?.textContent.trim() || '',
-      fmtCell,
-      datumCell,
-      parseEur(document.getElementById('sw-'      + id)?.textContent),
-      parseEur(document.getElementById('z4c-lbl-' + id)?.textContent),
-      parseEur(document.getElementById('ep-'      + id)?.textContent),
-      document.getElementById('rabatt-' + id)?.textContent.trim() || '–',
-      document.getElementById('ae-'     + id)?.textContent.trim() || '–',
-      parseEur(document.getElementById('gp-' + id)?.textContent),
-    ];
-    const cellLines = Math.max(fmtCell.split('\n').length, datumCell.split('\n').length);
-    ws.getRow(r).height = cellLines > 1 ? Math.min(cellLines * 14, 120) : 18;
-    const bg = idx % 2 === 0 ? WHITE : ALT;
-    rowData.forEach((val, i) => {
-      const cell  = ws.getCell(r, i + 1);
-      const isNum = typeof val === 'number';
-      const isGP  = i === 9;
-      sc(cell, {
-        bg,
-        bold:   isGP && isNum,
-        fg:     isGP && isNum ? NAVY : TEXT,
-        size:   10,
-        align:  hAligns[i],
-        numFmt: isNum ? '#,##0.00 "€"' : undefined,
-        wrap:   i === 2 || i === 3,
-      });
-      cell.border = hairBorder;
-      cell.value  = val === null ? '–' : val;
-    });
-    r++;
-  });
-
-  ws.getRow(r).height = 6; r++; // Abstand
-
-  // ── Summenzeilen ──
-  const ohneMwst = document.getElementById('auslandMwst')?.checked;
-  [
-    ['Nettobetrag:',          'sumNetto', false],
-    [ohneMwst ? 'Umsatzsteuerfrei (Ausland):' : 'zzgl. 19% MwSt.:', 'sumMwst', false],
-    [ohneMwst ? 'Gesamtbetrag:' : 'Gesamtbetrag brutto:',           'sumTotal', true ],
-  ].forEach(([label, id, bold]) => {
-    ws.getRow(r).height = 18;
-    ws.mergeCells(r, 1, r, N - 1);
-    const lc = ws.getCell(r, 1);
-    lc.value = label;
-    sc(lc, { bold, size: 10, align: 'right', fg: bold ? NAVY : TEXT });
-    const val = parseEur(document.getElementById(id)?.textContent);
-    const vc  = ws.getCell(r, N);
-    vc.value  = val !== null ? val : '';
-    sc(vc, { bold, fg: bold ? NAVY : TEXT, size: 10, align: 'right',
-             numFmt: val !== null ? '#,##0.00 "€"' : undefined });
-    if (bold) vc.border = { top: { style: 'medium', color: { argb: NAVY } } };
-    r++;
-  });
-
-  ws.getRow(r).height = 10; r++; // Abstand
-
-  // ── Bemerkungen ──
-  ws.getRow(r).height = 14;
-  ws.getCell(r, 1).value = 'Bemerkungen / Konditionen:';
-  sc(ws.getCell(r, 1), { fg: NAVY, bold: true, size: 9 });
-  ws.mergeCells(r, 1, r, N);
-  r++;
-  bemerk.split('\n').filter(Boolean).forEach(line => {
-    ws.getRow(r).height = 14;
-    ws.getCell(r, 1).value = line;
-    sc(ws.getCell(r, 1), { size: 9, wrap: true });
-    ws.mergeCells(r, 1, r, N);
-    r++;
-  });
-
-  // ── Fußzeile ──
-  const footerLines = Array.from(document.querySelectorAll('.footer span'))
-    .map(el => el.textContent.trim()).filter(Boolean);
-  if (footerLines.length) {
-    ws.getRow(r).height = 10; r++; // Abstand
-    footerLines.forEach(line => {
-      ws.getRow(r).height = 12;
-      ws.getCell(r, 1).value = line;
-      sc(ws.getCell(r, 1), { size: 8, fg: 'FF6B7280', wrap: true });
-      ws.mergeCells(r, 1, r, N);
-      r++;
-    });
-  }
-
-  // ── Logo einfügen ──
-  const logoSvg = document.getElementById('Ebene_1');
-  if (logoSvg) {
-    const vb = logoSvg.viewBox.baseVal;
-    const scale = 2; // Auflösung für scharfe Darstellung
-    const renderW = Math.round(vb.width * scale);
-    const renderH = Math.round(vb.height * scale);
-    const b64 = await svgToBase64(logoSvg, renderW, renderH);
-    if (b64) {
-      const imgId = wb.addImage({ base64: b64, extension: 'png' });
-      const exportWidth  = 260;
-      const exportHeight = Math.round(exportWidth * renderH / renderW);
-      ws.addImage(imgId, { tl: { col: 0, row: 0 }, ext: { width: exportWidth, height: exportHeight } });
-    }
-  }
-
-  // ── Download ──
-  const buf  = await wb.xlsx.writeBuffer();
-  const blob = new Blob([buf], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
-  const a    = Object.assign(document.createElement('a'), {
-    href:     URL.createObjectURL(blob),
-    download: `Angebot_Kunde_${(datumDE || 'Export').replace(/\./g, '-')}.xlsx`
-  });
-  document.body.appendChild(a);
-  a.click();
-  setTimeout(() => { URL.revokeObjectURL(a.href); document.body.removeChild(a); }, 100);
 }
 
 // ─────────────────────────────────────────
