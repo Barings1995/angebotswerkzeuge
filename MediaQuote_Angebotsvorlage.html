@@ -136,7 +136,7 @@ button, input, select, textarea { font-family: inherit; }
      uebrigblieben. Die Auswahl ist nicht geraten: es sind dieselben Selektoren,
      die weiter unten im @media print auf display:none stehen. Das Angebot
      selbst bleibt bei Aptos. */
-  .actions, .data-bar, .mwst-toggle, .btn-add, .btn-del {
+  .data-bar, .mwst-toggle, .btn-add, .btn-del {
     font-family: 'Source Sans 3', system-ui, sans-serif;
   }
 
@@ -693,14 +693,10 @@ button, input, select, textarea { font-family: inherit; }
     gap: 6px;
   }
 
-  /* ── Action buttons ── */
-  .actions {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    margin-bottom: 20px;
-    flex-wrap: wrap;
-  }
+  /* ── Action buttons ──
+     Der Block .actions, der die Knoepfe im Blatt hielt, ist am 06.09.2026
+     entfallen; die Knoepfe stehen seither in der Datenleiste darueber. Die
+     Regeln der Knoepfe selbst bleiben unveraendert. */
   .btn-action {
     /* Feste Höhe statt senkrechter Polsterung: Sonst wächst jeder Knopf um seine
        Kantenstärke und die Leiste bekommt drei verschiedene Höhen. Mit
@@ -747,7 +743,6 @@ button, input, select, textarea { font-family: inherit; }
   .btn-load:hover { background: var(--springer-blue-dark); }
   .btn-angebot { background: #fff; color: var(--navy); border: 1px solid var(--navy); }
   .btn-angebot:hover { background: var(--light-bg); }
-  .actions-sep { width: 1px; align-self: stretch; background: var(--border); margin: 2px 2px; }
   .col-toggles { display: inline-flex; align-items: center; gap: 10px; font-size: 12px; }
   .data-bar-sep { width: 1px; height: 16px; background: #ccd3dc; margin: 0 4px; }
   .col-toggles .ct-label { color: var(--navy); font-weight: 600; }
@@ -757,16 +752,18 @@ button, input, select, textarea { font-family: inherit; }
   /* ── Jahrgang / Spalten / Status ──
      Die Leiste gehoert zum Werkzeug, nicht zum Angebot: sie steht deshalb ueber
      dem Blatt und nicht darin. Flaeche, Rand und Masse wie die Datenleiste im
-     OpenSlots-Angebotsplaner; die Breite folgt dem Blatt darunter, damit beide
-     buendig stehen. Im Druck ist sie weg (siehe @media print). */
+     OpenSlots-Angebotsplaner. Sie nutzt die volle Fensterbreite und ist damit
+     breiter als das Blatt darunter: seit dem 06.09.2026 stehen auch die sechs
+     Aktionsknoepfe hier, und die passen zusammen mit Jahrgang, Spalten und den
+     beiden Statuszeilen in keine 1220 px breite Zeile. Im Druck ist sie weg
+     (siehe @media print). */
   .data-bar {
     display: flex;
     align-items: center;
     justify-content: space-between;
     gap: 10px;
     flex-wrap: wrap;
-    max-width: 1220px;
-    margin: 0 auto 10px;
+    margin: 0 0 10px;
     background: #fff;
     border: 1px solid var(--dlg-border);
     border-radius: var(--radius-md);
@@ -830,7 +827,7 @@ button, input, select, textarea { font-family: inherit; }
        sie am Ende des Inhalts auf der letzten Seite (nicht auf jeder Seite). */
     .page { box-shadow: none; padding: 12px 16px; max-width: 100%; border-radius: 0;
             display: flex; flex-direction: column; min-height: 100vh; }
-    .sm-hero, .actions, .btn-del, .btn-add, .mwst-toggle { display: none !important; }
+    .sm-hero, .btn-del, .btn-add, .mwst-toggle { display: none !important; }
     .positions-table td select,
     .positions-table td input[type="text"],
     .positions-table td input[type="number"] {
@@ -914,12 +911,32 @@ button, input, select, textarea { font-family: inherit; }
   </div>
 </div>
 
-<!-- Werkzeugleiste: Jahrgang, Spalten und Datenstand. Sie gehoert nicht zum
-     Angebot und steht deshalb ueber dem Blatt; im Druck ist sie ausgeblendet. -->
+<!-- Werkzeugleiste: Daten holen, Angebotsdatei, Jahrgang, Spalten, Ausgabe und
+     Datenstand. Sie gehoert nicht zum Angebot und steht deshalb ueber dem Blatt;
+     im Druck ist sie ausgeblendet. Die sechs Knoepfe standen bis zum 06.09.2026
+     im Blatt darunter - sie bedienen aber das Werkzeug und nicht das Angebot.
+     Reihenfolge wie im OpenSlots-Angebotsplaner: erst woher die Zahlen kommen,
+     dann die Angebotsdatei, dann was das Blatt zeigt, rechts der Datenstand und
+     zuletzt die Ausgabe; der rote Knopf steht ganz aussen. -->
 <div class="data-bar">
   <div class="data-bar-left">
+    <input type="file" id="dataFileInput" accept=".xlsx" style="display:none" onchange="onDataFileChosen(event)">
+    <input type="file" id="angebotFileInput" accept=".json,application/json" style="display:none" onchange="onAngebotFileChosen(event)">
+    <button class="btn-action btn-load" onclick="document.getElementById('dataFileInput').click()" title="Preis- und Termindaten aus Excel laden (Blätter „Preise“ + „Termine“)">
+      <svg viewBox="0 0 20 20" fill="currentColor" width="14" height="14"><path d="M3 5a2 2 0 012-2h3.586a1 1 0 01.707.293l1.414 1.414A1 1 0 0011.414 5H15a2 2 0 012 2v1H3V5z"/><path d="M3 9h14v5a2 2 0 01-2 2H5a2 2 0 01-2-2V9zm7 1a1 1 0 00-1 1v1.586l-.293-.293a1 1 0 10-1.414 1.414l2 2a1 1 0 001.414 0l2-2a1 1 0 00-1.414-1.414l-.293.293V11a1 1 0 00-1-1z"/></svg>
+      Daten laden
+    </button>
     <label for="yearSelect">Jahrgang</label>
     <select id="yearSelect" onchange="onYearChange()"></select>
+    <span class="data-bar-sep"></span>
+    <button class="btn-action btn-angebot" onclick="openAngebot()" title="Ein gespeichertes Angebot öffnen und weiterbearbeiten">
+      <svg viewBox="0 0 20 20" fill="currentColor" width="14" height="14"><path d="M2 6a2 2 0 012-2h4l2 2h6a2 2 0 012 2v6a2 2 0 01-2 2H4a2 2 0 01-2-2V6z"/></svg>
+      Angebot öffnen
+    </button>
+    <button class="btn-action btn-angebot" onclick="saveAngebot()" title="Diesen Angebotsstand als Datei speichern (beim erneuten Speichern wird dieselbe Datei überschrieben)">
+      <svg viewBox="0 0 20 20" fill="currentColor" width="14" height="14"><path d="M3 4a1 1 0 011-1h9l4 4v9a1 1 0 01-1 1H4a1 1 0 01-1-1V4zm4 0v4h6V4H7zm1 1h2v2H8V5zm-1 8a1 1 0 011-1h4a1 1 0 011 1v3H7v-3z"/></svg>
+      Angebot speichern
+    </button>
     <span class="data-bar-sep"></span>
     <span class="col-toggles" title="Spalten Rabatt / AE ein- oder ausblenden">
       <span class="ct-label">Spalten:</span>
@@ -930,33 +947,7 @@ button, input, select, textarea { font-family: inherit; }
   <div class="data-bar-right">
     <span class="ang-status" id="angStatus"></span>
     <div class="data-status" id="dataStatus">Keine Daten geladen – bitte Angebotsdaten.xlsx laden</div>
-  </div>
-</div>
-
-<div class="page">
-
-  <!-- Action buttons (screen only) -->
-  <div class="actions">
-    <input type="file" id="dataFileInput" accept=".xlsx" style="display:none" onchange="onDataFileChosen(event)">
-    <button class="btn-action btn-load" onclick="document.getElementById('dataFileInput').click()" title="Preis- und Termindaten aus Excel laden (Blätter „Preise“ + „Termine“)">
-      <svg viewBox="0 0 20 20" fill="currentColor" width="14" height="14"><path d="M3 5a2 2 0 012-2h3.586a1 1 0 01.707.293l1.414 1.414A1 1 0 0011.414 5H15a2 2 0 012 2v1H3V5z"/><path d="M3 9h14v5a2 2 0 01-2 2H5a2 2 0 01-2-2V9zm7 1a1 1 0 00-1 1v1.586l-.293-.293a1 1 0 10-1.414 1.414l2 2a1 1 0 001.414 0l2-2a1 1 0 00-1.414-1.414l-.293.293V11a1 1 0 00-1-1z"/></svg>
-      Daten laden
-    </button>
-
-    <span class="actions-sep"></span>
-
-    <input type="file" id="angebotFileInput" accept=".json,application/json" style="display:none" onchange="onAngebotFileChosen(event)">
-    <button class="btn-action btn-angebot" onclick="openAngebot()" title="Ein gespeichertes Angebot öffnen und weiterbearbeiten">
-      <svg viewBox="0 0 20 20" fill="currentColor" width="14" height="14"><path d="M2 6a2 2 0 012-2h4l2 2h6a2 2 0 012 2v6a2 2 0 01-2 2H4a2 2 0 01-2-2V6z"/></svg>
-      Angebot öffnen
-    </button>
-    <button class="btn-action btn-angebot" onclick="saveAngebot()" title="Diesen Angebotsstand als Datei speichern (beim erneuten Speichern wird dieselbe Datei überschrieben)">
-      <svg viewBox="0 0 20 20" fill="currentColor" width="14" height="14"><path d="M3 4a1 1 0 011-1h9l4 4v9a1 1 0 01-1 1H4a1 1 0 01-1-1V4zm4 0v4h6V4H7zm1 1h2v2H8V5zm-1 8a1 1 0 011-1h4a1 1 0 011 1v3H7v-3z"/></svg>
-      Angebot speichern
-    </button>
-
-    <span class="actions-sep"></span>
-
+    <span class="data-bar-sep"></span>
     <button class="btn-action btn-excel" onclick="exportToExcel()">
       <svg viewBox="0 0 20 20" fill="currentColor" width="13" height="13"><path fill-rule="evenodd" d="M3 4a1 1 0 011-1h4a1 1 0 010 2H6.414l2.293 2.293a1 1 0 11-1.414 1.414L5 6.414V8a1 1 0 01-2 0V4zm9 1a1 1 0 010-2h4a1 1 0 011 1v4a1 1 0 01-2 0V6.414l-2.293 2.293a1 1 0 11-1.414-1.414L13.586 5H12zm-9 7a1 1 0 012 0v1.586l2.293-2.293a1 1 0 111.414 1.414L6.414 15H8a1 1 0 010 2H4a1 1 0 01-1-1v-4zm13-1a1 1 0 011 1v4a1 1 0 01-1 1h-4a1 1 0 010-2h1.586l-2.293-2.293a1 1 0 111.414-1.414L15 13.586V12a1 1 0 011-1z" clip-rule="evenodd"/></svg>
       Als Excel exportieren
@@ -965,15 +956,15 @@ button, input, select, textarea { font-family: inherit; }
       <svg viewBox="0 0 20 20" fill="currentColor" width="14" height="14"><path d="M5 4a1 1 0 00-1 1v2H3a2 2 0 00-2 2v5a2 2 0 002 2h1v2a1 1 0 001 1h10a1 1 0 001-1v-2h1a2 2 0 002-2V9a2 2 0 00-2-2h-1V5a1 1 0 00-1-1H5zm8 2H7V5h6v1zm-1 9H8v-3h4v3zm3-4H5V9h10v2z"/></svg>
       Drucken / PDF
     </button>
-
-    <span class="actions-sep"></span>
-
+    <span class="data-bar-sep"></span>
     <button class="btn-action btn-reset" onclick="resetForm()" title="Alle Eingaben entfernen: Positionen, Empfänger, Kampagne und Bemerkungen">
       <svg viewBox="0 0 20 20" fill="currentColor" width="13" height="13"><path fill-rule="evenodd" d="M4 2a1 1 0 011 1v2.101a7.002 7.002 0 0111.601 2.566 1 1 0 11-1.885.666A5.002 5.002 0 005.999 7H9a1 1 0 010 2H4a1 1 0 01-1-1V3a1 1 0 011-1zm.008 9.057a1 1 0 011.276.61A5.002 5.002 0 0014.001 13H11a1 1 0 110-2h5a1 1 0 011 1v5a1 1 0 11-2 0v-2.101a7.002 7.002 0 01-11.601-2.566 1 1 0 01.61-1.276z" clip-rule="evenodd"/></svg>
       Alles zurücksetzen
     </button>
-
   </div>
+</div>
+
+<div class="page">
 
   <!-- Header -->
   <div class="header">
