@@ -170,7 +170,7 @@ button, input, select, textarea { font-family: inherit; }
     background: linear-gradient(135deg, #002050 0%, var(--navy) 60%, #004080 100%);
     border-bottom: 3px solid var(--orange);
     padding: 1.1rem 0 1rem;
-    margin: -20px -20px 20px;
+    margin: -20px -20px 16px;
   }
   .sm-hero-inner { max-width: none; margin: 0; padding: 0 1.5rem; }
   .sm-hero-head { display: flex; align-items: center; gap: 1rem; margin-bottom: 8px; }
@@ -712,21 +712,22 @@ button, input, select, textarea { font-family: inherit; }
      Der Block .actions, der die Knoepfe im Blatt hielt, ist am 06.09.2026
      entfallen; die Knoepfe stehen seither in der Datenleiste darueber. Die
      Regeln der Knoepfe selbst bleiben unveraendert. */
+  /* Form zeichengleich mit .data-btn im OpenSlots-Angebotsplaner: Polster 5/12,
+     Kante 1,5 px, Radius 6 px, 12 px halbfett - daraus ergeben sich 31 px Höhe.
+     Jeder Knopf trägt die Kante, auch der gefüllte (dann in seiner Füllfarbe);
+     so bleiben alle gleich hoch. Die Farben sind MediaQuotes eigene und bleiben
+     (Entscheidung 06.09.2026). */
   .btn-action {
-    /* Feste Höhe statt senkrechter Polsterung: Sonst wächst jeder Knopf um seine
-       Kantenstärke und die Leiste bekommt drei verschiedene Höhen. Mit
-       box-sizing: border-box (global gesetzt) zählt die Kante hier nicht mit. */
-    height: 30px;
-    padding: 0 16px;
+    padding: 5px 12px;
+    border: 1.5px solid transparent;
     border-radius: var(--radius-md);
     font-size: 12px;
     font-weight: 600;
     cursor: pointer;
-    border: none;
     display: inline-flex;
     align-items: center;
-    gap: 5px;
-    transition: background 0.18s ease, transform 0.05s ease;
+    gap: 6px;
+    transition: all .15s;
   }
   /* Sanftes „Gedrückt"-Feedback beim Klick (nur Bildschirm) */
   .btn-action:active,
@@ -739,27 +740,28 @@ button, input, select, textarea { font-family: inherit; }
     outline-offset: 2px;
   }
   /* Einheitliche Symbolgröße – die width/height der SVG selbst weichen ab */
-  .btn-action svg { width: 14px; height: 14px; }
-  .btn-print { background: var(--orange); color: #fff; }
-  .btn-print:hover { background: #d46e0d; }
+  .btn-action svg { width: 13px; height: 13px; }
+  .btn-print { background: var(--orange); border-color: var(--orange); color: #fff; }
+  .btn-print:hover { background: #d46e0d; border-color: #d46e0d; }
   /* „Alles zurücksetzen" löscht das ganze Formular und ist damit der einzige
      Knopf mit Folgen. Gefüllt in demselben Rot, das OpenSlots und PreisWerk für
      denselben Knopf verwenden – gleiche Wirkung, gleiche Farbe. */
-  /* Ohne Kante, sonst wäre der Knopf durch sie 2 px höher als seine Nachbarn –
-     bisher fiel das bei weißem Grund nicht auf, bei einer Fläche schon. */
-  .btn-reset { background: var(--rot); color: #fff; border: none; }
-  .btn-reset:hover { background: var(--rot-dunkel); }
+  .btn-reset { background: var(--rot); border-color: var(--rot); color: #fff; }
+  .btn-reset:hover { background: var(--rot-dunkel); border-color: var(--rot-dunkel); }
   /* Excel-Export: eigene Klasse. Vorher borgte sich der Knopf die Klasse der
      Spaltenschalter und überschrieb ihre Farben im style-Attribut – daher auch
      die abweichende Kantenstärke von 1,5 px. */
-  .btn-excel { background: #1d6f42; color: #fff; border: none; }
-  .btn-excel:hover { background: #175a36; }
-  .btn-load { background: var(--springer-blue); color: #fff; }
-  .btn-load:hover { background: var(--springer-blue-dark); }
-  .btn-angebot { background: #fff; color: var(--navy); border: 1px solid var(--navy); }
-  .btn-angebot:hover { background: var(--light-bg); }
+  .btn-excel { background: #1d6f42; border-color: #1d6f42; color: #fff; }
+  .btn-excel:hover { background: #175a36; border-color: #175a36; }
+  /* „Daten laden" und die beiden Angebotsknöpfe gibt es im
+     OpenSlots-Angebotsplaner genauso - sie tragen deshalb auch dessen Farben:
+     der Hauptweg navy gefüllt, die Angebotsdateien ruhig in Weiß mit grauer
+     Kante, gefüllt erst beim Überfahren. */
+  .btn-load { background: var(--navy); border-color: var(--navy); color: #fff; }
+  .btn-load:hover { background: #013a7a; border-color: #013a7a; }
+  .btn-angebot { background: #fff; border-color: var(--dlg-border); color: var(--navy); }
+  .btn-angebot:hover { background: var(--navy); border-color: var(--navy); color: #fff; }
   .col-toggles { display: inline-flex; align-items: center; gap: 10px; font-size: 12px; }
-  .data-bar-sep { width: 1px; height: 16px; background: #ccd3dc; margin: 0 4px; }
   .col-toggles .ct-label { color: var(--navy); font-weight: 600; }
   .col-toggles label { display: inline-flex; align-items: center; gap: 4px; cursor: pointer; font-weight: 600; color: var(--navy); }
   .col-toggles input { accent-color: var(--navy); cursor: pointer; margin: 0; }
@@ -775,32 +777,70 @@ button, input, select, textarea { font-family: inherit; }
   .data-bar {
     display: flex;
     align-items: center;
-    justify-content: space-between;
     gap: 10px;
     flex-wrap: wrap;
-    margin: 0 0 10px;
+    margin: 0 4px 8px;
     background: #fff;
     border: 1px solid var(--dlg-border);
     border-radius: var(--radius-md);
     padding: 7px 12px;
     box-shadow: 0 1px 3px rgba(0,40,90,.08);
   }
-  .data-bar-right { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
-  .data-bar-left { display: flex; align-items: center; gap: 8px; }
-  .data-bar-left label { font-size: 12px; font-weight: 600; color: var(--navy); }
+  /* Gruppen in der Leiste bekommen einen feinen Trennstrich davor - dieselbe
+     Form wie .ang-wrap im OpenSlots-Angebotsplaner. Der Strich ist bewusst
+     kuerzer als die Gruppe hoch ist: 16 px mittig, nicht ueber die volle
+     Hoehe. */
+  .bar-grp {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding-left: 10px;
+    position: relative;
+  }
+  .bar-grp::before {
+    content: "";
+    position: absolute;
+    left: 0;
+    top: 50%;
+    margin-top: -8px;
+    width: 1px;
+    height: 16px;
+    background: var(--dlg-border);
+  }
+  /* Wort und Auswahlfeld des Jahrgangs, zeichengleich mit .data-yr dort. */
+  .data-yr {
+    font-size: 11.5px;
+    color: var(--muted);
+    font-weight: 600;
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+  }
   #yearSelect {
     cursor: pointer;
-    border: 1px solid #ccd3dc;
+    border: 1.5px solid var(--dlg-border);
     border-radius: var(--radius-md);
-    padding: 4px 9px;
-    font-size: 12.5px;
+    padding: 4px 7px;
+    font-size: 12px;
     font-family: inherit;
     color: var(--text);
     background: #fff;
     font-weight: 600;
     outline: none;
   }
+  /* Der Fokusrahmen ist bewusst kraeftiger als dort: er hilft bei der Bedienung
+     ueber die Tastatur und ist keine Frage der Optik. */
   #yearSelect:focus { border-color: var(--navy); box-shadow: 0 0 0 2px rgba(0,40,90,0.1); }
+  /* Die beiden Hinweiszeilen - geoeffnete Angebotsdatei und Datenstand - stehen
+     zusammen am rechten Rand: der Leerraum der Leiste sammelt sich vor ihnen
+     und schiebt sie dorthin. */
+  .bar-status {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    margin-left: auto;
+    text-align: right;
+  }
   .data-status { font-size: 11.5px; color: var(--muted); }
   .data-status.loaded { color: var(--navy); font-weight: 600; }
 
@@ -936,22 +976,22 @@ button, input, select, textarea { font-family: inherit; }
 
 <!-- Werkzeugleiste: Daten holen, Angebotsdatei, Jahrgang, Spalten, Ausgabe und
      Datenstand. Sie gehoert nicht zum Angebot und steht deshalb ueber dem Blatt;
-     im Druck ist sie ausgeblendet. Die sechs Knoepfe standen bis zum 06.09.2026
-     im Blatt darunter - sie bedienen aber das Werkzeug und nicht das Angebot.
-     Reihenfolge wie im OpenSlots-Angebotsplaner: erst woher die Zahlen kommen,
-     dann die Angebotsdatei, dann was das Blatt zeigt, rechts der Datenstand und
-     zuletzt die Ausgabe; der rote Knopf steht ganz aussen. -->
+     im Druck ist sie ausgeblendet. Aufbau, Reihenfolge und Masse wie die
+     Datenleiste im OpenSlots-Angebotsplaner: eine flache Reihe, Gruppen durch
+     einen kurzen Strich getrennt, und die beiden Hinweiszeilen stehen
+     rechtsbuendig vor den Ausgabeknoepfen. -->
 <div class="data-bar">
-  <div class="data-bar-left">
-    <input type="file" id="dataFileInput" accept=".xlsx" style="display:none" onchange="onDataFileChosen(event)">
-    <input type="file" id="angebotFileInput" accept=".json,application/json" style="display:none" onchange="onAngebotFileChosen(event)">
-    <button class="btn-action btn-load" onclick="document.getElementById('dataFileInput').click()" title="Preis- und Termindaten aus Excel laden (Blätter „Preise“ + „Termine“)">
-      <svg viewBox="0 0 20 20" fill="currentColor" width="14" height="14"><path d="M3 5a2 2 0 012-2h3.586a1 1 0 01.707.293l1.414 1.414A1 1 0 0011.414 5H15a2 2 0 012 2v1H3V5z"/><path d="M3 9h14v5a2 2 0 01-2 2H5a2 2 0 01-2-2V9zm7 1a1 1 0 00-1 1v1.586l-.293-.293a1 1 0 10-1.414 1.414l2 2a1 1 0 001.414 0l2-2a1 1 0 00-1.414-1.414l-.293.293V11a1 1 0 00-1-1z"/></svg>
-      Daten laden
-    </button>
+  <input type="file" id="dataFileInput" accept=".xlsx" style="display:none" onchange="onDataFileChosen(event)">
+  <input type="file" id="angebotFileInput" accept=".json,application/json" style="display:none" onchange="onAngebotFileChosen(event)">
+  <button class="btn-action btn-load" onclick="document.getElementById('dataFileInput').click()" title="Preis- und Termindaten aus Excel laden (Blätter „Preise“ + „Termine“)">
+    <svg viewBox="0 0 20 20" fill="currentColor" width="14" height="14"><path d="M3 5a2 2 0 012-2h3.586a1 1 0 01.707.293l1.414 1.414A1 1 0 0011.414 5H15a2 2 0 012 2v1H3V5z"/><path d="M3 9h14v5a2 2 0 01-2 2H5a2 2 0 01-2-2V9zm7 1a1 1 0 00-1 1v1.586l-.293-.293a1 1 0 10-1.414 1.414l2 2a1 1 0 001.414 0l2-2a1 1 0 00-1.414-1.414l-.293.293V11a1 1 0 00-1-1z"/></svg>
+    Daten laden
+  </button>
+  <span class="data-yr">
     <label for="yearSelect">Jahrgang</label>
     <select id="yearSelect" onchange="onYearChange()"></select>
-    <span class="data-bar-sep"></span>
+  </span>
+  <span class="bar-grp">
     <button class="btn-action btn-angebot" onclick="openAngebot()" title="Ein gespeichertes Angebot öffnen und weiterbearbeiten">
       <svg viewBox="0 0 20 20" fill="currentColor" width="14" height="14"><path d="M2 6a2 2 0 012-2h4l2 2h6a2 2 0 012 2v6a2 2 0 01-2 2H4a2 2 0 01-2-2V6z"/></svg>
       Angebot öffnen
@@ -960,17 +1000,19 @@ button, input, select, textarea { font-family: inherit; }
       <svg viewBox="0 0 20 20" fill="currentColor" width="14" height="14"><path d="M3 4a1 1 0 011-1h9l4 4v9a1 1 0 01-1 1H4a1 1 0 01-1-1V4zm4 0v4h6V4H7zm1 1h2v2H8V5zm-1 8a1 1 0 011-1h4a1 1 0 011 1v3H7v-3z"/></svg>
       Angebot speichern
     </button>
-    <span class="data-bar-sep"></span>
+  </span>
+  <span class="bar-grp">
     <span class="col-toggles" title="Spalten Rabatt / AE ein- oder ausblenden">
       <span class="ct-label">Spalten:</span>
       <label><input type="checkbox" id="colchk-rabatt" checked onchange="onColToggle('rabatt', this.checked)"> Rabatt</label>
       <label><input type="checkbox" id="colchk-ae" checked onchange="onColToggle('ae', this.checked)"> AE</label>
     </span>
-  </div>
-  <div class="data-bar-right">
+  </span>
+  <span class="bar-status">
     <span class="ang-status" id="angStatus"></span>
-    <div class="data-status" id="dataStatus">Keine Daten geladen – bitte Angebotsdaten.xlsx laden</div>
-    <span class="data-bar-sep"></span>
+    <span class="data-status" id="dataStatus">Keine Daten geladen – bitte Angebotsdaten.xlsx laden</span>
+  </span>
+  <span class="bar-grp">
     <button class="btn-action btn-excel" onclick="exportToExcel()">
       <svg viewBox="0 0 20 20" fill="currentColor" width="13" height="13"><path fill-rule="evenodd" d="M3 4a1 1 0 011-1h4a1 1 0 010 2H6.414l2.293 2.293a1 1 0 11-1.414 1.414L5 6.414V8a1 1 0 01-2 0V4zm9 1a1 1 0 010-2h4a1 1 0 011 1v4a1 1 0 01-2 0V6.414l-2.293 2.293a1 1 0 11-1.414-1.414L13.586 5H12zm-9 7a1 1 0 012 0v1.586l2.293-2.293a1 1 0 111.414 1.414L6.414 15H8a1 1 0 010 2H4a1 1 0 01-1-1v-4zm13-1a1 1 0 011 1v4a1 1 0 01-1 1h-4a1 1 0 010-2h1.586l-2.293-2.293a1 1 0 111.414-1.414L15 13.586V12a1 1 0 011-1z" clip-rule="evenodd"/></svg>
       Als Excel exportieren
@@ -979,12 +1021,13 @@ button, input, select, textarea { font-family: inherit; }
       <svg viewBox="0 0 20 20" fill="currentColor" width="14" height="14"><path d="M5 4a1 1 0 00-1 1v2H3a2 2 0 00-2 2v5a2 2 0 002 2h1v2a1 1 0 001 1h10a1 1 0 001-1v-2h1a2 2 0 002-2V9a2 2 0 00-2-2h-1V5a1 1 0 00-1-1H5zm8 2H7V5h6v1zm-1 9H8v-3h4v3zm3-4H5V9h10v2z"/></svg>
       Drucken / PDF
     </button>
-    <span class="data-bar-sep"></span>
+  </span>
+  <span class="bar-grp">
     <button class="btn-action btn-reset" onclick="resetForm()" title="Alle Eingaben entfernen: Positionen, Empfänger, Kampagne und Bemerkungen">
       <svg viewBox="0 0 20 20" fill="currentColor" width="13" height="13"><path fill-rule="evenodd" d="M4 2a1 1 0 011 1v2.101a7.002 7.002 0 0111.601 2.566 1 1 0 11-1.885.666A5.002 5.002 0 005.999 7H9a1 1 0 010 2H4a1 1 0 01-1-1V3a1 1 0 011-1zm.008 9.057a1 1 0 011.276.61A5.002 5.002 0 0014.001 13H11a1 1 0 110-2h5a1 1 0 011 1v5a1 1 0 11-2 0v-2.101a7.002 7.002 0 01-11.601-2.566 1 1 0 01.61-1.276z" clip-rule="evenodd"/></svg>
       Alles zurücksetzen
     </button>
-  </div>
+  </span>
 </div>
 
 <div class="page">

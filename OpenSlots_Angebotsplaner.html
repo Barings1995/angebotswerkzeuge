@@ -254,7 +254,17 @@ button, input, select, textarea { font-family: inherit; }
 .year-sel:focus { outline: none; border-color: var(--sm-navy); }
 .data-btn.subtle { background: var(--sm-navy-10); border-color: var(--sm-navy); color: var(--sm-navy); }
 .data-btn.subtle:hover { background: var(--sm-navy); border-color: var(--sm-navy); color: #fff; }
-.data-status { font-size: 11.5px; color: var(--sm-muted); flex: 1; min-width: 120px; }
+/* Die beiden Hinweiszeilen - geoeffnete Angebotsdatei und Datenstand - stehen
+   zusammen am rechten Rand: der Leerraum der Leiste sammelt sich vor ihnen und
+   schiebt sie dorthin. */
+.bar-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin-left: auto;
+  text-align: right;
+}
+.data-status { font-size: 11.5px; color: var(--sm-muted); }
 /* Geladener Zustand: dieselbe Hervorhebung wie in PreisWerk und MediaQuote. */
 .data-status.loaded { color: var(--sm-navy); font-weight: 600; }
 
@@ -265,11 +275,25 @@ button, input, select, textarea { font-family: inherit; }
    Grund mit grauer Kante wie beim Jahrgang-Auswahlfeld – und einen feinen
    Trennstrich davor. Bewusst ohne weitere Farbe: Orange ist im Werkzeug bereits
    für den Hauptknopf „Als Tabelle kopieren" und die Akzentkanten vergeben. */
-.ang-wrap {
+.ang-wrap, .bar-grp {
   display: inline-flex;
+  align-items: center;
   gap: 8px;
   padding-left: 10px;
-  border-left: 1px solid var(--sm-border);
+  position: relative;
+}
+/* Der Trennstrich ist bewusst kuerzer als die Gruppe hoch ist: 16 px mittig,
+   nicht eine Kante ueber die volle Hoehe. `.bar-grp` traegt denselben Strich
+   und heisst wie in MediaQuote; hier steht „Alles zuruecksetzen" darin. */
+.ang-wrap::before, .bar-grp::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 50%;
+  margin-top: -8px;
+  width: 1px;
+  height: 16px;
+  background: var(--sm-border);
 }
 .data-btn.ang-btn { background: var(--sm-white); border-color: var(--sm-border); color: var(--sm-navy); }
 .data-btn.ang-btn:hover { background: var(--sm-navy); border-color: var(--sm-navy); color: #fff; }
@@ -1103,12 +1127,16 @@ tr.pl-row.alt td:not(.pl-cell) {
         Angebot speichern
       </button>
     </span>
-    <span class="ang-status" id="angStatus"></span>
-    <span class="data-status" id="dataStatus">Keine Daten geladen &ndash; bitte Angebotsdaten.xlsx laden</span>
-    <button class="data-btn danger" id="resetBtn" onclick="resetAll()" title="Alle angekreuzten Platzierungen und Ausgaben f&uuml;r alle Titel entfernen" style="display:none">
-      <svg width="13" height="13" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M4 2a1 1 0 011 1v2.101a7.002 7.002 0 0111.601 2.566 1 1 0 11-1.885.666A5.002 5.002 0 005.999 7H9a1 1 0 010 2H4a1 1 0 01-1-1V3a1 1 0 011-1zm.008 9.057a1 1 0 011.276.61A5.002 5.002 0 0014.001 13H11a1 1 0 110-2h5a1 1 0 011 1v5a1 1 0 11-2 0v-2.101a7.002 7.002 0 01-11.601-2.566 1 1 0 01.61-1.276z" clip-rule="evenodd"/></svg>
-      Alles zur&uuml;cksetzen
-    </button>
+    <span class="bar-status">
+      <span class="ang-status" id="angStatus"></span>
+      <span class="data-status" id="dataStatus">Keine Daten geladen &ndash; bitte Angebotsdaten.xlsx laden</span>
+    </span>
+    <span class="bar-grp">
+      <button class="data-btn danger" id="resetBtn" onclick="resetAll()" title="Alle angekreuzten Platzierungen und Ausgaben f&uuml;r alle Titel entfernen">
+        <svg width="13" height="13" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M4 2a1 1 0 011 1v2.101a7.002 7.002 0 0111.601 2.566 1 1 0 11-1.885.666A5.002 5.002 0 005.999 7H9a1 1 0 010 2H4a1 1 0 01-1-1V3a1 1 0 011-1zm.008 9.057a1 1 0 011.276.61A5.002 5.002 0 0014.001 13H11a1 1 0 110-2h5a1 1 0 011 1v5a1 1 0 11-2 0v-2.101a7.002 7.002 0 01-11.601-2.566 1 1 0 01.61-1.276z" clip-rule="evenodd"/></svg>
+        Alles zur&uuml;cksetzen
+      </button>
+    </span>
     <input type="file" id="dataFile" accept=".xlsx" style="display:none" onchange="onDataFileChosen(event)">
     <input type="file" id="angebotFile" accept=".json,application/json" style="display:none" onchange="onAngebotFileChosen(event)">
   </div>
@@ -2741,13 +2769,10 @@ function buildTxt(){
   return L.join('\n');
 }
 
-function updResetBtn(){
-  const btn=document.getElementById('resetBtn');if(!btn)return;
-  const any=isCustomData&&ST.some(s=>s.issues.length>0);
-  btn.style.display=any?'inline-flex':'none';
-}
 async function resetAll(){
-  if(!ST.some(s=>s.issues.length>0))return;
+  /* Der Knopf steht dauerhaft in der Leiste und fragt deshalb auch dann nach,
+     wenn noch nichts angekreuzt ist - ein sichtbarer Knopf, der wortlos nichts
+     tut, waere nicht zu verstehen. Ebenso in MediaQuote. */
   if(!await frage('Alles zurücksetzen?',
     '<p>Alle Platzierungen, Ausgaben und Optionen für alle Titel werden entfernt.</p>'+
     '<p>Der aktuelle Angebotsstand wird gelöscht.</p>',
@@ -2778,7 +2803,6 @@ function render(){
   if(onlyFilledOn())applyVisibility();
   const html=buildHtml();
   document.getElementById('pv-wrap').innerHTML=html||'<p style="color:var(--sm-muted-l);font-size:12.5px;margin:0">Sobald Platzierungen angekreuzt sind, erscheint hier die Angebotsvorschau zum Kopieren.</p>';
-  updResetBtn();
   saveState();
 }
 
