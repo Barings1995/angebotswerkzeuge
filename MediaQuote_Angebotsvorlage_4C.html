@@ -769,6 +769,9 @@ button, input, select, textarea { font-family: inherit; }
      gesetzt, damit die Quittung unter dem Mauszeiger nicht sofort navy wird. */
   .btn-angebot.done,
   .btn-angebot.done:hover { background: var(--gruen-hell); border-color: var(--gruen); color: var(--gruen); }
+  /* Mittig, weil der Knopf während der Quittung seine Breite hält (siehe flash()):
+     Der kürzere Text stünde sonst links, mit 40 px Luft an der rechten Kante. */
+  .btn-action.done { justify-content: center; }
   .col-toggles { display: inline-flex; align-items: center; gap: 10px; font-size: 12px; }
   .col-toggles .ct-label { color: var(--navy); font-weight: 600; }
   .col-toggles label { display: inline-flex; align-items: center; gap: 4px; cursor: pointer; font-weight: 600; color: var(--navy); }
@@ -2364,13 +2367,22 @@ function flash(id, msg) {
   if (flashTimer) {                       // laufende Quittung zuerst zurücknehmen
     clearTimeout(flashTimer);
     b.innerHTML = b.dataset.orig || b.innerHTML;
+    b.style.minWidth = '';
   }
   b.dataset.orig = b.innerHTML;
+  /* Breite festhalten, bevor die Beschriftung wechselt: „✓ Gespeichert" ist rund
+     40 px schmaler als „Angebot speichern". Ohne die Sperre schrumpfte der Knopf
+     für zwei Sekunden, und alles rechts von ihm rückte zweimal nach — beim
+     Erscheinen der Quittung und beim Zurückspringen. Gemessen statt fest
+     eingetragen, weil die Breite an Schrift und Zoomstufe hängt; box-sizing ist
+     border-box, der Messwert passt also unverändert als Mindestbreite. */
+  b.style.minWidth = b.getBoundingClientRect().width + 'px';
   b.classList.add('done');
   b.innerHTML = msg;
   flashTimer = setTimeout(() => {
     b.classList.remove('done');
     b.innerHTML = b.dataset.orig;
+    b.style.minWidth = '';
     flashTimer = null;
   }, 2000);
 }

@@ -300,10 +300,14 @@ button, input, select, textarea { font-family: inherit; }
 /* Quittung nach dem Speichern: Der Knopf traegt sie zwei Sekunden lang selbst
    (siehe flash()). Bisher wechselte nur die Beschriftung; mit demselben Gruen,
    das „Als Tabelle kopieren" nach dem Kopieren zeigt (.copy-btn.done), ist sie
-   auch aus dem Augenwinkel zu sehen und sieht aus wie in MediaQuote. Auch fuer :hover gesetzt, damit die Quittung
-   unter dem Mauszeiger nicht sofort navy wird. */
+   auch aus dem Augenwinkel zu sehen und sieht aus wie in MediaQuote. Auch fuer
+   :hover gesetzt, damit die Quittung unter dem Mauszeiger nicht sofort navy wird. */
 .data-btn.ang-btn.done,
 .data-btn.ang-btn.done:hover { background: var(--sm-green-l); border-color: var(--sm-green); color: var(--sm-green); }
+/* Mittig, weil die Knoepfe waehrend der Quittung ihre Breite halten (siehe
+   flash()): Der kuerzere Text stuende sonst links, mit Luft an der rechten
+   Kante. Gilt auch fuer die beiden Kopierknoepfe, die dieselbe Funktion nutzen. */
+.data-btn.done, .copy-btn.done { justify-content: center; }
 /* Hinweis auf die geöffnete Angebotsdatei. Er nennt auch den Speicherzeitpunkt,
    weil ein älteres Angebot die Preise von damals enthält und nicht die heutigen. */
 .ang-status {
@@ -2841,10 +2845,15 @@ async function cpHtml(){
 
 async function cpTxt(){await navigator.clipboard.writeText(buildTxt());flash('cb-txt','\u2713 Kopiert');}
 
+/* Die Breite wird festgehalten, bevor die Beschriftung wechselt: Die Quittung ist
+   kuerzer als der Ruhetext (bei „Angebot speichern" rund 40 px), ohne die Sperre
+   rueckte alles rechts vom Knopf zweimal nach. Gemessen statt fest eingetragen,
+   weil die Breite an Schrift und Zoomstufe haengt; box-sizing ist border-box. */
 function flash(id,msg){
   const b=document.getElementById(id),orig=b.innerHTML;
+  b.style.minWidth=b.getBoundingClientRect().width+'px';
   b.classList.add('done');b.innerHTML=msg;
-  setTimeout(()=>{b.classList.remove('done');b.innerHTML=orig;},2000);
+  setTimeout(()=>{b.classList.remove('done');b.innerHTML=orig;b.style.minWidth='';},2000);
 }
 
 /* ===== HOVER-FADENKREUZ: Zeile + Spalte in der Belegungsmatrix hervorheben ===== */
