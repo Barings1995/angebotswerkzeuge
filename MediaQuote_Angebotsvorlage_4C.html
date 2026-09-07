@@ -38,6 +38,11 @@
        OpenSlots-Angebotsplaner, damit derselbe Vorgang gleich aussieht. */
     --rot: #c0392b;
     --rot-dunkel: #9c2e22;
+    /* Grün der Speicherquittung — derselbe Ton, den der OpenSlots-Angebotsplaner
+       für das Häkchen im Knopf führt. Keine Brandfarbe, aber derselbe Vorgang
+       soll in beiden Werkzeugen gleich aussehen. */
+    --gruen: #0f6e56;
+    --gruen-hell: #e1f5ee;
     /* Eckenradien als Staffel statt gestreuter Einzelwerte — gleiche Werte wie in
        PreisWerk und im Geist der OpenSlots-Staffel. sm = Felder, Kennzeichen und die
        Knöpfe der Leiste, md = Dialogknöpfe, lg = Hinweisfähnchen, xl = Dialogfenster.
@@ -757,6 +762,13 @@ button, input, select, textarea { font-family: inherit; }
   .btn-load:hover { background: #013a7a; border-color: #013a7a; }
   .btn-angebot { background: #fff; border-color: var(--dlg-border); color: var(--navy); }
   .btn-angebot:hover { background: var(--navy); border-color: var(--navy); color: #fff; }
+  /* Quittung nach dem Speichern: Der Knopf trägt sie zwei Sekunden lang selbst,
+     genau wie im OpenSlots-Angebotsplaner. Beim Zwischenspeichern in dieselbe
+     Datei ändert sich sonst nichts Sichtbares — die Angebotszeile nennt zwar den
+     Zeitpunkt, springt am selben Tag aber nur in der Uhrzeit. Auch für :hover
+     gesetzt, damit die Quittung unter dem Mauszeiger nicht sofort navy wird. */
+  .btn-angebot.done,
+  .btn-angebot.done:hover { background: var(--gruen-hell); border-color: var(--gruen); color: var(--gruen); }
   .col-toggles { display: inline-flex; align-items: center; gap: 10px; font-size: 12px; }
   .col-toggles .ct-label { color: var(--navy); font-weight: 600; }
   .col-toggles label { display: inline-flex; align-items: center; gap: 4px; cursor: pointer; font-weight: 600; color: var(--navy); }
@@ -1010,7 +1022,7 @@ button, input, select, textarea { font-family: inherit; }
       <svg viewBox="0 0 20 20" fill="currentColor" width="14" height="14"><path d="M2 6a2 2 0 012-2h4l2 2h6a2 2 0 012 2v6a2 2 0 01-2 2H4a2 2 0 01-2-2V6z"/></svg>
       Angebot öffnen
     </button>
-    <button class="btn-action btn-angebot" onclick="saveAngebot()" title="Diesen Angebotsstand als Datei speichern (beim erneuten Speichern wird dieselbe Datei überschrieben)">
+    <button class="btn-action btn-angebot" id="angSaveBtn" onclick="saveAngebot()" title="Diesen Angebotsstand als Datei speichern (beim erneuten Speichern wird dieselbe Datei überschrieben)">
       <svg viewBox="0 0 20 20" fill="currentColor" width="14" height="14"><path d="M3 4a1 1 0 011-1h9l4 4v9a1 1 0 01-1 1H4a1 1 0 01-1-1V4zm4 0v4h6V4H7zm1 1h2v2H8V5zm-1 8a1 1 0 011-1h4a1 1 0 011 1v3H7v-3z"/></svg>
       Angebot speichern
     </button>
@@ -2337,6 +2349,33 @@ function plainPaste(e) {
 let _origPrintTitle = null;   // Fenster-Titel während Druck/PDF zwischenspeichern
 
 // ─────────────────────────────────────────
+//  Kurze Quittung im Knopf
+// ─────────────────────────────────────────
+/* Der Knopf zeigt zwei Sekunden lang „Gespeichert" und geht dann in seine
+   normale Beschriftung zurück — dieselbe Mechanik und derselbe Wortlaut wie im
+   OpenSlots-Angebotsplaner. Die Rückmeldung erscheint damit dort, wo der Blick
+   beim Klicken ohnehin liegt. Der Zeitgeber wird gemerkt: Wer zweimal kurz
+   hintereinander speichert, bekäme sonst die Quittung als Beschriftung
+   festgeschrieben, weil der zweite Aufruf sie als Ausgangszustand sichert. */
+let flashTimer = null;
+function flash(id, msg) {
+  const b = document.getElementById(id);
+  if (!b) return;
+  if (flashTimer) {                       // laufende Quittung zuerst zurücknehmen
+    clearTimeout(flashTimer);
+    b.innerHTML = b.dataset.orig || b.innerHTML;
+  }
+  b.dataset.orig = b.innerHTML;
+  b.classList.add('done');
+  b.innerHTML = msg;
+  flashTimer = setTimeout(() => {
+    b.classList.remove('done');
+    b.innerHTML = b.dataset.orig;
+    flashTimer = null;
+  }, 2000);
+}
+
+// ─────────────────────────────────────────
 //  Hinweis auf die geöffnete Angebotsdatei
 // ─────────────────────────────────────────
 /* Steht dauerhaft in der Werkzeugleiste, wie im OpenSlots-Angebotsplaner: Er
@@ -2354,7 +2393,11 @@ function updAngStatus() {
       const p = n => ('0' + n).slice(-2);
       const t = document.createElement('span');
       t.className = 'ang-time';
-      t.textContent = ' · Stand ' + p(d.getDate()) + '.' + p(d.getMonth() + 1) + '.' + d.getFullYear();
+      /* Mit Uhrzeit: Beim Zwischenspeichern am selben Tag bliebe die Zeile sonst
+         unverändert stehen; nachprüfbar wäre dann nicht, ob der letzte Klick vor
+         oder nach der letzten Änderung lag. */
+      t.textContent = ' · Stand ' + p(d.getDate()) + '.' + p(d.getMonth() + 1) + '.' + d.getFullYear()
+                    + ', ' + p(d.getHours()) + ':' + p(d.getMinutes());
       el.appendChild(t);
     }
   }
@@ -2498,6 +2541,7 @@ async function saveAngebot() {
       angebotFileName = angebotFileHandle.name || '';
       angebotSavedAt  = new Date().toISOString();
       updAngStatus();
+      flash('angSaveBtn', '✓ Gespeichert');
       return;
     } catch (e) {
       // Vom Nutzer abgebrochen — entweder der Auswahl-Dialog (AbortError) oder
@@ -2525,6 +2569,7 @@ function downloadAngebotFallback(json) {
   angebotFileName = name;
   angebotSavedAt  = new Date().toISOString();
   updAngStatus();
+  flash('angSaveBtn', '✓ Gespeichert');
 }
 
 async function openAngebot() {

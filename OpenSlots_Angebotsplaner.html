@@ -297,6 +297,13 @@ button, input, select, textarea { font-family: inherit; }
 }
 .data-btn.ang-btn { background: var(--sm-white); border-color: var(--sm-border); color: var(--sm-navy); }
 .data-btn.ang-btn:hover { background: var(--sm-navy); border-color: var(--sm-navy); color: #fff; }
+/* Quittung nach dem Speichern: Der Knopf traegt sie zwei Sekunden lang selbst
+   (siehe flash()). Bisher wechselte nur die Beschriftung; mit demselben Gruen,
+   das „Als Tabelle kopieren" nach dem Kopieren zeigt (.copy-btn.done), ist sie
+   auch aus dem Augenwinkel zu sehen und sieht aus wie in MediaQuote. Auch fuer :hover gesetzt, damit die Quittung
+   unter dem Mauszeiger nicht sofort navy wird. */
+.data-btn.ang-btn.done,
+.data-btn.ang-btn.done:hover { background: var(--sm-green-l); border-color: var(--sm-green); color: var(--sm-green); }
 /* Hinweis auf die geöffnete Angebotsdatei. Er nennt auch den Speicherzeitpunkt,
    weil ein älteres Angebot die Preise von damals enthält und nicht die heutigen. */
 .ang-status {
@@ -2144,7 +2151,10 @@ function updAngStatus(){
     const d=new Date(angebotSavedAt);
     if(!isNaN(d)){
       const p=n=>('0'+n).slice(-2);
-      zeit=' <span class="ang-time">· Stand '+p(d.getDate())+'.'+p(d.getMonth()+1)+'.'+d.getFullYear()+'</span>';
+      /* Mit Uhrzeit: Beim Zwischenspeichern am selben Tag bliebe die Zeile sonst
+         unveraendert stehen. Gleicher Wortlaut wie in MediaQuote. */
+      zeit=' <span class="ang-time">· Stand '+p(d.getDate())+'.'+p(d.getMonth()+1)+'.'+d.getFullYear()
+          +', '+p(d.getHours())+':'+p(d.getMinutes())+'</span>';
     }
   }
   el.innerHTML='Angebot: '+esc(angebotFileName)+zeit;
