@@ -789,10 +789,19 @@ function jahrAuswahlAufbauen() {
   s.innerHTML = jahrgaenge().map(j => '<option value="' + j + '"' + (j === gewJahr ? ' selected' : '') + '>' + j + '</option>').join('');
 }
 
+/* Beim Wechsel des Jahrgangs bleibt der gewaehlte Titel stehen, sofern der neue
+   Jahrgang ihn ebenfalls fuehrt. Verglichen wird der Name, nicht die Kennung: die
+   wird je Jahrgang eigens vergeben, derselbe Titel traegt in 2026 und 2027 zwei
+   verschiedene. Der Name taugt dafuer, weil „unique (jahr, name)" ihn innerhalb
+   eines Jahrgangs eindeutig haelt. Fehlt der Titel drueben, bleibt es beim
+   bisherigen Verhalten: der oberste der Liste. */
 function jahrWechseln(jahr) {
+  const bisher = titelVonId(gewTitel);
+  const name = bisher ? String(bisher.name || '').trim() : '';
   gewJahr = jahr;
-  const erste = titelNachAnzeige()[0];
-  gewTitel = erste ? erste.id : null;
+  const liste = titelNachAnzeige();
+  const ziel = (name && liste.find(t => String(t.name || '').trim() === name)) || liste[0];
+  gewTitel = ziel ? ziel.id : null;
   zeichnen();
 }
 function reiterWechseln(welcher) {
