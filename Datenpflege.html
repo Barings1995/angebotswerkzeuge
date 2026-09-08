@@ -668,7 +668,14 @@ async function ladenAusDatenbank() {
     const s = await daten('stand?select=geaendert_am');
     const d = (s && s[0] && s[0].geaendert_am) ? new Date(s[0].geaendert_am) : null;
     const z = n => String(n).padStart(2, '0');
-    standText = (d && !isNaN(d)) ? ('Stand ' + z(d.getDate()) + '.' + z(d.getMonth() + 1) + '.' + d.getFullYear()) : '';
+    /* Mit Uhrzeit: an einem Tag wird oft mehrmals gespeichert, und wer
+       daneben OpenSlots oder MediaQuote offen hat, muss erkennen koennen,
+       ob deren Preise noch vom Stand vor der letzten Speicherung stammen.
+       Der Zeitstempel liegt ohnehin vor - bisher wurde er nur abgeschnitten. */
+    standText = (d && !isNaN(d))
+      ? ('Stand ' + z(d.getDate()) + '.' + z(d.getMonth() + 1) + '.' + d.getFullYear() +
+         ', ' + z(d.getHours()) + ':' + z(d.getMinutes()) + ' Uhr')
+      : '';
   } catch (e) { standText = ''; }
 }
 
@@ -826,6 +833,40 @@ function offeneAenderungen() {
   return ARBEIT.some(titelGeaendert);
 }
 
+/* Gezaehlt wird auf Zeilenebene, nicht je Feld: ein angelegter oder entfernter
+   Titel zaehlt einmal, seine Stammdaten (Name, Auflage, Fachbereich) zusammen
+   einmal, und jede Preis- oder Terminzeile einmal - gleich, ob an ihr ein Wert
+   oder drei geaendert wurden. Das entspricht dem, was in der Tabelle als eine
+   markierte Zeile erscheint. Feiner zu zaehlen hiesse, jedes Feld einzeln
+   gegenzuhalten; die Zahl wuerde dadurch groesser, aber nicht aussagekraeftiger. */
+function zahlOffeneAenderungen() {
+  if (!ARBEIT || !URSPRUNG) return 0;
+  let n = 0;
+
+  const zeilenZaehlen = (alt, jetzt) => {
+    const vorher = alt || [], nachher = jetzt || [];
+    let z = 0;
+    nachher.forEach(a => {
+      const u = vorher.find(b => b.id === a.id);
+      if (!u || !gleich(u, a)) z++;
+    });
+    vorher.forEach(b => { if (!nachher.find(a => a.id === b.id)) z++; });
+    return z;
+  };
+
+  (ARBEIT || []).forEach(t => {
+    const u = ursprungTitel(t.id);
+    if (!u) { n++; return; }                       /* neuer Titel: einmal */
+    if (u.name !== t.name || u.auflage !== t.auflage || u.fachbereich !== t.fachbereich) n++;
+    n += zeilenZaehlen(u.preis, t.preis);
+    n += zeilenZaehlen(u.termin, t.termin);
+  });
+  (URSPRUNG || []).forEach(u => {
+    if (!(ARBEIT || []).find(t => t.id === u.id)) n++;   /* entfernter Titel */
+  });
+  return n;
+}
+
 function knoepfeAuffrischen() {
   const offen = offeneAenderungen();
   const fehler = alleFehler();
@@ -833,7 +874,8 @@ function knoepfeAuffrischen() {
   document.getElementById('verwerfenKnopf').disabled = !offen;
   const hinweis = document.getElementById('offenHinweis');
   hinweis.classList.toggle('an', offen);
-  hinweis.textContent = offen ? 'Änderungen offen' : '';
+  const zahl = offen ? zahlOffeneAenderungen() : 0;
+  hinweis.textContent = offen ? (zahl === 1 ? '1 Änderung offen' : zahl + ' Änderungen offen') : '';
   const kasten = document.getElementById('pruefKasten');
   kasten.classList.toggle('an', fehler.length > 0);
   if (fehler.length) {
