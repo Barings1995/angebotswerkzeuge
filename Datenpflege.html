@@ -218,7 +218,14 @@ button, input, select, textarea { font-family: inherit; }
     background: var(--white); color: var(--text); }
   .suche input:focus { outline: none; border-color: var(--navy); box-shadow: 0 0 0 2px rgba(0,40,90,.08); }
   .suche .umfang { font-size: 12.5px; font-weight: 500; color: var(--grey-600); gap: 5px; }
-  .suche .umfang input { width: auto; height: auto; padding: 0; }
+  /* Kaestchen und Beschriftung zeigen den Zeigefinger - beide schalten beim
+     Klick um, und beide sollen das ankuendigen. So halten es auch die drei
+     anderen Werkzeuge (.tog in OpenSlots, .col-toggles in MediaQuote, der
+     Schieber in PreisWerk); die Datenpflege war die einzige Ausnahme. */
+  .suche .umfang, .suche .umfang input { cursor: pointer; }
+  /* Angehakt im Dunkelblau der Marke statt im Systemblau des Rechners -
+     wie die Kaestchen in OpenSlots und MediaQuote. */
+  .suche .umfang input { width: auto; height: auto; padding: 0; accent-color: var(--navy); }
   /* Das X zum Leeren ist ein eigener Knopf, nicht das des Browsers. Dessen
      Zeichen kommt aus der Systemschrift, traegt sein eigenes Grau, laesst sich
      in der Groesse nicht setzen, erscheint erst beim Ueberfahren — und in
