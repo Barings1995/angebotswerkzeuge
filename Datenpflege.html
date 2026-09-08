@@ -177,6 +177,17 @@ button, input, select, textarea { font-family: inherit; }
   .gruppe .btn:not(.btn-primär) { border-color: transparent; background: transparent; }
   .gruppe .btn:not(.btn-primär):not(.btn-gefahr):hover:not(:disabled) { background: var(--surface); }
   .gruppe .btn-gefahr:hover:not(:disabled) { background: var(--red-bg); }
+  /* Das Suchfeld steht neben den Reitern: gesucht wird, was der Reiter zeigt —
+     im Reiter „Preise" Formate und Kategorien, im Reiter „Termine" die Ausgaben.
+     Es ist so hoch wie Auswahl und Umschalter (38 px), damit die Leiste ihre
+     durchgehende Aussenkante behaelt. */
+  .suche { display: inline-flex; align-items: center; gap: 8px; }
+  .suche input { font-family: var(--font-body); font-size: 13px; height: 38px; width: 190px;
+    padding: 0 10px; border: 1px solid var(--border); border-radius: var(--radius-md);
+    background: var(--white); color: var(--text); }
+  .suche input:focus { outline: none; border-color: var(--navy); box-shadow: 0 0 0 2px rgba(0,40,90,.08); }
+  .suche .umfang { font-size: 12.5px; font-weight: 500; color: var(--grey-600); gap: 5px; }
+  .suche .umfang input { width: auto; height: auto; }
   .stand-hinweis { font-size: 12.5px; color: var(--grey-600); }
   .offen-hinweis { display: none; align-items: center; gap: 6px; font-size: 12.5px; font-weight: 600; color: var(--orange-dark); background: #fdf3e7; border: 1px solid #f6ddbc; border-radius: var(--radius-md); padding: 3px 10px; }
   .offen-hinweis.an { display: inline-flex; }
@@ -196,6 +207,23 @@ button, input, select, textarea { font-family: inherit; }
   .titel-zeile .zahl { font-size: 11px; color: var(--grey-500); flex: none; }
   .titel-zeile .offen { font-size: 11px; color: var(--orange-dark); font-weight: 600; flex: none; }
   .titel-zeile .geaendert { color: var(--orange); font-weight: 700; flex: none; }
+
+  /* ── Trefferliste ── */
+  /* Die Treffer stehen im rechten Feld, an der Stelle des Titels: die Suche
+     fuehrt zu einem Titel hin, sie ist keine zweite Bearbeitungsflaeche. Je Titel
+     ein Kopf, darunter seine Fundstellen; angeklickt wird beides und beides
+     springt an dieselbe Stelle. */
+  .such-titel { display: flex; align-items: baseline; gap: 8px; margin-top: 16px; padding: 4px 6px;
+    border-bottom: 2px solid var(--navy); cursor: pointer; border-radius: var(--radius-sm) var(--radius-sm) 0 0; }
+  .such-titel:first-child { margin-top: 0; }
+  .such-titel:hover { background: var(--surface-hover); }
+  .such-titel b { font-size: 14px; color: var(--navy); }
+  .such-titel .neben { font-size: 11.5px; color: var(--grey-600); }
+  .such-zeile { cursor: pointer; }
+  .such-zeile td { padding: 5px 6px; }
+  .such-feld { font-size: 10.5px; font-weight: 700; color: var(--grey-600); text-transform: uppercase; letter-spacing: .07em; white-space: nowrap; }
+  .such-wert { white-space: pre-line; }
+  mark { background: #fdf0d5; color: inherit; border-radius: 2px; padding: 0 1px; }
 
   .inhalt { padding: 14px 16px 18px; }
   .inhalt-kopf { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; flex-wrap: wrap; margin-bottom: 12px; padding-bottom: 9px; border-bottom: 2px solid var(--navy); }
@@ -354,6 +382,11 @@ button, input, select, textarea { font-family: inherit; }
         <button id="reiterPreise"  class="an" onclick="reiterWechseln('preise')">Preise</button>
         <button id="reiterTermine"           onclick="reiterWechseln('termine')">Termine</button>
       </div>
+      <div class="suche">
+        <input type="search" id="suchFeld" placeholder="Suchen …" oninput="sucheSetzen(this.value)"
+               onkeydown="if (event.key === 'Escape') sucheBeenden()">
+        <label class="umfang"><input type="checkbox" id="suchAlle" onchange="sucheUmfangSetzen(this.checked)">alle Jahrgänge</label>
+      </div>
       <span class="stand-hinweis" id="standHinweis"></span>
       <span class="offen-hinweis" id="offenHinweis"></span>
       <span style="flex:1"></span>
@@ -421,6 +454,8 @@ let gewJahr  = '';
 let gewTitel = null;         // id des gewaehlten Titels
 let reiter   = 'preise';
 let standText = '';
+let suchText = '';           // was im Suchfeld steht, getrimmt
+let suchAlleJahre = false;   // false: nur der gewaehlte Jahrgang
 
 /* ── Schnittstelle ────────────────────────────────────────────────────────── */
 function dbErreichbar() {
@@ -817,6 +852,158 @@ function esc(s) {
     .replace(/>/g, '&gt;').replace(/"/g, '&quot;');
 }
 
+/* ── Suche ────────────────────────────────────────────────────────────────────
+   Gesucht wird im Bestand, der ohnehin im Speicher liegt: die Suche liest nur,
+   sie fragt die Datenbank nicht und aendert nichts. Gezeigt wird der Stand der
+   Arbeitskopie, also mit den offenen Aenderungen — was auf dem Schirm steht, ist
+   auch das, was gefunden wird.
+
+   Ab zwei Zeichen wird gesucht. Bei einem einzigen faende man fast jedes Format,
+   und die Liste waere nutzlos lang. */
+const SUCHE_AB = 2;
+const SUCHE_HOECHSTENS = 300;
+
+function suchtGerade() { return suchText.length >= SUCHE_AB; }
+
+function sucheSetzen(wert) {
+  suchText = String(wert == null ? '' : wert).trim();
+  zeichnen();
+}
+function sucheUmfangSetzen(alle) {
+  suchAlleJahre = !!alle;
+  zeichnen();
+}
+function sucheBeenden() {
+  suchText = '';
+  const feld = document.getElementById('suchFeld');
+  if (feld) feld.value = '';
+  zeichnen();
+}
+
+/* Der Sprung zum Treffer: Jahrgang und Titel werden gesetzt, die Suche endet.
+   Sie bleibt nicht stehen — sonst waere der Titel gewaehlt, aber weiter verdeckt
+   von der Trefferliste. Das Suchwort bleibt im Feld nicht erhalten; wer weiter
+   suchen will, sucht neu. */
+function suchTrefferOeffnen(jahr, id) {
+  gewJahr = jahr;
+  gewTitel = id;
+  sucheBeenden();
+}
+
+function passt(wert, suche) {
+  return String(wert == null ? '' : wert).toLowerCase().includes(suche);
+}
+
+/* Die Fundstelle mit dem Suchwort hervorgehoben. Getrennt wird an der rohen
+   Zeichenkette und erst danach maskiert — anders herum verschoebe eine
+   Maskierung wie „&amp;" die Fundstelle. */
+function hervor(wert, suche) {
+  const text = String(wert == null ? '' : wert);
+  const i = text.toLowerCase().indexOf(suche);
+  if (i < 0) return esc(text);
+  return esc(text.slice(0, i)) + '<mark>' + esc(text.slice(i, i + suche.length)) +
+         '</mark>' + esc(text.slice(i + suche.length));
+}
+
+/* Bei Themen und Kongressen steht ein Eintrag je Zeile. Gezeigt werden nur die
+   Zeilen, die das Suchwort tragen — sonst stuende bei einem Treffer die ganze
+   Themenliste des Heftes in der Trefferliste. */
+function trefferZeilen(wert, suche) {
+  const zeilen = String(wert == null ? '' : wert).split('\n').filter(z => passt(z, suche));
+  return zeilen.length ? zeilen.join('\n') : String(wert == null ? '' : wert);
+}
+
+/* Die durchsuchten Titel in der Reihenfolge, in der die Titelliste sie zeigt;
+   bei „alle Jahrgaenge" Jahrgang fuer Jahrgang, aufsteigend. */
+function suchTitel() {
+  if (!suchAlleJahre) return titelNachAnzeige();
+  let raus = [];
+  jahrgaenge().forEach(j => { raus = raus.concat(titelNachAnzeige(j)); });
+  return raus;
+}
+
+/* Ein Treffer je Fundstelle: { titel, feld, wert }. Welche Felder durchsucht
+   werden, richtet sich nach dem Reiter — der Reiter zeigt, was gesucht wird. */
+const SUCH_TERMIN_FELDER = [
+  ['heft', 'Heft'], ['monat', 'Monat'], ['et', 'ET'], ['anzeigenschluss', 'AS'],
+  ['du_schluss', 'DU-Schluss'], ['eh_termin', 'EH-Termin'],
+  ['themen', 'Themenschwerpunkt'], ['kongresse', 'Kongresse']
+];
+
+function suchTreffer() {
+  const suche = suchText.toLowerCase();
+  const raus = [];
+  suchTitel().forEach(t => {
+    if (reiter === 'preise') {
+      (t.preis || []).forEach(p => {
+        if (passt(p.format, suche))          raus.push({ t: t, feld: p.kategorie || 'Ohne Kategorie', wert: p.format, preis: p.preis });
+        else if (passt(p.kategorie, suche))  raus.push({ t: t, feld: p.kategorie, wert: p.format, kat: true, preis: p.preis });
+      });
+    } else {
+      (t.termin || []).forEach(a => {
+        SUCH_TERMIN_FELDER.forEach(f => {
+          if (passt(a[f[0]], suche)) {
+            raus.push({ t: t, feld: f[1], wert: trefferZeilen(a[f[0]], suche),
+                        heft: (a.heft || '') + (a.monat ? ' \u00b7 ' + a.monat : '') });
+          }
+        });
+      });
+    }
+  });
+  return raus;
+}
+
+function sucheZeichnen() {
+  const suche = suchText.toLowerCase();
+  const alle = suchTreffer();
+  const treffer = alle.slice(0, SUCHE_HOECHSTENS);
+  const titelZahl = new Set(treffer.map(x => x.t.id)).size;
+  const umfang = suchAlleJahre ? 'alle Jahrg\u00e4nge' : 'Jahrgang ' + esc(gewJahr);
+  const was = reiter === 'preise' ? 'Formate und Kategorien' : 'Ausgaben';
+
+  let html = '<div class="inhalt-kopf"><h2>Suche \u201e' + esc(suchText) + '\u201c</h2>' +
+    '<span class="neben">' + (alle.length
+      ? alle.length + (alle.length === 1 ? ' Fundstelle in ' : ' Fundstellen in ') +
+        titelZahl + (titelZahl === 1 ? ' Titel' : ' Titeln')
+      : 'keine Fundstelle') +
+    ' \u00b7 ' + umfang + ' \u00b7 ' + was + '</span></div>';
+
+  if (!alle.length) {
+    html += '<div class="leer-zeile" style="padding:14px 6px">Nichts gefunden.' +
+      (suchAlleJahre ? '' : ' Mit „alle Jahrg\u00e4nge“ wird \u00fcber den gew\u00e4hlten Jahrgang hinaus gesucht.') +
+      '</div>';
+    return html;
+  }
+
+  let letzter = null;
+  treffer.forEach(x => {
+    if (x.t.id !== letzter) {
+      if (letzter !== null) html += '</table>';
+      const eigene = treffer.filter(y => y.t.id === x.t.id).length;
+      html += '<div class="such-titel" onclick="suchTrefferOeffnen(\'' + esc(x.t.jahr) + '\',\'' + x.t.id + '\')">' +
+        '<b>' + esc(x.t.name) + '</b>' +
+        '<span class="neben">Jahrgang ' + esc(x.t.jahr) + ' \u00b7 ' + eigene +
+        (eigene === 1 ? ' Fundstelle' : ' Fundstellen') + '</span></div>' +
+        '<table><colgroup><col style="width:26%"><col><col style="width:110px"></colgroup>';
+      letzter = x.t.id;
+    }
+    const dritte = reiter === 'preise'
+      ? '<td class="r">' + esc(preisText(x.preis)) + '</td>'
+      : '<td>' + esc(x.heft) + '</td>';
+    html += '<tr class="such-zeile" onclick="suchTrefferOeffnen(\'' + esc(x.t.jahr) + '\',\'' + x.t.id + '\')">' +
+      '<td class="such-feld">' + (x.kat ? hervor(x.feld, suche) : esc(x.feld)) + '</td>' +
+      '<td class="such-wert">' + (x.kat ? esc(x.wert) : hervor(x.wert, suche)) + '</td>' +
+      dritte + '</tr>';
+  });
+  html += '</table>';
+
+  if (alle.length > treffer.length) {
+    html += '<div class="fehlertext" style="color:var(--grey-600)">Gezeigt werden die ersten ' +
+      SUCHE_HOECHSTENS + ' Fundstellen. Ein l\u00e4ngeres Suchwort grenzt sie ein.</div>';
+  }
+  return html;
+}
+
 function zeichnen() {
   document.getElementById('standHinweis').textContent = standText;
   /* Die Jahrgangsauswahl wird aus den Titeln gebildet, nicht aus der
@@ -856,6 +1043,10 @@ function titellisteZeichnen() {
 
 function inhaltZeichnen() {
   const ziel = document.getElementById('inhalt');
+  /* Waehrend gesucht wird, steht hier die Trefferliste. Der gewaehlte Titel geht
+     darueber nicht verloren: er bleibt links markiert und steht wieder da, sobald
+     die Suche endet. */
+  if (suchtGerade()) { ziel.innerHTML = sucheZeichnen(); return; }
   const t = titelVonId(gewTitel);
   if (!t) { ziel.innerHTML = '<div class="leer-zeile">Kein Titel gewählt.</div>'; return; }
   const anzahl = reiter === 'preise' ? (t.preis || []).length : (t.termin || []).length;
