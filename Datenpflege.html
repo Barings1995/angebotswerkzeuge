@@ -187,7 +187,26 @@ button, input, select, textarea { font-family: inherit; }
     background: var(--white); color: var(--text); }
   .suche input:focus { outline: none; border-color: var(--navy); box-shadow: 0 0 0 2px rgba(0,40,90,.08); }
   .suche .umfang { font-size: 12.5px; font-weight: 500; color: var(--grey-600); gap: 5px; }
-  .suche .umfang input { width: auto; height: auto; }
+  .suche .umfang input { width: auto; height: auto; padding: 0; }
+  /* Das X zum Leeren ist ein eigener Knopf, nicht das des Browsers. Dessen
+     Zeichen kommt aus der Systemschrift, traegt sein eigenes Grau, laesst sich
+     in der Groesse nicht setzen, erscheint erst beim Ueberfahren — und in
+     Firefox gar nicht. Gestalten laesst es sich nicht: das Pseudoelement nimmt
+     nichts an ausser appearance und einem Hintergrundbild. Also abgeschaltet
+     und selbst gezeichnet.
+
+     Gehalten wie das X der Zeilen (.zeilen-x): dasselbe Zeichen, dieselbe
+     Groesse, dasselbe Grau, derselbe Druckpunkt. Nur die Farbe beim Ueberfahren
+     ist eine andere — Rot steht in diesem Werkzeug fuer das Entfernen von
+     Daten, und eine Suche zu leeren entfernt nichts. */
+  .suche .huelle { position: relative; display: inline-flex; align-items: center; }
+  .suche input[type=search] { padding-right: 30px; }
+  .suche input[type=search]::-webkit-search-cancel-button { -webkit-appearance: none; appearance: none; }
+  .such-x { position: absolute; right: 5px; border: none; background: none; color: var(--grey-500);
+    cursor: pointer; font-family: var(--font-body); font-size: 15px; line-height: 1;
+    padding: 2px 5px; border-radius: var(--radius-sm); }
+  .such-x:hover { color: var(--navy); background: var(--surface-hover); }
+  .such-x:active { transform: translateY(1px); }
   .stand-hinweis { font-size: 12.5px; color: var(--grey-600); }
   .offen-hinweis { display: none; align-items: center; gap: 6px; font-size: 12.5px; font-weight: 600; color: var(--orange-dark); background: #fdf3e7; border: 1px solid #f6ddbc; border-radius: var(--radius-md); padding: 3px 10px; }
   .offen-hinweis.an { display: inline-flex; }
@@ -383,8 +402,12 @@ button, input, select, textarea { font-family: inherit; }
         <button id="reiterTermine"           onclick="reiterWechseln('termine')">Termine</button>
       </div>
       <div class="suche">
-        <input type="search" id="suchFeld" placeholder="Suchen …" oninput="sucheSetzen(this.value)"
-               onkeydown="if (event.key === 'Escape') sucheBeenden()">
+        <span class="huelle">
+          <input type="search" id="suchFeld" placeholder="Suchen …" oninput="sucheSetzen(this.value)"
+                 onkeydown="if (event.key === 'Escape') sucheBeenden()">
+          <button type="button" class="such-x" id="suchX" hidden title="Suche leeren"
+                  aria-label="Suche leeren" onclick="sucheBeenden()">×</button>
+        </span>
         <label class="umfang"><input type="checkbox" id="suchAlle" onchange="sucheUmfangSetzen(this.checked)">alle Jahrgänge</label>
       </div>
       <span class="stand-hinweis" id="standHinweis"></span>
@@ -865,8 +888,18 @@ const SUCHE_HOECHSTENS = 300;
 
 function suchtGerade() { return suchText.length >= SUCHE_AB; }
 
+/* Das X haengt am geschriebenen Wortlaut, nicht an der Suche: es steht schon
+   beim ersten Zeichen da, obwohl erst ab dem zweiten gesucht wird. Sonst bliebe
+   ein einzelnes Zeichen im Feld ohne sichtbaren Weg hinaus. */
+function suchXAuffrischen() {
+  const feld = document.getElementById('suchFeld');
+  const x = document.getElementById('suchX');
+  if (feld && x) x.hidden = feld.value === '';
+}
+
 function sucheSetzen(wert) {
   suchText = String(wert == null ? '' : wert).trim();
+  suchXAuffrischen();
   zeichnen();
 }
 function sucheUmfangSetzen(alle) {
@@ -877,6 +910,7 @@ function sucheBeenden() {
   suchText = '';
   const feld = document.getElementById('suchFeld');
   if (feld) feld.value = '';
+  suchXAuffrischen();
   zeichnen();
 }
 
