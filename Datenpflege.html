@@ -130,8 +130,38 @@ button, input, select, textarea { font-family: inherit; }
      „Verwerfen" und „Speichern" sind durch Farbe und Sperrung schon unterschieden. */
   .btn svg { width: 15px; height: 15px; flex: none; }
 
-  /* ── Leiste ── */
-  .leiste { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-xl); padding: 11px 15px; margin-bottom: 16px; box-shadow: var(--shadow-sm); }
+  /* ── Leiste ──
+     Flaeche, Rundung und Polster wie die Datenleiste der drei anderen
+     Werkzeuge: 6 px rund, 7/12 gepolstert. Dort ist die Leiste durchweg
+     flacher und knapper als die Kaesten unter ihr (OpenSlots 6 zu 10,
+     PreisWerk 6 zu 8) — sie gehoert zum Werkzeug, nicht zum Inhalt, und tritt
+     deshalb zurueck. Die Datenpflege hatte das umgedreht: 10 rund ueber
+     8 runden Spalten, dazu das dickste Polster im Ordner. Sie trat vor und
+     wirkte schwer. Die Kacheln der Aktionen und die 38 px hohen Felder
+     bleiben, wie sie sind — nur die Huelle tritt zurueck. */
+  .leiste { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-md); padding: 7px 12px; margin-bottom: 16px; box-shadow: var(--shadow-sm); }
+  /* Die Leiste passt erst ab rund 2150 px Fensterbreite in eine Zeile. Auf
+     jedem gewoehnlichen Fenster brach sie ohnehin um — nur eben dort, wo der
+     Platz zufaellig ausging: bei 1280 px fiel „Speichern“ als einzelner Rest
+     in eine dritte Zeile, ganz links. Jetzt liegt der Umbruch fest zwischen
+     Auswahl (womit wird gearbeitet) und Aktionen (was wird getan). Ab 2200 px
+     ist der Zwang aufgehoben: dort ist Platz fuer eine Zeile, und zwei waeren
+     kuenstlich aufgebrochen. */
+  .aktionen { flex-basis: 100%; }
+  /* Beide Zeilen sind an beiden Raendern verankert: oben schiebt die Fuge die
+     Hinweise nach rechts, unten die letzte Kachel mit „Verwerfen/Speichern“.
+     So sammelt sich der freie Platz in der Mitte und gliedert, statt am
+     rechten Rand als angeschnittene Flaeche liegenzubleiben. */
+  .leiste .fuge { flex: 1; }
+  .aktionen > .gruppe:last-child { margin-left: auto; }
+  @media (min-width: 2200px) {
+    /* Einzeilig kehrt die alte Ordnung zurueck: Auswahl, Suche und Hinweise
+       links beieinander, die Aktionen als Block am rechten Rand. Die Fuge
+       wandert dafuer hinter die Hinweise. */
+    .aktionen { flex-basis: auto; margin-left: auto; }
+    .aktionen > .gruppe:last-child { margin-left: 0; }
+    .leiste .fuge { flex: 0; }
+  }
   /* Auswahl und Umschalter sind so hoch wie die Kacheln der Aktionen (38 px):
      nur so laufen die Aussenkanten der Leiste auf einer Linie durch. Eine eigene
      Kachel bekommen sie nicht — sie waehlen aus, sie loesen nichts aus. */
@@ -418,9 +448,9 @@ button, input, select, textarea { font-family: inherit; }
         </span>
         <label class="umfang"><input type="checkbox" id="suchAlle" onchange="sucheUmfangSetzen(this.checked)">alle Jahrgänge</label>
       </div>
+      <span class="fuge"></span>
       <span class="stand-hinweis" id="standHinweis"></span>
       <span class="offen-hinweis" id="offenHinweis"></span>
-      <span style="flex:1"></span>
       <div class="aktionen">
         <div class="gruppe">
           <button class="btn" onclick="excelEingangWaehlen()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 9v10a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V9"/><polyline points="7 8 12 3 17 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>Aus Excel laden …</button>
@@ -1144,7 +1174,14 @@ function preiseZeichnen(t) {
       '<tr><th>Format</th><th class="r">Preis €</th><th class="r">4c-Zuschlag €</th><th>rabatt</th><th>AE</th><th>Termin</th><th class="r">Seiten-Äqu.</th><th></th></tr>';
     g.zeilen.forEach(p => {
       const u = ursprungPreis(t, p.id);
-      const anders = feld => (!u || String(u[feld] == null ? '' : u[feld]) !== String(p[feld] == null ? '' : p[feld])) ? ' class="geaendert"' : '';
+      /* Eine neu angelegte Zeile hat keinen Ursprung - vorher galt damit jedes
+         ihrer Felder als geaendert, und vor dem Preisfeld stand ein zweiter
+         oranger Strich mitten in der Zeile. Neu ist aber die Zeile als Ganzes,
+         nicht jedes Feld darin: sie wird deshalb nur einmal markiert, am
+         Format als ihrem ersten Feld. */
+      const anders = feld => (u
+        ? String(u[feld] == null ? '' : u[feld]) !== String(p[feld] == null ? '' : p[feld])
+        : feld === 'format') ? ' class="geaendert"' : '';
       html += '<tr>' +
         '<td' + anders('format') + '><input value="' + esc(p.format) + '" onchange="preisSetzen(\'' + p.id + '\',\'format\',this.value)"></td>' +
         '<td class="r' + (anders('preis') ? ' geaendert' : '') + '"><input class="zahl' + (isNaN(zahlOderNull(p.preis)) ? ' fehler' : '') + '" value="' + esc(preisText(p.preis)) + '" onchange="preisSetzen(\'' + p.id + '\',\'preis\',this.value)"></td>' +
