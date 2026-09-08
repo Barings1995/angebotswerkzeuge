@@ -136,6 +136,7 @@ button, input, select, textarea { font-family: inherit; }
      nur so laufen die Aussenkanten der Leiste auf einer Linie durch. Eine eigene
      Kachel bekommen sie nicht — sie waehlen aus, sie loesen nichts aus. */
   .leiste select { font-family: var(--font-body); font-size: 13px; font-weight: 600; height: 38px; padding: 0 10px; border: 1px solid var(--border); border-radius: var(--radius-md); background: var(--white); color: var(--text); cursor: pointer; }
+  .leiste select:focus { outline: none; border-color: var(--navy); box-shadow: 0 0 0 2px rgba(0,40,90,.08); }
   .leiste label { font-size: 13px; font-weight: 600; display: inline-flex; align-items: center; gap: 6px; }
   .reiter { display: inline-flex; border: 1px solid var(--border); border-radius: var(--radius-md); overflow: hidden; background: var(--white); }
   /* Die inneren Knoepfe tragen jetzt selbst eine Rundung, statt von der Huelle
@@ -333,6 +334,7 @@ button, input, select, textarea { font-family: inherit; }
   .dialog-zeile { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 7px 20px; border-top: 1px solid #eef1f5; font-size: 13px; }
   .dialog-zeile > span { color: var(--grey-600); }
   .dialog-zeile input, .dialog-zeile select { padding: 4px 8px; border: 1px solid var(--border); border-radius: var(--radius-sm); font-size: 13px; font-family: var(--font-body); color: var(--text); background: var(--white); }
+  .dialog-zeile input:focus, .dialog-zeile select:focus { outline: none; border-color: var(--navy); box-shadow: 0 0 0 2px rgba(0,40,90,.08); }
   .dialog-zeile input.kurz { width: 84px; text-align: right; }
   .dialog-summe { background: #eef4fa; border-top: 1px solid var(--border); padding: 9px 20px; font-size: 12.5px; color: var(--navy); }
   .dialog-knoepfe { display: flex; justify-content: flex-end; gap: 8px; padding: 12px 20px; border-top: 1px solid var(--border); }

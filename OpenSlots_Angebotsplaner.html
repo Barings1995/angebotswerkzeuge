@@ -251,7 +251,9 @@ button, input, select, textarea { font-family: inherit; }
   background: var(--sm-white);
   cursor: pointer;
 }
-.year-sel:focus { outline: none; border-color: var(--sm-navy); }
+/* Fokus wie in den uebrigen Werkzeugen: blauer Rahmen und ein zarter Schimmer
+   ringsum, damit die Tastaturbedienung ueberall gleich aussieht. */
+.year-sel:focus { outline: none; border-color: var(--sm-navy); box-shadow: 0 0 0 2px rgba(0,40,90,.08); }
 .data-btn.subtle { background: var(--sm-navy-10); border-color: var(--sm-navy); color: var(--sm-navy); }
 .data-btn.subtle:hover { background: var(--sm-navy); border-color: var(--sm-navy); color: #fff; }
 /* Die beiden Hinweiszeilen - geoeffnete Angebotsdatei und Datenstand - stehen

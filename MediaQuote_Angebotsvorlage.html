@@ -303,6 +303,11 @@ button, input, select, textarea { font-family: inherit; }
   }
   .field-line input[type="text"] { width: 160px; }
   .field-line input[type="date"] { width: 140px; }
+  /* Diese Felder haben nur eine Unterlinie, keinen Rahmen. Ein Schimmer ringsum
+     passt dort nicht; die Linie wird beim Schreiben dunkelblau - dieselbe Sprache
+     wie beim Prozentfeld im Tabellenkopf, nur in Navy statt Orange. */
+  .field-line input[type="text"]:focus,
+  .field-line input[type="date"]:focus { border-bottom-color: var(--navy); }
 
   /* ── Address block ── */
   .adress-block {
@@ -337,7 +342,7 @@ button, input, select, textarea { font-family: inherit; }
     white-space: pre-wrap;
     line-height: 1.5;
   }
-  .adress-box-text:focus { border-color: var(--navy); background: #fff; }
+  .adress-box-text:focus { border-color: var(--navy); background: #fff; box-shadow: 0 0 0 2px rgba(0,40,90,.08); }
   .adress-box-text a { color: var(--navy); }
   .adress-box-text:empty::before {
     content: attr(data-placeholder);
@@ -352,13 +357,17 @@ button, input, select, textarea { font-family: inherit; }
     background: var(--light-bg);
     overflow: hidden;
   }
-  .empfaenger-box:focus-within { border-color: var(--navy); background: #fff; }
+  .empfaenger-box:focus-within { border-color: var(--navy); background: #fff; box-shadow: 0 0 0 2px rgba(0,40,90,.08); }
   .empfaenger-box .adress-box-text {
     border: none;
     border-radius: 0;
     background: transparent;
     min-height: auto;
   }
+  /* Im Empfaengerfeld liegt der Rahmen aussen um beide Haelften. Den Schimmer
+     zeichnet dort die Huelle (:focus-within); die innere Haelfte laesst ihn weg,
+     sonst stuende er doppelt - einmal aussen, einmal mitten im Kasten. */
+  .empfaenger-box .adress-box-text:focus { box-shadow: none; }
   .empfaenger-box .ef-addr { min-height: 60px; }
   .empfaenger-box .ef-camp { min-height: auto; padding-top: 2px; }
   .ef-divider { border-top: 1px solid var(--border); padding: 5px 8px 0; }
@@ -449,7 +458,7 @@ button, input, select, textarea { font-family: inherit; }
   .positions-table td select:focus,
   .positions-table td input:focus {
     border-color: var(--navy);
-    box-shadow: 0 0 0 2px rgba(0,40,90,0.1);
+    box-shadow: 0 0 0 2px rgba(0,40,90,.08);
   }
 
   .col-pos    { width: 30px; text-align: center; font-weight: 700; color: var(--muted); }
@@ -481,7 +490,7 @@ button, input, select, textarea { font-family: inherit; }
     box-sizing: border-box;
   }
   .positions-table td .umfeld-input::placeholder { color: var(--muted); font-style: italic; }
-  .positions-table td .umfeld-input:focus { border-color: var(--navy); box-shadow: 0 0 0 2px rgba(0,40,90,0.1); outline: none; }
+  .positions-table td .umfeld-input:focus { border-color: var(--navy); box-shadow: 0 0 0 2px rgba(0,40,90,.08); outline: none; }
   .umfeld-label { display: none; }
   .umfeld-label:empty { display: none; }
   .termin-label {
@@ -684,7 +693,7 @@ button, input, select, textarea { font-family: inherit; }
     white-space: pre-wrap;
     line-height: 1.5;
   }
-  .bemerkungen-text:focus { border-color: var(--navy); background: #fff; }
+  .bemerkungen-text:focus { border-color: var(--navy); background: #fff; box-shadow: 0 0 0 2px rgba(0,40,90,.08); }
   .bemerkungen-text a { color: var(--navy); }
 
   /* ── Footer ── */
@@ -839,9 +848,10 @@ button, input, select, textarea { font-family: inherit; }
     font-weight: 600;
     outline: none;
   }
-  /* Der Fokusrahmen ist bewusst kraeftiger als dort: er hilft bei der Bedienung
-     ueber die Tastatur und ist keine Frage der Optik. */
-  #yearSelect:focus { border-color: var(--navy); box-shadow: 0 0 0 2px rgba(0,40,90,0.1); }
+  /* Fokus einheitlich ueber alle vier Werkzeuge: blauer Rahmen und ein zarter
+     Schimmer ringsum. Der Schimmer hilft bei der Bedienung ueber die Tastatur
+     und ist keine Frage der Optik; das Mass stammt aus PreisWerk. */
+  #yearSelect:focus { border-color: var(--navy); box-shadow: 0 0 0 2px rgba(0,40,90,.08); }
   /* Die beiden Hinweiszeilen - geoeffnete Angebotsdatei und Datenstand - stehen
      zusammen am rechten Rand: der Leerraum der Leiste sammelt sich vor ihnen
      und schiebt sie dorthin. */
