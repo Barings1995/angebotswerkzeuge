@@ -406,12 +406,12 @@ button, input, select, textarea { font-family: inherit; }
 }
 .kg-menu-hd { font-size: 10.5px; color: var(--sm-muted); padding: 5px 2px 7px; letter-spacing: .03em; }
 .kg-search-wrap { position: relative; }
-.kg-search-wrap svg { position: absolute; left: 8px; top: 50%; transform: translateY(-50%); color: var(--sm-muted-l); pointer-events: none; }
+.kg-search-wrap > svg { position: absolute; left: 8px; top: 50%; transform: translateY(-50%); color: var(--sm-muted-l); pointer-events: none; }
 .kg-search {
   width: 100%;
   font-family: 'Source Sans 3', sans-serif;
   font-size: 12.5px;
-  padding: 5px 9px 5px 27px;
+  padding: 5px 26px 5px 27px;
   border: 1.5px solid var(--sm-border);
   border-radius: var(--radius-md);
   color: var(--sm-text);
@@ -419,6 +419,20 @@ button, input, select, textarea { font-family: inherit; }
   transition: border-color .12s;
 }
 .kg-search:focus { outline: none; border-color: var(--sm-navy); box-shadow: 0 0 0 2px rgba(0,40,90,.08); }
+
+/* Leeren-Knopf, gleich fuer beide Suchfelder. Der Kreis ist ausgefuellt gezeichnet
+   wie die uebrigen Sinnbilder dieses Werkzeugs, damit er zur Lupe am anderen Ende
+   des Feldes passt. Beim Ueberfahren wird er dunkelblau, nicht rot: Rot steht hier
+   fuer das Entfernen von Daten, hier wird lediglich die Suche zurueckgenommen. */
+.such-x {
+  position: absolute; right: 6px; top: 50%; transform: translateY(-50%);
+  display: flex; align-items: center; justify-content: center;
+  padding: 2px; border: none; background: none; cursor: pointer;
+  color: var(--sm-muted-l); border-radius: var(--radius-sm);
+  transition: color .12s, background .12s;
+}
+.such-x[hidden] { display: none; }
+.such-x:hover { color: var(--sm-navy); background: var(--sm-navy-05); }
 .kg-empty { font-size: 12px; color: var(--sm-muted-l); padding: 10px 12px; }
 .kg-item {
   display: flex;
@@ -1004,13 +1018,13 @@ tr.pl-row.alt td:not(.pl-cell) {
 
 /* ── TITELSUCHE ── */
 .title-search-wrap { position: relative; margin: 0 0 .6rem; }
-.title-search-wrap svg { position: absolute; left: 9px; top: 50%; transform: translateY(-50%); color: var(--sm-muted-l); pointer-events: none; }
+.title-search-wrap > svg { position: absolute; left: 9px; top: 50%; transform: translateY(-50%); color: var(--sm-muted-l); pointer-events: none; }
 .title-search {
   width: 100%;
   max-width: 320px;
   font-family: 'Source Sans 3', sans-serif;
   font-size: 12.5px;
-  padding: 6px 10px 6px 29px;
+  padding: 6px 27px 6px 29px;
   border: 1.5px solid var(--sm-border);
   border-radius: var(--radius-md);
   color: var(--sm-text);
@@ -1122,7 +1136,10 @@ tr.pl-row.alt td:not(.pl-cell) {
           <div class="kg-menu-hd">Ausgaben &uuml;ber alle Titel anlegen</div>
           <div class="kg-search-wrap">
             <svg width="13" height="13" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true"><path fill-rule="evenodd" d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z" clip-rule="evenodd"/></svg>
-            <input type="text" class="kg-search" id="kgSearch" placeholder="Kongress suchen &hellip;" autocomplete="off" oninput="filterKgMenu(this.value)">
+            <input type="text" class="kg-search" id="kgSearch" placeholder="Kongress suchen &hellip;" autocomplete="off"
+                   oninput="kgSuche(this.value)" onkeydown="suchEsc(event,'kgSearch',kgSucheLeeren)">
+            <button type="button" class="such-x" id="kgSearchX" hidden title="Suche leeren"
+                    aria-label="Suche leeren" onclick="kgSucheLeeren()"><svg width="13" height="13" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd"/></svg></button>
           </div>
         </div>
         <div id="kgList"></div>
@@ -1157,7 +1174,10 @@ tr.pl-row.alt td:not(.pl-cell) {
   <div class="sec-label">Titel</div>
   <div class="title-search-wrap" id="titleSearchWrap" style="display:none">
     <svg width="14" height="14" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true"><path fill-rule="evenodd" d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z" clip-rule="evenodd"/></svg>
-    <input type="text" class="title-search" id="titleSearch" placeholder="Titel suchen &hellip;" oninput="filterTabs(this.value)">
+    <input type="text" class="title-search" id="titleSearch" placeholder="Titel suchen &hellip;"
+           oninput="titelSuche(this.value)" onkeydown="suchEsc(event,'titleSearch',titelSucheLeeren)">
+    <button type="button" class="such-x" id="titleSearchX" hidden title="Suche leeren"
+            aria-label="Suche leeren" onclick="titelSucheLeeren()"><svg width="14" height="14" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd"/></svg></button>
   </div>
   <div class="tabs" id="tabs"></div>
   </aside>
@@ -2434,6 +2454,33 @@ function renderKgMenu(){
     return `<button class="kg-item" data-nm="${esc(nm.toLowerCase())}" onclick="applyKongress(${i})"><span>${esc(nm)}</span><span class="kg-cnt">${cnt}</span></button>`;
   }).join('')+'<div class="kg-empty" id="kgEmpty" style="display:none">Kein Kongress gefunden.</div>';
 }
+/* Beide Suchfelder tragen rechts ein X, solange etwas darin steht; Escape leert
+   ebenso. Im Kongressmenue nimmt Escape zuerst nur die Suche zurueck und laesst
+   das Menue offen - erst ein zweites Escape schliesst es. Bei leerem Feld reicht
+   die Taste sofort durch, damit der gewohnte Ausweg erhalten bleibt. */
+function suchXAuffrischen(feldId, xId){
+  const f=document.getElementById(feldId), x=document.getElementById(xId);
+  if(f&&x)x.hidden=f.value==='';
+}
+function titelSuche(v){filterTabs(v);suchXAuffrischen('titleSearch','titleSearchX');}
+function titelSucheLeeren(){
+  const f=document.getElementById('titleSearch');
+  if(f){f.value='';f.focus();}
+  filterTabs('');suchXAuffrischen('titleSearch','titleSearchX');
+}
+function kgSuche(v){filterKgMenu(v);suchXAuffrischen('kgSearch','kgSearchX');}
+function kgSucheLeeren(){
+  const f=document.getElementById('kgSearch');
+  if(f){f.value='';f.focus();}
+  filterKgMenu('');suchXAuffrischen('kgSearch','kgSearchX');
+}
+function suchEsc(ev, feldId, leeren){
+  if(ev.key!=='Escape')return;
+  const f=document.getElementById(feldId);
+  if(!f||f.value==='')return;
+  ev.stopPropagation();
+  leeren();
+}
 function filterKgMenu(q){
   q=(q||'').trim().toLowerCase();
   let hits=0;
@@ -2458,7 +2505,7 @@ function toggleKgMenu(ev){
     menu.style.display='';
     setKgExpanded(true);
     const s=document.getElementById('kgSearch');
-    if(s){s.value='';filterKgMenu('');s.focus();}
+    if(s){s.value='';filterKgMenu('');suchXAuffrischen('kgSearch','kgSearchX');s.focus();}
     menu.scrollTop=0;
   }else{menu.style.display='none';setKgExpanded(false);}
 }
