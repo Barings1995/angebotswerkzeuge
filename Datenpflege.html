@@ -1325,6 +1325,19 @@ function hoehenAuffrischen() {
   document.querySelectorAll('.termin-tab textarea').forEach(hoeheAnpassen);
 }
 
+/* Die Höhe der beiden mehrzeiligen Felder richtet sich nach dem Inhalt, und der
+   Inhalt bricht nach der Spaltenbreite um. Ändert sich das Fenster, ändert sich
+   die Spaltenbreite — eine einmal gesetzte Höhe bliebe dabei stehen und
+   verbärge die letzte Zeile, denn die Felder haben `overflow: hidden`. Die
+   Höhen werden deshalb beim Ändern der Fenstergröße nachgeführt, gebündelt auf
+   je ein Bild, damit das Ziehen am Fensterrand nicht ins Stocken gerät. */
+let hoehenWartet = false;
+window.addEventListener('resize', () => {
+  if (hoehenWartet) return;
+  hoehenWartet = true;
+  requestAnimationFrame(() => { hoehenWartet = false; hoehenAuffrischen(); });
+});
+
 function neuKnopf(was) {
   return '<div class="neu-zeile"><button class="btn" onclick="terminAnlegen()">+ ' + was + ' anlegen</button></div>';
 }
