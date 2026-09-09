@@ -1307,6 +1307,22 @@ function fmtP(p){if(!Array.isArray(p))return fmt(p);return `<span style='white-s
 function fmtPtxt(p){if(!Array.isArray(p))return fmt(p);return `${fmt(p[0])} s/w (zzgl. ${fmt(p[1])} 4c-Zuschlag)`;}
 function esc(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
 function escNl(s){return esc(s).replace(/\r?\n/g,'<br>');}
+
+/* Vor eine Heftnummer gehoert das Wort "Heft", vor eine Bezeichnung nicht: ein
+   Sonderheft heisst "Sonderheft" oder "Supplement", nicht "Heft Sonderheft".
+   Als Nummer gilt eine Zahl, auch mit Buchstaben dahinter ("4a"), und eine
+   Spanne aus zweien, gleich mit welchem Strich ("1-2", "1–2", "1/2"). Alles
+   andere ist frei eingetragen und benennt sich selbst. Das Leerzeichen ist hier
+   ein gewoehnliches, nicht das schmale der Jahresvorschau: die Bezeichnung
+   steht so auch in gespeicherten Angeboten und wird darin wiedergefunden. */
+function istHeftnummer(heft) {
+  return /^\d+[a-zA-Z]?(\s*[–—/-]\s*\d+[a-zA-Z]?)?$/.test(String(heft == null ? '' : heft).trim());
+}
+function heftText(heft) {
+  const h = String(heft == null ? '' : heft).trim();
+  if (!h) return '';
+  return istHeftnummer(h) ? 'Heft ' + h : h;
+}
 function flatNl(s){return String(s).replace(/\r?\n/g,'; ').trim();}
 
 /* ── HINWEISFENSTER ───────────────────────────────────────────────────────────
@@ -2423,7 +2439,7 @@ function addAllIssues(){
   const existing=new Set(s.issues.map(i=>i.issIdx).filter(x=>x!=null));
   ISSUES[cJ].forEach((row,idx)=>{
     if(existing.has(idx))return;
-    s.issues.push({id:s.nid++,ausgabe:'Heft '+row[0],et:row[1],ds:row[2],du:row[5]||'',eh:row[6]||'',themen:row[3]||'',kongress:row[4]||'',issIdx:idx,sel:new Set()});
+    s.issues.push({id:s.nid++,ausgabe:heftText(row[0]),et:row[1],ds:row[2],du:row[5]||'',eh:row[6]||'',themen:row[3]||'',kongress:row[4]||'',issIdx:idx,sel:new Set()});
   });
   rMx();
 }
@@ -2526,7 +2542,7 @@ function applyKongress(i){
     const s=ST[ji],row=ISSUES[ji]&&ISSUES[ji][idx];
     if(!s||!row)return;
     if(s.issues.some(x=>x.issIdx===idx))return;
-    s.issues.push({id:s.nid++,ausgabe:'Heft '+row[0],et:row[1],ds:row[2],du:row[5]||'',eh:row[6]||'',themen:row[3]||'',kongress:row[4]||'',issIdx:idx,sel:new Set()});
+    s.issues.push({id:s.nid++,ausgabe:heftText(row[0]),et:row[1],ds:row[2],du:row[5]||'',eh:row[6]||'',themen:row[3]||'',kongress:row[4]||'',issIdx:idx,sel:new Set()});
     added++;titles.add(ji);
   });
   const kgEl=document.getElementById('ck-kg');
@@ -2564,7 +2580,7 @@ function selIss(id,raw){
   if(raw===''){s.issIdx=null;s.ausgabe='';s.et='';s.ds='';s.du='';s.eh='';s.themen='';s.kongress='';rMx();return;}
   const idx=parseInt(raw,10),row=ISSUES[cJ][idx];
   if(!row)return;
-  s.issIdx=idx;s.ausgabe='Heft '+row[0];s.et=row[1];s.ds=row[2];s.du=row[5]||'';s.eh=row[6]||'';s.themen=row[3]||'';s.kongress=row[4]||'';
+  s.issIdx=idx;s.ausgabe=heftText(row[0]);s.et=row[1];s.ds=row[2];s.du=row[5]||'';s.eh=row[6]||'';s.themen=row[3]||'';s.kongress=row[4]||'';
   rMx();
 }
 
@@ -2634,7 +2650,7 @@ function rMx(){
   }
   let h='<thead><tr><th class="pl-hd">Platzierung</th>';
   iss.forEach((s,ci)=>{
-    const opts=ISSUES[ji].map(([l],i)=>`<option value="${i}"${s.issIdx===i?' selected':''}>Heft ${esc(l)}</option>`).join('');
+    const opts=ISSUES[ji].map(([l],i)=>`<option value="${i}"${s.issIdx===i?' selected':''}>${esc(heftText(l))}</option>`).join('');
     h+=`<th class="iss-th" data-col="${ci}"><div class="iss-head">`;
     h+=`<select class="iss-sel" onchange="selIss(${s.id},this.value)"><option value="">Heft wählen …</option>${opts}</select>`;
     h+=`<input type="text" value="${esc(s.et)}" placeholder="ET" oninput="updI(${s.id},'et',this.value)">`;

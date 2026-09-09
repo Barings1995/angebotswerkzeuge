@@ -934,9 +934,9 @@ function alleFehler() {
     });
     const hefte = new Set();
     (t.termin || []).forEach(a => {
-      const wo = t.name + ' · Heft ' + (a.heft || '?');
-      if (!String(a.heft || '').trim()) fehler.push(t.name + ': eine Ausgabe ohne Heftnummer');
-      if (hefte.has(a.heft)) fehler.push(wo + ': Heftnummer steht zweimal');
+      const wo = t.name + ' · ' + (heftText(a.heft) || 'Ausgabe ohne Heft');
+      if (!String(a.heft || '').trim()) fehler.push(t.name + ': eine Ausgabe ohne Heftangabe');
+      if (hefte.has(a.heft)) fehler.push(wo + ': steht zweimal');
       hefte.add(a.heft);
       [['et', 'ET'], ['anzeigenschluss', 'Anzeigenschluss'], ['du_schluss', 'DU-Schluss'], ['eh_termin', 'EH-Termin']]
         .forEach(([feld, name]) => { if (!terminGueltig(a[feld])) fehler.push(wo + ': ' + name + ' muss TT.MM. sein'); });
@@ -977,6 +977,22 @@ function titelWaehlen(id) { gewTitel = id; zeichnen(); }
 function esc(s) {
   return String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;')
     .replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+}
+
+/* Vor eine Heftnummer gehoert das Wort "Heft", vor eine Bezeichnung nicht: ein
+   Sonderheft heisst "Sonderheft" oder "Supplement", nicht "Heft Sonderheft".
+   Als Nummer gilt eine Zahl, auch mit Buchstaben dahinter ("4a"), und eine
+   Spanne aus zweien, gleich mit welchem Strich ("1-2", "1–2", "1/2"). Alles
+   andere ist frei eingetragen und benennt sich selbst. Das Leerzeichen ist hier
+   ein gewoehnliches, nicht das schmale der Jahresvorschau: die Bezeichnung
+   steht in Meldungen und Dialogen dieses Werkzeugs. */
+function istHeftnummer(heft) {
+  return /^\d+[a-zA-Z]?(\s*[–—/-]\s*\d+[a-zA-Z]?)?$/.test(String(heft == null ? '' : heft).trim());
+}
+function heftText(heft) {
+  const h = String(heft == null ? '' : heft).trim();
+  if (!h) return '';
+  return istHeftnummer(h) ? 'Heft ' + h : h;
 }
 
 /* ── Suche ────────────────────────────────────────────────────────────────────
@@ -1389,7 +1405,7 @@ async function terminEntfernen(id) {
   const a = (t.termin || []).find(x => x.id === id);
   if (!a) return;
   if (!await frage('Ausgabe entfernen?',
-    '<p>Heft ' + esc(a.heft || '') + ' wird mit seinen Terminen, Themen und Kongressen entfernt.</p>' +
+    '<p>' + esc(heftText(a.heft) || 'Diese Ausgabe') + ' wird mit allen Terminen, Themen und Kongressen entfernt.</p>' +
     '<p>Wirksam wird das erst mit „Speichern"; bis dahin holt „Verwerfen" es zurück.</p>',
     'Entfernen')) return;
   t.termin = t.termin.filter(x => x.id !== id);
@@ -2587,10 +2603,10 @@ function excelLesen(mappe, dateiname) {
     const jahr = zelleText(zeile.getCell(1)), name = zelleText(zeile.getCell(2));
     if (!jahr || !name) return;
     const heft = zelleText(zeile.getCell(3));
-    if (!heft) { beanstandet.push('Termine, Zeile ' + nr + ': ohne Heftnummer'); return; }
+    if (!heft) { beanstandet.push('Termine, Zeile ' + nr + ': ohne Heftangabe'); return; }
     if (!jahre[jahr] || !jahre[jahr].nachName[name]) { ohneTitel.push(jahr + ' · ' + name); return; }
     const t = jahre[jahr].nachName[name];
-    if (t.termine.some(a => a.heft === heft)) { beanstandet.push('Termine, Zeile ' + nr + ': Heft ' + heft + ' steht bei ' + name + ' zweimal'); return; }
+    if (t.termine.some(a => a.heft === heft)) { beanstandet.push('Termine, Zeile ' + nr + ': ' + heftText(heft) + ' steht bei ' + name + ' zweimal'); return; }
     ['et', 'anzeigenschluss', 'du_schluss', 'eh_termin'].forEach((f, i) => {
       const w = zelleText(zeile.getCell(5 + i));
       if (!terminGueltig(w)) beanstandet.push('Termine, Zeile ' + nr + ': „' + w + '" ist kein Termin der Form TT.MM.');

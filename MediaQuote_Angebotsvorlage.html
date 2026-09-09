@@ -1295,6 +1295,22 @@ function esc(s) {
     .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
 }
 
+/* Vor eine Heftnummer gehoert das Wort "Heft", vor eine Bezeichnung nicht: ein
+   Sonderheft heisst "Sonderheft" oder "Supplement", nicht "Heft Sonderheft".
+   Als Nummer gilt eine Zahl, auch mit Buchstaben dahinter ("4a"), und eine
+   Spanne aus zweien, gleich mit welchem Strich ("1-2", "1–2", "1/2"). Alles
+   andere ist frei eingetragen und benennt sich selbst. Das Leerzeichen ist hier
+   ein gewoehnliches, nicht das schmale der Jahresvorschau: die Bezeichnung
+   steht so auch in gespeicherten Angeboten und wird darin wiedergefunden. */
+function istHeftnummer(heft) {
+  return /^\d+[a-zA-Z]?(\s*[–—/-]\s*\d+[a-zA-Z]?)?$/.test(String(heft == null ? '' : heft).trim());
+}
+function heftText(heft) {
+  const h = String(heft == null ? '' : heft).trim();
+  if (!h) return '';
+  return istHeftnummer(h) ? 'Heft ' + h : h;
+}
+
 function onZ4cChange(id) {
   const z4cSel = document.getElementById('z4c-sel-' + id);
   const lbl    = document.getElementById('z4c-lbl-' + id);
@@ -1329,9 +1345,9 @@ function buildAusgabeOptions(titelName) {
   if (!ausgaben) return '<option value="">– bitte wählen –</option>';
   return '<option value="">– bitte wählen –</option>' +
     ausgaben.map(a =>
-      `<option value="${esc('Heft ' + a.heft + '/' + a.monat.slice(0,3) + '.')}"` +
+      `<option value="${esc(heftText(a.heft) + '/' + a.monat.slice(0,3) + '.')}"` +
       ` data-et="${esc(a.et || '')}" data-as="${esc(a.as || '')}" data-du="${esc(a.du || '')}" data-eh="${esc(a.eh || '')}">` +
-      `Heft ${esc(a.heft)} · ${esc(a.monat)}</option>`
+      `${esc(heftText(a.heft))} · ${esc(a.monat)}</option>`
     ).join('');
 }
 
@@ -2729,7 +2745,7 @@ function formatMerkmale(jahrgang, titel, fmt) {
    dazukommt oder wegfällt. */
 function ausgabeMerkmale(jahrgang, titel, datum) {
   const liste = ((jahrgang && jahrgang.ausgaben) ? jahrgang.ausgaben[titel] : null) || [];
-  const a = liste.find(x => 'Heft ' + x.heft + '/' + String(x.monat || '').slice(0, 3) + '.' === datum);
+  const a = liste.find(x => heftText(x.heft) + '/' + String(x.monat || '').slice(0, 3) + '.' === datum);
   if (!a) return null;
   return [a.et || '', a.as || '', a.du || '', a.eh || ''].join('|');
 }
