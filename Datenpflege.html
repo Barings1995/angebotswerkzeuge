@@ -226,6 +226,16 @@ button, input, select, textarea { font-family: inherit; }
   /* Angehakt im Dunkelblau der Marke statt im Systemblau des Rechners -
      wie die Kaestchen in OpenSlots und MediaQuote. */
   .suche .umfang input { width: auto; height: auto; padding: 0; accent-color: var(--navy); }
+  /* Der Schimmer der Regel darueber gilt den Schreibfeldern: er umzieht deren
+     Rahmen, solange darin geschrieben wird. Das Kaestchen hat keinen eigenen
+     Rahmen, deshalb legte sich der Schimmer als grauer Kasten um Haken und
+     Beschriftung - eine Form, die sonst an keinem Haken der Werkzeuge steht.
+     Er entfaellt hier. Den Bedienpunkt zeigt stattdessen ein Ring, und den nur
+     bei Bedienung ueber die Tastatur - beim Klicken mit der Maus bleibt das
+     Kaestchen ungerahmt. Der Ring traegt das Dunkelblau der Marke statt des
+     Systemblaus des Rechners, wie die Knoepfe in MediaQuote. */
+  .suche .umfang input:focus { box-shadow: none; outline: none; }
+  .suche .umfang input:focus-visible { outline: 2px solid var(--navy); outline-offset: 2px; }
   /* Das X zum Leeren ist ein eigener Knopf, nicht das des Browsers. Dessen
      Zeichen kommt aus der Systemschrift, traegt sein eigenes Grau, laesst sich
      in der Groesse nicht setzen, erscheint erst beim Ueberfahren — und in
