@@ -1524,6 +1524,42 @@ async function speichern() {
   }
 }
 
+/* Die Nummern werden nur so weit angefasst, wie es die Abfolge verlangt. Zuvor
+   bekam jede Zeile stur i+1: eine geloeschte Zeile schrieb dadurch saemtliche
+   Zeilen darunter neu - sieben geloeschte Formate in langen Preislisten wurden
+   so zu 246 Schreibvorgaengen, von denen 239 nur die Nummer verschoben.
+   Bleiben die gespeicherten Nummern aufsteigend, werden sie behalten; die
+   Luecke, die eine geloeschte Zeile hinterlaesst, stoert nicht, denn gelesen
+   wird mit „order=reihenfolge.asc", und eine Eindeutigkeit ist auf der Spalte
+   nicht verlangt. Nur wo die sanfte Vergabe nicht aufgeht - umsortiert, oder
+   eine neue Zeile findet zwischen ihren Nachbarn keine freie Nummer - wird wie
+   zuvor von eins an durchnummeriert. */
+function nummernVergeben(neu, alt) {
+  const gespeicherte = z => {
+    if (istNeu(z.id)) return null;
+    const a = alt.find(x => x.id === z.id);
+    return a ? Number(a.reihenfolge) : null;
+  };
+  const durch = () => neu.map((_, k) => k + 1);
+  const nummern = [];
+  let letzte = 0;
+  for (let i = 0; i < neu.length; i++) {
+    const eigen = gespeicherte(neu[i]);
+    if (eigen !== null && eigen > letzte) { nummern.push(eigen); letzte = eigen; continue; }
+    /* Neu oder verschoben: die naechste feste Nummer dahinter begrenzt, was hier
+       noch Platz findet. Reicht der Platz nicht, ist die sanfte Vergabe am Ende. */
+    let naechste = null;
+    for (let j = i + 1; j < neu.length; j++) {
+      const n = gespeicherte(neu[j]);
+      if (n !== null) { naechste = n; break; }
+    }
+    if (naechste !== null && naechste <= letzte + 1) return durch();
+    letzte++;
+    nummern.push(letzte);
+  }
+  return nummern;
+}
+
 async function zeilenSchreiben(tabelle, t, u, feldname, felder) {
   let n = 0;
   const neu = (t[feldname] || []), alt = (u[feldname] || []);
@@ -1533,10 +1569,11 @@ async function zeilenSchreiben(tabelle, t, u, feldname, felder) {
   for (const z of alt) {
     if (!neuIds.has(z.id)) { await schreiben(tabelle + '?id=eq.' + z.id, 'DELETE'); n++; }
   }
+  const nummern = nummernVergeben(neu, alt);
   const anzulegen = [];
   for (let i = 0; i < neu.length; i++) {
     const z = neu[i];
-    z.reihenfolge = i + 1;
+    z.reihenfolge = nummern[i];
     if (istNeu(z.id) || !altIds.has(z.id)) { anzulegen.push(Object.assign({ titel_id: t.id }, nurFelder(z, felder))); continue; }
     const a = alt.find(x => x.id === z.id);
     if (!gleich(nurFelder(a, felder), nurFelder(z, felder))) {
