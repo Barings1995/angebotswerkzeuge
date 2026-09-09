@@ -360,8 +360,15 @@ button, input, select, textarea { font-family: inherit; }
      (hoeheAnpassen setzt die Höhe nach dem Inhalt). Die Zeile wird dadurch höher,
      die Tabelle aber schmaler — und nichts bleibt verborgen.
      Die Terminfelder stehen oben bündig, damit sie neben einem hohen Feld auf
-     der Höhe der ersten Zeile bleiben. */
-  .termin-tab { table-layout: fixed; }
+     der Höhe der ersten Zeile bleiben.
+     Was der Rest hergibt, hat eine Untergrenze: die festen Spalten geben nicht
+     nach, deshalb ging früher jede Verschmälerung des Fensters allein zu Lasten
+     der beiden Textspalten — bis unter 950 px nichts mehr von ihnen übrig war
+     und die Tabelle rechts abgeschnitten wurde. Ab 858 px Tabellenbreite
+     (518 px feste Spalten und je 170 px für Themenschwerpunkte und Kongresse)
+     rollt die Tabelle stattdessen seitlich, wie in OpenSlots und PreisWerk. */
+  .tab-roll { overflow-x: auto; }
+  .termin-tab { table-layout: fixed; min-width: 858px; }
   .termin-tab td { padding-top: 4px; padding-bottom: 4px; vertical-align: top; }
   .termin-tab td input, .termin-tab td textarea { line-height: 1.5; }
   .termin-tab td textarea { display: block; width: 100%; padding: 3px 6px;
@@ -1276,9 +1283,12 @@ function termineZeichnen(t) {
   if (!liste.length) return '<table><tr class="leer-zeile"><td>Noch keine Ausgaben hinterlegt.</td></tr></table>' + neuKnopf('Ausgabe');
   /* Eine Zeile je Ausgabe, Themenschwerpunkte und Kongresse als eigene Spalten.
      Die sechs vorderen Spalten sind fest, die beiden hinteren teilen sich den
-     Rest. Zuvor standen Thema und Kongresse in einer zweiten Zeile darunter —
+     Rest — mindestens aber 170 px, darunter rollt die Tabelle seitlich.
+     Die festen Breiten sind gemessen, nicht geschätzt: Die Datumsspalten fassen
+     die lange Form 22.12.2026, die Spalte Monat den längsten Monatsnamen.
+     Zuvor standen Thema und Kongresse in einer zweiten Zeile darunter —
      bequemer zu bearbeiten, aber die Liste war doppelt so lang. */
-  let html = '<table class="termin-tab"><colgroup><col style="width:58px"><col style="width:100px"><col style="width:84px"><col style="width:100px"><col style="width:96px"><col style="width:96px"><col><col><col style="width:34px"></colgroup>' +
+  let html = '<div class="tab-roll"><table class="termin-tab"><colgroup><col style="width:52px"><col style="width:88px"><col style="width:86px"><col style="width:86px"><col style="width:86px"><col style="width:86px"><col><col><col style="width:34px"></colgroup>' +
     '<tr><th>Heft</th><th>Monat</th><th>ET</th><th>AS</th><th>DU-Schluss</th><th>EH-Termin</th><th>Themenschwerpunkte</th><th>Kongresse</th><th></th></tr>';
   liste.forEach(a => {
     const f = feld => terminGueltig(a[feld]) ? '' : ' fehler';
@@ -1294,7 +1304,7 @@ function termineZeichnen(t) {
       '<td><button class="zeilen-x" title="Ausgabe entfernen" onclick="terminEntfernen(\'' + a.id + '\')">×</button></td>' +
     '</tr>';
   });
-  html += '</table>';
+  html += '</table></div>';
   html += '<div class="fehlertext" style="color:var(--grey-600)">Termine in der Form <b>TT.MM.</b> — der Jahrgang wird von den Werkzeugen ergänzt. Fällt ein Termin ins Vor- oder Folgejahr, die Jahreszahl mitschreiben: <b>22.12.2026</b>. Mehrere Themen und mehrere Kongresse jeweils in eine eigene Zeile — Zeilenumbruch mit der Eingabetaste.</div>';
   return html + neuKnopf('Ausgabe');
 }
