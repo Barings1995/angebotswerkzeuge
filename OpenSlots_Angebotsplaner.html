@@ -1318,10 +1318,14 @@ function escNl(s){return esc(s).replace(/\r?\n/g,'<br>');}
 function istHeftnummer(heft) {
   return /^\d+[a-zA-Z]?(\s*[–—/-]\s*\d+[a-zA-Z]?)?$/.test(String(heft == null ? '' : heft).trim());
 }
+/* Die Bezeichnung traegt hier ausser dem Heft auch den Monat ("5 – Juni").
+   Geprueft wird deshalb der Teil davor; der Monat haengt unveraendert hinten an. */
 function heftText(heft) {
   const h = String(heft == null ? '' : heft).trim();
   if (!h) return '';
-  return istHeftnummer(h) ? 'Heft ' + h : h;
+  const teile = h.split(' – ');
+  const kopf = teile.length > 1 ? teile.slice(0, -1).join(' – ') : h;
+  return istHeftnummer(kopf) ? 'Heft ' + h : h;
 }
 function flatNl(s){return String(s).replace(/\r?\n/g,'; ').trim();}
 
