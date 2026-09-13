@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>MediaSheet &ndash; Preis- und Terminblatt</title>
 <meta name="theme-color" content="#00285A">
-<link rel="icon" type="image/svg+xml" href="icon.svg">
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='7' fill='%2300285a'/><rect x='7' y='5' width='18' height='22' rx='2' fill='%23ffffff'/><rect x='9.5' y='8.5' width='13' height='1.6' rx='.8' fill='%2300285a'/><rect x='9.5' y='13' width='7' height='1.5' rx='.75' fill='%23b9c6d8'/><rect x='18' y='13' width='4.5' height='1.5' rx='.75' fill='%23ee7d11'/><rect x='9.5' y='16.8' width='7' height='1.5' rx='.75' fill='%23b9c6d8'/><rect x='18' y='16.8' width='4.5' height='1.5' rx='.75' fill='%23ee7d11'/><rect x='9.5' y='20.6' width='7' height='1.5' rx='.75' fill='%23b9c6d8'/><rect x='18' y='20.6' width='4.5' height='1.5' rx='.75' fill='%23ee7d11'/></svg>">
 <link rel="apple-touch-icon" href="icon-180.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -349,6 +349,18 @@ td.fmt{width:44%}
 .termine td.thema{font-size:10.5px}
 .termine td.kong{font-size:9.8px; color:var(--grey-600); line-height:1.35}
 .termine tbody td{padding:4.5px 5px}
+
+/* Zwischen der Standzeile und dem ersten Inhalt steht derselbe Abstand wie
+   zwischen zwei Abschnitten. Noetig ist die Regel fuer die Folgeblaetter: Dort
+   faengt der Koerper ohne Ueberschrift unmittelbar mit dem Tabellenkopf an, der
+   sonst an der Standzeile klebt. Das erste Kind gibt seinen eigenen oberen
+   Abstand ab, damit die Ueberschrift auf dem ersten Blatt nicht abrutscht.
+   Der Abstand steht als Polster, nicht als Rand: Die Umbruchmessung summiert
+   die Hoehen der Blattteile, und die zaehlen einen Rand nicht mit — als Rand
+   waere das Blatt im Druck 16 px hoeher als gemessen und kippte auf eine
+   zusaetzliche Seite. */
+.koerper{padding-top:16px}
+.koerper > :first-child{margin-top:0}
 
 .legende{margin-top:9px; font-size:10px; color:var(--grey-600); line-height:1.5}
 .legende b{color:var(--text)}
