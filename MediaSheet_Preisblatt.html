@@ -236,28 +236,23 @@ select:disabled{opacity:.5; cursor:not-allowed}
    davor. Der Druckknopf folgt dahinter in einer eigenen Gruppe mit feinem
    Trennstrich — 1 x 16 px, senkrecht mittig, wie dort. */
 .bar-status{display:inline-flex; align-items:center; gap:8px; margin-left:auto; text-align:right}
-/* Stand und Druckknopf bleiben beisammen: reicht die Breite nicht, rutschen
-   beide gemeinsam rechtsbuendig in die zweite Zeile, statt den Knopf mit
-   seinem Trennstrich allein am linken Rand stehen zu lassen. */
+/* Umbruch der Datenleiste, dieselben Regeln wie in OpenSlots, MediaQuote und
+   PreisWerk — Stueck fuer Stueck statt in ganzen Bloecken:
+   1. Jedes Element rutscht erst in die naechste Zeile, wenn es selbst keinen
+      Platz mehr hat. Stand und Druckknopf bleiben beisammen (.leiste-ende) und
+      rutschen gemeinsam rechtsbuendig.
+   2. Beginnt eine Gruppe mit Trennstrich eine neue Zeile, entfaellt ihr Strich
+      (Klasse .zeilenanfang, gemessen im Skript). Die Gruppe rueckt dann um die
+      Strichbreite nach links — per transform, das das Layout nicht veraendert;
+      so kann die Leiste nicht zwischen zwei Zustaenden springen.
+   Beschriftungen und Stand brechen nie innerhalb ihrer Zeile. */
 .leiste-ende{display:inline-flex; align-items:center; gap:10px; margin-left:auto}
-/* Umbruch bei schmalem Fenster in zwei Stufen:
-   1. Die Leiste teilt sich an ihrem Trenner. Oben bleibt, welche Daten gezeigt
-      werden (Daten laden, Jahrgang, Titel); darunter steht, was aufs Blatt
-      kommt, mit Stand und Druckknopf rechtsbuendig. Der Trenner entfaellt dann,
-      ein Strich am Zeilenanfang trennte nichts.
-   2. Wird es noch schmaler, rutschen Stand und Druckknopf gemeinsam in eine
-      dritte Zeile, weiter rechtsbuendig.
-   Der Strich liegt absolut im Zwischenraum und nimmt keine Breite ein: sein
-   Ein- und Ausblenden verschiebt nichts, die Leiste kann also nicht zwischen
-   beiden Zustaenden hin- und herspringen. */
-.leiste-teil{display:flex; align-items:center; gap:10px; flex-wrap:wrap; min-width:0}
-.leiste-auswahl{margin-right:10px}
-.leiste-rest{flex:1 1 auto; position:relative}
-.leiste-rest::before{
-  content:""; position:absolute; left:-10.5px; top:50%; margin-top:-8px;
-  width:1px; height:16px; background:var(--border);
-}
-.leiste.umgebrochen .leiste-rest::before{display:none}
+.zeilenanfang{transform:translateX(-10px)}
+.zeilenanfang::before{display:none}
+.leiste-ende{flex-wrap:wrap; justify-content:flex-end}
+.leiste-ende .bar-status{flex-wrap:wrap; justify-content:flex-end}
+.leiste-ende .data-status, .leiste button{white-space:nowrap}
+.leiste-ende > .zeilenanfang{transform:none}
 .bar-grp{display:inline-flex; align-items:center; gap:8px; padding-left:10px; position:relative}
 .bar-grp::before{
   content:""; position:absolute; left:0; top:50%; margin-top:-8px;
@@ -469,7 +464,6 @@ td.fmt{width:44%}
 
 <!-- Datenleiste: womit gearbeitet wird, und der Weg zum PDF. -->
 <div class="leiste">
-  <span class="leiste-teil leiste-auswahl" id="leisteAuswahl">
   <button type="button" class="knopf prim&auml;r" id="ladeKnopf" title="Preise und Termine aus Excel laden (Bl&auml;tter &bdquo;Preise&ldquo; + &bdquo;Termine&ldquo;)">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/><line x1="12" y1="10" x2="12" y2="17"/><polyline points="9 14 12 17 15 14"/></svg>
     Daten laden
@@ -477,15 +471,12 @@ td.fmt{width:44%}
   <span class="feld"><label for="wJahr">Jahrgang</label><select id="wJahr"></select></span>
   <span class="feld"><label for="wTitel">Titel</label><select id="wTitel"></select></span>
 
-  </span>
-
-  <!-- Rechte Teilleiste: was aufs Blatt kommt, Stand und Ausgabe. Der Trenner
-       davor entfaellt, sobald sie in die zweite Zeile rutscht. -->
-  <span class="leiste-teil leiste-rest" id="leisteRest">
+  <span class="bar-grp">
   <span class="umfang" role="group" aria-label="Umfang des Blattes">
     <button type="button" id="uBeides" aria-pressed="true">Preise und Termine</button>
     <button type="button" id="uPreise" aria-pressed="false">Nur Preise</button>
     <button type="button" id="uTermine" aria-pressed="false">Nur Termine</button>
+  </span>
   </span>
 
   <span class="fach" id="fachFeld">
@@ -517,7 +508,6 @@ td.fmt{width:44%}
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>
       Drucken / PDF
     </button>
-  </span>
   </span>
   </span>
   <input type="file" id="datei" accept=".xlsx" hidden>
@@ -1458,12 +1448,26 @@ async function starten(){
     }
   });
 
-  /* Ob die rechte Teilleiste in die zweite Zeile gerutscht ist, laesst sich
-     in CSS nicht abfragen; gemessen wird bei jeder Groessenaenderung. */
+  /* Ob eine Gruppe mit Trennstrich eine neue Zeile beginnt, laesst sich in CSS
+     nicht abfragen; gemessen wird bei jeder Groessen- und Textaenderung, wie in
+     OpenSlots. Siehe .zeilenanfang. */
   const leiste = document.querySelector('.leiste');
-  const umbruchPruefen = () => leiste.classList.toggle('umgebrochen',
-    document.getElementById('leisteRest').offsetTop > document.getElementById('leisteAuswahl').offsetTop + 2);
-  if(window.ResizeObserver) new ResizeObserver(umbruchPruefen).observe(leiste);
+  const umbruchPruefen = () => {
+    leiste.querySelectorAll(':scope > .bar-grp, :scope > .leiste-ende > .bar-grp').forEach(g => {
+      if(!g.getClientRects().length) return;
+      let v = g.previousElementSibling;
+      while(v && !v.getClientRects().length) v = v.previousElementSibling;
+      g.classList.toggle('zeilenanfang',
+        !v || g.getBoundingClientRect().top >= v.getBoundingClientRect().bottom - 1);
+    });
+  };
+  if(window.ResizeObserver){
+    const ro = new ResizeObserver(umbruchPruefen);
+    ro.observe(leiste);
+    Array.from(leiste.children).forEach(k => ro.observe(k));
+  }
+  new MutationObserver(umbruchPruefen).observe(leiste,
+    { subtree:true, childList:true, characterData:true, attributes:true, attributeFilter:['style','hidden'] });
   umbruchPruefen();
 
   document.getElementById('ladeKnopf').addEventListener('click', () => document.getElementById('datei').click());
