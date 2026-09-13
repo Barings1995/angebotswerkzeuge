@@ -990,6 +990,30 @@ button, input, select, textarea { font-family: inherit; }
        (nur letzte Seite, kein position:fixed -> keine Ueberlappung/Wiederholung) */
     .footer { margin-top: auto; padding-top: 6px; gap: 3px; }
   }
+
+/* Umbruch der Datenleiste, dieselben Regeln wie in MediaSheet:
+   1. Stand und Ausgabeknoepfe bleiben beisammen (.leiste-ende) und rutschen
+      gemeinsam rechtsbuendig in die naechste Zeile.
+   2. Beginnt eine Gruppe mit Trennstrich eine neue Zeile, entfaellt ihr Strich
+      (Klasse .zeilenanfang, gemessen im Skript am Ende der Datei). Die Gruppe
+      rueckt dann um die Strichbreite nach links — per transform, das das Layout
+      nicht veraendert; so kann die Leiste nicht zwischen zwei Zustaenden springen. */
+.leiste-ende{display:inline-flex; align-items:center; gap:10px; margin-left:auto}
+.zeilenanfang{transform:translateX(-10px)}
+.zeilenanfang::before{display:none}
+/* Wird auch der Block rechts zu lang — etwa mit geoeffnetem Angebot —, bricht er
+   in sich um, rechtsbuendig: zuerst Angebot und Stand, darunter die Knoepfe.
+   Beschriftungen und Stand brechen dabei nie innerhalb ihrer Zeile. Rechtsbuendig
+   braucht eine Gruppe am Zeilenanfang kein Nachruecken nach links. */
+.leiste-ende{flex-wrap:wrap; justify-content:flex-end}
+.leiste-ende .bar-status{flex-wrap:wrap; justify-content:flex-end}
+.leiste-ende .data-status, .leiste-ende button{white-space:nowrap}
+.leiste-ende > .zeilenanfang{transform:none}
+/* Die Ausgabeknoepfe bleiben untereinander beisammen: bricht der Block rechts um,
+   wandern sie gemeinsam in die naechste Zeile. Steht die Gruppe dort am Anfang,
+   entfaellt der Strich vor ihrem ersten Knopf. */
+.leiste-knoepfe{display:inline-flex; align-items:center; gap:10px}
+.leiste-knoepfe.zeilenanfang > .bar-grp:first-child::before{display:none}
 </style>
 </head>
 <body>
@@ -1023,7 +1047,7 @@ button, input, select, textarea { font-family: inherit; }
   <input type="file" id="dataFileInput" accept=".xlsx" style="display:none" onchange="onDataFileChosen(event)">
   <input type="file" id="angebotFileInput" accept=".json,application/json" style="display:none" onchange="onAngebotFileChosen(event)">
   <button class="btn-action btn-load" onclick="document.getElementById('dataFileInput').click()" title="Preis- und Termindaten aus Excel laden (Blätter „Preise“ + „Termine“)">
-    <svg viewBox="0 0 20 20" fill="currentColor" width="14" height="14"><path d="M3 5a2 2 0 012-2h3.586a1 1 0 01.707.293l1.414 1.414A1 1 0 0011.414 5H15a2 2 0 012 2v1H3V5z"/><path d="M3 9h14v5a2 2 0 01-2 2H5a2 2 0 01-2-2V9zm7 1a1 1 0 00-1 1v1.586l-.293-.293a1 1 0 10-1.414 1.414l2 2a1 1 0 001.414 0l2-2a1 1 0 00-1.414-1.414l-.293.293V11a1 1 0 00-1-1z"/></svg>
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="14" height="14" aria-hidden="true"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/><line x1="12" y1="10" x2="12" y2="17"/><polyline points="9 14 12 17 15 14"/></svg>
     Daten laden
   </button>
   <span class="data-yr">
@@ -1032,11 +1056,11 @@ button, input, select, textarea { font-family: inherit; }
   </span>
   <span class="bar-grp">
     <button class="btn-action btn-angebot" onclick="openAngebot()" title="Ein gespeichertes Angebot öffnen und weiterbearbeiten">
-      <svg viewBox="0 0 20 20" fill="currentColor" width="14" height="14"><path d="M2 6a2 2 0 012-2h4l2 2h6a2 2 0 012 2v6a2 2 0 01-2 2H4a2 2 0 01-2-2V6z"/></svg>
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="14" height="14" aria-hidden="true"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>
       Angebot öffnen
     </button>
     <button class="btn-action btn-angebot" id="angSaveBtn" onclick="saveAngebot()" title="Diesen Angebotsstand als Datei speichern (beim erneuten Speichern wird dieselbe Datei überschrieben)">
-      <svg viewBox="0 0 20 20" fill="currentColor" width="14" height="14"><path d="M3 4a1 1 0 011-1h9l4 4v9a1 1 0 01-1 1H4a1 1 0 01-1-1V4zm4 0v4h6V4H7zm1 1h2v2H8V5zm-1 8a1 1 0 011-1h4a1 1 0 011 1v3H7v-3z"/></svg>
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="14" height="14" aria-hidden="true"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
       Angebot speichern
     </button>
   </span>
@@ -1053,21 +1077,25 @@ button, input, select, textarea { font-family: inherit; }
       Auslandskunde – ohne MwSt.
     </label>
   </span>
+  <span class="leiste-ende">
   <span class="bar-status">
     <span class="ang-status" id="angStatus"></span>
     <span class="data-status" id="dataStatus">Keine Daten geladen – bitte Angebotsdaten.xlsx laden</span>
   </span>
+  <span class="leiste-knoepfe">
   <span class="bar-grp">
     <button class="btn-action btn-print" onclick="window.print()">
-      <svg viewBox="0 0 20 20" fill="currentColor" width="14" height="14"><path d="M5 4a1 1 0 00-1 1v2H3a2 2 0 00-2 2v5a2 2 0 002 2h1v2a1 1 0 001 1h10a1 1 0 001-1v-2h1a2 2 0 002-2V9a2 2 0 00-2-2h-1V5a1 1 0 00-1-1H5zm8 2H7V5h6v1zm-1 9H8v-3h4v3zm3-4H5V9h10v2z"/></svg>
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="14" height="14" aria-hidden="true"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>
       Drucken / PDF
     </button>
   </span>
   <span class="bar-grp">
     <button class="btn-action btn-reset" onclick="resetForm()" title="Alle Eingaben entfernen: Positionen, Empfänger, Kampagne und Bemerkungen">
-      <svg viewBox="0 0 20 20" fill="currentColor" width="13" height="13"><path fill-rule="evenodd" d="M4 2a1 1 0 011 1v2.101a7.002 7.002 0 0111.601 2.566 1 1 0 11-1.885.666A5.002 5.002 0 005.999 7H9a1 1 0 010 2H4a1 1 0 01-1-1V3a1 1 0 011-1zm.008 9.057a1 1 0 011.276.61A5.002 5.002 0 0014.001 13H11a1 1 0 110-2h5a1 1 0 011 1v5a1 1 0 11-2 0v-2.101a7.002 7.002 0 01-11.601-2.566 1 1 0 01.61-1.276z" clip-rule="evenodd"/></svg>
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="13" height="13" aria-hidden="true"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>
       Alles zurücksetzen
     </button>
+  </span>
+  </span>
   </span>
 </div>
 
@@ -2894,6 +2922,33 @@ function parseEur(s) {
   const n = parseFloat(s.replace(/\./g, '').replace(',', '.').replace(/[^\d.\-]/g, ''));
   return isNaN(n) ? null : n;
 }
+
+/* Umbruch der Datenleiste: CSS kann nicht abfragen, ob eine Gruppe eine neue
+   Zeile beginnt — deshalb wird bei jeder Groessenaenderung der Leiste und ihrer
+   Teile gemessen. Siehe .zeilenanfang. */
+(function(){
+  const leiste = document.querySelector('.data-bar');
+  if(!leiste || !window.ResizeObserver) return;
+  const pruefen = () => {
+    leiste.querySelectorAll(':scope > .bar-grp, :scope > .leiste-ende > .leiste-knoepfe').forEach(g => {
+      if(!g.getClientRects().length) return;
+      let v = g.previousElementSibling;
+      while(v && !v.getClientRects().length) v = v.previousElementSibling;
+      g.classList.toggle('zeilenanfang',
+        !v || g.getBoundingClientRect().top >= v.getBoundingClientRect().bottom - 1);
+    });
+  };
+  const ro = new ResizeObserver(pruefen);
+  ro.observe(leiste);
+  Array.from(leiste.children).forEach(k => ro.observe(k));
+  /* Aendert sich nur ein Text im Inneren — etwa der Hinweis auf ein geoeffnetes
+     Angebot —, meldet der ResizeObserver das nicht verlaesslich. Deshalb auch auf
+     Text- und Sichtbarkeitsaenderungen hoeren. Die Klasse .zeilenanfang selbst
+     loest nichts aus (nur „style" wird beobachtet, nicht „class"). */
+  new MutationObserver(pruefen).observe(leiste,
+    { subtree:true, childList:true, characterData:true, attributes:true, attributeFilter:['style'] });
+  pruefen();
+})();
 </script>
 </body>
 </html>

@@ -174,7 +174,8 @@ select:disabled{opacity:.5; cursor:not-allowed}
 /* Knoepfe, Form Wert fuer Wert wie .data-btn in OpenSlots und .btn-data in
    PreisWerk: Polster 5/12, Kante 1,5 px in der Fuellfarbe, 6 px rund,
    12 px halbfett — daraus ergeben sich 31 px Hoehe. Weiss ist die Regel, der
-   gefuellte Knopf die Ausnahme (hier: Drucken), wie in der Datenpflege. */
+   gefuellte Knopf die Ausnahme (hier: Daten laden in Navy, Drucken in Orange
+   wie in MediaQuote). */
 .knopf{
   display:inline-flex; align-items:center; gap:6px; background:var(--white);
   color:var(--navy); border:1.5px solid var(--border); border-radius:var(--radius-md);
@@ -186,11 +187,20 @@ select:disabled{opacity:.5; cursor:not-allowed}
 .knopf:disabled{opacity:.5; cursor:not-allowed}
 .knopf:disabled:hover{border-color:var(--border); background:var(--white)}
 .knopf.primär:disabled:hover{background:var(--navy); border-color:var(--navy)}
-.knopf svg{width:14px; height:14px; flex:none}
+/* Druckknopf orange wie .btn-print in MediaQuote, samt Ton beim Ueberfahren. */
+.knopf.druck{background:var(--orange); color:var(--white); border-color:var(--orange)}
+.knopf.druck:hover{background:#d46e0d; border-color:#d46e0d}
+.knopf.druck:disabled:hover{background:var(--orange); border-color:var(--orange)}
+.knopf svg{width:13px; height:13px; flex:none}
 /* Druckpunkt: der Knopf sinkt beim Druecken um 1 px ab, wie in allen vier
    uebrigen Werkzeugen. Gesperrte Knoepfe geben nicht nach. */
 .knopf:active:not(:disabled), .umfang button:active:not(:disabled){transform:translateY(1px)}
-.pfeil{font-size:.58rem; opacity:.8}
+.pfeil{font-size:.58rem; opacity:.8; transition:transform .15s}
+/* Klapppfeil wie in der Jahresvorschau: Arial ausdruecklich, weil Source Sans 3
+   kein Zeichen ▼ hat und sonst die Systemschrift einen schmaleren Pfeil zeichnet.
+   Bei offenem Fach zeigt er nach oben. */
+.pfeil{font-family:Arial,Helvetica,sans-serif}
+#fachKnopf[aria-expanded="true"] .pfeil{transform:rotate(180deg)}
 
 /* Klappfach fuer die Formatauswahl. Aufbau wie das Kongressmenue in OpenSlots
    (.kg-menu): weisse Flaeche, feiner Rand, 6 px rund, mittlerer Schatten. Es
@@ -226,22 +236,54 @@ select:disabled{opacity:.5; cursor:not-allowed}
    davor. Der Druckknopf folgt dahinter in einer eigenen Gruppe mit feinem
    Trennstrich — 1 x 16 px, senkrecht mittig, wie dort. */
 .bar-status{display:inline-flex; align-items:center; gap:8px; margin-left:auto; text-align:right}
+/* Stand und Druckknopf bleiben beisammen: reicht die Breite nicht, rutschen
+   beide gemeinsam rechtsbuendig in die zweite Zeile, statt den Knopf mit
+   seinem Trennstrich allein am linken Rand stehen zu lassen. */
+.leiste-ende{display:inline-flex; align-items:center; gap:10px; margin-left:auto}
+/* Umbruch bei schmalem Fenster in zwei Stufen:
+   1. Die Leiste teilt sich an ihrem Trenner. Oben bleibt, welche Daten gezeigt
+      werden (Daten laden, Jahrgang, Titel); darunter steht, was aufs Blatt
+      kommt, mit Stand und Druckknopf rechtsbuendig. Der Trenner entfaellt dann,
+      ein Strich am Zeilenanfang trennte nichts.
+   2. Wird es noch schmaler, rutschen Stand und Druckknopf gemeinsam in eine
+      dritte Zeile, weiter rechtsbuendig.
+   Der Strich liegt absolut im Zwischenraum und nimmt keine Breite ein: sein
+   Ein- und Ausblenden verschiebt nichts, die Leiste kann also nicht zwischen
+   beiden Zustaenden hin- und herspringen. */
+.leiste-teil{display:flex; align-items:center; gap:10px; flex-wrap:wrap; min-width:0}
+.leiste-auswahl{margin-right:10px}
+.leiste-rest{flex:1 1 auto; position:relative}
+.leiste-rest::before{
+  content:""; position:absolute; left:-10.5px; top:50%; margin-top:-8px;
+  width:1px; height:16px; background:var(--border);
+}
+.leiste.umgebrochen .leiste-rest::before{display:none}
 .bar-grp{display:inline-flex; align-items:center; gap:8px; padding-left:10px; position:relative}
 .bar-grp::before{
   content:""; position:absolute; left:0; top:50%; margin-top:-8px;
   width:1px; height:16px; background:var(--border);
 }
-.status{display:inline-flex; align-items:center; gap:6px; font-size:11.5px; color:var(--grey-600)}
-.status b{color:var(--navy); font-weight:600}
-.status svg{display:none}
+/* Statuszeile Zeichen fuer Zeichen wie .data-status in OpenSlots, MediaQuote
+   und PreisWerk: grau, solange nichts geladen ist, danach Navy und halbfett. */
+.data-status{font-size:11.5px; color:var(--grey-600)}
+.data-status.loaded{color:var(--navy); font-weight:600}
 /* Fehlt einem Jahrgang etwas, wird das nicht rot gemeldet: es ist nichts
-   schiefgegangen, es fehlt nur eine Haelfte. Flaeche und Zeichen wie .data-note
-   in PreisWerk. */
-.status.warnt{
-  font-size:12.5px; background:var(--surface); border:1px solid var(--border);
-  border-radius:var(--radius-md); padding:4px 10px; text-align:left;
+   schiefgegangen, es fehlt nur eine Haelfte. Eigene Blase wie .data-note in
+   PreisWerk, damit die Statuszeile selbst immer gleich aussieht. */
+.data-note{
+  display:inline-flex; align-items:center; gap:6px; font-size:12.5px; color:var(--grey-600);
+  background:var(--surface); border:1px solid var(--border);
+  border-radius:var(--radius-md); padding:4px 10px; max-width:100%;
 }
-.status.warnt svg{display:block; width:14px; height:14px; flex:none; color:var(--navy)}
+.data-note svg{width:14px; height:14px; flex:none; color:var(--navy)}
+/* Laesst sich eine gewaehlte Datei nicht lesen: rote Blase wie .data-error in
+   PreisWerk. */
+.data-error{
+  display:inline-flex; align-items:center; gap:6px; font-size:12.5px; font-weight:600;
+  color:#be1818; background:#fdeaea; border:1px solid #f3c0c0;
+  border-radius:var(--radius-md); padding:4px 10px;
+}
+.data-error svg{width:14px; height:14px; flex:none}
 
 /* ── Schalterleiste ──────────────────────────────────────────────────────
    Was auf dem Blatt erscheint, wird in einer eigenen Karte gewaehlt — getrennt
@@ -427,9 +469,19 @@ td.fmt{width:44%}
 
 <!-- Datenleiste: womit gearbeitet wird, und der Weg zum PDF. -->
 <div class="leiste">
-  <span class="feld"><label for="wTitel">Titel</label><select id="wTitel"></select></span>
+  <span class="leiste-teil leiste-auswahl" id="leisteAuswahl">
+  <button type="button" class="knopf prim&auml;r" id="ladeKnopf" title="Preise und Termine aus Excel laden (Bl&auml;tter &bdquo;Preise&ldquo; + &bdquo;Termine&ldquo;)">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/><line x1="12" y1="10" x2="12" y2="17"/><polyline points="9 14 12 17 15 14"/></svg>
+    Daten laden
+  </button>
   <span class="feld"><label for="wJahr">Jahrgang</label><select id="wJahr"></select></span>
+  <span class="feld"><label for="wTitel">Titel</label><select id="wTitel"></select></span>
 
+  </span>
+
+  <!-- Rechte Teilleiste: was aufs Blatt kommt, Stand und Ausgabe. Der Trenner
+       davor entfaellt, sobald sie in die zweite Zeile rutscht. -->
+  <span class="leiste-teil leiste-rest" id="leisteRest">
   <span class="umfang" role="group" aria-label="Umfang des Blattes">
     <button type="button" id="uBeides" aria-pressed="true">Preise und Termine</button>
     <button type="button" id="uPreise" aria-pressed="false">Nur Preise</button>
@@ -446,16 +498,29 @@ td.fmt{width:44%}
     <div class="fach-liste" id="fachListe" hidden></div>
   </span>
 
+  <span class="data-note" id="hinweis" hidden>
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+    <span id="hinweisText"></span>
+  </span>
+  <span class="data-error" id="fehler" role="alert" hidden>
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+    <span id="fehlerText"></span>
+  </span>
+
+  <span class="leiste-ende">
   <span class="bar-status">
-    <span class="status" id="status"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg><span id="statusText">Preisliste wird geladen &hellip;</span></span>
+    <span class="data-status" id="status">Preisliste wird geladen &hellip;</span>
   </span>
 
   <span class="bar-grp">
-    <button class="knopf prim&auml;r" id="druckKnopf" disabled>
+    <button class="knopf druck" id="druckKnopf" disabled>
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>
-      Drucken / als PDF sichern
+      Drucken / PDF
     </button>
   </span>
+  </span>
+  </span>
+  <input type="file" id="datei" accept=".xlsx" hidden>
 </div>
 
 <!-- Schalterleiste: was auf dem Blatt erscheint. Jeder Schalter erscheint nur,
@@ -491,7 +556,7 @@ const DB_FELDER =
   'themen,kongresse,geaendert_am)';
 
 let BESTAND = {};        // { jahr: { titel: {auflage, fach, preise:[], termine:[], stand} } }
-let HERKUNFT = '';       // woher die Zahlen stammen — steht in der Statuszeile
+let HERKUNFT = '';       // woher die Zahlen stammen — steht in der Statuszeile („geladen: …“)
 let AUSWAHL = null;      // abgewaehlte Formate des offenen Blattes (Set), sonst null
 
 function dbErreichbar(){
@@ -565,7 +630,7 @@ async function ausDatenbank(){
       '&termin.order=reihenfolge.asc&limit=500');
     const B = datenbankZuBestand(titel);
     if(!B || !Object.keys(B).length) throw new Error('Keine Jahrgänge in der Datenbank.');
-    BESTAND = B; HERKUNFT = 'Preisliste aus der Datenbank';
+    BESTAND = B; HERKUNFT = 'Preisliste';
     return true;
   }catch(e){
     console.warn('Preisliste nicht aus der Datenbank geholt:', e);
@@ -640,6 +705,49 @@ function mappeZuBestand(mappe){
   return B;
 }
 
+/* Ein Stand fuer alle: der Speicherzeitpunkt der Mappe. */
+function standAusMappe(mappe, B){
+  const d = mappe.modified ? new Date(mappe.modified) : null;
+  const s = datumText(d);
+  Object.keys(B).forEach(j => Object.keys(B[j]).forEach(t => { B[j][t].stand = s; }));
+}
+
+/* ── Daten laden von Hand ─────────────────────────────────────────────────
+   Wie in den uebrigen Werkzeugen: eine Angebotsdaten.xlsx waehlen, sie ersetzt
+   die geladene Preisliste bis zum naechsten Oeffnen der Seite. Titel und
+   Jahrgang bleiben stehen, solange die Datei sie kennt. */
+function fehlerZeigen(text){
+  document.getElementById('fehlerText').textContent = text;
+  document.getElementById('fehler').hidden = false;
+}
+function fehlerWeg(){ document.getElementById('fehler').hidden = true; }
+
+async function dateiGewaehlt(ev){
+  const datei = ev.target.files[0]; if(!datei) return;
+  fehlerWeg();
+  const st = document.getElementById('status');
+  const vorher = st.textContent, vorherKlasse = st.className;
+  st.textContent = 'lädt …'; st.className = 'data-status';
+  try{
+    await ensureExcelJS();
+    const mappe = new ExcelJS.Workbook();
+    await mappe.xlsx.load(await datei.arrayBuffer());
+    const B = mappeZuBestand(mappe);
+    if(!B || !Object.keys(B).length) throw new Error('Die Datei enthält keine Jahrgänge im Blatt „Preise“.');
+    standAusMappe(mappe, B);
+    BESTAND = B; HERKUNFT = datei.name;
+    auswahlAufbauen();
+    wechseln();
+  }catch(e){
+    console.error(e);
+    st.textContent = vorher; st.className = vorherKlasse;
+    const roh = e.message || String(e);
+    fehlerZeigen(/Preise|Jahrgänge|ExcelJS/.test(roh)
+      ? roh
+      : 'Die Datei konnte nicht als Excel-Datei (.xlsx) gelesen werden. Bitte die Angebotsdaten.xlsx mit den Blättern „Preise“ und „Termine“ verwenden.');
+  }finally{ ev.target.value = ''; }
+}
+
 async function ausMappe(){
   if(location.protocol === 'file:') return false;
   try{
@@ -651,11 +759,8 @@ async function ausMappe(){
     await mappe.xlsx.load(puffer);
     const B = mappeZuBestand(mappe);
     if(!B || !Object.keys(B).length) throw new Error('Keine Jahrgänge in der Datei.');
-    /* Ein Stand fuer alle: der Speicherzeitpunkt der Mappe. */
-    const d = mappe.modified ? new Date(mappe.modified) : null;
-    const s = datumText(d);
-    Object.keys(B).forEach(j => Object.keys(B[j]).forEach(t => { B[j][t].stand = s; }));
-    BESTAND = B; HERKUNFT = 'Angebotsdaten.xlsx (Notweg)';
+    standAusMappe(mappe, B);
+    BESTAND = B; HERKUNFT = 'Angebotsdaten.xlsx';
     return true;
   }catch(e){
     console.warn('Preisliste nicht von der Adresse geholt:', e);
@@ -1216,24 +1321,23 @@ function leisteNachfuehren(){
   if(ohnePreise && !ohneTermine) umfangSetzen('uTermine', true);
   if(ohneTermine && !ohnePreise) umfangSetzen('uPreise', true);
 
+  /* Statuszeile wie in den uebrigen Werkzeugen: Herkunft, Jahrgaenge, Stand.
+     Der Stand bleibt der dieses Blattes (siehe juengster()). */
   const st = document.getElementById('status');
-  const tx = document.getElementById('statusText');
-  if(ohnePreise && ohneTermine){
-    st.classList.add('warnt');
-    tx.innerHTML = 'Für diesen Titel und Jahrgang sind weder Preise noch Termine ' +
-                   'hinterlegt. <b>' + esc(HERKUNFT) + '</b>';
-  }else if(ohnePreise){
-    st.classList.add('warnt');
-    tx.innerHTML = 'Für diesen Jahrgang sind noch keine Preise hinterlegt – ' +
-                   'ausgegeben wird die Terminliste. <b>' + esc(HERKUNFT) + '</b>';
-  }else if(ohneTermine){
-    st.classList.add('warnt');
-    tx.innerHTML = 'Für diesen Jahrgang sind noch keine Termine hinterlegt – ' +
-                   'ausgegeben wird die Preisliste. <b>' + esc(HERKUNFT) + '</b>';
-  }else{
-    st.classList.remove('warnt');
-    tx.innerHTML = esc(HERKUNFT) + (AKTUELL && AKTUELL.stand ? ' · Stand <b>' + esc(AKTUELL.stand) + '</b>' : '');
-  }
+  st.textContent = 'geladen: ' + HERKUNFT + ' · ' + jahreListe().join('/') +
+                   (L && L.stand ? ' · Stand ' + L.stand : '');
+  st.className = 'data-status loaded';
+
+  const hw = document.getElementById('hinweis');
+  const text = (ohnePreise && ohneTermine)
+      ? 'Für diesen Titel und Jahrgang sind weder Preise noch Termine hinterlegt.'
+    : ohnePreise
+      ? 'Für diesen Jahrgang sind noch keine Preise hinterlegt – ausgegeben wird die Terminliste.'
+    : ohneTermine
+      ? 'Für diesen Jahrgang sind noch keine Termine hinterlegt – ausgegeben wird die Preisliste.'
+      : '';
+  document.getElementById('hinweisText').textContent = text;
+  hw.hidden = !text;
 }
 
 function umfangSetzen(id, still){
@@ -1303,20 +1407,6 @@ function einstellungenMerken(id){
 async function starten(){
   einstellungenLesen();
 
-  const ok = await ausDatenbank() || await ausMappe();
-  if(!ok){
-    const st = document.getElementById('status');
-    st.classList.add('warnt');
-    document.getElementById('statusText').textContent =
-      location.protocol === 'file:'
-        ? 'Die Preisliste ließ sich nicht laden. Beim Öffnen per Doppelklick verbietet der Browser das Lesen der Nachbardateien – über die Startseite im Netz funktioniert es.'
-        : 'Die Preisliste ließ sich weder aus der Datenbank noch von der Adresse laden.';
-    return;
-  }
-
-  auswahlAufbauen();
-  wechseln();
-
   document.getElementById('wJahr').addEventListener('change', e => {
     GEWAEHLT.jahr = e.target.value;
     auswahlAufbauen();
@@ -1356,6 +1446,27 @@ async function starten(){
     }
   });
 
+  /* Ob die rechte Teilleiste in die zweite Zeile gerutscht ist, laesst sich
+     in CSS nicht abfragen; gemessen wird bei jeder Groessenaenderung. */
+  const leiste = document.querySelector('.leiste');
+  const umbruchPruefen = () => leiste.classList.toggle('umgebrochen',
+    document.getElementById('leisteRest').offsetTop > document.getElementById('leisteAuswahl').offsetTop + 2);
+  if(window.ResizeObserver) new ResizeObserver(umbruchPruefen).observe(leiste);
+  umbruchPruefen();
+
+  document.getElementById('ladeKnopf').addEventListener('click', () => document.getElementById('datei').click());
+  document.getElementById('datei').addEventListener('change', dateiGewaehlt);
+
+  /* Erst die Datenbank, dann - falls sie schweigt - die Datei daneben. Klappt
+     beides nicht, bleibt der Weg ueber „Daten laden". */
+  const ok = await ausDatenbank() || await ausMappe();
+  if(!Object.keys(BESTAND).length && !ok){
+    document.getElementById('status').textContent = location.protocol === 'file:'
+      ? 'Keine Daten geladen – bitte Angebotsdaten.xlsx laden'
+      : 'Preisliste nicht erreichbar – bitte Angebotsdaten.xlsx laden';
+    return;
+  }
+  if(ok){ auswahlAufbauen(); wechseln(); }
 }
 
 /* Die Schriften veraendern die Zeilenhoehen; wird vor ihrem Eintreffen

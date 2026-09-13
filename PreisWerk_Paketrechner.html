@@ -295,6 +295,30 @@ button, input, select, textarea { font-family: inherit; }
     .staffel-bar { flex-direction: column; }
     .staffel-item { border-right: none; border-bottom: 1px solid rgba(255,255,255,0.1); }
   }
+
+/* Umbruch der Datenleiste, dieselben Regeln wie in MediaSheet:
+   1. Stand und Ausgabeknoepfe bleiben beisammen (.leiste-ende) und rutschen
+      gemeinsam rechtsbuendig in die naechste Zeile.
+   2. Beginnt eine Gruppe mit Trennstrich eine neue Zeile, entfaellt ihr Strich
+      (Klasse .zeilenanfang, gemessen im Skript am Ende der Datei). Die Gruppe
+      rueckt dann um die Strichbreite nach links — per transform, das das Layout
+      nicht veraendert; so kann die Leiste nicht zwischen zwei Zustaenden springen. */
+.leiste-ende{display:inline-flex; align-items:center; gap:10px; margin-left:auto}
+.zeilenanfang{transform:translateX(-10px)}
+.zeilenanfang::before{display:none}
+/* Wird auch der Block rechts zu lang — etwa mit geoeffnetem Angebot —, bricht er
+   in sich um, rechtsbuendig: zuerst Angebot und Stand, darunter die Knoepfe.
+   Beschriftungen und Stand brechen dabei nie innerhalb ihrer Zeile. Rechtsbuendig
+   braucht eine Gruppe am Zeilenanfang kein Nachruecken nach links. */
+.leiste-ende{flex-wrap:wrap; justify-content:flex-end}
+.leiste-ende .bar-status{flex-wrap:wrap; justify-content:flex-end}
+.leiste-ende .data-status, .leiste-ende button{white-space:nowrap}
+.leiste-ende > .zeilenanfang{transform:none}
+/* Die Ausgabeknoepfe bleiben untereinander beisammen: bricht der Block rechts um,
+   wandern sie gemeinsam in die naechste Zeile. Steht die Gruppe dort am Anfang,
+   entfaellt der Strich vor ihrem ersten Knopf. */
+.leiste-knoepfe{display:inline-flex; align-items:center; gap:10px}
+.leiste-knoepfe.zeilenanfang > .bar-grp:first-child::before{display:none}
 </style>
 </head>
 <body>
@@ -321,29 +345,33 @@ button, input, select, textarea { font-family: inherit; }
 <!-- ── Daten laden ── -->
 <div class="data-bar">
   <button class="btn-data" onclick="document.getElementById('dataFile').click()" title="Preisdaten aus Excel laden (Blatt „Preise“)">
-    <svg width="13" height="13" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true"><path d="M3 5a2 2 0 012-2h3.586a1 1 0 01.707.293l1.414 1.414A1 1 0 0011.414 5H15a2 2 0 012 2v1H3V5z"/><path d="M3 9h14v5a2 2 0 01-2 2H5a2 2 0 01-2-2V9zm7 1a1 1 0 00-1 1v1.586l-.293-.293a1 1 0 10-1.414 1.414l2 2a1 1 0 001.414 0l2-2a1 1 0 00-1.414-1.414l-.293.293V11a1 1 0 00-1-1z"/></svg>
+    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/><line x1="12" y1="10" x2="12" y2="17"/><polyline points="9 14 12 17 15 14"/></svg>
     Daten laden
   </button>
   <label class="data-year" id="yearWrap" for="yearSel" style="display:none;">Jahrgang
     <select id="yearSel" onchange="applyYear(this.value)"></select>
   </label>
   <span class="data-error" id="dataError" role="alert" style="display:none;">
-    <svg width="14" height="14" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true"><path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-8-5a1 1 0 011 1v4a1 1 0 11-2 0V6a1 1 0 011-1zm0 9a1 1 0 100-2 1 1 0 000 2z" clip-rule="evenodd"/></svg>
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
     <span id="dataErrorMsg"></span>
   </span>
   <span class="data-note" id="standNote" style="display:none;">
-    <svg width="14" height="14" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true"><path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-9-3a1 1 0 112 0 1 1 0 01-2 0zm1 3a1 1 0 00-1 1v4a1 1 0 102 0v-4a1 1 0 00-1-1z" clip-rule="evenodd"/></svg>
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
     <span id="standNoteMsg"></span>
     <button type="button" class="note-x" onclick="schliesseStandHinweis()" title="Hinweis schließen" aria-label="Hinweis schließen">✕</button>
   </span>
+  <span class="leiste-ende">
   <span class="bar-status">
     <span class="data-status" id="dataStatus">Keine Daten geladen – bitte Angebotsdaten.xlsx laden</span>
   </span>
+  <span class="leiste-knoepfe">
   <span class="bar-grp">
     <button class="btn-clear" onclick="clearAll()" title="Alle Positionen aus dem Paket entfernen">
-      <svg width="13" height="13" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true"><path fill-rule="evenodd" d="M4 2a1 1 0 011 1v2.101a7.002 7.002 0 0111.601 2.566 1 1 0 11-1.885.666A5.002 5.002 0 005.999 7H9a1 1 0 010 2H4a1 1 0 01-1-1V3a1 1 0 011-1zm.008 9.057a1 1 0 011.276.61A5.002 5.002 0 0014.001 13H11a1 1 0 110-2h5a1 1 0 011 1v5a1 1 0 11-2 0v-2.101a7.002 7.002 0 01-11.601-2.566 1 1 0 01.61-1.276z" clip-rule="evenodd"/></svg>
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>
       Alles zurücksetzen
     </button>
+  </span>
+  </span>
   </span>
   <input type="file" id="dataFile" accept=".xlsx" style="display:none" onchange="onDataFileChosen(event)">
 </div>
@@ -1245,6 +1273,33 @@ standAktiv = true;
    ohne Netz sofort der gemerkte Stand dasteht statt einer leeren Seite. */
 /* Erst die Datenbank, dann - falls sie schweigt - die Datei daneben. */
 ladePreislisteAusDatenbank().then(ok=>{ if(!ok) ladePreislisteVonServer(); });
+
+/* Umbruch der Datenleiste: CSS kann nicht abfragen, ob eine Gruppe eine neue
+   Zeile beginnt — deshalb wird bei jeder Groessenaenderung der Leiste und ihrer
+   Teile gemessen. Siehe .zeilenanfang. */
+(function(){
+  const leiste = document.querySelector('.data-bar');
+  if(!leiste || !window.ResizeObserver) return;
+  const pruefen = () => {
+    leiste.querySelectorAll(':scope > .bar-grp, :scope > .leiste-ende > .leiste-knoepfe').forEach(g => {
+      if(!g.getClientRects().length) return;
+      let v = g.previousElementSibling;
+      while(v && !v.getClientRects().length) v = v.previousElementSibling;
+      g.classList.toggle('zeilenanfang',
+        !v || g.getBoundingClientRect().top >= v.getBoundingClientRect().bottom - 1);
+    });
+  };
+  const ro = new ResizeObserver(pruefen);
+  ro.observe(leiste);
+  Array.from(leiste.children).forEach(k => ro.observe(k));
+  /* Aendert sich nur ein Text im Inneren — etwa der Hinweis auf ein geoeffnetes
+     Angebot —, meldet der ResizeObserver das nicht verlaesslich. Deshalb auch auf
+     Text- und Sichtbarkeitsaenderungen hoeren. Die Klasse .zeilenanfang selbst
+     loest nichts aus (nur „style" wird beobachtet, nicht „class"). */
+  new MutationObserver(pruefen).observe(leiste,
+    { subtree:true, childList:true, characterData:true, attributes:true, attributeFilter:['style'] });
+  pruefen();
+})();
 </script>
 </body>
 </html>

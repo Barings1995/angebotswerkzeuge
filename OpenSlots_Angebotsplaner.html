@@ -381,6 +381,9 @@ button, input, select, textarea { font-family: inherit; }
    eigenen SVG. Es dreht sich um 180°, sobald das Menü offen ist – die Richtung
    hängt am Zustand `aria-expanded` des Knopfes, den das Menü ohnehin pflegen sollte. */
 .kg-chev { font-size: .58rem; opacity: .8; transition: transform .15s; }
+/* Source Sans 3 hat kein Zeichen ▼; ohne ausdrueckliche Schrift entscheidet das
+   Geraet (Mac: Helvetica oder Systemschrift) – daher Arial wie in der Jahresvorschau. */
+.kg-chev { font-family: Arial, Helvetica, sans-serif; }
 #kgBtn[aria-expanded="true"] .kg-chev { transform: rotate(180deg); }
 .kg-menu {
   position: absolute;
@@ -491,6 +494,7 @@ button, input, select, textarea { font-family: inherit; }
 .tabgrp:hover { border-bottom-color: var(--sm-navy); }
 .tabgrp .fb-toggle {
   display: inline-block;
+  font-family: Arial, Helvetica, sans-serif; /* ▼ wie in der Jahresvorschau, s. .kg-chev */
   margin-right: 6px;
   font-size: 8px;
   transition: transform .18s;
@@ -803,6 +807,7 @@ tr.cat td.pl-cell .cat-lbl {
 }
 tr.cat td .cat-toggle {
   display: inline-block;
+  font-family: Arial, Helvetica, sans-serif; /* ▼ wie in der Jahresvorschau, s. .kg-chev */
   margin-right: 5px;
   font-size: 8px;
   transition: transform .18s;
@@ -1093,6 +1098,30 @@ tr.pl-row.alt td:not(.pl-cell) {
   vertical-align: middle;
 }
 
+
+/* Umbruch der Datenleiste, dieselben Regeln wie in MediaSheet:
+   1. Stand und Ausgabeknoepfe bleiben beisammen (.leiste-ende) und rutschen
+      gemeinsam rechtsbuendig in die naechste Zeile.
+   2. Beginnt eine Gruppe mit Trennstrich eine neue Zeile, entfaellt ihr Strich
+      (Klasse .zeilenanfang, gemessen im Skript am Ende der Datei). Die Gruppe
+      rueckt dann um die Strichbreite nach links — per transform, das das Layout
+      nicht veraendert; so kann die Leiste nicht zwischen zwei Zustaenden springen. */
+.leiste-ende{display:inline-flex; align-items:center; gap:10px; margin-left:auto}
+.zeilenanfang{transform:translateX(-10px)}
+.zeilenanfang::before{display:none}
+/* Wird auch der Block rechts zu lang — etwa mit geoeffnetem Angebot —, bricht er
+   in sich um, rechtsbuendig: zuerst Angebot und Stand, darunter die Knoepfe.
+   Beschriftungen und Stand brechen dabei nie innerhalb ihrer Zeile. Rechtsbuendig
+   braucht eine Gruppe am Zeilenanfang kein Nachruecken nach links. */
+.leiste-ende{flex-wrap:wrap; justify-content:flex-end}
+.leiste-ende .bar-status{flex-wrap:wrap; justify-content:flex-end}
+.leiste-ende .data-status, .leiste-ende button{white-space:nowrap}
+.leiste-ende > .zeilenanfang{transform:none}
+/* Die Ausgabeknoepfe bleiben untereinander beisammen: bricht der Block rechts um,
+   wandern sie gemeinsam in die naechste Zeile. Steht die Gruppe dort am Anfang,
+   entfaellt der Strich vor ihrem ersten Knopf. */
+.leiste-knoepfe{display:inline-flex; align-items:center; gap:10px}
+.leiste-knoepfe.zeilenanfang > .bar-grp:first-child::before{display:none}
 </style>
 </head>
 <body>
@@ -1121,7 +1150,7 @@ tr.pl-row.alt td:not(.pl-cell) {
 
   <div class="data-bar">
     <button class="data-btn" onclick="document.getElementById('dataFile').click()" title="Preis- und Termindaten aus Excel laden (Bl&auml;tter &bdquo;Preise&ldquo; + &bdquo;Termine&ldquo;)">
-      <svg width="13" height="13" viewBox="0 0 20 20" fill="currentColor"><path d="M3 5a2 2 0 012-2h3.586a1 1 0 01.707.293l1.414 1.414A1 1 0 0011.414 5H15a2 2 0 012 2v1H3V5z"/><path d="M3 9h14v5a2 2 0 01-2 2H5a2 2 0 01-2-2V9zm7 1a1 1 0 00-1 1v1.586l-.293-.293a1 1 0 10-1.414 1.414l2 2a1 1 0 001.414 0l2-2a1 1 0 00-1.414-1.414l-.293.293V11a1 1 0 00-1-1z"/></svg>
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/><line x1="12" y1="10" x2="12" y2="17"/><polyline points="9 14 12 17 15 14"/></svg>
       Daten laden
     </button>
     <span class="data-yr" id="yearWrap" style="display:none">Jahrgang
@@ -1129,7 +1158,7 @@ tr.pl-row.alt td:not(.pl-cell) {
     </span>
     <span class="kg-wrap" id="kgWrap" style="display:none">
       <button class="data-btn subtle" id="kgBtn" aria-haspopup="true" aria-expanded="false" onclick="toggleKgMenu(event)" title="Ausgaben, die zu einem Kongress geh&ouml;ren, &uuml;ber alle Titel als Heftzeilen anlegen">
-        <svg width="13" height="13" viewBox="0 0 20 20" fill="currentColor"><path d="M9.5 2.1a1 1 0 011 0l6 3.4A1 1 0 0117 6.4V8H3V6.4a1 1 0 01.5-.9l6-3.4z"/><path d="M4 9.5h2.2v6H4v-6zm4.9 0h2.2v6H8.9v-6zm4.9 0H16v6h-2.2v-6zM3 17a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1z"/></svg>
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="3" y1="22" x2="21" y2="22"/><line x1="6" y1="18" x2="6" y2="11"/><line x1="10" y1="18" x2="10" y2="11"/><line x1="14" y1="18" x2="14" y2="11"/><line x1="18" y1="18" x2="18" y2="11"/><polygon points="12 2 20 7 4 7"/></svg>
         Nach Kongress
         <span class="kg-chev" aria-hidden="true">&#9660;</span>
       </button>
@@ -1137,11 +1166,11 @@ tr.pl-row.alt td:not(.pl-cell) {
         <div class="kg-menu-top">
           <div class="kg-menu-hd">Ausgaben &uuml;ber alle Titel anlegen</div>
           <div class="kg-search-wrap">
-            <svg width="13" height="13" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true"><path fill-rule="evenodd" d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z" clip-rule="evenodd"/></svg>
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
             <input type="text" class="kg-search" id="kgSearch" placeholder="Kongress suchen &hellip;" autocomplete="off"
                    oninput="kgSuche(this.value)" onkeydown="suchEsc(event,'kgSearch',kgSucheLeeren)">
             <button type="button" class="such-x" id="kgSearchX" hidden title="Suche leeren"
-                    aria-label="Suche leeren" onclick="kgSucheLeeren()"><svg width="13" height="13" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd"/></svg></button>
+                    aria-label="Suche leeren" onclick="kgSucheLeeren()"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg></button>
           </div>
         </div>
         <div id="kgList"></div>
@@ -1149,23 +1178,27 @@ tr.pl-row.alt td:not(.pl-cell) {
     </span>
     <span class="ang-wrap" id="angWrap" style="display:none">
       <button class="data-btn ang-btn" id="angOpenBtn" onclick="openAngebot()" title="Ein gespeichertes Angebot &ouml;ffnen und weiterbearbeiten">
-        <svg width="13" height="13" viewBox="0 0 20 20" fill="currentColor"><path d="M2 6a2 2 0 012-2h4l2 2h6a2 2 0 012 2v6a2 2 0 01-2 2H4a2 2 0 01-2-2V6z"/></svg>
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>
         Angebot &ouml;ffnen
       </button>
       <button class="data-btn ang-btn" id="angSaveBtn" onclick="saveAngebot()" title="Diesen Angebotsstand als Datei speichern (beim erneuten Speichern wird dieselbe Datei &uuml;berschrieben)">
-        <svg width="13" height="13" viewBox="0 0 20 20" fill="currentColor"><path d="M3 4a1 1 0 011-1h9.586a1 1 0 01.707.293l2.414 2.414a1 1 0 01.293.707V16a1 1 0 01-1 1h-1v-5a1 1 0 00-1-1H6a1 1 0 00-1 1v5H4a1 1 0 01-1-1V4zm4 1v2h5V5H7zm0 8h6v4H7v-4z"/></svg>
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
         Angebot speichern
       </button>
     </span>
+    <span class="leiste-ende">
     <span class="bar-status">
       <span class="ang-status" id="angStatus"></span>
       <span class="data-status" id="dataStatus">Keine Daten geladen &ndash; bitte Angebotsdaten.xlsx laden</span>
     </span>
+    <span class="leiste-knoepfe">
     <span class="bar-grp">
       <button class="data-btn danger" id="resetBtn" onclick="resetAll()" title="Alle angekreuzten Platzierungen und Ausgaben f&uuml;r alle Titel entfernen">
-        <svg width="13" height="13" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M4 2a1 1 0 011 1v2.101a7.002 7.002 0 0111.601 2.566 1 1 0 11-1.885.666A5.002 5.002 0 005.999 7H9a1 1 0 010 2H4a1 1 0 01-1-1V3a1 1 0 011-1zm.008 9.057a1 1 0 011.276.61A5.002 5.002 0 0014.001 13H11a1 1 0 110-2h5a1 1 0 011 1v5a1 1 0 11-2 0v-2.101a7.002 7.002 0 01-11.601-2.566 1 1 0 01.61-1.276z" clip-rule="evenodd"/></svg>
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>
         Alles zur&uuml;cksetzen
       </button>
+    </span>
+    </span>
     </span>
     <input type="file" id="dataFile" accept=".xlsx" style="display:none" onchange="onDataFileChosen(event)">
     <input type="file" id="angebotFile" accept=".json,application/json" style="display:none" onchange="onAngebotFileChosen(event)">
@@ -1175,11 +1208,11 @@ tr.pl-row.alt td:not(.pl-cell) {
   <aside class="sidebar">
   <div class="sec-label">Titel</div>
   <div class="title-search-wrap" id="titleSearchWrap" style="display:none">
-    <svg width="14" height="14" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true"><path fill-rule="evenodd" d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z" clip-rule="evenodd"/></svg>
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
     <input type="text" class="title-search" id="titleSearch" placeholder="Titel suchen &hellip;"
            oninput="titelSuche(this.value)" onkeydown="suchEsc(event,'titleSearch',titelSucheLeeren)">
     <button type="button" class="such-x" id="titleSearchX" hidden title="Suche leeren"
-            aria-label="Suche leeren" onclick="titelSucheLeeren()"><svg width="14" height="14" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd"/></svg></button>
+            aria-label="Suche leeren" onclick="titelSucheLeeren()"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg></button>
   </div>
   <div class="tabs" id="tabs"></div>
   </aside>
@@ -1255,7 +1288,7 @@ Bitte reservieren Sie nur budget- und planungsrelevante Platzierungen.</textarea
     <div class="prev-hdr">
       <span class="prev-lbl">Vorschau &amp; Kopiervorlage</span>
       <div class="btn-row">
-        <button class="copy-btn primary" id="cb-html" onclick="cpHtml()" title="Als formatierte Tabelle kopieren (f&uuml;r Outlook)">&#x2398;&nbsp;Als Tabelle kopieren</button>
+        <button class="copy-btn primary" id="cb-html" onclick="cpHtml()" title="Als formatierte Tabelle kopieren (f&uuml;r Outlook)"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>Als Tabelle kopieren</button>
         <button class="copy-btn" id="cb-txt" onclick="cpTxt()" title="Als einfachen Text kopieren">Nur Text</button>
       </div>
     </div>
@@ -2953,6 +2986,33 @@ applyYear(pickStartYear());
    sich die Seite danach nach und baut mit ihr neu auf. */
 /* Erst die Datenbank, dann - falls sie schweigt - die Datei daneben. */
 ladePreislisteAusDatenbank().then(ok=>{ if(!ok) ladePreislisteVonServer(); });
+
+/* Umbruch der Datenleiste: CSS kann nicht abfragen, ob eine Gruppe eine neue
+   Zeile beginnt — deshalb wird bei jeder Groessenaenderung der Leiste und ihrer
+   Teile gemessen. Siehe .zeilenanfang. */
+(function(){
+  const leiste = document.querySelector('.data-bar');
+  if(!leiste || !window.ResizeObserver) return;
+  const pruefen = () => {
+    leiste.querySelectorAll(':scope > .bar-grp, :scope > .ang-wrap, :scope > .leiste-ende > .leiste-knoepfe').forEach(g => {
+      if(!g.getClientRects().length) return;
+      let v = g.previousElementSibling;
+      while(v && !v.getClientRects().length) v = v.previousElementSibling;
+      g.classList.toggle('zeilenanfang',
+        !v || g.getBoundingClientRect().top >= v.getBoundingClientRect().bottom - 1);
+    });
+  };
+  const ro = new ResizeObserver(pruefen);
+  ro.observe(leiste);
+  Array.from(leiste.children).forEach(k => ro.observe(k));
+  /* Aendert sich nur ein Text im Inneren — etwa der Hinweis auf ein geoeffnetes
+     Angebot —, meldet der ResizeObserver das nicht verlaesslich. Deshalb auch auf
+     Text- und Sichtbarkeitsaenderungen hoeren. Die Klasse .zeilenanfang selbst
+     loest nichts aus (nur „style" wird beobachtet, nicht „class"). */
+  new MutationObserver(pruefen).observe(leiste,
+    { subtree:true, childList:true, characterData:true, attributes:true, attributeFilter:['style'] });
+  pruefen();
+})();
 </script>
 </body>
 </html>
