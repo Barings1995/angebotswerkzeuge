@@ -645,7 +645,7 @@ td.fmt{width:44%}
   <div class="o-grp" id="gTermin"><div class="o-kopf">Terminteil</div>
     <label id="sThemenFeld"><input type="checkbox" id="sThemen" checked> Themenschwerpunkte</label>
     <label id="sKongFeld"><input type="checkbox" id="sKong" checked> Kongresse</label>
-    <label id="sVergangenFeld"><input type="checkbox" id="sVergangen"> Verstrichene Ausgaben ausblenden</label>
+    <label id="sVerstrichenFeld"><input type="checkbox" id="sVerstrichen" checked> Verstrichene Ausgaben zeigen</label>
   </div>
   <div class="o-grp" id="gKenn"><div class="o-kopf">Kennzeichnung</div>
     <label id="sVorlFeld"><input type="checkbox" id="sVorl" checked> Vermerk &bdquo;vorl&auml;ufig&ldquo;</label>
@@ -1254,7 +1254,7 @@ function hatTerminblatt(L){
 function terminseitenBauen(L){
   const zeigeThemen = document.getElementById('sThemen').checked && L.hatThemen;
   const zeigeKong   = document.getElementById('sKong').checked && L.hatKongresse;
-  const ohneAlte    = document.getElementById('sVergangen').checked && L.hatVerstrichene;
+  const ohneAlte    = !document.getElementById('sVerstrichen').checked && L.hatVerstrichene;
   const liste = L.termine.filter(a => !(ohneAlte && a.verstrichen));
   if(!liste.length) return;
   /* Ohne Termine und ohne Themen bliebe eine Tabelle aus Heftnummern und
@@ -1440,7 +1440,7 @@ function leisteNachfuehren(){
   zeigen('sTerminFeld',    !!(preisteil && L.hatTerminart));
   zeigen('sThemenFeld',    !!(terminteil && L.hatThemen));
   zeigen('sKongFeld',      !!(terminteil && L.hatKongresse));
-  zeigen('sVergangenFeld', !!(terminteil && L.hatVerstrichene));
+  zeigen('sVerstrichenFeld', !!(terminteil && L.hatVerstrichene));
   document.getElementById('sVorlFeld').hidden = !(preisteil || terminteil);
   document.getElementById('fachFeld').hidden = !preisteil;
 
@@ -1576,9 +1576,20 @@ function wechseln(){
    Oeffnen wieder auf „an", damit ein einmaliges Ausschalten nicht still auf das
    naechste Vorab-Blatt durchschlaegt. Die Formatauswahl gilt ohnehin nur fuer
    das offene Blatt. */
-const GEMERKT = ['sRabatt','sAE','sTermin','sThemen','sKong','sVergangen'];
+const GEMERKT = ['sRabatt','sAE','sTermin','sThemen','sKong','sVerstrichen'];
 
 function einstellungenLesen(){
+  /* Bis 14.09.2026 hiess der Schalter „Verstrichene Ausgaben ausblenden“ (Haken
+     = nicht aufgefuehrt). Eine dort gemerkte Wahl wird einmal umgerechnet, damit
+     niemand nach der Umstellung ungefragt wieder alle Ausgaben sieht. */
+  try{
+    const alt = localStorage.getItem('mediaSheet_sVergangen');
+    if(alt === '0' || alt === '1'){
+      if(localStorage.getItem('mediaSheet_sVerstrichen') === null)
+        localStorage.setItem('mediaSheet_sVerstrichen', alt === '1' ? '0' : '1');
+      localStorage.removeItem('mediaSheet_sVergangen');
+    }
+  }catch(e){}
   GEMERKT.forEach(id => {
     try{
       const w = localStorage.getItem('mediaSheet_' + id);
@@ -1637,7 +1648,7 @@ async function starten(){
   document.querySelectorAll('.umfang button').forEach(b => {
     b.addEventListener('click', () => { if(!b.disabled) umfangSetzen(b.id); });
   });
-  ['sRabatt','sAE','sTermin','sThemen','sKong','sVergangen','sVorl'].forEach(id => {
+  ['sRabatt','sAE','sTermin','sThemen','sKong','sVerstrichen','sVorl'].forEach(id => {
     document.getElementById(id).addEventListener('change', () => {
       einstellungenMerken(id);
       zeichnen();
