@@ -318,7 +318,7 @@ select:disabled{opacity:.5; cursor:not-allowed}
 .blatt{
   width:210mm; height:297mm; margin:0 auto 22px; background:var(--white);
   border-radius:var(--radius-sm); box-shadow:0 2px 20px rgba(0,40,90,.12);
-  padding:16mm 15mm 14mm; display:flex; flex-direction:column; line-height:1.55;
+  padding:14mm; display:flex; flex-direction:column; line-height:1.55;
 }
 .blattkopf{
   display:flex; align-items:flex-start; gap:16px;
@@ -421,12 +421,14 @@ td.fmt{width:44%}
    Nur die Blaetter, je Blatt eine Seite. Die Bedienung verschwindet. */
 @media print{
   @page{size:A4; margin:0}
+  /* Rand 14 mm rundum, hier als Polster des Blattes, damit jedes Blatt genau
+     eine Seite fuellt. */
   html,body{background:#fff}
   .sm-hero,.leiste,.schalter,.nichts{display:none!important}
   .buehne{padding:0; overflow:visible}
   .blatt{
     width:auto; height:auto; margin:0; border-radius:0; box-shadow:none;
-    padding:16mm 15mm 14mm; break-after:page;
+    padding:14mm; break-after:page;
   }
   .blatt:last-child{break-after:auto}
   .kontakt:empty::before{content:''}
@@ -923,11 +925,15 @@ function a4Hoehe(){
 
 /* Zwischen Bildschirm und Drucker liegen ein paar Zehntel: Chrome setzt beim
    Drucken die Zeilen minimal anders als in der Vorschau. Ein randvolles Blatt
-   kippt dadurch auf eine zusaetzliche, fast leere Seite. Die Reserve von 8 px —
-   gut zwei Millimeter — faengt das ab; belegt am 13.09.2026 an „Die Onkologie"
-   2026, das ohne Reserve als drei Blaetter gemessen wurde und als vier Seiten
-   aus dem Drucker kam. */
-const RESERVE = 8;
+   kippt dadurch auf eine zusaetzliche, fast leere Seite. Die Reserve faengt das
+   ab; belegt am 13.09.2026 an „Die Onkologie" 2026, das ohne Reserve als drei
+   Blaetter gemessen wurde und als vier Seiten aus dem Drucker kam. Seit dem
+   14.09.2026 (Rand 14 mm) 24 px — gut sechs Millimeter: mit 8 px kippte
+   „Die Onkologie" 2026 wieder auf vier Seiten, mit 16 px die Termine der
+   „Ärzte Zeitung ONKOLOGIE UND HAEMATOLOGIE" 2026 (lange Kongresslisten, 17,7 px
+   frei) auf drei statt zwei. Mit 24 px stimmen alle 90 Kombinationen aus
+   Jahrgang, Titel und Umfang im Druck mit der Vorschau ueberein. */
+const RESERVE = 24;
 
 function laeuftUeber(blatt){
   const cs = getComputedStyle(blatt);
