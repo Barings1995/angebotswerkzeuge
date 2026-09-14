@@ -1760,6 +1760,56 @@ function standAusDatenbank(zeilen) {
   return ` · Stand ${p(d.getDate())}.${p(d.getMonth() + 1)}.${d.getFullYear()}`;
 }
 
+// Beim Start steht das gemerkte Angebot schon aus dem Browser-Speicher da, wenn die
+// Preisliste eintrifft. applyYear() baut die Zeilen dann neu auf und setzt dabei die
+// 4c-Wahl bzw. einen von Hand eingetragenen Preis auf den Katalog zurück. Deshalb
+// unmittelbar davor je Zeile merken und danach wieder setzen – sofern Titel und Format
+// gleich geblieben sind. Gemerkt wird erst beim Eintreffen, damit auch Eingaben aus der
+// Wartezeit erhalten bleiben. Ohne Zeilen (Zurücksetzen, Start ohne Speicher) wirkt es nicht.
+function zeilenMerken() {
+  const merk = [];
+  document.querySelectorAll('#posBody tr[id^="row-"]').forEach(tr => {
+    const id = parseInt(tr.id.replace('row-', ''));
+    if (!id) return;
+    const z4c = document.getElementById('z4c-sel-' + id);
+    const ep  = document.getElementById('ep-' + id);
+    merk.push({
+      id,
+      titel: document.getElementById('titel-' + id)?.value,
+      fmt:   document.getElementById('fmt-' + id)?.value,
+      datum: document.getElementById('datum-' + id)?.value,
+      z4c:   z4c ? z4c.value : null,
+      hand:  (ep && ep.dataset.manual === '1' && ep.dataset.price !== '') ? ep.dataset.price : null
+    });
+  });
+  return merk;
+}
+function zeilenZurueck(merk) {
+  merk.forEach(m => {
+    const titelSel = document.getElementById('titel-' + m.id);
+    const fmtSel   = document.getElementById('fmt-' + m.id);
+    if (!titelSel || !fmtSel || titelSel.value !== m.titel || fmtSel.value !== m.fmt) return;
+    // onTitelChange() leert die Beschriftung der Ausgabe und refreshRow() füllt sie nur bei
+    // gewählter Ausgabe wieder – sonst fehlte etwa „– bitte wählen –" im Druck. Wie in
+    // restorePosition() gilt der Text der gewählten Option.
+    const dSel = document.getElementById('datum-' + m.id), dLbl = document.getElementById('datum-lbl-' + m.id);
+    if (dSel && dLbl && dSel.value === m.datum) dLbl.textContent = dSel.options[dSel.selectedIndex]?.text || '';
+    const z4c = document.getElementById('z4c-sel-' + m.id);
+    if (z4c && m.z4c != null && z4c.value !== m.z4c && [...z4c.options].some(o => o.value === m.z4c)) {
+      z4c.value = m.z4c;
+      onZ4cChange(m.id);
+    }
+    const ep = document.getElementById('ep-' + m.id);
+    if (ep && m.hand != null) {
+      ep.dataset.price  = m.hand;
+      ep.dataset.manual = '1';
+      ep.textContent    = formatEur(parseFloat(m.hand));
+      onAnzahlChange(m.id);
+    }
+  });
+  if (merk.length) { recalcTotal(); saveStand(); }
+}
+
 async function ladePreislisteAusDatenbank() {
   if (!dbErreichbar()) return false;
   if (!isCustomData) updateDataStatus('Preisliste wird geladen …', false);
@@ -1776,10 +1826,12 @@ async function ladePreislisteAusDatenbank() {
     isCustomData   = true;
     datenAusAngebot = false;
     if (!currentYear || !DATASET[currentYear]) currentYear = activeYears()[0];
+    const merk = zeilenMerken();
     rebuildYearDropdown();
     const noDataRow = document.getElementById('no-data-row');
     if (noDataRow) noDataRow.remove();
     applyYear(currentYear);
+    zeilenZurueck(merk);
     datenStand = standAusDatenbank(stand);
     saveCache();
     updateDataStatus(`geladen: Preisliste · ${activeYears().join('/')}${datenStand}`, true);
@@ -1816,10 +1868,12 @@ async function ladePreislisteVonServer() {
     datenAusAngebot = false;
     // Der gemerkte Jahrgang bleibt stehen, solange die Preisliste ihn kennt.
     if (!currentYear || !DATASET[currentYear]) currentYear = activeYears()[0];
+    const merk = zeilenMerken();
     rebuildYearDropdown();
     const noDataRow = document.getElementById('no-data-row');
     if (noDataRow) noDataRow.remove();
     applyYear(currentYear);
+    zeilenZurueck(merk);
     datenStand = standAusMappe(wb);
     saveCache();                                 // Stand nachtragen: applyYear() hat ihn noch nicht gekannt
     updateDataStatus(`geladen: ${DATEN_DATEI} · ${activeYears().join('/')}${datenStand}`, true);
@@ -1982,17 +2036,22 @@ window.addEventListener('DOMContentLoaded', async () => {
   // eigenem oninput-Aufruf erfasst werden.
   ['input', 'change'].forEach(ev => document.addEventListener(ev, saveStand, true));
 
-  // Preisliste von der Adresse holen, bevor die erste Position entsteht.
-  // Ohne Adresse (Doppelklick) kehrt der Aufruf sofort zurück und es bleibt beim
+  // Liegt eine Preisliste im Browser-Speicher, stehen Positionen und zuletzt bearbeiteter
+  // Stand sofort da; die Preisliste von der Adresse frischt sie danach auf (wie in
+  // OpenSlots und PreisWerk, siehe zeilenMerken). Ohne Zwischenspeicher erst die
+  // Preisliste holen – ohne Daten entstünde statt der ersten Position nur der Hinweis.
+  // Ohne Adresse (Doppelklick) kehren die Lader sofort zurück und es bleibt beim
   // Zwischenspeicher bzw. beim Laden von Hand.
   // Erst die Datenbank, dann - falls sie schweigt - die Datei daneben.
-  if (!await ladePreislisteAusDatenbank()) await ladePreislisteVonServer();
-
-  // Start mit einer leeren Position
-  addPosition();
-
-  // Zuletzt bearbeiteten Stand zurückholen (ersetzt die leere Position, falls vorhanden)
-  restoreStand();
+  if (fromCache) {
+    addPosition();     // Start mit einer leeren Position
+    restoreStand();    // ersetzt sie durch den zuletzt bearbeiteten Stand, falls vorhanden
+    if (!await ladePreislisteAusDatenbank()) await ladePreislisteVonServer();
+  } else {
+    if (!await ladePreislisteAusDatenbank()) await ladePreislisteVonServer();
+    addPosition();
+    restoreStand();
+  }
 });
 
 // ─────────────────────────────────────────
