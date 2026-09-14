@@ -825,7 +825,14 @@ function terminGueltig(wert) {
   const m = s.match(TERMIN_MUSTER);
   if (!m) return false;
   const tag = Number(m[1]), monat = Number(m[2]);
-  return tag >= 1 && tag <= 31 && monat >= 1 && monat <= 12;
+  if (monat < 1 || monat > 12) return false;
+  /* Den Tag am Kalender prüfen, nicht nur an 31: „31.04." oder „30.02." gibt es
+     nicht. Ohne Jahreszahl ist das Jahr offen — der 29.02. gilt dann als möglich.
+     Mit Jahreszahl entscheidet der Kalender des Jahres; zweistellig heißt 20xx. */
+  const jahr = m[3] ? (m[3].length === 2 ? 2000 + Number(m[3]) : Number(m[3])) : null;
+  const letzter = jahr ? new Date(jahr, monat, 0).getDate()
+                       : [31, 29, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31][monat - 1];
+  return tag >= 1 && tag <= letzter;
 }
 
 function meldung(text, schlecht) {
