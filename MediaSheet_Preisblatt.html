@@ -206,10 +206,12 @@ select:disabled{opacity:.5; cursor:not-allowed}
 
 /* Klappfach fuer die Formatauswahl. Aufbau wie das Kongressmenue in OpenSlots
    (.kg-menu): weisse Flaeche, feiner Rand, 6 px rund, mittlerer Schatten. Es
-   oeffnet ueber dem Blatt, damit die Liste die Seite nicht verschiebt. */
+   oeffnet ueber dem Blatt, damit die Liste die Seite nicht verschiebt — von der
+   rechten Kante des Knopfes nach links, weil die Karte am rechten Fensterrand
+   steht. */
 .fach{position:relative; display:inline-flex}
 .fach-liste{
-  position:absolute; z-index:20; top:calc(100% + 6px); left:0; width:330px;
+  position:absolute; z-index:20; top:calc(100% + 6px); left:auto; right:0; width:330px;
   max-height:60vh; overflow-y:auto; background:var(--white); border:1px solid var(--border);
   border-radius:var(--radius-md); box-shadow:var(--shadow-md); padding:0 0 5px;
 }
@@ -282,21 +284,108 @@ select:disabled{opacity:.5; cursor:not-allowed}
 }
 .data-error svg{width:14px; height:14px; flex:none}
 
-/* ── Schalterleiste ──────────────────────────────────────────────────────
-   Was auf dem Blatt erscheint, wird in einer eigenen Karte gewaehlt — getrennt
-   von der Auswahl darueber, wie .options-bar in PreisWerk (12/24 gepolstert,
-   8 px rund, 20 px Abstand). Ein Schalter erscheint nur, wenn der Titel auch
-   etwas zu schalten hat; bleibt keiner uebrig, entfaellt die ganze Karte. */
+/* ── Spaltenueberschriften ────────────────────────────────────────────────
+   Titel, Vorschau und Blattinhalt tragen je eine Ueberschrift wie .sec-label in
+   OpenSlots (10 px fett, gesperrt, Linie darunter). Sie stehen auf einer Hoehe,
+   so beginnen Suchfeld, Blatt und Karte auf derselben Linie. */
+.sec-label{
+  font-size:10px; font-weight:700; color:var(--grey-600); letter-spacing:.1em; text-transform:uppercase;
+  line-height:normal; margin:0 0 .6rem; padding-bottom:5px; border-bottom:1px solid var(--border);
+}
+
+/* ── Blattinhalt ──────────────────────────────────────────────────────────
+   Was auf dem Blatt erscheint, wird in einer Karte gewaehlt, gegliedert nach den
+   Teilen des Blattes: Umfang, Preisteil, Terminteil, Kennzeichnung. Karte und
+   Haekchen wie .options-panel und .tog in OpenSlots (12,5 px normal, 9 px
+   Abstand). Ein Schalter erscheint nur, wenn der Titel auch etwas zu schalten
+   hat; bleibt in einem Abschnitt keiner uebrig, entfaellt der Abschnitt, und
+   ohne geladene Daten die ganze Spalte (leisteNachfuehren). */
 .schalter{
-  display:flex; align-items:center; gap:20px; flex-wrap:wrap; background:var(--white);
-  border:1px solid var(--border); border-radius:var(--radius-lg); padding:12px 24px;
-  margin:12px 24px 0; box-shadow:var(--shadow-sm);
+  display:flex; flex-direction:column; background:var(--white);
+  border:1px solid var(--border); border-radius:var(--radius-lg); padding:.3rem 1rem .8rem;
+  box-shadow:var(--shadow-sm);
 }
-.schalter label{
-  display:inline-flex; align-items:center; gap:7px; font-size:13px; font-weight:500;
-  color:var(--navy); cursor:pointer; white-space:nowrap;
+.o-grp{display:flex; flex-direction:column; align-items:flex-start; gap:8px; padding:.7rem 0; border-top:1px solid var(--border)}
+.o-grp:first-child{border-top:none}
+.o-kopf{font-size:10px; font-weight:700; letter-spacing:.08em; text-transform:uppercase; color:var(--navy); line-height:normal}
+/* Nur die Haekchen der Karte selbst: Die Formatliste liegt ebenfalls in der
+   Karte und behaelt ihre eigenen Regeln (.fach-liste label, eine je Zeile). */
+.o-grp > label{
+  display:inline-flex; align-items:center; gap:9px; font-size:12.5px; font-weight:400;
+  color:var(--text); cursor:pointer;
 }
-.schalter input{accent-color:var(--navy); width:15px; height:15px; cursor:pointer}
+.o-grp > label input{accent-color:var(--navy); width:15px; height:15px; cursor:pointer; flex:none}
+/* Umfang untereinander: nebeneinander ist die Spalte zu schmal. */
+.schalter .umfang{flex-direction:column; align-self:stretch}
+.schalter .umfang button{text-align:left}
+
+/* ── Titelleiste ──────────────────────────────────────────────────────────
+   Titel links als Liste, nach Fachbereichen gruppiert, mit Suche und
+   einklappbaren Gruppen — Bauform, Maße und Verhalten aus OpenSlots (.sidebar,
+   .tabgrp, .tab, .title-search). Wie dort beginnen alle Gruppen zugeklappt; der
+   gewaehlte Titel bleibt auch in einer zugeklappten Gruppe stehen. Waehrend
+   gesucht wird, zaehlt nur der Treffer. Die Auswahlliste #wTitel bleibt
+   unsichtbar erhalten: Die Druckpruefung steuert das Werkzeug ueber sie.
+   Die Ueberschrift „Titel“ steht wie in OpenSlots, seit Vorschau und
+   Blattinhalt daneben eigene tragen.
+
+   Anordnung der Arbeitsflaeche nach Fensterbreite:
+   - ab 1400 px drei Spalten Titel | Vorschau | Blattinhalt (244 + Blatt + 250);
+     darunter reicht die Breite nicht fuer Blatt und Karte nebeneinander,
+   - 821–1399 px steht die Karte ueber dem Blatt, Abschnitte nebeneinander,
+   - bis 820 px alles untereinander (siehe unten). */
+.arbeit{
+  display:grid; grid-template-columns:244px minmax(0,1fr); grid-template-areas:"tl einst" "tl haupt";
+  align-items:start; margin:16px 24px 0;
+}
+.titelleiste{
+  grid-area:tl; grid-row:1 / span 2; position:sticky; top:12px;
+  max-height:calc(100vh - 24px); display:flex; flex-direction:column; min-height:0;
+}
+.haupt{grid-area:haupt; min-width:0}
+.einst{grid-area:einst; min-width:0; margin:0 20px 16px}
+.einst .schalter{flex-direction:row; flex-wrap:wrap; gap:0 2rem; padding:.2rem 1.25rem}
+.einst .o-grp{border-top:none}
+@media screen and (min-width:1400px){
+  .arbeit{grid-template-columns:244px minmax(0,1fr) 250px; grid-template-areas:"tl haupt einst"}
+  .titelleiste{grid-row:auto}
+  .einst{position:sticky; top:12px; margin:0}
+  .einst .schalter{flex-direction:column; gap:0; padding:.3rem 1rem .8rem}
+  .einst .o-grp{border-top:1px solid var(--border)}
+  .einst .o-grp:first-child{border-top:none}
+}
+.tl-suche{position:relative; margin:0 0 .6rem}
+.tl-suche > svg{position:absolute; left:9px; top:50%; transform:translateY(-50%); color:var(--grey-500); pointer-events:none}
+.tl-suche input{
+  width:100%; font-size:12.5px; padding:6px 27px 6px 29px; border:1.5px solid var(--border);
+  border-radius:var(--radius-md); color:var(--text); background:var(--white); transition:border-color .12s;
+}
+.tl-suche input:focus{outline:none; border-color:var(--navy); box-shadow:0 0 0 2px rgba(0,40,90,.08)}
+.such-x{
+  position:absolute; right:6px; top:50%; transform:translateY(-50%); display:flex; align-items:center;
+  justify-content:center; padding:2px; border:none; background:none; cursor:pointer; color:var(--grey-500);
+  border-radius:var(--radius-sm); transition:color .12s, background .12s;
+}
+.such-x:hover{color:var(--navy); background:var(--surface-hover)}
+.tl-liste{display:flex; flex-direction:column; gap:4px; flex:1 1 auto; min-height:0; overflow-y:auto; padding-right:2px}
+.tl-grp{
+  display:flex; align-items:center; width:100%; margin:.5rem 0 .1rem; padding:2px 2px 4px;
+  font-size:10px; font-weight:700; letter-spacing:.09em; text-transform:uppercase; line-height:normal;
+  color:var(--navy); background:none; border:0; border-bottom:1px solid var(--border);
+  text-align:left; cursor:pointer; user-select:none;
+}
+.tl-grp:first-child{margin-top:0}
+.tl-grp:hover{border-bottom-color:var(--navy)}
+.tl-grp .pfeil{display:inline-block; font-family:Arial,Helvetica,sans-serif; margin-right:6px; font-size:8px; transition:transform .18s}
+.tl-grp.zu .pfeil{transform:rotate(-90deg)}
+.tl-titel{
+  display:block; width:100%; text-align:left; padding:7px 11px; border:1.5px solid var(--border);
+  border-radius:var(--radius-md); background:var(--white); color:var(--grey-600); font-size:12px;
+  font-weight:500; line-height:1.25; cursor:pointer; transition:all .15s; box-shadow:var(--shadow-sm);
+}
+.tl-titel:hover{border-color:var(--navy); color:var(--navy); background:var(--surface-hover)}
+.tl-titel.on{border-color:var(--navy); background:var(--navy); color:#fff; font-weight:600; box-shadow:0 2px 6px rgba(0,40,90,.22)}
+.tl-leer{font-size:12px; color:var(--grey-500); padding:6px 2px}
 
 /* ── Buehne und Blatt ─────────────────────────────────────────────────────
    Ein Blatt ist genau eine A4-Seite. Am Bildschirm liegt es auf dem kuehlen
@@ -304,7 +393,9 @@ select:disabled{opacity:.5; cursor:not-allowed}
    (.page), im Druck ist es nackt und hat einen harten Seitenwechsel hinter
    sich. Die Breite bleibt am Bildschirm bei 210 mm: rechnete die Vorschau mit
    einer anderen Breite, braeche sie anders um als der Drucker. */
-.buehne{padding:20px 24px 60px; overflow-x:auto}
+.buehne{padding:0 20px 60px; overflow-x:auto}
+/* Ueberschrift genau so breit wie das Blatt darunter. */
+.haupt > .vorschau{width:210mm; max-width:calc(100% - 40px); margin:0 auto .6rem}
 .nichts{
   max-width:62ch; margin:30px auto; padding:18px 20px; background:var(--white);
   border:1px solid var(--border); border-radius:var(--radius-lg); box-shadow:var(--shadow-sm);
@@ -430,7 +521,8 @@ td.fmt{width:44%}
      als 900 px) — sie schob das Blatt sonst 16 px nach unten und haengte 40 px
      an, und jedes volle A4-Blatt kippte auf eine Leerseite (14.09.2026). */
   html,body{background:#fff}
-  .sm-hero,.leiste,.schalter,.nichts{display:none!important}
+  .sm-hero,.leiste,.einst,.sec-label,.nichts,.titelleiste{display:none!important}
+  .arbeit{display:block; margin:0}
   .buehne{padding:0; overflow:visible}
   .blatt{
     width:auto; height:297mm; margin:0; border-radius:0; box-shadow:none;
@@ -441,8 +533,18 @@ td.fmt{width:44%}
 }
 
 @media screen and (max-width:900px){
-  .leiste,.schalter{margin-left:12px; margin-right:12px}
-  .buehne{padding:16px 10px 40px}
+  .leiste{margin-left:12px; margin-right:12px}
+  .arbeit{margin-left:12px; margin-right:12px}
+  .buehne{padding:0 10px 40px}
+  .haupt > .vorschau{max-width:calc(100% - 20px)}
+}
+@media screen and (max-width:820px){
+  .arbeit{display:flex; flex-direction:column; align-items:stretch; margin-left:0; margin-right:0}
+  .titelleiste{position:static; align-self:stretch; flex-basis:auto; width:auto; max-height:none; margin:0 12px 12px}
+  .einst{margin:0 12px 16px}
+  .tl-liste{flex-direction:row; flex-wrap:wrap; overflow:visible}
+  .tl-grp{flex-basis:100%}
+  .tl-titel{width:auto}
 }
 </style>
 </head>
@@ -477,25 +579,7 @@ td.fmt{width:44%}
     Daten laden
   </button>
   <span class="feld"><label for="wJahr">Jahrgang</label><select id="wJahr"></select></span>
-  <span class="feld"><label for="wTitel">Titel</label><select id="wTitel"></select></span>
-
-  <span class="bar-grp">
-  <span class="umfang" role="group" aria-label="Umfang des Blattes">
-    <button type="button" id="uBeides" aria-pressed="true">Preise und Termine</button>
-    <button type="button" id="uPreise" aria-pressed="false">Nur Preise</button>
-    <button type="button" id="uTermine" aria-pressed="false">Nur Termine</button>
-  </span>
-  </span>
-
-  <span class="fach" id="fachFeld">
-    <button type="button" class="knopf" id="fachKnopf" aria-haspopup="true" aria-expanded="false"
-            title="Einzelne Formate vom Blatt nehmen oder wieder aufnehmen">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>
-      <span id="fachZahl">Formate</span>
-      <span class="pfeil" aria-hidden="true">&#9660;</span>
-    </button>
-    <div class="fach-liste" id="fachListe" hidden></div>
-  </span>
+  <span class="feld" hidden><label for="wTitel">Titel</label><select id="wTitel" tabindex="-1"></select></span>
 
   <span class="data-note" id="hinweis" hidden>
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
@@ -521,19 +605,58 @@ td.fmt{width:44%}
   <input type="file" id="datei" accept=".xlsx" hidden>
 </div>
 
-<!-- Schalterleiste: was auf dem Blatt erscheint. Jeder Schalter erscheint nur,
-     wenn der gewaehlte Titel auch etwas zu schalten hat. -->
+<!-- Arbeitsflaeche in drei Spalten: Titel | Vorschau | Blattinhalt. Die Karte
+     „Blattinhalt“ steht im Quelltext vor der Vorschau, damit sie bei schmalem
+     Fenster ueber dem Blatt erscheint (siehe .arbeit). -->
+<div class="arbeit">
+<aside class="titelleiste" aria-label="Titel">
+  <div class="sec-label">Titel</div>
+  <div class="tl-suche" id="tlSucheFeld" hidden>
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+    <input type="text" id="tlSuche" placeholder="Titel suchen &hellip;" aria-label="Titel suchen" autocomplete="off">
+    <button type="button" class="such-x" id="tlSucheX" hidden title="Suche leeren" aria-label="Suche leeren"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg></button>
+  </div>
+  <div class="tl-liste" id="tlListe"></div>
+</aside>
+<aside class="einst" id="einst" aria-label="Blattinhalt">
+<div class="sec-label">Blattinhalt</div>
 <div class="schalter" id="schalter">
-  <label id="sRabattFeld"><input type="checkbox" id="sRabatt" checked> Rabatt-Spalte</label>
-  <label id="sAEFeld"><input type="checkbox" id="sAE" checked> AE-Spalte</label>
-  <label id="sTerminFeld"><input type="checkbox" id="sTermin" checked> Termin-Spalte</label>
-  <label id="sThemenFeld"><input type="checkbox" id="sThemen" checked> Themenschwerpunkte</label>
-  <label id="sKongFeld"><input type="checkbox" id="sKong" checked> Kongresse</label>
-  <label id="sVergangenFeld"><input type="checkbox" id="sVergangen"> Verstrichene Ausgaben ausblenden</label>
-  <label id="sVorlFeld"><input type="checkbox" id="sVorl" checked> Vermerk &bdquo;vorl&auml;ufig&ldquo;</label>
+  <div class="o-grp" id="gUmfang"><div class="o-kopf">Umfang</div>
+  <span class="umfang" role="group" aria-label="Umfang des Blattes">
+      <button type="button" id="uBeides" aria-pressed="true">Preise und Termine</button>
+      <button type="button" id="uPreise" aria-pressed="false">Nur Preise</button>
+      <button type="button" id="uTermine" aria-pressed="false">Nur Termine</button>
+    </span>
+  </div>
+  <div class="o-grp" id="gPreis"><div class="o-kopf">Preisteil</div>
+    <span class="fach" id="fachFeld">
+      <button type="button" class="knopf" id="fachKnopf" aria-haspopup="true" aria-expanded="false"
+              title="Einzelne Formate vom Blatt nehmen oder wieder aufnehmen">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>
+        <span id="fachZahl">Formate</span>
+        <span class="pfeil" aria-hidden="true">&#9660;</span>
+      </button>
+      <div class="fach-liste" id="fachListe" hidden></div>
+    </span>
+    <label id="sRabattFeld"><input type="checkbox" id="sRabatt" checked> Rabatt-Spalte</label>
+    <label id="sAEFeld"><input type="checkbox" id="sAE" checked> AE-Spalte</label>
+    <label id="sTerminFeld"><input type="checkbox" id="sTermin" checked> Termin-Spalte</label>
+  </div>
+  <div class="o-grp" id="gTermin"><div class="o-kopf">Terminteil</div>
+    <label id="sThemenFeld"><input type="checkbox" id="sThemen" checked> Themenschwerpunkte</label>
+    <label id="sKongFeld"><input type="checkbox" id="sKong" checked> Kongresse</label>
+    <label id="sVergangenFeld"><input type="checkbox" id="sVergangen"> Verstrichene Ausgaben ausblenden</label>
+  </div>
+  <div class="o-grp" id="gKenn"><div class="o-kopf">Kennzeichnung</div>
+    <label id="sVorlFeld"><input type="checkbox" id="sVorl" checked> Vermerk &bdquo;vorl&auml;ufig&ldquo;</label>
+  </div>
 </div>
-
+</aside>
+<div class="haupt">
+<div class="sec-label vorschau">Vorschau</div>
 <div class="buehne" id="buehne"></div>
+</div>
+</div>
 
 <script src="konfiguration.js"></script>
 <script>
@@ -1321,10 +1444,15 @@ function leisteNachfuehren(){
   document.getElementById('sVorlFeld').hidden = !(preisteil || terminteil);
   document.getElementById('fachFeld').hidden = !preisteil;
 
-  /* Bleibt kein einziger Schalter uebrig, entfaellt die ganze Karte: eine leere
-     weisse Leiste ueber dem Blatt waere nur eine Fuge. */
+  /* Bleibt in einem Abschnitt kein Schalter uebrig, entfaellt der Abschnitt
+     samt Kopf; der Umfang steht, sobald ein Blatt geladen ist. Ohne Blatt
+     entfaellt die ganze Spalte „Blattinhalt“. */
+  document.getElementById('gUmfang').hidden = !L;
+  document.querySelectorAll('#schalter > .o-grp:not(#gUmfang)').forEach(g => {
+    g.hidden = !Array.from(g.children).some(k => !k.classList.contains('o-kopf') && !k.hidden);
+  });
   const kasten = document.getElementById('schalter');
-  kasten.hidden = !Array.from(kasten.children).some(k => !k.hidden);
+  document.getElementById('einst').hidden = !Array.from(kasten.children).some(k => !k.hidden);
 
   /* Was der Titel nicht hergibt, laesst sich auch nicht waehlen. */
   const ohnePreise = !!(L && !L.hatPreise);
@@ -1377,6 +1505,60 @@ function auswahlAufbauen(){
   const titel = titelListe(GEWAEHLT.jahr);
   if(!GEWAEHLT.titel || titel.indexOf(GEWAEHLT.titel) < 0) GEWAEHLT.titel = titel[0] || '';
   wT.innerHTML = titel.map(t => '<option' + (t === GEWAEHLT.titel ? ' selected' : '') + '>' + esc(t) + '</option>').join('');
+  titelleisteAufbauen();
+}
+
+/* ── Titelleiste ─────────────────────────────────────────────────────────── */
+let TL_ZU = null;   /* zugeklappte Fachbereiche, nach Name — ueberdauert den Jahrgangswechsel */
+
+function titelleisteAufbauen(){
+  const B = BESTAND[GEWAEHLT.jahr] || {}, gruppen = [], stelle = {};
+  Object.keys(B).forEach(t => {
+    const f = String(B[t].fach || '').trim();
+    if(!(f in stelle)){ stelle[f] = gruppen.length; gruppen.push({ f, titel:[] }); }
+    gruppen[stelle[f]].titel.push(t);
+  });
+  /* Ohne Fachbereiche (etwa aus einer Excel-Mappe) eine schlichte Liste */
+  const mitKopf = gruppen.length > 1 || (gruppen.length === 1 && gruppen[0].f !== '');
+  if(TL_ZU === null) TL_ZU = new Set(gruppen.map(g => g.f));
+  const knopf = (t, f) => '<button type="button" class="tl-titel' + (t === GEWAEHLT.titel ? ' on' : '') +
+    '" data-t="' + esc(t) + '" data-f="' + esc(f) + '">' + esc(t) + '</button>';
+  document.getElementById('tlListe').innerHTML = gruppen.map(g =>
+    (mitKopf ? '<button type="button" class="tl-grp" data-f="' + esc(g.f) + '"><span class="pfeil" aria-hidden="true">&#9660;</span>' +
+               esc(g.f || 'Weitere Titel') + '</button>' : '') +
+    g.titel.map(t => knopf(t, mitKopf ? g.f : '')).join('')
+  ).join('') + '<div class="tl-leer" id="tlLeer" hidden>Kein Titel gefunden.</div>';
+  document.getElementById('tlSucheFeld').hidden = Object.keys(B).length < 2;
+  titelFiltern();
+}
+
+/* Suche und Klappzustand wirken auf dieselben Zeilen, deshalb entscheidet eine
+   Stelle ueber die Sichtbarkeit (wie filterTabs in OpenSlots). */
+function titelFiltern(){
+  const feld = document.getElementById('tlSuche');
+  const q = feld.value.trim().toLowerCase(), suchen = q !== '', treffer = {};
+  let zahl = 0;
+  document.querySelectorAll('#tlListe .tl-titel').forEach(b => {
+    const t = b.dataset.t, f = b.dataset.f;
+    const passt = !suchen || t.toLowerCase().indexOf(q) > -1;
+    const zu = !suchen && f !== '' && TL_ZU.has(f) && t !== GEWAEHLT.titel;
+    b.hidden = !passt || zu;
+    b.classList.toggle('on', t === GEWAEHLT.titel);
+    if(passt){ treffer[f] = true; zahl++; }
+  });
+  document.querySelectorAll('#tlListe .tl-grp').forEach(g => {
+    const f = g.dataset.f, offen = suchen || !TL_ZU.has(f);
+    g.hidden = suchen && !treffer[f];
+    g.classList.toggle('zu', !offen);
+    g.setAttribute('aria-expanded', offen ? 'true' : 'false');
+  });
+  document.getElementById('tlLeer').hidden = zahl > 0;
+  document.getElementById('tlSucheX').hidden = feld.value === '';
+}
+
+function titelSucheLeeren(){
+  const feld = document.getElementById('tlSuche');
+  feld.value = ''; feld.focus(); titelFiltern();
 }
 
 function wechseln(){
@@ -1428,8 +1610,30 @@ async function starten(){
   });
   document.getElementById('wTitel').addEventListener('change', e => {
     GEWAEHLT.titel = e.target.value;
+    titelFiltern();
     wechseln();
   });
+  document.getElementById('tlListe').addEventListener('click', e => {
+    const g = e.target.closest('.tl-grp');
+    if(g){
+      const f = g.dataset.f;
+      if(TL_ZU.has(f)) TL_ZU.delete(f); else TL_ZU.add(f);
+      titelFiltern();
+      return;
+    }
+    const b = e.target.closest('.tl-titel');
+    if(!b || b.dataset.t === GEWAEHLT.titel) return;
+    GEWAEHLT.titel = b.dataset.t;
+    document.getElementById('wTitel').value = b.dataset.t;
+    titelFiltern();
+    wechseln();
+  });
+  document.getElementById('tlSuche').addEventListener('input', titelFiltern);
+  /* Escape leert zuerst die Suche; bei leerem Feld reicht die Taste durch */
+  document.getElementById('tlSuche').addEventListener('keydown', e => {
+    if(e.key === 'Escape' && e.target.value !== ''){ e.stopPropagation(); titelSucheLeeren(); }
+  });
+  document.getElementById('tlSucheX').addEventListener('click', titelSucheLeeren);
   document.querySelectorAll('.umfang button').forEach(b => {
     b.addEventListener('click', () => { if(!b.disabled) umfangSetzen(b.id); });
   });
