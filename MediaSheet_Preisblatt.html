@@ -137,8 +137,10 @@ a:focus-visible, button:focus-visible, label:focus-visible, [tabindex]:focus-vis
    wie .data-yr/.year-sel in OpenSlots und .data-year in PreisWerk. Nativer
    Auswahlpfeil, kein selbst gezeichneter: so sehen die Felder aus wie die der
    uebrigen Werkzeuge, und wie die des Rechners. */
+/* Zeilenhoehe fest auf normal, nicht die 1.5 des body: sonst standen die Woerter
+   einen Bildpunkt hoeher als in OpenSlots und MediaQuote (gemessen). */
 .feld{
-  font-size:11.5px; color:var(--grey-600); font-weight:600;
+  font-size:11.5px; line-height:normal; color:var(--grey-600); font-weight:600;
   display:inline-flex; align-items:center; gap:5px;
 }
 .feld label{cursor:pointer}
@@ -421,20 +423,24 @@ td.fmt{width:44%}
    Nur die Blaetter, je Blatt eine Seite. Die Bedienung verschwindet. */
 @media print{
   @page{size:A4; margin:0}
-  /* Rand 14 mm rundum, hier als Polster des Blattes, damit jedes Blatt genau
-     eine Seite fuellt. */
+  /* Rand 14 mm rundum, hier als Polster des Blattes. Jedes Blatt ist genau
+     eine A4-Seite hoch, damit die Fusszeile wie am Bildschirm am unteren Rand
+     steht. Das geht nur, weil die Buehne im Druck kein Polster traegt: Die
+     Regel fuer schmale Fenster gilt deshalb nur am Bildschirm (A4 ist schmaler
+     als 900 px) — sie schob das Blatt sonst 16 px nach unten und haengte 40 px
+     an, und jedes volle A4-Blatt kippte auf eine Leerseite (14.09.2026). */
   html,body{background:#fff}
   .sm-hero,.leiste,.schalter,.nichts{display:none!important}
   .buehne{padding:0; overflow:visible}
   .blatt{
-    width:auto; height:auto; margin:0; border-radius:0; box-shadow:none;
+    width:auto; height:297mm; margin:0; border-radius:0; box-shadow:none;
     padding:14mm; break-after:page;
   }
   .blatt:last-child{break-after:auto}
   .kontakt:empty::before{content:''}
 }
 
-@media (max-width:900px){
+@media screen and (max-width:900px){
   .leiste,.schalter{margin-left:12px; margin-right:12px}
   .buehne{padding:16px 10px 40px}
 }
