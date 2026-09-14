@@ -754,11 +754,34 @@ async function ausDatenbank(){
     const B = datenbankZuBestand(titel);
     if(!B || !Object.keys(B).length) throw new Error('Keine Jahrgänge in der Datenbank.');
     BESTAND = B; HERKUNFT = 'Preisliste';
+    kopieSichern();
     return true;
   }catch(e){
     console.warn('Preisliste nicht aus der Datenbank geholt:', e);
     return false;   /* kein Fehler, sondern der Uebergang zum Notweg */
   }
+}
+
+/* ── Kopie im Browser ─────────────────────────────────────────────────────
+   Wie in den uebrigen Werkzeugen steht beim Oeffnen sofort die zuletzt aus der
+   Datenbank geholte Preisliste da; die frische folgt einen Augenblick spaeter.
+   Abgelegt wird nur, was aus der Datenbank kam — eine von Hand geladene Mappe
+   soll beim naechsten Oeffnen nicht als Preisliste erscheinen. */
+const KOPIE_SCHLUESSEL = 'mediaSheetPreisliste';
+
+function kopieSichern(){
+  try{ localStorage.setItem(KOPIE_SCHLUESSEL, JSON.stringify(BESTAND)); }catch(e){}
+}
+
+function kopieLaden(){
+  try{
+    const B = JSON.parse(localStorage.getItem(KOPIE_SCHLUESSEL) || 'null');
+    if(B && typeof B === 'object' && Object.keys(B).length){
+      BESTAND = B; HERKUNFT = 'Browser-Speicher';
+      return true;
+    }
+  }catch(e){}
+  return false;
 }
 
 /* ── Notweg: die Angebotsdaten.xlsx von der Adresse ───────────────────────
@@ -1700,8 +1723,12 @@ async function starten(){
   document.getElementById('ladeKnopf').addEventListener('click', () => document.getElementById('datei').click());
   document.getElementById('datei').addEventListener('change', dateiGewaehlt);
 
-  /* Erst die Datenbank, dann - falls sie schweigt - die Datei daneben. Klappt
-     beides nicht, bleibt der Weg ueber „Daten laden". */
+  /* Liegt eine Kopie im Browser, steht das Blatt sofort. Danach die Datenbank,
+     dann - falls sie schweigt - die Datei daneben. Klappt beides nicht, bleibt
+     es bei der Kopie oder beim Weg ueber „Daten laden". */
+  const ausKopie = kopieLaden();
+  if(ausKopie){ auswahlAufbauen(); wechseln(); }
+  const vorher = ausKopie ? JSON.stringify(BESTAND) : '';
   const ok = await ausDatenbank() || await ausMappe();
   if(!Object.keys(BESTAND).length && !ok){
     document.getElementById('status').textContent = location.protocol === 'file:'
@@ -1709,7 +1736,15 @@ async function starten(){
       : 'Preisliste nicht erreichbar – bitte Angebotsdaten.xlsx laden';
     return;
   }
-  if(ok){ auswahlAufbauen(); wechseln(); }
+  if(!ok) return;
+  /* Unveraenderte Zahlen: nur die Statuszeile nachziehen, damit eine schon
+     getroffene Formatauswahl nicht verloren geht. */
+  if(ausKopie && JSON.stringify(BESTAND) === vorher){
+    AKTUELL = lage(GEWAEHLT.jahr, GEWAEHLT.titel);
+    leisteNachfuehren();
+    return;
+  }
+  auswahlAufbauen(); wechseln();
 }
 
 /* Die Schriften veraendern die Zeilenhoehen; wird vor ihrem Eintreffen
