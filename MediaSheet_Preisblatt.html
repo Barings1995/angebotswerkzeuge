@@ -1541,6 +1541,10 @@ function titelleisteAufbauen(){
     if(!(f in stelle)){ stelle[f] = gruppen.length; gruppen.push({ f, titel:[] }); }
     gruppen[stelle[f]].titel.push(t);
   });
+  /* Fachgruppen und Titel alphabetisch; Titel ohne Fachbereich bleiben am Ende. */
+  const abc = (x, y) => x.localeCompare(y, 'de', { numeric:true, sensitivity:'base' });
+  gruppen.sort((x, y) => (x.f === '') - (y.f === '') || abc(x.f, y.f));
+  gruppen.forEach(g => g.titel.sort(abc));
   /* Ohne Fachbereiche (etwa aus einer Excel-Mappe) eine schlichte Liste */
   const mitKopf = gruppen.length > 1 || (gruppen.length === 1 && gruppen[0].f !== '');
   if(TL_ZU === null) TL_ZU = new Set(gruppen.map(g => g.f));
