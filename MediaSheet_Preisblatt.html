@@ -1258,7 +1258,7 @@ function terminZeile(L, a, zeigeThemen, zeigeKong){
   if(L.hatAS) h += '<td class="mitte">' + esc(a.as) + '</td>';
   if(L.hatDU) h += '<td class="mitte">' + esc(a.du) + '</td>';
   if(L.hatEH) h += '<td class="mitte">' + esc(a.eh) + '</td>';
-  if(zeigeThemen) h += '<td class="thema">' + (a.themen.trim() ? esc(a.themen) : '<span class="leer">–</span>') + '</td>';
+  if(zeigeThemen) h += '<td class="thema">' + mehrzeilig(a.themen) + '</td>';
   if(zeigeKong)   h += '<td class="kong">' + mehrzeilig(a.kongresse) + '</td>';
   return h + '</tr>';
 }
