@@ -476,7 +476,7 @@ td.fmt{width:44%}
 
 /* Termine: die beiden Textspalten tragen, was die festen Spalten uebrig lassen. */
 .termine td.thema{font-size:10.5px}
-.termine td.kong{font-size:9.8px; color:var(--grey-600); line-height:1.35}
+.termine td.kong{font-size:9.8px; line-height:1.35}
 .termine tbody td{padding:4.5px 5px}
 
 /* Zwischen der Standzeile und dem ersten Inhalt steht derselbe Abstand wie
@@ -1242,7 +1242,7 @@ function terminKopf(L, zeigeThemen, zeigeKong){
   if(L.hatDU) h += '<th class="mitte">DU</th>';
   if(L.hatEH) h += '<th class="mitte">EH</th>';
   if(zeigeThemen) h += '<th>Themenschwerpunkte</th>';
-  if(zeigeKong)   h += '<th>Kongresse (Auslage)</th>';
+  if(zeigeKong)   h += '<th>Kongresse</th>';
   return h + '</tr></thead>';
 }
 
