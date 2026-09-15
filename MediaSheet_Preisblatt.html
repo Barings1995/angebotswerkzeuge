@@ -925,11 +925,15 @@ function esc(s){
     .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 }
 
-function geld(v){
+/* Preise immer kaufmaennisch mit zwei Nachkommastellen; ganze Zahlen wie die
+   Auflage ohne. */
+function geld(v){ return zahl(v, 2); }
+
+function zahl(v, stellen){
   if(v == null || v === '') return '';
   const n = Number(v);
   if(isNaN(n)) return '';
-  let s = (Math.abs(n - Math.round(n)) < 0.005) ? String(Math.round(n)) : n.toFixed(2).replace('.', ',');
+  let s = stellen ? n.toFixed(stellen).replace('.', ',') : String(Math.round(n));
   const teile = s.split(',');
   teile[0] = teile[0].replace(/\B(?=(\d{3})+(?!\d))/g, '.');
   return teile.join(',');
@@ -1166,7 +1170,7 @@ function preisseitenBauen(L){
   const kopfHtml = preisKopf(zeigeRabatt, zeigeAE, zeigeTermin, einspaltig);
   const legende = preisLegende(L, zeigeRabatt, zeigeAE, zeigeTermin, einspaltig);
   const unter = 'Fachbereich ' + esc(L.fach) +
-                (L.auflage ? ' · Auflage <b>' + geld(L.auflage) + '</b> Exemplare' : '') +
+                (L.auflage ? ' · Auflage <b>' + zahl(L.auflage) + '</b> Exemplare' : '') +
                 (L.termine.length ? ' · ' + L.termine.length + ' Ausgaben im Jahr' : '');
 
   const G = gruppen(L);
