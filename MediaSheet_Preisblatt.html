@@ -319,6 +319,15 @@ select:disabled{opacity:.5; cursor:not-allowed}
 /* Umfang untereinander: nebeneinander ist die Spalte zu schmal. */
 .schalter .umfang{flex-direction:column; align-self:stretch}
 .schalter .umfang button{text-align:left}
+/* Zwei Zeilen hoch, damit auch laengere Angaben ganz sichtbar bleiben; der
+   Fuss selbst bleibt einzeilig, Zeilenumbrueche werden deshalb nicht angenommen. */
+#sKontakt{
+  width:15rem; max-width:100%; resize:none; font:inherit; font-size:12.5px; line-height:1.4;
+  padding:6px 9px; border:1.5px solid var(--border); border-radius:var(--radius-md);
+  color:var(--text); background:var(--white); transition:border-color .12s;
+}
+#sKontakt:focus{outline:none; border-color:var(--navy); box-shadow:0 0 0 2px rgba(0,40,90,.08)}
+.o-hinweis{font-size:11px; color:var(--grey-600); line-height:1.4}
 
 /* ── Titelleiste ──────────────────────────────────────────────────────────
    Titel links als Liste, nach Fachbereichen gruppiert, mit Suche und
@@ -354,6 +363,7 @@ select:disabled{opacity:.5; cursor:not-allowed}
   .einst .schalter{flex-direction:column; gap:0; padding:.3rem 1rem .8rem}
   .einst .o-grp{border-top:1px solid var(--border)}
   .einst .o-grp:first-child{border-top:none}
+  #sKontakt{width:100%}
 }
 .tl-suche{position:relative; margin:0 0 .6rem}
 .tl-suche > svg{position:absolute; left:9px; top:50%; transform:translateY(-50%); color:var(--grey-500); pointer-events:none}
@@ -508,15 +518,9 @@ td.fmt{width:44%}
   display:flex; justify-content:space-between; align-items:flex-end; gap:14px;
   font-size:10px; color:var(--grey-600);
 }
-/* Der Ansprechpartner wird unmittelbar im Fuss geschrieben; die Eingabe auf der
-   ersten Seite wandert beim Verlassen des Feldes auf die uebrigen Seiten. */
-.kontakt{
-  min-width:180px; outline:0; border-radius:var(--radius-sm); padding:2px 4px;
-  margin:-2px -4px; white-space:pre-wrap;
-}
-.blatt:first-of-type .kontakt:hover{background:var(--surface-hover)}
-.blatt:first-of-type .kontakt:focus{background:var(--white); box-shadow:0 0 0 2px var(--blue-light)}
-.kontakt:empty::before{content:attr(data-platzhalter); color:var(--grey-500)}
+/* Der Ansprechpartner wird in der Leiste eingetragen (Feld „Ansprechpartner“);
+   im Fuss steht er nur noch zur Anzeige, auf jeder Seite gleich. */
+.kontakt{min-width:180px}
 .fuss .seite{white-space:nowrap; text-align:right}
 
 /* ── Druck ────────────────────────────────────────────────────────────────
@@ -538,7 +542,6 @@ td.fmt{width:44%}
     padding:14mm; break-after:page;
   }
   .blatt:last-child{break-after:auto}
-  .kontakt:empty::before{content:''}
 }
 
 @media screen and (max-width:900px){
@@ -658,6 +661,10 @@ td.fmt{width:44%}
   </div>
   <div class="o-grp" id="gKenn"><div class="o-kopf">Kennzeichnung</div>
     <label id="sVorlFeld"><input type="checkbox" id="sVorl" checked> Vermerk &bdquo;vorl&auml;ufig&ldquo;</label>
+  </div>
+  <div class="o-grp" id="gKontakt"><div class="o-kopf">Ansprechpartner</div>
+    <textarea id="sKontakt" rows="2" placeholder="Name &middot; Funktion" aria-label="Ansprechpartner im Fu&szlig; des Blattes" autocomplete="off" spellcheck="false"></textarea>
+    <div class="o-hinweis">Erscheint im Fu&szlig; jeder Seite.</div>
   </div>
 </div>
 </aside>
@@ -1061,7 +1068,7 @@ function neuesBlatt(art, unter){
     '</div>' +
     '<div class="koerper"></div>' +
     '<div class="fuss">' +
-      '<div class="kontakt" data-platzhalter="Name · Funktion"></div>' +
+      '<div class="kontakt"></div>' +
       '<div class="seite"></div>' +
     '</div>';
   document.getElementById('buehne').appendChild(el);
@@ -1384,24 +1391,26 @@ function zeichnen(){
 }
 
 /* ── Ansprechpartner ──────────────────────────────────────────────────────
-   Geschrieben wird im Fuss der ersten Seite; beim Verlassen des Feldes wandert
-   der Text auf die uebrigen Seiten und in den Zwischenspeicher des Geraetes.
-   Dasselbe Verfahren wie das Absenderfeld in MediaQuote, aber mit eigenem
-   Schluessel — die Werkzeuge sollen nicht aneinanderhaengen. */
+   Geschrieben wird im Feld „Ansprechpartner“ der Leiste (seit 15.09.2026, vorher
+   unmittelbar im Fuss der ersten Seite). Jede Eingabe steht sofort auf allen
+   Seiten und im Zwischenspeicher des Geraetes — mit eigenem Schluessel, die
+   Werkzeuge sollen nicht aneinanderhaengen. */
+function kontaktLesen(){
+  try{ return localStorage.getItem(KONTAKT_SCHLUESSEL) || ''; }catch(e){ return ''; }
+}
 function kontaktSetzen(){
-  let text = '';
-  try{ text = localStorage.getItem(KONTAKT_SCHLUESSEL) || ''; }catch(e){}
-  SEITEN.forEach((b, i) => {
-    const k = b.querySelector('.kontakt');
-    k.textContent = text;
-    if(i === 0){
-      k.setAttribute('contenteditable', 'true');
-      k.addEventListener('blur', () => {
-        const neu = k.textContent.trim();
-        try{ localStorage.setItem(KONTAKT_SCHLUESSEL, neu); }catch(e){}
-        SEITEN.forEach(x => { if(x !== b) x.querySelector('.kontakt').textContent = neu; });
-      });
-    }
+  const text = kontaktLesen().trim();
+  SEITEN.forEach(b => { b.querySelector('.kontakt').textContent = text; });
+}
+function kontaktFeldVerbinden(){
+  const feld = document.getElementById('sKontakt');
+  feld.value = kontaktLesen();
+  feld.addEventListener('keydown', e => { if(e.key === 'Enter') e.preventDefault(); });
+  feld.addEventListener('input', () => {
+    const einzeilig = feld.value.replace(/\s*[\r\n]+\s*/g, ' ');
+    if(einzeilig !== feld.value) feld.value = einzeilig;
+    try{ localStorage.setItem(KONTAKT_SCHLUESSEL, feld.value); }catch(e){}
+    kontaktSetzen();
   });
 }
 
@@ -1487,6 +1496,7 @@ function leisteNachfuehren(){
   document.querySelectorAll('#schalter > .o-grp:not(#gUmfang)').forEach(g => {
     g.hidden = !Array.from(g.children).some(k => !k.classList.contains('o-kopf') && !k.hidden);
   });
+  document.getElementById('gKontakt').hidden = !L;
   const kasten = document.getElementById('schalter');
   document.getElementById('einst').hidden = !Array.from(kasten.children).some(k => !k.hidden);
 
@@ -1653,6 +1663,7 @@ function einstellungenMerken(id){
 /* ── Start ────────────────────────────────────────────────────────────────── */
 async function starten(){
   einstellungenLesen();
+  kontaktFeldVerbinden();
 
   document.getElementById('wJahr').addEventListener('change', e => {
     GEWAEHLT.jahr = e.target.value;
