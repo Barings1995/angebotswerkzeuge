@@ -843,12 +843,27 @@ function titelVonId(id) { return (ARBEIT || []).find(t => t.id === id) || null; 
    das Ende, ein weiterer Punkt oder ein Komma. „0.5" und „3,5" bleiben damit
    Nachkommastellen, „1.234.567" wird 1234567. Einzig „3.475" laesst sich nicht mehr
    als drei Komma vier sieben fuenf schreiben — dafuer gibt es das Komma. */
+/* Liest Eingaben in deutscher Schreibweise. Tausenderpunkte gelten nur, wenn die
+   ganze Zahl sauber gegliedert ist (1.250 / 12.345,67 / 1.000.000) und nicht mit 0
+   beginnt; sonst ist ein Punkt das Dezimalzeichen (3475.50). Punkt und Komma
+   gemischt ausserhalb dieser Gliederung ist keine Zahl. Zahlen aus der Datenbank
+   kommen unveraendert durch. */
 function zahlOderNull(wert) {
+  if (typeof wert === 'number') return isNaN(wert) ? NaN : wert;
   let s = String(wert == null ? '' : wert).trim().replace(/\s/g, '');
   if (s === '') return null;
-  s = s.replace(/\.(?=\d{3}(?:[.,]|$))/g, '').replace(',', '.');
+  if (/^-?[1-9]\d{0,2}(\.\d{3})+(,\d*)?$/.test(s)) s = s.replace(/\./g, '').replace(',', '.');
+  else if (s.includes(',')) { if (s.includes('.')) return NaN; s = s.replace(',', '.'); }
   const n = Number(s);
   return isNaN(n) ? NaN : n;
+}
+
+/* Preise und Zuschlaege: hoechstens zwei Nachkommastellen (Cent). Mehr gilt als
+   unbrauchbar und wird markiert — so wird aus „3,475" nie still 3.475 €. */
+function preisOderNull(wert) {
+  const n = zahlOderNull(wert);
+  if (n == null || isNaN(n)) return n;
+  return Math.abs(Math.round(n * 100) - n * 100) > 1e-6 ? NaN : n;
 }
 
 /* Preise mit Tausenderpunkt und immer zwei Nachkommastellen: aus 3475 wird „3.475,00",
@@ -858,7 +873,7 @@ function zahlOderNull(wert) {
    Nicht fuer das Seiten-Aequivalent: das ist kein Preis, sondern ein Faktor. */
 function preisText(wert) {
   if (wert == null || wert === '') return '';
-  const n = zahlOderNull(wert);
+  const n = preisOderNull(wert);
   if (n == null || isNaN(n)) return String(wert);
   return n.toLocaleString('de-DE', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 }
@@ -1173,8 +1188,8 @@ function alleFehler() {
       const schl = (p.kategorie || '') + '|' + (p.format || '');
       if (gesehen.has(schl)) fehler.push(wo + ': steht zweimal in derselben Kategorie');
       gesehen.add(schl);
-      if (isNaN(zahlOderNull(p.preis)))       fehler.push(wo + ': Preis ist keine Zahl');
-      if (isNaN(zahlOderNull(p.zuschlag_4c))) fehler.push(wo + ': 4c-Zuschlag ist keine Zahl');
+      if (isNaN(preisOderNull(p.preis)))       fehler.push(wo + ': Preis ist keine Zahl mit höchstens zwei Nachkommastellen');
+      if (isNaN(preisOderNull(p.zuschlag_4c))) fehler.push(wo + ': 4c-Zuschlag ist keine Zahl mit höchstens zwei Nachkommastellen');
       const eq = zahlOderNull(p.seiten_aequivalent);
       if (isNaN(eq) || (eq != null && eq <= 0)) fehler.push(wo + ': Seiten-Äquivalent muss größer als 0 sein');
     });
@@ -1510,8 +1525,8 @@ function preiseZeichnen(t, karte) {
       const formatFeld = '<input value="' + esc(p.format) + '" onchange="preisSetzen(\'' + p.id + '\',\'format\',this.value)">';
       html += '<tr' + (neu ? ' class="zeile-neu"' : '') + '>' +
         aendZelle(karte, st('format'), '', neu ? '<div class="mit-marke">' + formatFeld + '<span class="neu-marke">neu</span></div>' : formatFeld) +
-        aendZelle(karte, st('preis'), 'r', '<input class="zahl' + (isNaN(zahlOderNull(p.preis)) ? ' fehler' : '') + '" value="' + esc(preisText(p.preis)) + '" onchange="preisSetzen(\'' + p.id + '\',\'preis\',this.value)">') +
-        aendZelle(karte, st('zuschlag_4c'), 'r', '<input class="zahl' + (isNaN(zahlOderNull(p.zuschlag_4c)) ? ' fehler' : '') + '" value="' + esc(preisText(p.zuschlag_4c)) + '" onchange="preisSetzen(\'' + p.id + '\',\'zuschlag_4c\',this.value)">') +
+        aendZelle(karte, st('preis'), 'r', '<input class="zahl' + (isNaN(preisOderNull(p.preis)) ? ' fehler' : '') + '" value="' + esc(preisText(p.preis)) + '" onchange="preisSetzen(\'' + p.id + '\',\'preis\',this.value)">') +
+        aendZelle(karte, st('zuschlag_4c'), 'r', '<input class="zahl' + (isNaN(preisOderNull(p.zuschlag_4c)) ? ' fehler' : '') + '" value="' + esc(preisText(p.zuschlag_4c)) + '" onchange="preisSetzen(\'' + p.id + '\',\'zuschlag_4c\',this.value)">') +
         aendZelle(karte, st('rabattfaehig'), '', jaNein(p.id, 'rabattfaehig', p.rabattfaehig)) +
         aendZelle(karte, st('ae_faehig'), '', jaNein(p.id, 'ae_faehig', p.ae_faehig)) +
         aendZelle(karte, st('termin_art'), '', '<select onchange="preisSetzen(\'' + p.id + '\',\'termin_art\',this.value)">' +
@@ -1619,7 +1634,7 @@ function preisSetzen(id, feld, wert) {
   const p = (t.preis || []).find(x => x.id === id); if (!p) return;
   if (feld === 'rabattfaehig' || feld === 'ae_faehig') p[feld] = (wert === 'ja');
   else if (feld === 'preis' || feld === 'zuschlag_4c' || feld === 'seiten_aequivalent') {
-    const n = zahlOderNull(wert);
+    const n = feld === 'seiten_aequivalent' ? zahlOderNull(wert) : preisOderNull(wert);
     p[feld] = isNaN(n) ? String(wert) : n;   /* unbrauchbare Eingabe bleibt stehen, damit die Prüfung sie zeigt */
   }
   else if (feld === 'termin_art') p[feld] = wert || null;
