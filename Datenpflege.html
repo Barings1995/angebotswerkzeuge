@@ -836,18 +836,15 @@ function titelVonId(id) { return (ARBEIT || []).find(t => t.id === id) || null; 
 
 /* Zahlen, wie sie hier geschrieben werden: das Komma trennt die Nachkommastellen,
    der Punkt die Tausender. Der Tausenderpunkt muss vor dem Rechnen weg — seit die
-   Felder Preise als „3.475" zeigen, wuerde ein blosses Wieder-Speichern daraus sonst
-   die Zahl 3,475 machen und jeden Preis durch tausend teilen.
+   Felder Preise als „3.475,00" zeigen, wuerde ein blosses Wieder-Speichern daraus
+   sonst die Zahl 3,475 machen und jeden Preis durch tausend teilen.
 
-   Als Tausenderpunkt gilt ein Punkt, auf den genau drei Ziffern folgen und danach
-   das Ende, ein weiterer Punkt oder ein Komma. „0.5" und „3,5" bleiben damit
-   Nachkommastellen, „1.234.567" wird 1234567. Einzig „3.475" laesst sich nicht mehr
-   als drei Komma vier sieben fuenf schreiben — dafuer gibt es das Komma. */
-/* Liest Eingaben in deutscher Schreibweise. Tausenderpunkte gelten nur, wenn die
-   ganze Zahl sauber gegliedert ist (1.250 / 12.345,67 / 1.000.000) und nicht mit 0
-   beginnt; sonst ist ein Punkt das Dezimalzeichen (3475.50). Punkt und Komma
-   gemischt ausserhalb dieser Gliederung ist keine Zahl. Zahlen aus der Datenbank
-   kommen unveraendert durch. */
+   Tausenderpunkte gelten nur, wenn die ganze Zahl sauber gegliedert ist (1.250 /
+   12.345,67 / 1.000.000) und nicht mit 0 beginnt; sonst ist ein Punkt das
+   Dezimalzeichen (3475.50, 0.5). Punkt und Komma gemischt ausserhalb dieser
+   Gliederung ist keine Zahl. Zahlen aus der Datenbank kommen unveraendert durch.
+   „3,475" oder „0.125" liest diese Funktion als Nachkommastellen; fuer Preise
+   sperrt sie preisOderNull, weil dort mehr als zwei Stellen nicht vorkommen. */
 function zahlOderNull(wert) {
   if (typeof wert === 'number') return isNaN(wert) ? NaN : wert;
   let s = String(wert == null ? '' : wert).trim().replace(/\s/g, '');
