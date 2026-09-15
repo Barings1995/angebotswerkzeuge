@@ -261,7 +261,14 @@ button, input, select, textarea { font-family: inherit; }
   .such-x:hover { color: var(--navy); background: var(--surface-hover); }
   .such-x:active { transform: translateY(1px); }
   .stand-hinweis { font-size: 12.5px; color: var(--grey-600); }
-  .offen-hinweis { display: none; align-items: center; gap: 6px; font-size: 12.5px; font-weight: 600; color: var(--orange-dark); background: #fdf3e7; border: 1px solid #f6ddbc; border-radius: var(--radius-md); padding: 3px 10px; }
+  /* Der Hinweis ist zugleich der Knopf zur Übersicht der offenen Änderungen.
+     Die Übersicht öffnet sich nur auf Wunsch, nicht vor jedem Speichern
+     (Entscheidung von Marcus, 15.09.2026) — sonst kostete jede kleine Korrektur
+     einen Klick mehr. */
+  .offen-hinweis { display: none; align-items: center; gap: 6px; font-size: 12.5px; font-weight: 600; line-height: 1.5; color: var(--orange-dark); background: #fdf3e7; border: 1px solid #f6ddbc; border-radius: var(--radius-md); padding: 3px 10px; cursor: pointer; }
+  .offen-hinweis:hover { background: #fbe9d3; border-color: #f3c58f; }
+  .offen-hinweis:active { transform: translateY(1px); }
+  .offen-hinweis:focus-visible { outline: 2px solid var(--navy); outline-offset: 2px; }
   .offen-hinweis.an { display: inline-flex; }
 
   /* ── Zweispaltiger Arbeitsbereich ── */
@@ -279,6 +286,8 @@ button, input, select, textarea { font-family: inherit; }
   .titel-zeile .zahl { font-size: 11px; color: var(--grey-500); flex: none; }
   .titel-zeile .offen { font-size: 11px; color: var(--orange-dark); font-weight: 600; flex: none; }
   .titel-zeile .geaendert { color: var(--orange); font-weight: 700; flex: none; }
+  /* Zahl der offenen Änderungen je Titel; bei einem neu angelegten Titel „neu". */
+  .titel-zeile .aend-zahl { display: inline-block; font-size: 10.5px; font-weight: 700; color: #fff; background: var(--orange); border-radius: 9px; padding: 0 6px; margin-left: 5px; line-height: 16px; vertical-align: 1px; }
 
   /* ── Trefferliste ── */
   /* Die Treffer stehen im rechten Feld, an der Stelle des Titels: die Suche
@@ -320,7 +329,6 @@ button, input, select, textarea { font-family: inherit; }
     border: 1px solid transparent; border-radius: var(--radius-sm); }
   .kat-kopf .kat-name:hover { border-color: var(--border); background: var(--white); }
   .kat-kopf .kat-name:focus { outline: none; border-color: var(--navy); background: var(--white); box-shadow: 0 0 0 2px rgba(0,40,90,.08); }
-  .kat-kopf.geaendert .kat-name { color: var(--orange); }
   .kat-kopf .kat-zahl { flex: none; }
   .kat-kopf .kat-tat { flex: none; font: inherit; letter-spacing: .06em; color: var(--grey-500);
     background: none; border: none; cursor: pointer; padding: 2px 6px; border-radius: var(--radius-sm); }
@@ -347,7 +355,6 @@ button, input, select, textarea { font-family: inherit; }
   td input:focus, td select:focus { outline: none; border-color: var(--navy); background: var(--white); box-shadow: 0 0 0 2px rgba(0,40,90,.08); }
   td input.zahl { text-align: right; }
   td input.fehler, td select.fehler { border-color: var(--red); background: var(--red-bg); }
-  td.geaendert { box-shadow: inset 2px 0 0 var(--orange); }
   .zeilen-x { border: none; background: none; color: var(--grey-500); cursor: pointer; font-size: 15px; line-height: 1; padding: 2px 5px; border-radius: var(--radius-sm); }
   .zeilen-x:hover { color: var(--red); background: var(--red-bg); }
   .fehlertext { color: var(--red); font-size: 11.5px; padding: 1px 6px 5px; }
@@ -380,6 +387,32 @@ button, input, select, textarea { font-family: inherit; }
     background: var(--white); box-shadow: 0 0 0 2px rgba(0,40,90,.08); }
   .neu-zeile { padding: 8px 2px 2px; }
 
+  /* ── Offene Änderungen ──
+     Jedes geänderte Feld trägt bis zum Speichern den hellen Orangeton des Hinweises
+     „Änderungen offen". Zuvor stand nur ein Strich vor Format und Preis; die übrigen
+     Preisfelder, die Stammdaten und sämtliche Termine blieben unmarkiert. Beim
+     Überfahren nennt #vorherTipp den gespeicherten Wert. Neue Zeilen werden als
+     Ganzes markiert; entfernte sind nicht mehr zu sehen und stehen deshalb in der
+     Übersicht. Die Regeln stehen hinter denen der Tabellen, damit sie bei gleicher
+     Gewichtung gewinnen; eine Beanstandung (rot) geht vor. */
+  td.aend input:not(.fehler), td.aend select:not(.fehler),
+  .termin-tab td.aend textarea, .feld.aend input, .kat-kopf.aend .kat-name {
+    background: #fdf3e7; border-color: #f3c58f; }
+  td.aend input:focus:not(.fehler), td.aend select:focus:not(.fehler),
+  .termin-tab td.aend textarea:focus, .feld.aend input:focus, .kat-kopf.aend .kat-name:focus {
+    border-color: var(--navy); }
+  tr.zeile-neu td { background: #fef8f0; }
+  tr.zeile-neu td:first-child { box-shadow: inset 3px 0 0 var(--orange); }
+  .mit-marke { display: flex; align-items: center; gap: 6px; }
+  .mit-marke input { flex: 1 1 auto; min-width: 0; }
+  .neu-marke { flex: none; font-size: 10px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase;
+    color: var(--orange-dark); background: #fdf3e7; border: 1px solid #f3c58f; border-radius: 3px; padding: 0 5px; line-height: 16px; }
+  /* Fest am Fenster statt am Feld: die Termintabelle rollt seitlich und schnitte
+     einen Hinweis über ihrer ersten Zeile sonst ab. */
+  #vorherTipp { position: fixed; z-index: 70; pointer-events: none; white-space: nowrap; max-width: 440px;
+    overflow: hidden; text-overflow: ellipsis; background: var(--navy); color: #fff; font-size: 11.5px;
+    font-weight: 500; line-height: 1.4; padding: 4px 9px; border-radius: 5px; box-shadow: var(--shadow-md); }
+
   /* ── Rückfragen und Dialoge ── */
   .schleier { position: fixed; inset: 0; background: rgba(10,25,50,.42); display: flex; align-items: center; justify-content: center; padding: 20px; z-index: 50; }
   .dialog { background: var(--white); border-radius: var(--radius-xl); box-shadow: var(--shadow-lg); width: 100%; max-width: 460px; overflow: hidden; }
@@ -396,6 +429,29 @@ button, input, select, textarea { font-family: inherit; }
   .dialog-liste .eintrag { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 7px 20px; border-top: 1px solid #eef1f5; font-size: 13px; }
   .dialog-liste .eintrag b { font-weight: 600; }
   .dialog-liste .eintrag span { font-size: 11.5px; color: var(--grey-600); }
+
+  /* Übersicht der offenen Änderungen: je Titel ein Kopf, darunter eine Zeile je
+     Änderung. Ein Klick führt zur Stelle, wie in der Trefferliste der Suche. */
+  .dialog.uebersicht { max-width: 760px; }
+  .ueb { padding: 0 20px 8px; max-height: calc(100vh - 230px); overflow-y: auto; }
+  .ueb-titel { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; margin-top: 12px; padding: 4px 0; border-bottom: 2px solid var(--navy); }
+  .ueb-titel b { font-size: 14px; color: var(--navy); }
+  .ueb-titel span { font-size: 11.5px; color: var(--grey-600); white-space: nowrap; }
+  .ueb table { table-layout: fixed; }
+  .ueb td { padding: 6px; vertical-align: baseline; }
+  .ueb tr.geht { cursor: pointer; }
+  .ueb tr:not(.geht):hover td { background: none; }
+  .ueb .ber { width: 78px; font-size: 10.5px; font-weight: 700; color: var(--grey-600); text-transform: uppercase; letter-spacing: .07em; white-space: nowrap; }
+  .ueb .wo { width: 190px; overflow-wrap: anywhere; }
+  .ueb .fe { width: 130px; color: var(--grey-600); }
+  .ueb .wert { overflow-wrap: anywhere; }
+  .ueb .alt { color: var(--grey-600); text-decoration: line-through; text-decoration-color: rgba(107,122,153,.6); }
+  .ueb .pf { color: var(--grey-500); padding: 0 6px; }
+  .ueb .jetzt { font-weight: 600; }
+  .ueb .art-neu { color: var(--green); font-weight: 600; }
+  .ueb .art-weg { color: var(--red); font-weight: 600; }
+  .ueb .hin { width: 22px; text-align: right; color: var(--grey-500); }
+  .ueb-sperre { padding: 9px 20px; font-size: 12.5px; color: var(--red); background: var(--red-bg); border-top: 1px solid var(--red-border); }
 
   .meldung { position: fixed; left: 50%; transform: translateX(-50%); bottom: 22px; background: var(--navy); color: #fff; font-size: 13px; font-weight: 600; padding: 9px 18px; border-radius: var(--radius-md); box-shadow: var(--shadow-lg); z-index: 60; }
   .meldung.schlecht { background: var(--red); }
@@ -474,7 +530,7 @@ button, input, select, textarea { font-family: inherit; }
       </div>
       <span class="fuge"></span>
       <span class="stand-hinweis" id="standHinweis"></span>
-      <span class="offen-hinweis" id="offenHinweis"></span>
+      <button type="button" class="offen-hinweis" id="offenHinweis" onclick="uebersichtOeffnen()" title="Übersicht der offenen Änderungen öffnen"></button>
       <div class="aktionen">
         <div class="gruppe">
           <button class="btn" onclick="excelEingangWaehlen()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 9v10a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V9"/><polyline points="7 8 12 3 17 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>Aus Excel laden …</button>
@@ -864,38 +920,218 @@ function offeneAenderungen() {
   return ARBEIT.some(titelGeaendert);
 }
 
-/* Gezaehlt wird auf Zeilenebene, nicht je Feld: ein angelegter oder entfernter
-   Titel zaehlt einmal, seine Stammdaten (Name, Auflage, Fachbereich) zusammen
-   einmal, und jede Preis- oder Terminzeile einmal - gleich, ob an ihr ein Wert
-   oder drei geaendert wurden. Das entspricht dem, was in der Tabelle als eine
-   markierte Zeile erscheint. Feiner zu zaehlen hiesse, jedes Feld einzeln
-   gegenzuhalten; die Zahl wuerde dadurch groesser, aber nicht aussagekraeftiger. */
-function zahlOffeneAenderungen() {
-  if (!ARBEIT || !URSPRUNG) return 0;
-  let n = 0;
+/* Gezaehlt wird je Feld (seit 15.09.2026, auf Wunsch von Marcus; zuvor je Zeile):
+   jeder geaenderte Wert zaehlt einmal - der Preis und der 4c-Zuschlag derselben
+   Zeile also zweimal. Eine neu angelegte oder entfernte Zeile zaehlt einmal, ein
+   neu angelegter oder entfernter Titel ebenfalls, und zwar samt allem, was er
+   mitbringt. Das Umbenennen einer Kategorie zaehlt einmal, nicht einmal je Format.
+   Die Reihenfolge zaehlt nicht: sie wird erst beim Speichern vergeben.
 
-  const zeilenZaehlen = (alt, jetzt) => {
-    const vorher = alt || [], nachher = jetzt || [];
-    let z = 0;
-    nachher.forEach(a => {
-      const u = vorher.find(b => b.id === a.id);
-      if (!u || !gleich(u, a)) z++;
+   aenderungenVon liefert die Aenderungen eines Titels als Liste. Aus ihr lesen die
+   Zaehlung, die Markierung in den Tabellen und die Uebersicht - alle drei zeigen
+   damit dasselbe. Verglichen wird der Wortlaut; null und leer gelten als gleich,
+   wie beim Speichern (nurFelder). */
+const STAMM_PRUEF  = [['name', 'Titel'], ['auflage', 'Auflage'], ['fachbereich', 'Fachbereich']];
+const PREIS_PRUEF  = [['format', 'Format'], ['preis', 'Preis €'], ['zuschlag_4c', '4c-Zuschlag €'],
+  ['rabattfaehig', 'rabatt'], ['ae_faehig', 'AE'], ['termin_art', 'Termin'], ['seiten_aequivalent', 'Seiten-Äqu.']];
+const TERMIN_PRUEF = [['heft', 'Heft'], ['monat', 'Monat'], ['et', 'ET'], ['anzeigenschluss', 'AS'],
+  ['du_schluss', 'DU-Schluss'], ['eh_termin', 'EH-Termin'], ['themen', 'Themenschwerpunkte'], ['kongresse', 'Kongresse']];
+const TRENNER = ' ||| ';
+
+function roh(w) { return w == null ? '' : String(w); }
+function leerText(w) { return roh(w).trim() === '' ? 'leer' : roh(w); }
+function stammWert(f, w) { return f === 'auflage' ? (ganzText(w) || 'leer') : leerText(w); }
+function preisWert(f, w) {
+  if (f === 'preis' || f === 'zuschlag_4c') return preisText(w) || 'leer';
+  if (f === 'rabattfaehig' || f === 'ae_faehig') return w ? 'ja' : 'nein';
+  if (f === 'termin_art') return w || '—';
+  if (f === 'seiten_aequivalent') return zahlText(w) || 'auto';
+  return leerText(w);
+}
+function terminWert(f, w) {
+  if (f === 'themen' || f === 'kongresse') return roh(w).trim() ? roh(w).split('\n').join(' · ') : 'leer';
+  return leerText(w);
+}
+
+function aenderungenVon(t) {
+  const u = ursprungTitel(t.id);
+  const basis = { jahr: t.jahr, titelId: t.id, titel: t.name };
+  const liste = [];
+  const dazu = x => liste.push(Object.assign({}, basis, x));
+  if (!u) { dazu({ bereich: 'Titel', wo: 'Titel', art: 'neu' }); return liste; }
+
+  STAMM_PRUEF.forEach(([f, name]) => {
+    if (roh(u[f]) !== roh(t[f])) dazu({ bereich: 'Titel', wo: 'Stammdaten', name: name,
+      alt: stammWert(f, u[f]), neu: stammWert(f, t[f]), stelle: 'stamm-' + f });
+  });
+
+  const altPreis = u.preis || [], neuPreis = t.preis || [];
+  const paare = new Map();
+  neuPreis.forEach(p => {
+    const a = altPreis.find(x => x.id === p.id);
+    if (a && roh(a.kategorie) !== roh(p.kategorie)) paare.set(roh(a.kategorie) + TRENNER + roh(p.kategorie), [a.kategorie, p.kategorie]);
+  });
+  paare.forEach(([alt, neu]) => dazu({ bereich: 'Preise', wo: 'Kategorie', name: 'Name',
+    alt: leerText(alt), neu: leerText(neu), reiter: 'preise', stelle: 'kat-' + roh(neu) }));
+  neuPreis.forEach(p => {
+    const a = altPreis.find(x => x.id === p.id);
+    const wo = p.format || 'Format ohne Namen';
+    if (!a) { dazu({ bereich: 'Preise', wo: wo, art: 'neu', zeileId: p.id, reiter: 'preise', stelle: 'preis-' + p.id + '-format' }); return; }
+    PREIS_PRUEF.forEach(([f, name]) => {
+      if (roh(a[f]) !== roh(p[f])) dazu({ bereich: 'Preise', wo: wo, name: name,
+        alt: preisWert(f, a[f]), neu: preisWert(f, p[f]), reiter: 'preise', stelle: 'preis-' + p.id + '-' + f });
     });
-    vorher.forEach(b => { if (!nachher.find(a => a.id === b.id)) z++; });
-    return z;
-  };
+  });
+  altPreis.forEach(a => {
+    if (!neuPreis.some(p => p.id === a.id)) dazu({ bereich: 'Preise', wo: a.format || 'Format ohne Namen', art: 'weg', reiter: 'preise' });
+  });
 
-  (ARBEIT || []).forEach(t => {
-    const u = ursprungTitel(t.id);
-    if (!u) { n++; return; }                       /* neuer Titel: einmal */
-    if (u.name !== t.name || u.auflage !== t.auflage || u.fachbereich !== t.fachbereich) n++;
-    n += zeilenZaehlen(u.preis, t.preis);
-    n += zeilenZaehlen(u.termin, t.termin);
+  const altTermin = u.termin || [], neuTermin = t.termin || [];
+  neuTermin.forEach(z => {
+    const a = altTermin.find(x => x.id === z.id);
+    const wo = heftText(z.heft) || 'Ausgabe ohne Heft';
+    if (!a) { dazu({ bereich: 'Termine', wo: wo, art: 'neu', zeileId: z.id, reiter: 'termine', stelle: 'termin-' + z.id + '-heft' }); return; }
+    TERMIN_PRUEF.forEach(([f, name]) => {
+      if (roh(a[f]) !== roh(z[f])) dazu({ bereich: 'Termine', wo: wo, name: name,
+        alt: terminWert(f, a[f]), neu: terminWert(f, z[f]), reiter: 'termine', stelle: 'termin-' + z.id + '-' + f });
+    });
   });
-  (URSPRUNG || []).forEach(u => {
-    if (!(ARBEIT || []).find(t => t.id === u.id)) n++;   /* entfernter Titel */
+  altTermin.forEach(a => {
+    if (!neuTermin.some(z => z.id === a.id)) dazu({ bereich: 'Termine', wo: heftText(a.heft) || 'Ausgabe ohne Heft', art: 'weg', reiter: 'termine' });
   });
-  return n;
+  return liste;
+}
+
+/* Alle offenen Aenderungen, in der Ordnung der Titelliste: Jahrgang fuer Jahrgang,
+   darin nach Fachbereich und Namen; entfernte Titel am Ende ihres Jahrgangs. */
+function aenderungen() {
+  if (!ARBEIT || !URSPRUNG) return [];
+  const bleiben = new Set(ARBEIT.map(t => t.id));
+  const jahre = [...new Set(ARBEIT.map(t => t.jahr).concat(URSPRUNG.map(u => u.jahr)))].sort();
+  let liste = [];
+  jahre.forEach(j => {
+    titelNachAnzeige(j).forEach(t => { liste = liste.concat(aenderungenVon(t)); });
+    URSPRUNG.filter(u => u.jahr === j && !bleiben.has(u.id)).sort(NACH_NAMEN)
+      .forEach(u => liste.push({ jahr: u.jahr, titelId: null, titel: u.name, bereich: 'Titel', wo: 'Titel', art: 'weg' }));
+  });
+  return liste;
+}
+function zahlOffeneAenderungen() { return aenderungen().length; }
+
+/* Was die Tabellen eines Titels markieren: je Stelle der gespeicherte Wert, dazu
+   die Kennungen der neu angelegten Zeilen. Innerhalb eines neu angelegten Titels
+   bleibt alles unmarkiert - dort waere jede Zeile neu. */
+function aendKarte(t) {
+  const karte = { felder: new Map(), neu: new Set() };
+  if (t) aenderungenVon(t).forEach(x => {
+    if (x.art === 'neu' && x.zeileId) karte.neu.add(x.zeileId);
+    else if (!x.art && x.stelle) karte.felder.set(x.stelle, x.alt);
+  });
+  return karte;
+}
+function aendAttr(karte, stelle, klasse) {
+  const alt = karte.felder.get(stelle);
+  const k = ((klasse || '') + (alt != null ? ' aend' : '')).trim();
+  return (k ? ' class="' + k + '"' : '') + ' data-stelle="' + esc(stelle) + '"' +
+         (alt != null ? ' data-vorher="' + esc('vorher: ' + alt) + '"' : '');
+}
+function aendZelle(karte, stelle, klasse, inner) {
+  return '<td' + aendAttr(karte, stelle, klasse) + '>' + inner + '</td>';
+}
+
+function titelMarke(t) {
+  if (!titelGeaendert(t)) return '';
+  if (!ursprungTitel(t.id)) return ' <span class="aend-zahl" title="Neu angelegt, noch nicht gespeichert">neu</span>';
+  const n = aenderungenVon(t).length;
+  return n ? ' <span class="aend-zahl" title="' + (n === 1 ? '1 offene Änderung' : n + ' offene Änderungen') + '">' + n + '</span>'
+           : ' <span class="geaendert">•</span>';
+}
+
+/* ── Hinweis „vorher" ──
+   Ein einziges Element fuer die ganze Seite, fest am Fenster ausgerichtet. Es
+   erscheint ueber dem Feld, am oberen Fensterrand darunter. */
+function vorherTippWeg() { const e = document.getElementById('vorherTipp'); if (e) e.hidden = true; }
+document.addEventListener('mouseover', e => {
+  const ziel = e.target && e.target.closest ? e.target.closest('[data-vorher]') : null;
+  if (!ziel) { vorherTippWeg(); return; }
+  let tipp = document.getElementById('vorherTipp');
+  if (!tipp) { tipp = document.createElement('div'); tipp.id = 'vorherTipp'; document.body.appendChild(tipp); }
+  tipp.textContent = ziel.dataset.vorher;
+  tipp.hidden = false;
+  const r = ziel.getBoundingClientRect(), b = tipp.getBoundingClientRect();
+  let oben = r.top - b.height - 4;
+  if (oben < 4) oben = r.bottom + 4;
+  tipp.style.top = oben + 'px';
+  tipp.style.left = Math.max(4, Math.min(window.innerWidth - b.width - 4, r.left + r.width / 2 - b.width / 2)) + 'px';
+});
+window.addEventListener('scroll', vorherTippWeg, true);
+
+/* ── Übersicht der offenen Änderungen ── */
+let uebersichtListe = [];
+function uebersichtOeffnen() {
+  uebersichtListe = aenderungen();
+  const liste = uebersichtListe;
+  if (!liste.length) return;
+  const gruppeVon = x => x.jahr + TRENNER + x.titel + TRENNER + x.titelId;
+  const titelZahl = new Set(liste.map(gruppeVon)).size;
+  const jahre = new Set(liste.map(x => x.jahr)).size;
+  let html = '<h3>Offene Änderungen</h3><div class="erklaerung">' +
+    (liste.length === 1 ? '1 Änderung' : liste.length + ' Änderungen') + ' in ' +
+    (titelZahl === 1 ? '1 Titel' : titelZahl + ' Titeln') + ', noch nicht gespeichert. Ein Klick auf eine Zeile führt zur Stelle.</div><div class="ueb">';
+  let gruppe = null;
+  liste.forEach((x, i) => {
+    const schluessel = gruppeVon(x);
+    if (schluessel !== gruppe) {
+      if (gruppe !== null) html += '</table>';
+      const n = liste.filter(y => gruppeVon(y) === schluessel).length;
+      html += '<div class="ueb-titel"><b>' + esc(x.titel || 'Titel ohne Namen') + '</b><span>' +
+        (jahre > 1 ? 'Jahrgang ' + esc(x.jahr) + ' · ' : '') + (n === 1 ? '1 Änderung' : n + ' Änderungen') + '</span></div><table>';
+      gruppe = schluessel;
+    }
+    const geht = !!x.titelId;
+    const wert = x.art === 'neu' ? '<td colspan="2" class="art-neu">neu angelegt</td>'
+               : x.art === 'weg' ? '<td colspan="2" class="art-weg">entfernt</td>'
+               : '<td class="fe">' + esc(x.name) + '</td><td class="wert"><span class="alt">' + esc(x.alt) +
+                 '</span><span class="pf">→</span><span class="jetzt">' + esc(x.neu) + '</span></td>';
+    html += '<tr' + (geht ? ' class="geht" onclick="uebersichtSprung(' + i + ')"' : '') + '>' +
+      '<td class="ber">' + esc(x.bereich) + '</td><td class="wo">' + esc(x.wo) + '</td>' + wert +
+      '<td class="hin">' + (geht ? '›' : '') + '</td></tr>';
+  });
+  html += '</table></div>';
+  const fehler = alleFehler();
+  if (fehler.length) html += '<div class="ueb-sperre">Speichern ist gesperrt: ' +
+    (fehler.length === 1 ? 'eine Angabe stimmt' : fehler.length + ' Angaben stimmen') + ' noch nicht.</div>';
+  html += '<div class="dialog-knoepfe"><button class="btn" onclick="uebersichtSchliessen()">Schließen</button>' +
+    '<button class="btn btn-primär" onclick="uebersichtSchliessen();speichern()"' + (fehler.length ? ' disabled' : '') + '>Speichern</button></div>';
+  dialogZeigen(html);
+  document.querySelector('#dialogPlatz .dialog').classList.add('uebersicht');
+  document.addEventListener('keydown', uebersichtEscape, true);
+}
+function uebersichtEscape(e) {
+  if (!document.querySelector('#dialogPlatz .uebersicht')) { document.removeEventListener('keydown', uebersichtEscape, true); return; }
+  if (e.key === 'Escape') { e.stopPropagation(); uebersichtSchliessen(); }
+}
+function uebersichtSchliessen() {
+  document.removeEventListener('keydown', uebersichtEscape, true);
+  dialogSchliessen();
+}
+function uebersichtSprung(i) {
+  const x = uebersichtListe[i];
+  if (!x || !x.titelId || !titelVonId(x.titelId)) return;
+  uebersichtSchliessen();
+  if (suchText) {
+    suchText = '';
+    const feld = document.getElementById('suchFeld'); if (feld) feld.value = '';
+    suchXAuffrischen();
+  }
+  gewJahr = x.jahr;
+  gewTitel = x.titelId;
+  if (x.reiter && x.reiter !== reiter) reiterWechseln(x.reiter); else zeichnen();
+  const ziel = x.stelle && [...document.querySelectorAll('#inhalt [data-stelle]')].find(el => el.dataset.stelle === x.stelle);
+  if (!ziel) { document.getElementById('inhalt').scrollIntoView({ block: 'start' }); return; }
+  ziel.scrollIntoView({ block: 'center' });
+  const feld = ziel.matches('input, select, textarea') ? ziel : ziel.querySelector('input, select, textarea');
+  if (feld) feld.focus({ preventScroll: true });
 }
 
 function knoepfeAuffrischen() {
@@ -906,7 +1142,8 @@ function knoepfeAuffrischen() {
   const hinweis = document.getElementById('offenHinweis');
   hinweis.classList.toggle('an', offen);
   const zahl = offen ? zahlOffeneAenderungen() : 0;
-  hinweis.textContent = offen ? (zahl === 1 ? '1 Änderung offen' : zahl + ' Änderungen offen') : '';
+  hinweis.innerHTML = !offen ? '' : ((zahl === 0 ? 'Änderungen offen' : zahl === 1 ? '1 Änderung offen' : zahl + ' Änderungen offen') +
+    ' <span aria-hidden="true">›</span>');
   const kasten = document.getElementById('pruefKasten');
   kasten.classList.toggle('an', fehler.length > 0);
   if (fehler.length) {
@@ -1173,6 +1410,7 @@ function zeichnen() {
      mitgehen. Zuvor wurde sie nur beim Start und aus zwei Dialogen aufgebaut -
      nach dem Zuruecknehmen einer Loeschung fehlte der Jahrgang in der Liste,
      obwohl seine Titel wieder dastanden. */
+  vorherTippWeg();
   jahrAuswahlAufbauen();
   titellisteZeichnen();
   inhaltZeichnen();
@@ -1195,7 +1433,7 @@ function titellisteZeichnen() {
                      : '<span class="zahl">' + (t.preis || []).length + '</span>')
         : '<span class="zahl">' + (t.termin || []).length + '</span>';
       html += '<div class="titel-zeile' + (t.id === gewTitel ? ' an' : '') + '" onclick="titelWaehlen(\'' + t.id + '\')">' +
-              '<span>' + esc(t.name) + (titelGeaendert(t) ? ' <span class="geaendert">•</span>' : '') + '</span>' + zusatz + '</div>';
+              '<span>' + esc(t.name) + titelMarke(t) + '</span>' + zusatz + '</div>';
     });
   });
   liste.innerHTML = html || '<div class="fach-kopf">Keine Titel in diesem Jahrgang</div>';
@@ -1215,10 +1453,11 @@ function inhaltZeichnen() {
              '<span class="neben">Jahrgang ' + esc(t.jahr) + ' · ' + anzahl +
              (reiter === 'preise' ? ' Formate' : ' Ausgaben') + '</span></div>';
 
+  const karte = aendKarte(t);
   html += '<div class="stamm">' +
-    '<div class="feld feld-titel"><label>Titel</label><input value="' + esc(t.name) + '" onchange="stammSetzen(\'name\',this.value)"></div>' +
-    '<div class="feld"><label>Auflage</label><input class="zahl" style="width:92px;text-align:right" value="' + esc(ganzText(t.auflage)) + '" onchange="stammSetzen(\'auflage\',this.value)"></div>' +
-    '<div class="feld"><label>Fachbereich</label><input style="width:150px" list="fachListe" value="' + esc(t.fachbereich) + '" onchange="stammSetzen(\'fachbereich\',this.value)"></div>' +
+    '<div' + aendAttr(karte, 'stamm-name', 'feld feld-titel') + '><label>Titel</label><input value="' + esc(t.name) + '" onchange="stammSetzen(\'name\',this.value)"></div>' +
+    '<div' + aendAttr(karte, 'stamm-auflage', 'feld') + '><label>Auflage</label><input class="zahl" style="width:92px;text-align:right" value="' + esc(ganzText(t.auflage)) + '" onchange="stammSetzen(\'auflage\',this.value)"></div>' +
+    '<div' + aendAttr(karte, 'stamm-fachbereich', 'feld') + '><label>Fachbereich</label><input style="width:150px" list="fachListe" value="' + esc(t.fachbereich) + '" onchange="stammSetzen(\'fachbereich\',this.value)"></div>' +
     '<datalist id="fachListe">' + [...new Set((ARBEIT || []).map(x => x.fachbereich).filter(Boolean))].map(f => '<option value="' + esc(f) + '">').join('') + '</datalist>' +
     /* Nur solange der Titel neu und ungespeichert ist. Ohne diesen Weg zurueck
        bliebe gegen einen versehentlich angelegten Titel allein „Verwerfen", und
@@ -1229,7 +1468,7 @@ function inhaltZeichnen() {
       : '<button class="btn btn-gefahr" onclick="titelLoeschenOeffnen()">Titel löschen …</button>') +
     '</div>';
 
-  html += reiter === 'preise' ? preiseZeichnen(t) : termineZeichnen(t);
+  html += reiter === 'preise' ? preiseZeichnen(t, karte) : termineZeichnen(t, karte);
   ziel.innerHTML = html;
   hoehenAuffrischen();
 }
@@ -1247,14 +1486,14 @@ function katGruppen(t) {
   return gruppen;
 }
 
-function preiseZeichnen(t) {
+function preiseZeichnen(t, karte) {
+  karte = karte || aendKarte(t);
   const liste = t.preis || [];
   if (!liste.length) return '<table><tr class="leer-zeile"><td>Noch keine Formate hinterlegt.</td></tr></table>' + katKnopf();
   const nachKat = katGruppen(t);
   let html = '';
   nachKat.forEach((g, i) => {
-    const umbenannt = g.zeilen.some(p => { const u = ursprungPreis(t, p.id); return u && u.kategorie !== p.kategorie; });
-    html += '<div class="kat-kopf' + (umbenannt ? ' geaendert' : '') + '">' +
+    html += '<div' + aendAttr(karte, 'kat-' + roh(g.kat), 'kat-kopf') + '>' +
       '<input class="kat-name" value="' + esc(g.kat) + '" onchange="kategorieUmbenennen(' + i + ',this.value)">' +
       '<span class="kat-zahl">' + g.zeilen.length + '</span>' +
       '<button class="kat-tat kat-weg" title="Diese Kategorie mit allen ihren Formaten entfernen" onclick="kategorieEntfernen(' + i + ')">Entfernen</button>' +
@@ -1262,25 +1501,21 @@ function preiseZeichnen(t) {
     html += '<table><colgroup><col style="width:34%"><col style="width:13%"><col style="width:13%"><col style="width:9%"><col style="width:9%"><col style="width:9%"><col style="width:10%"><col style="width:36px"></colgroup>' +
       '<tr><th>Format</th><th class="r">Preis €</th><th class="r">4c-Zuschlag €</th><th>rabatt</th><th>AE</th><th>Termin</th><th class="r">Seiten-Äqu.</th><th></th></tr>';
     g.zeilen.forEach(p => {
-      const u = ursprungPreis(t, p.id);
-      /* Eine neu angelegte Zeile hat keinen Ursprung - vorher galt damit jedes
-         ihrer Felder als geaendert, und vor dem Preisfeld stand ein zweiter
-         oranger Strich mitten in der Zeile. Neu ist aber die Zeile als Ganzes,
-         nicht jedes Feld darin: sie wird deshalb nur einmal markiert, am
-         Format als ihrem ersten Feld. */
-      const anders = feld => (u
-        ? String(u[feld] == null ? '' : u[feld]) !== String(p[feld] == null ? '' : p[feld])
-        : feld === 'format') ? ' class="geaendert"' : '';
-      html += '<tr>' +
-        '<td' + anders('format') + '><input value="' + esc(p.format) + '" onchange="preisSetzen(\'' + p.id + '\',\'format\',this.value)"></td>' +
-        '<td class="r' + (anders('preis') ? ' geaendert' : '') + '"><input class="zahl' + (isNaN(zahlOderNull(p.preis)) ? ' fehler' : '') + '" value="' + esc(preisText(p.preis)) + '" onchange="preisSetzen(\'' + p.id + '\',\'preis\',this.value)"></td>' +
-        '<td class="r"><input class="zahl' + (isNaN(zahlOderNull(p.zuschlag_4c)) ? ' fehler' : '') + '" value="' + esc(preisText(p.zuschlag_4c)) + '" onchange="preisSetzen(\'' + p.id + '\',\'zuschlag_4c\',this.value)"></td>' +
-        '<td>' + jaNein(p.id, 'rabattfaehig', p.rabattfaehig) + '</td>' +
-        '<td>' + jaNein(p.id, 'ae_faehig', p.ae_faehig) + '</td>' +
-        '<td><select onchange="preisSetzen(\'' + p.id + '\',\'termin_art\',this.value)">' +
+      /* Jedes geaenderte Feld wird markiert, eine neu angelegte Zeile als Ganzes
+         (Hintergrund, Strich am Zeilenanfang, Marke „neu") - nicht jedes ihrer Felder. */
+      const neu = karte.neu.has(p.id);
+      const st = f => 'preis-' + p.id + '-' + f;
+      const formatFeld = '<input value="' + esc(p.format) + '" onchange="preisSetzen(\'' + p.id + '\',\'format\',this.value)">';
+      html += '<tr' + (neu ? ' class="zeile-neu"' : '') + '>' +
+        aendZelle(karte, st('format'), '', neu ? '<div class="mit-marke">' + formatFeld + '<span class="neu-marke">neu</span></div>' : formatFeld) +
+        aendZelle(karte, st('preis'), 'r', '<input class="zahl' + (isNaN(zahlOderNull(p.preis)) ? ' fehler' : '') + '" value="' + esc(preisText(p.preis)) + '" onchange="preisSetzen(\'' + p.id + '\',\'preis\',this.value)">') +
+        aendZelle(karte, st('zuschlag_4c'), 'r', '<input class="zahl' + (isNaN(zahlOderNull(p.zuschlag_4c)) ? ' fehler' : '') + '" value="' + esc(preisText(p.zuschlag_4c)) + '" onchange="preisSetzen(\'' + p.id + '\',\'zuschlag_4c\',this.value)">') +
+        aendZelle(karte, st('rabattfaehig'), '', jaNein(p.id, 'rabattfaehig', p.rabattfaehig)) +
+        aendZelle(karte, st('ae_faehig'), '', jaNein(p.id, 'ae_faehig', p.ae_faehig)) +
+        aendZelle(karte, st('termin_art'), '', '<select onchange="preisSetzen(\'' + p.id + '\',\'termin_art\',this.value)">' +
           ['', 'DU', 'EH'].map(w => '<option value="' + w + '"' + ((p.termin_art || '') === w ? ' selected' : '') + '>' + (w || '—') + '</option>').join('') +
-        '</select></td>' +
-        '<td class="r"><input class="zahl" placeholder="auto" value="' + esc(zahlText(p.seiten_aequivalent)) + '" onchange="preisSetzen(\'' + p.id + '\',\'seiten_aequivalent\',this.value)"></td>' +
+        '</select>') +
+        aendZelle(karte, st('seiten_aequivalent'), 'r', '<input class="zahl" placeholder="auto" value="' + esc(zahlText(p.seiten_aequivalent)) + '" onchange="preisSetzen(\'' + p.id + '\',\'seiten_aequivalent\',this.value)">') +
         '<td><button class="zeilen-x" title="Format entfernen" onclick="preisEntfernen(\'' + p.id + '\')">×</button></td>' +
       '</tr>';
     });
@@ -1301,7 +1536,8 @@ function jaNein(id, feld, wert) {
     '<option value="nein"' + (wert ? '' : ' selected') + '>nein</option></select>';
 }
 
-function termineZeichnen(t) {
+function termineZeichnen(t, karte) {
+  karte = karte || aendKarte(t);
   const liste = t.termin || [];
   if (!liste.length) return '<table><tr class="leer-zeile"><td>Noch keine Ausgaben hinterlegt.</td></tr></table>' + neuKnopf('Ausgabe');
   /* Eine Zeile je Ausgabe, Themenschwerpunkte und Kongresse als eigene Spalten.
@@ -1315,15 +1551,15 @@ function termineZeichnen(t) {
     '<tr><th>Heft</th><th>Monat</th><th>ET</th><th>AS</th><th>DU-Schluss</th><th>EH-Termin</th><th>Themenschwerpunkte</th><th>Kongresse</th><th></th></tr>';
   liste.forEach(a => {
     const f = feld => terminGueltig(a[feld]) ? '' : ' fehler';
-    html += '<tr>' +
-      '<td><input value="' + esc(a.heft) + '" onchange="terminSetzen(\'' + a.id + '\',\'heft\',this.value)"></td>' +
-      '<td><input value="' + esc(a.monat) + '" onchange="terminSetzen(\'' + a.id + '\',\'monat\',this.value)"></td>' +
-      '<td><input class="' + f('et') + '" value="' + esc(a.et) + '" onchange="terminSetzen(\'' + a.id + '\',\'et\',this.value)"></td>' +
-      '<td><input class="' + f('anzeigenschluss') + '" value="' + esc(a.anzeigenschluss) + '" onchange="terminSetzen(\'' + a.id + '\',\'anzeigenschluss\',this.value)"></td>' +
-      '<td><input class="' + f('du_schluss') + '" value="' + esc(a.du_schluss) + '" onchange="terminSetzen(\'' + a.id + '\',\'du_schluss\',this.value)"></td>' +
-      '<td><input class="' + f('eh_termin') + '" value="' + esc(a.eh_termin) + '" onchange="terminSetzen(\'' + a.id + '\',\'eh_termin\',this.value)"></td>' +
-      '<td>' + mehrzeilig(a.id, 'themen', a.themen) + '</td>' +
-      '<td>' + mehrzeilig(a.id, 'kongresse', a.kongresse) + '</td>' +
+    const st = feld => 'termin-' + a.id + '-' + feld;
+    const feldZelle = (feld, klasse) => aendZelle(karte, st(feld), '',
+      '<input' + (klasse !== undefined ? ' class="' + klasse + '"' : '') + ' value="' + esc(a[feld]) + '" onchange="terminSetzen(\'' + a.id + '\',\'' + feld + '\',this.value)">');
+    html += '<tr' + (karte.neu.has(a.id) ? ' class="zeile-neu"' : '') + '>' +
+      feldZelle('heft') + feldZelle('monat') +
+      feldZelle('et', f('et')) + feldZelle('anzeigenschluss', f('anzeigenschluss')) +
+      feldZelle('du_schluss', f('du_schluss')) + feldZelle('eh_termin', f('eh_termin')) +
+      aendZelle(karte, st('themen'), '', mehrzeilig(a.id, 'themen', a.themen)) +
+      aendZelle(karte, st('kongresse'), '', mehrzeilig(a.id, 'kongresse', a.kongresse)) +
       '<td><button class="zeilen-x" title="Ausgabe entfernen" onclick="terminEntfernen(\'' + a.id + '\')">×</button></td>' +
     '</tr>';
   });
@@ -1511,6 +1747,9 @@ async function speichern() {
   const fehler = alleFehler();
   if (fehler.length) { meldung('Erst die beanstandeten Angaben berichtigen.', true); return; }
   const knopf = document.getElementById('speichernKnopf');
+  /* Gemeldet wird dieselbe Zahl, die der Hinweis zeigte - nicht die Zahl der
+     Schreibvorgaenge, die je Zeile zaehlt. */
+  const gezaehlt = zahlOffeneAenderungen();
   knopf.disabled = true; knopf.textContent = 'Speichern …';
   try {
     if (sitzung && sitzung.ablauf && sitzung.ablauf < Date.now() + 60000) await sitzungErneuern();
@@ -1561,7 +1800,8 @@ async function speichern() {
     await ladenAusDatenbank();
     if (!titelVonId(gewTitel)) { const e = titelNachAnzeige()[0]; gewTitel = e ? e.id : null; }
     zeichnen();
-    meldung(n === 0 ? 'Nichts zu speichern.' : ('Gespeichert — ' + n + (n === 1 ? ' Änderung' : ' Änderungen') + ' stehen jetzt in allen Werkzeugen.'));
+    const z = gezaehlt || n;
+    meldung(n === 0 ? 'Nichts zu speichern.' : ('Gespeichert — ' + z + (z === 1 ? ' Änderung steht' : ' Änderungen stehen') + ' jetzt in allen Werkzeugen.'));
   } catch (fehler) {
     meldung('Nicht gespeichert: ' + fehler.message, true);
   } finally {
