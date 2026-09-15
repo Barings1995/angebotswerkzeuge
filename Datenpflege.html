@@ -292,6 +292,18 @@ button, input, select, textarea { font-family: inherit; }
      stehenden Zeile weg. Der Gruppenname darueber laeuft bewusst mit. */
   .spalte-inhalt th { position: sticky; top: 0; z-index: 2;
     border-bottom: none; box-shadow: inset 0 -1px 0 var(--border); }
+  /* Der Gruppenname bleibt zusammen mit der Kopfzeile stehen; ohne ihn stuenden
+     die Formate einer Gruppe weit unten ohne ihren Namen da. Jede Gruppe steht
+     dafuer in einem eigenen Block: ohne ihn haengen alle Namen am selben
+     Behaelter und blieben gleichzeitig oben kleben — sie stapelten sich
+     uebereinander. So begrenzt sich jeder Name auf seine Gruppe und wird vom
+     naechsten hinausgeschoben, wie die Titelkoepfe der Jahresvorschau.
+     Die Kopfzeile ruecke ich um die Hoehe des Namens nach unten; gemessen wird
+     sie in rollfelderAnpassen(), denn sie haengt an Schrift und Zoom. */
+  .kat-block { position: relative; }
+  .spalte-inhalt .kat-kopf { position: sticky; top: 0; z-index: 4;
+    background: var(--white); padding-top: 10px; }
+  .spalte-inhalt .kat-block th { top: var(--kat-hoehe, 0px); }
   /* Der Knopf steht unter der rollenden Liste, nicht darin: bei 19 Titeln waere er
      sonst weggerollt, gerade wenn ein zwanzigster hinzukommen soll. */
   .titel-fuss { border-top: 1px solid var(--border); padding: 9px 12px; background: var(--surface); }
@@ -489,6 +501,7 @@ button, input, select, textarea { font-family: inherit; }
     .spalte-inhalt .tab-roll { overflow-x: auto; }
     .spalte-inhalt th { position: static; box-shadow: none;
       border-bottom: 1px solid var(--border); }
+    .spalte-inhalt .kat-kopf { position: static; padding-top: 14px; }
   }
 
   .verborgen { display: none !important; }
@@ -1531,6 +1544,7 @@ function preiseZeichnen(t, karte) {
   const nachKat = katGruppen(t);
   let html = '';
   nachKat.forEach((g, i) => {
+    html += '<div class="kat-block">';
     html += '<div' + aendAttr(karte, 'kat-' + roh(g.kat), 'kat-kopf') + '>' +
       '<input class="kat-name" value="' + esc(g.kat) + '" onchange="kategorieUmbenennen(' + i + ',this.value)">' +
       '<span class="kat-zahl">' + g.zeilen.length + '</span>' +
@@ -1559,7 +1573,7 @@ function preiseZeichnen(t, karte) {
     });
     html += '<tr class="neu-format"><td colspan="8">' +
       '<button title="Ein Format in dieser Kategorie anlegen" onclick="formatAnlegen(' + i + ')">+ Format</button>' +
-      '</td></tr></table>';
+      '</td></tr></table></div>';
   });
   return html + katKnopf();
 }
@@ -1647,6 +1661,12 @@ function rollfelderAnpassen() {
   const liste = document.getElementById('titelListe');
   const tafel = document.querySelector('.spalte-inhalt');
   if (!liste || !tafel || tafel.offsetParent === null) return;
+  /* Die Kopfzeile der Tabelle steht unter dem Gruppennamen, nicht an der
+     Oberkante der Tafel. Im Terminteil gibt es keine Gruppen — dort bleibt der
+     Wert 0 und die Kopfzeile steht ganz oben. */
+  const gruppenKopf = tafel.querySelector('.kat-kopf');
+  tafel.style.setProperty('--kat-hoehe',
+    (gruppenKopf ? Math.round(gruppenKopf.getBoundingClientRect().height) : 0) + 'px');
   if (window.matchMedia('(max-width: 820px)').matches) {
     liste.style.maxHeight = ''; tafel.style.maxHeight = ''; return;
   }
