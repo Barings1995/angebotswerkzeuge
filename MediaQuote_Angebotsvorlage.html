@@ -768,8 +768,10 @@ button, input, select, textarea { font-family: inherit; }
   .btn-action.done { justify-content: center; }
   .col-toggles { display: inline-flex; align-items: center; gap: 10px; font-size: 12px; }
   .col-toggles .ct-label { color: var(--navy); font-weight: 600; }
-  .col-toggles label { display: inline-flex; align-items: center; gap: 4px; cursor: pointer; font-weight: 600; color: var(--navy); }
-  .col-toggles input { accent-color: var(--navy); cursor: pointer; margin: 0; }
+  /* Kaestchen 15 px mit 9 px Abstand zur Beschriftung - wie die Optionen in
+     OpenSlots und MediaSheet (seit 15.09.2026, vorher Standardgroesse und 4 px). */
+  .col-toggles label { display: inline-flex; align-items: center; gap: 9px; cursor: pointer; font-weight: 600; color: var(--navy); }
+  .col-toggles input { accent-color: var(--navy); cursor: pointer; margin: 0; width: 15px; height: 15px; flex: none; }
 
   /* Haken „Auslandskunde - ohne MwSt.": Er stand bis zum 06.09.2026 im Blatt
      ueber der Summentabelle, obwohl er dem Werkzeug gehoert - er trug schon
@@ -781,10 +783,10 @@ button, input, select, textarea { font-family: inherit; }
      hinter „Spalten: Rabatt / AE" gelesen wird. Masse wie .col-toggles label.
      Der Zustand bleibt im Blatt sichtbar: die Steuerzeile heisst dann
      „Umsatzsteuerfrei (Ausland)". */
-  .mwst-toggle { display: inline-flex; align-items: center; gap: 4px;
+  .mwst-toggle { display: inline-flex; align-items: center; gap: 9px;
                  font-size: 12px; font-weight: 600; color: var(--navy);
                  cursor: pointer; }
-  .mwst-toggle input { accent-color: var(--navy); cursor: pointer; margin: 0; }
+  .mwst-toggle input { accent-color: var(--navy); cursor: pointer; margin: 0; width: 15px; height: 15px; flex: none; }
 
   /* ── Jahrgang / Spalten / Status ──
      Die Leiste gehoert zum Werkzeug, nicht zum Angebot: sie steht deshalb ueber

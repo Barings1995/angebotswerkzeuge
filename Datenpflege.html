@@ -217,7 +217,7 @@ button, input, select, textarea { font-family: inherit; }
     padding: 0 10px; border: 1px solid var(--border); border-radius: var(--radius-md);
     background: var(--white); color: var(--text); }
   .suche input:focus { outline: none; border-color: var(--navy); box-shadow: 0 0 0 2px rgba(0,40,90,.08); }
-  .suche .umfang { font-size: 12.5px; font-weight: 500; color: var(--grey-600); gap: 5px; }
+  .suche .umfang { font-size: 12.5px; font-weight: 500; color: var(--grey-600); gap: 9px; }
   /* Kaestchen und Beschriftung zeigen den Zeigefinger - beide schalten beim
      Klick um, und beide sollen das ankuendigen. So halten es auch die drei
      anderen Werkzeuge (.tog in OpenSlots, .col-toggles in MediaQuote, der
@@ -225,7 +225,9 @@ button, input, select, textarea { font-family: inherit; }
   .suche .umfang, .suche .umfang input { cursor: pointer; }
   /* Angehakt im Dunkelblau der Marke statt im Systemblau des Rechners -
      wie die Kaestchen in OpenSlots und MediaQuote. */
-  .suche .umfang input { width: auto; height: auto; padding: 0; accent-color: var(--navy); }
+  /* Kaestchen 15 px mit 9 px Abstand - wie OpenSlots, MediaSheet und MediaQuote
+     (seit 15.09.2026, vorher Standardgroesse und 5 px). */
+  .suche .umfang input { width: 15px; height: 15px; flex: none; margin: 0; padding: 0; accent-color: var(--navy); }
   /* Der Schimmer der Regel darueber gilt den Schreibfeldern: er umzieht deren
      Rahmen, solange darin geschrieben wird. Das Kaestchen hat keinen eigenen
      Rahmen, deshalb legte sich der Schimmer als grauer Kasten um Haken und
