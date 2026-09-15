@@ -415,7 +415,7 @@ select:disabled{opacity:.5; cursor:not-allowed}
   padding:14mm; display:flex; flex-direction:column; line-height:1.55;
 }
 .blattkopf{
-  display:flex; align-items:flex-start; gap:16px;
+  display:flex; align-items:stretch; gap:16px;
   border-bottom:2px solid var(--navy); padding-bottom:9px;
 }
 .blattkopf .links{flex:1 1 auto; min-width:0}
@@ -429,10 +429,18 @@ select:disabled{opacity:.5; cursor:not-allowed}
 }
 .blattkopf .unter{font-size:13px; color:var(--grey-600); margin-top:3px}
 .blattkopf .unter b{color:var(--text); font-weight:600}
-.blattkopf .rechts{flex:none; text-align:right; padding-top:2px}
+/* Rechts oben das Logo, rechts unten der Jahrgang auf der Grundlinie der
+   Unterzeile — so stehen links und rechts auf denselben zwei Linien. Der
+   Jahrgang ist so gross wie der Titel, damit er beim Durchblaettern auffaellt,
+   aber nicht groesser. Die Verschiebung um -3,1 px gleicht die Grundlinie der
+   Jahreszahl an die der Unterzeile an; gemessen in Chrome am 15.09.2026. */
+.blattkopf .rechts{
+  flex:none; text-align:right; padding-top:2px;
+  display:flex; flex-direction:column; justify-content:space-between; align-items:flex-end;
+}
 .blattkopf .jahrgang{
-  font-family:var(--font-title); font-size:22px;
-  color:var(--navy); margin-top:7px; line-height:1;
+  font-family:var(--font-title); font-size:27px;
+  color:var(--navy); line-height:1; position:relative; top:-3.1px;
 }
 .stand{
   display:flex; align-items:center; gap:9px; flex-wrap:wrap;
