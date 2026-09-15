@@ -301,6 +301,13 @@ button, input, select, textarea { font-family: inherit; }
      sonst weggerollt, gerade wenn ein zwanzigster hinzukommen soll. */
   .titel-fuss { border-top: 1px solid var(--border); padding: 9px 12px; background: var(--surface); }
   .titel-fuss .btn { width: 100%; justify-content: center; }
+  /* Derselbe feste Fuss unter der Formattafel. Der Knopf steht hier links und
+     nicht ueber die ganze Breite: die Tafel ist mehr als dreimal so breit wie
+     die Titelliste. Ohne Knopf — bei der Suche und ohne gewaehlten Titel —
+     verschwindet der Fuss, sonst stuende dort ein leerer Streifen.
+     (16.09.2026) */
+  .inhalt-fuss { border-top: 1px solid var(--border); padding: 9px 12px; background: var(--surface); }
+  .inhalt-fuss:empty { display: none; }
   .fach-kopf { font-size: 10.5px; font-weight: 700; color: var(--grey-600); text-transform: uppercase; letter-spacing: .1em; padding: 12px 14px 4px; }
   .titel-zeile { display: flex; justify-content: space-between; align-items: center; gap: 8px; padding: 5px 14px; font-size: 13px; cursor: pointer; border-left: 3px solid transparent; }
   .titel-zeile:hover { background: var(--surface-hover); }
@@ -407,7 +414,6 @@ button, input, select, textarea { font-family: inherit; }
   .termin-tab td textarea:hover { border-color: var(--border); background: var(--white); }
   .termin-tab td textarea:focus { outline: none; border-color: var(--navy);
     background: var(--white); box-shadow: 0 0 0 2px rgba(0,40,90,.08); }
-  .neu-zeile { padding: 8px 2px 2px; }
 
   /* ── Offene Änderungen ──
      Jedes geänderte Feld trägt bis zum Speichern den hellen Orangeton des Hinweises
@@ -589,7 +595,13 @@ button, input, select, textarea { font-family: inherit; }
         <div class="titelliste" id="titelListe"></div>
         <div class="titel-fuss"><button class="btn" onclick="titelAnlegenOeffnen()">+ Titel anlegen …</button></div>
       </div>
-      <div class="spalte spalte-inhalt"><div class="inhalt" id="inhalt"></div></div>
+      <!-- Karte aussen, Rollfeld innen, darunter der feste Fuss — wie die
+           Titelliste links. Zuvor war die Spalte Karte und Rollfeld in einem;
+           ein Fuss darunter waere mitgerollt. -->
+      <div class="spalte">
+        <div class="spalte-inhalt"><div class="inhalt" id="inhalt"></div></div>
+        <div class="inhalt-fuss" id="inhaltFuss"></div>
+      </div>
     </div>
   </section>
 
@@ -1488,9 +1500,9 @@ function inhaltZeichnen() {
   /* Waehrend gesucht wird, steht hier die Trefferliste. Der gewaehlte Titel geht
      darueber nicht verloren: er bleibt links markiert und steht wieder da, sobald
      die Suche endet. */
-  if (suchtGerade()) { ziel.innerHTML = sucheZeichnen(); return; }
+  if (suchtGerade()) { ziel.innerHTML = sucheZeichnen(); fussZeichnen(null); return; }
   const t = titelVonId(gewTitel);
-  if (!t) { ziel.innerHTML = '<div class="leer-zeile">Kein Titel gewählt.</div>'; return; }
+  if (!t) { ziel.innerHTML = '<div class="leer-zeile">Kein Titel gewählt.</div>'; fussZeichnen(null); return; }
   const anzahl = reiter === 'preise' ? (t.preis || []).length : (t.termin || []).length;
   let html = '<div class="inhalt-kopf"><h2>' + esc(t.name) + '</h2>' +
              '<span class="neben">Jahrgang ' + esc(t.jahr) + ' · ' + anzahl +
@@ -1513,7 +1525,23 @@ function inhaltZeichnen() {
 
   html += reiter === 'preise' ? preiseZeichnen(t, karte) : termineZeichnen(t, karte);
   ziel.innerHTML = html;
+  fussZeichnen(reiter);
   hoehenAuffrischen();
+}
+
+/* Der Knopf zum Anlegen steht in einem festen Fuss unter der Tafel, nicht mehr
+   am Ende des gerollten Inhalts: dort war er, seit Tafel und Liste in sich
+   rollen, erst nach allen Formaten zu erreichen. Waehrend der Suche und ohne
+   gewaehlten Titel bleibt der Fuss leer — dann ist nichts anzulegen. Die Hoehe
+   des Rollfelds richtet sich nach dem Fuss; rollfelderAnpassen() laeuft in
+   zeichnen() nach dieser Stelle. „+ Format" bleibt bei seiner Kategorie: der
+   Knopf gehoert dorthin, nicht in den Fuss. (16.09.2026) */
+function fussZeichnen(welcher) {
+  const fuss = document.getElementById('inhaltFuss');
+  if (!fuss) return;
+  fuss.innerHTML =
+    welcher === 'preise'  ? '<button class="btn" onclick="kategorieAnlegen()">+ Kategorie anlegen</button>' :
+    welcher === 'termine' ? '<button class="btn" onclick="terminAnlegen()">+ Ausgabe anlegen</button>' : '';
 }
 
 /* Die Kategorien in der Reihenfolge ihres ersten Auftretens. Ueber den Platz in
@@ -1532,7 +1560,7 @@ function katGruppen(t) {
 function preiseZeichnen(t, karte) {
   karte = karte || aendKarte(t);
   const liste = t.preis || [];
-  if (!liste.length) return '<table><tr class="leer-zeile"><td>Noch keine Formate hinterlegt.</td></tr></table>' + katKnopf();
+  if (!liste.length) return '<table><tr class="leer-zeile"><td>Noch keine Formate hinterlegt.</td></tr></table>';
   const nachKat = katGruppen(t);
   let html = '';
   nachKat.forEach((g, i) => {
@@ -1566,11 +1594,7 @@ function preiseZeichnen(t, karte) {
       '<button title="Ein Format in dieser Kategorie anlegen" onclick="formatAnlegen(' + i + ')">+ Format</button>' +
       '</td></tr></table>';
   });
-  return html + katKnopf();
-}
-
-function katKnopf() {
-  return '<div class="neu-zeile"><button class="btn" onclick="kategorieAnlegen()">+ Kategorie anlegen</button></div>';
+  return html;
 }
 
 function jaNein(id, feld, wert) {
@@ -1582,7 +1606,7 @@ function jaNein(id, feld, wert) {
 function termineZeichnen(t, karte) {
   karte = karte || aendKarte(t);
   const liste = t.termin || [];
-  if (!liste.length) return '<table><tr class="leer-zeile"><td>Noch keine Ausgaben hinterlegt.</td></tr></table>' + neuKnopf('Ausgabe');
+  if (!liste.length) return '<table><tr class="leer-zeile"><td>Noch keine Ausgaben hinterlegt.</td></tr></table>';
   /* Eine Zeile je Ausgabe, Themenschwerpunkte und Kongresse als eigene Spalten.
      Die sechs vorderen Spalten sind fest, die beiden hinteren teilen sich den
      Rest — mindestens aber 170 px, darunter rollt die Tabelle seitlich.
@@ -1608,7 +1632,7 @@ function termineZeichnen(t, karte) {
   });
   html += '</table></div>';
   html += '<div class="fehlertext" style="color:var(--grey-600)">Termine in der Form <b>TT.MM.</b> — der Jahrgang wird von den Werkzeugen ergänzt. Fällt ein Termin ins Vor- oder Folgejahr, die Jahreszahl mitschreiben: <b>22.12.2026</b>. Mehrere Themen und mehrere Kongresse jeweils in eine eigene Zeile — Zeilenumbruch mit der Eingabetaste.</div>';
-  return html + neuKnopf('Ausgabe');
+  return html;
 }
 
 /* Mehrzeiliges Feld für Themen und Kongresse. Ein Eintrag je Zeile; die Höhe
@@ -1658,19 +1682,16 @@ function rollfelderAnpassen() {
   const unten = parseFloat(getComputedStyle(document.querySelector('.wrap')).marginBottom);
   const hoehe = Math.max(ROLL_MINDEST,
     Math.floor(innerHeight - (tafel.getBoundingClientRect().top + scrollY) - unten));
-  /* Die Liste endet auf derselben Linie wie die Tafel. Unter ihr steht noch der
-     Knopf „+ Titel anlegen …", der nicht mitrollt — seine Hoehe zaehlt deshalb
-     von der Liste ab, nicht von der Spalte. */
-  const abzug = Math.ceil(liste.closest('.spalte').getBoundingClientRect().height
-    - liste.getBoundingClientRect().height);
-  tafel.style.maxHeight = hoehe + 'px';
-  liste.style.maxHeight = Math.max(ROLL_MINDEST, hoehe - abzug) + 'px';
+  /* Beide Spalten enden auf derselben Linie. Unter beiden steht ein Knopf, der
+     nicht mitrollt — „+ Titel anlegen …" und „+ Kategorie anlegen“ bzw.
+     „+ Ausgabe anlegen". Seine Hoehe zaehlt deshalb vom Rollfeld ab, nicht von
+     der Spalte; ist der Fuss leer, ist sie 0. */
+  const abzug = feld => Math.ceil(feld.closest('.spalte').getBoundingClientRect().height
+    - feld.getBoundingClientRect().height);
+  tafel.style.maxHeight = Math.max(ROLL_MINDEST, hoehe - abzug(tafel)) + 'px';
+  liste.style.maxHeight = Math.max(ROLL_MINDEST, hoehe - abzug(liste)) + 'px';
 }
 if (document.fonts) document.fonts.ready.then(rollfelderAnpassen);
-
-function neuKnopf(was) {
-  return '<div class="neu-zeile"><button class="btn" onclick="terminAnlegen()">+ ' + was + ' anlegen</button></div>';
-}
 
 function ursprungPreis(t, id) {
   const u = ursprungTitel(t.id);
