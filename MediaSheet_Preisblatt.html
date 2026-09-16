@@ -1313,7 +1313,7 @@ function terminseitenBauen(L){
   if(L.hatEH) kuerzel.push('<b>EH</b> Anlieferung Einhefter und Beilagen');
   const legende =
     '<div class="legende">' +
-    (kuerzel.length ? kuerzel.join(' · ') + '. Terminangaben ohne Jahreszahl beziehen sich auf ' +
+    (kuerzel.length ? kuerzel.join(' · ') + '. Termine ohne Jahresangabe gelten für ' +
                       esc(GEWAEHLT.jahr) + '. ' : '') +
     (ohneAlte ? 'Ausgaben mit verstrichenem Anzeigenschluss sind nicht aufgeführt.' : '') +
     '</div>';
