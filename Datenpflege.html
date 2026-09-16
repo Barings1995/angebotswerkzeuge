@@ -392,7 +392,13 @@ button, input, select, textarea { font-family: inherit; }
 
   .inhalt { padding: 14px 16px 18px; }
   .inhalt-kopf { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; flex-wrap: wrap; margin-bottom: 12px; padding-bottom: 9px; border-bottom: 2px solid var(--navy); }
-  .inhalt-kopf h2 { font-size: 15px; font-weight: 700; color: var(--navy); }
+  /* Der Titel steht in 20 px, damit er vom Kategoriekopf darunter (14 px) klar
+     getrennt bleibt. Bei 15 px lagen beide bei einem Pixel Unterschied in
+     derselben Schrift, Staerke und Farbe und sahen einander zu aehnlich; den
+     Rang gab nur noch der Strich unter dem Titel an. Gewaehlt wurde die
+     Vergroesserung in der gleichen Schrift, nicht ein Wechsel auf Playfair
+     Display. (17.09.2026) */
+  .inhalt-kopf h2 { font-size: 20px; font-weight: 700; color: var(--navy); }
   .inhalt-kopf .neben { font-size: 12px; color: var(--grey-600); }
   .stamm { display: flex; gap: 14px; flex-wrap: wrap; align-items: flex-end; margin-bottom: 16px; }
   .feld { display: flex; flex-direction: column; gap: 4px; }
