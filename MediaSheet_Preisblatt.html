@@ -1319,7 +1319,16 @@ function terminseitenBauen(L){
     '</div>';
   const unter = 'Erscheinungstermine, Anzeigenschlüsse und Produktionstermine je Ausgabe';
 
-  let blatt = neuesBlatt('Termine und Themen', unter);
+  /* Die Ueberschrift nennt, was auf dem Blatt steht. Themen und Kongresse sind
+     beide abschaltbar und nicht bei jedem Titel gepflegt — eine feste Zeile
+     verspraeche mal zu viel, mal zu wenig. (17.09.2026) */
+  const stuecke = ['Termine'];
+  if(zeigeThemen) stuecke.push('Themen');
+  if(zeigeKong)   stuecke.push('Kongresse');
+  const ueber = stuecke.length === 1 ? stuecke[0]
+              : stuecke.slice(0, -1).join(', ') + ' und ' + stuecke[stuecke.length - 1];
+
+  let blatt = neuesBlatt(ueber, unter);
   koerper(blatt).insertAdjacentHTML('beforeend', '<h2 class="abschnitt">Ausgaben</h2>');
   let zeilen = [];
 
@@ -1334,7 +1343,7 @@ function terminseitenBauen(L){
     if(laeuftUeber(blatt)){
       zeilen.pop();
       tabelleSetzen(blatt, kopfHtml, zeilen, 'termine');
-      blatt = neuesBlatt('Termine und Themen · Fortsetzung', unter);
+      blatt = neuesBlatt(ueber + ' · Fortsetzung', unter);
       koerper(blatt).insertAdjacentHTML('beforeend', '<h2 class="abschnitt">Ausgaben</h2>');
       zeilen = [terminZeile(L, a, zeigeThemen, zeigeKong)];
       tabelleSetzen(blatt, kopfHtml, zeilen, 'termine');
