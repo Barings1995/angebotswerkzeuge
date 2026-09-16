@@ -1573,19 +1573,30 @@ function fokusZurueck(k) {
   if (k.von != null) { try { f.setSelectionRange(k.von, k.bis); } catch (e) { /* s. o. */ } }
 }
 
-/* Nach einer Feldaenderung wird nicht sofort neu gezeichnet, sondern nach dem
-   laufenden Durchlauf. Der Grund ist der Schreibzeiger: Wird beim Klick in ein
-   anderes Feld sofort gezeichnet, ist das angeklickte Feld schon ersetzt, bevor
-   der Browser den Zeiger darin gesetzt hat — er stand dann immer am Anfang,
-   gleich wo geklickt wurde. Mit dem Aufschub bearbeitet der Browser den Klick
-   zu Ende, und `fokusMerken()` liest die richtige Stelle ab. Sichtbar ist die
-   Wartezeit nicht; der Wert selbst ist zu diesem Zeitpunkt laengst uebernommen.
-   Mehrere Anstoesse kurz hintereinander zeichnen nur einmal. (16.09.2026) */
+/* Nach einer Feldaenderung wird nicht sofort neu gezeichnet, sondern erst, wenn
+   der Klick, der die Aenderung ausgeloest hat, zu Ende bearbeitet ist. Eine
+   Feldaenderung wird naemlich schon beim Druecken der Maustaste uebernommen,
+   der Klick selbst kommt erst beim Loslassen an. Wird dazwischen gezeichnet,
+   ist alles, was unter dem Zeiger lag, durch neue Elemente ersetzt, und der
+   Klick geht ins Leere: der Schreibzeiger stuende am Anfang des angeklickten
+   Feldes statt an der angeklickten Stelle, und eine angeklickte Titelzeile
+   bekaeme ihren Klick gar nicht erst — sie muesste zweimal angeklickt werden.
+   Gewartet wird deshalb auf das Loslassen der Taste und einen weiteren
+   Durchlauf, in dem der Klick zugestellt wird. Ist gar keine Taste gedrueckt
+   (Enter, Tab), genuegt der Durchlauf. Sichtbar ist die Wartezeit nicht; der
+   Wert selbst ist zu diesem Zeitpunkt laengst uebernommen. Mehrere Anstoesse
+   kurz hintereinander zeichnen nur einmal. (16.09.2026) */
 let ZEICHNEN_ANGESTOSSEN = false;
+let MAUS_UNTEN = false;
+document.addEventListener('mousedown', () => { MAUS_UNTEN = true; }, true);
+document.addEventListener('mouseup', () => { MAUS_UNTEN = false; }, true);
+
 function spaeterZeichnen() {
   if (ZEICHNEN_ANGESTOSSEN) return;
   ZEICHNEN_ANGESTOSSEN = true;
-  setTimeout(() => { ZEICHNEN_ANGESTOSSEN = false; zeichnen(); }, 0);
+  const los = () => { ZEICHNEN_ANGESTOSSEN = false; zeichnen(); };
+  if (MAUS_UNTEN) document.addEventListener('mouseup', () => setTimeout(los, 0), { once: true });
+  else setTimeout(los, 0);
 }
 
 function zeichnen() {
