@@ -1350,7 +1350,7 @@ function terminseitenBauen(L){
 
 let GEWAEHLT = { jahr:'', titel:'' };
 let AKTUELL = null;
-const KONTAKT_SCHLUESSEL  = 'mediaSheetKontakt';    /* zuletzt eingetragen */
+const KONTAKT_SCHLUESSEL  = 'mediaSheetKontakt';    /* abgeloest, wird beim Start geraeumt */
 const KONTAKTE_SCHLUESSEL = 'mediaSheetKontakte';   /* je Titel */
 
 function umfang(){
@@ -1402,11 +1402,12 @@ function zeichnen(){
    Der Eintrag gehoert zum gewaehlten Titel (seit 16.09.2026): verschiedene
    Titel haben verschiedene Ansprechpartner. Gemerkt wird eine Zuordnung
    Titel -> Name; wer den Titel wechselt, findet im Feld den Namen dieses
-   Titels. Fuer einen Titel, zu dem noch nichts hinterlegt ist, steht der
-   zuletzt eingetragene Name als Vorbelegung da — wer fuer die meisten Titel
-   derselbe ist, tippt sonst immer wieder dasselbe. Der alte einzelne
-   Schluessel bleibt genau dafuer in Gebrauch, ein Umziehen der bisherigen
-   Eingabe eruebrigt sich damit. */
+   Titels. Ist fuer einen Titel nichts hinterlegt, bleibt das Feld leer.
+   Der zuletzt eingetragene Name stand dort kurzzeitig als Vorbelegung — als
+   Tipp-Ersparnis gedacht, aber sie las sich wie ein Fehler: anderer Titel,
+   gleicher Name, und nichts zeigte an, dass der Name nur geliehen war. Der
+   alte einzelne Schluessel ist damit abgeloest und wird beim Start entfernt,
+   damit nichts Totes zurueckbleibt. (16.09.2026) */
 function kontakteLesen(){
   try{
     const o = JSON.parse(localStorage.getItem(KONTAKTE_SCHLUESSEL) || '{}');
@@ -1415,18 +1416,13 @@ function kontakteLesen(){
 }
 function kontaktLesen(){
   const o = kontakteLesen();
-  if(GEWAEHLT.titel && Object.prototype.hasOwnProperty.call(o, GEWAEHLT.titel)){
-    return String(o[GEWAEHLT.titel] || '');
-  }
-  try{ return localStorage.getItem(KONTAKT_SCHLUESSEL) || ''; }catch(e){ return ''; }
+  return GEWAEHLT.titel ? String(o[GEWAEHLT.titel] || '') : '';
 }
 function kontaktSchreiben(text){
-  if(GEWAEHLT.titel){
-    const o = kontakteLesen();
-    o[GEWAEHLT.titel] = text;
-    try{ localStorage.setItem(KONTAKTE_SCHLUESSEL, JSON.stringify(o)); }catch(e){}
-  }
-  try{ localStorage.setItem(KONTAKT_SCHLUESSEL, text); }catch(e){}
+  if(!GEWAEHLT.titel) return;
+  const o = kontakteLesen();
+  o[GEWAEHLT.titel] = text;
+  try{ localStorage.setItem(KONTAKTE_SCHLUESSEL, JSON.stringify(o)); }catch(e){}
 }
 function kontaktSetzen(){
   const text = kontaktLesen().trim();
@@ -1441,6 +1437,7 @@ function kontaktFeldNachfuehren(){
   if(feld.value !== wert){ feld.value = wert; kontaktHoehe(); }
 }
 function kontaktFeldVerbinden(){
+  try{ localStorage.removeItem(KONTAKT_SCHLUESSEL); }catch(e){}
   const feld = document.getElementById('sKontakt');
   feld.value = kontaktLesen();
   // Hoehe folgt dem Inhalt, zwei Zeilen (rows="2") bleiben das Mindestmass.
