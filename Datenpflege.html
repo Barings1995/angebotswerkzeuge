@@ -1869,7 +1869,9 @@ function terminZeileLeer(a) {
   return ['monat', 'et', 'anzeigenschluss', 'du_schluss', 'eh_termin', 'themen', 'kongresse']
     .every(f => leerFeld(a[f]));
 }
-const NICHT_GESPEICHERT = '<p>Die Zeile wurde noch nicht gespeichert; die Eingaben sind damit endg\u00fcltig weg — „Verwerfen" holt sie nicht zur\u00fcck.</p>';
+/* Zwei Saetze statt Gedankenstrich: ein Strich kann beim Umbruch an den
+   Zeilenanfang rutschen und steht dort wie ein Listenpunkt. (16.09.2026) */
+const NICHT_GESPEICHERT = '<p>Die Zeile wurde noch nicht gespeichert. Die Eingaben sind damit endg\u00fcltig weg; „Verwerfen" holt sie nicht zur\u00fcck.</p>';
 const ERST_MIT_SPEICHERN = '<p>Wirksam wird das erst mit „Speichern"; bis dahin holt „Verwerfen" es zur\u00fcck.</p>';
 
 /* ── Ändern ───────────────────────────────────────────────────────────────── */
@@ -1981,7 +1983,7 @@ async function kategorieEntfernen(i) {
     '<p>„' + esc(g.kat) + '" wird mit <b>' + n + '</b> ' + (n === 1 ? 'Format' : 'Formaten') +
     ' aus der Preisliste genommen.</p>' +
     (alleNeu
-      ? '<p>' + (n === 1 ? 'Die Zeile wurde' : 'Die Zeilen wurden') + ' noch nicht gespeichert; die Eingaben sind damit endg\u00fcltig weg — „Verwerfen" holt sie nicht zur\u00fcck.</p>'
+      ? '<p>' + (n === 1 ? 'Die Zeile wurde' : 'Die Zeilen wurden') + ' noch nicht gespeichert. Die Eingaben sind damit endg\u00fcltig weg; „Verwerfen" holt sie nicht zur\u00fcck.</p>'
       : '<p>Wirksam wird das erst mit „Speichern"; bis dahin holt „Verwerfen" sie zur\u00fcck.</p>'),
     'Entfernen')) return;
   const weg = new Set(g.zeilen.map(p => p.id));
