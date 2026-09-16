@@ -274,7 +274,8 @@ button, input, select, textarea { font-family: inherit; }
   .offen-hinweis.an { display: inline-flex; }
 
   /* ── Zweispaltiger Arbeitsbereich ── */
-  .arbeit { display: grid; grid-template-columns: 268px minmax(0,1fr); gap: 16px; align-items: start; }
+  .arbeit { --spalte-links: 268px;
+    display: grid; grid-template-columns: var(--spalte-links) minmax(0,1fr); gap: 16px; align-items: start; }
   .spalte { background: var(--white); border: 1px solid var(--border); border-radius: var(--radius-lg); box-shadow: var(--shadow-sm); overflow: hidden; }
   /* Unten kein Polster: der Fuss mit dem Knopf zum Anlegen traegt seine eigene
      Linie oben und trennt damit schon. Ein Polster daneben trennte ein zweites
@@ -315,6 +316,13 @@ button, input, select, textarea { font-family: inherit; }
      (16.09.2026) */
   .inhalt-fuss { border-top: 1px solid var(--border); padding: 9px 12px; background: var(--surface); }
   .inhalt-fuss:empty { display: none; }
+  /* Beide Knoepfe zum Anlegen sind gleich breit. Das Mass kommt nicht frei
+     gegriffen, sondern aus der linken Spalte: deren Knopf fuellt sie ganz aus,
+     abzueglich der beiden Raender der Karte und des Polsters im Fuss. Vorher
+     war der Knopf der schmalen Spalte breiter als der in der breiten Tafel —
+     das sah zufaellig aus. Gilt auch fuer „+ Ausgabe anlegen", sonst wechselte
+     die Breite beim Umschalten zwischen Preisen und Terminen. (16.09.2026) */
+  .inhalt-fuss .btn { width: calc(var(--spalte-links) - 26px); justify-content: center; }
   /* Der Fachbereich stand bisher auf demselben weissen Grund wie die Titel
      darunter und unterschied sich allein durch Groesse und Versalien — der
      Wechsel der Gruppe war kaum zu bemerken. Jetzt traegt die Zeile eine eigene
@@ -514,6 +522,7 @@ button, input, select, textarea { font-family: inherit; }
   @media (max-width: 820px) {
     .arbeit { grid-template-columns: minmax(0,1fr); }
     .titelliste { max-height: 320px; }
+    .inhalt-fuss .btn { width: auto; justify-content: flex-start; }
     /* Einspaltig rollt wieder die Seite: ein Rollfeld unter der Liste liefe
        hier auf seine Mindesthoehe, und die stehende Kopfzeile haette keinen
        Rahmen mehr, an dem sie stehen koennte — sie legte sich ueber den Kopf
