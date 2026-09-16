@@ -892,7 +892,7 @@ function render() {
   let sumList = 0, sumRabatt = 0, sumAfter = 0, sumAE = 0, sumNet = 0;
   let rows = '';
 
-  const spalten = useAE ? 9 : 8;   // Titel, Format, Anz., Listenpreis, Rabatt, nach Rabatt, [AE], Netto, Entfernen
+  const spalten = useAE ? 9 : 8;   // Titel, Format, Anzahl, Listenpreis, Rabatt, nach Rabatt, [AE], Netto, Entfernen
 
   gruppen.forEach(g => {
     if (mehrere) {
@@ -950,7 +950,7 @@ function render() {
       <table>
         <thead>
           <tr>
-            <th>Titel</th><th>Format</th><th>Anz.</th>
+            <th>Titel</th><th>Format</th><th>Anzahl</th>
             <th class="r">Listenpreis</th><th class="r">Staffelrabatt</th>
             <th class="r">Nach Rabatt</th>${aeHeader}
             <th class="r">Netto gesamt</th><th></th>
