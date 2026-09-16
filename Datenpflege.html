@@ -276,7 +276,14 @@ button, input, select, textarea { font-family: inherit; }
   /* ── Zweispaltiger Arbeitsbereich ── */
   .arbeit { display: grid; grid-template-columns: 268px minmax(0,1fr); gap: 16px; align-items: start; }
   .spalte { background: var(--white); border: 1px solid var(--border); border-radius: var(--radius-lg); box-shadow: var(--shadow-sm); overflow: hidden; }
-  .titelliste { padding: 6px 0 10px; max-height: calc(100vh - 264px); overflow-y: auto; }
+  /* Unten kein Polster: der Fuss mit dem Knopf zum Anlegen traegt seine eigene
+     Linie oben und trennt damit schon. Ein Polster daneben trennte ein zweites
+     Mal und hinterliesse einen weissen Streifen zwischen der letzten Titelzeile
+     und dem Fuss — unter einer blau markierten Zeile lagen dort Blau, Weiss und
+     Grau uebereinander. Das obere Polster von 6px bleibt stehen, es wird beim
+     ersten Fachbereichsband ohnehin durch dessen negativen Abstand aufgehoben.
+     (16.09.2026) */
+  .titelliste { padding: 6px 0 0; max-height: calc(100vh - 264px); overflow-y: auto; }
   /* Die Seite selbst rollt nicht mehr: Titelliste und Formattafel rollen in
      sich, ihre Hoehen setzt rollfelderAnpassen() nach dem Fenster — dasselbe
      Verfahren wie in der Jahresvorschau. Kopf und Leiste stehen dadurch immer,
