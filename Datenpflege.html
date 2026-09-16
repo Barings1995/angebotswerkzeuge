@@ -1533,20 +1533,12 @@ function sucheZeichnen() {
    muessen. Alle Felder werden dadurch durch neue ersetzt — auch das, in das
    gerade geklickt wurde. Der Klick ging bisher ins Leere, erst der zweite traf
    ein Feld, das es noch gab; nach Enter stand der Fokus ueberhaupt nirgends.
-   Gemerkt wird deshalb, wohin der Fokus gehoert, und nach dem Neubau wieder
-   dorthin gesetzt. Die Zellen tragen mit `data-stelle` bereits eine Kennung aus
-   Zeile und Feldname, die das Neuzeichnen uebersteht; wo keine steht (etwa der
-   Name einer Kategorie), hilft die Position unter den Feldern der Tafel.
-   (16.09.2026) */
-let KLICK_ZIEL = null;      /* zuletzt angeklicktes Feld samt Zeitpunkt */
-const KLICK_FRIST = 700;    /* danach zaehlt der Klick nicht mehr als Ziel */
-
-document.addEventListener('mousedown', e => {
-  const f = e.target.closest && e.target.closest('input, select, textarea');
-  KLICK_ZIEL = (f && document.getElementById('inhalt').contains(f))
-    ? { kennung: feldKennung(f), zeit: Date.now() } : null;
-}, true);
-
+   Gemerkt wird deshalb, wohin der Fokus gehoert und wo darin der Schreibzeiger
+   steht, und nach dem Neubau wieder dorthin gesetzt. Die Zellen tragen mit
+   `data-stelle` bereits eine Kennung aus Zeile und Feldname, die das Neuzeichnen
+   uebersteht; wo keine steht (etwa der Name einer Kategorie), hilft die Position
+   unter den Feldern der Tafel. Voraussetzung ist, dass der Klick vorher zu Ende
+   bearbeitet wurde — dafuer sorgt `spaeterZeichnen()`. (16.09.2026) */
 function feldKennung(f) {
   const inhalt = document.getElementById('inhalt');
   const zelle = f.closest('[data-stelle]');
@@ -1554,13 +1546,11 @@ function feldKennung(f) {
   return { platz: [...inhalt.querySelectorAll('input, select, textarea')].indexOf(f) };
 }
 
-/* Vor dem Neubau: Wohin gehoert der Fokus? Beim Klick in ein anderes Feld steht
-   im aktiven Feld noch das alte — dann gilt das Klickziel. Sonst (Enter, Tab)
-   bleibt es beim Feld selbst, samt Stelle des Schreibzeigers. */
+/* Vor dem Neubau: Wohin gehoert der Fokus? Weil das Neuzeichnen nach einer
+   Feldaenderung wartet, bis der Klick fertig ist, steht das immer im aktiven
+   Feld — mitsamt der Stelle, an die der Browser den Schreibzeiger gesetzt hat,
+   und einem markierten Bereich, falls einer besteht. */
 function fokusMerken() {
-  if (KLICK_ZIEL && Date.now() - KLICK_ZIEL.zeit < KLICK_FRIST) {
-    const z = KLICK_ZIEL.kennung; KLICK_ZIEL = null; return z;
-  }
   const f = document.activeElement;
   if (!f || !f.matches || !f.matches('input, select, textarea')) return null;
   if (!document.getElementById('inhalt').contains(f)) return null;
@@ -1581,6 +1571,21 @@ function fokusZurueck(k) {
   if (!f) return;   /* die Zeile kann inzwischen weg sein */
   f.focus({ preventScroll: true });
   if (k.von != null) { try { f.setSelectionRange(k.von, k.bis); } catch (e) { /* s. o. */ } }
+}
+
+/* Nach einer Feldaenderung wird nicht sofort neu gezeichnet, sondern nach dem
+   laufenden Durchlauf. Der Grund ist der Schreibzeiger: Wird beim Klick in ein
+   anderes Feld sofort gezeichnet, ist das angeklickte Feld schon ersetzt, bevor
+   der Browser den Zeiger darin gesetzt hat — er stand dann immer am Anfang,
+   gleich wo geklickt wurde. Mit dem Aufschub bearbeitet der Browser den Klick
+   zu Ende, und `fokusMerken()` liest die richtige Stelle ab. Sichtbar ist die
+   Wartezeit nicht; der Wert selbst ist zu diesem Zeitpunkt laengst uebernommen.
+   Mehrere Anstoesse kurz hintereinander zeichnen nur einmal. (16.09.2026) */
+let ZEICHNEN_ANGESTOSSEN = false;
+function spaeterZeichnen() {
+  if (ZEICHNEN_ANGESTOSSEN) return;
+  ZEICHNEN_ANGESTOSSEN = true;
+  setTimeout(() => { ZEICHNEN_ANGESTOSSEN = false; zeichnen(); }, 0);
 }
 
 function zeichnen() {
@@ -1831,7 +1836,7 @@ function ursprungPreis(t, id) {
 function stammSetzen(feld, wert) {
   const t = titelVonId(gewTitel); if (!t) return;
   t[feld] = feld === 'auflage' ? (parseInt(String(wert).replace(/\D/g, ''), 10) || 0) : String(wert).trim();
-  zeichnen();
+  spaeterZeichnen();
 }
 function preisSetzen(id, feld, wert) {
   const t = titelVonId(gewTitel); if (!t) return;
@@ -1843,7 +1848,7 @@ function preisSetzen(id, feld, wert) {
   }
   else if (feld === 'termin_art') p[feld] = wert || null;
   else p[feld] = String(wert).trim();
-  zeichnen();
+  spaeterZeichnen();
 }
 function terminSetzen(id, feld, wert) {
   const t = titelVonId(gewTitel); if (!t) return;
@@ -1851,7 +1856,7 @@ function terminSetzen(id, feld, wert) {
   a[feld] = (feld === 'kongresse' || feld === 'themen')
     ? String(wert).split('\n').map(s => s.trim()).filter(Boolean).join('\n')
     : String(wert).trim();
-  zeichnen();
+  spaeterZeichnen();
 }
 async function preisEntfernen(id) {
   const t = titelVonId(gewTitel); if (!t) return;
