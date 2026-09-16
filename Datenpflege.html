@@ -406,15 +406,24 @@ button, input, select, textarea { font-family: inherit; }
      sie besteht aus den Formaten, die sie nennen. Umbenennen heisst deshalb, alle
      ihre Formate umzubenennen, Entfernen heisst, sie mitzunehmen — und eine
      Kategorie ohne Formate kann es nicht geben, beim Anlegen entsteht darum
-     gleich eine leere Formatzeile mit. */
-  .kat-kopf { font-size: 10.5px; font-weight: 700; color: var(--grey-600); text-transform: uppercase; letter-spacing: .1em; padding: 14px 2px 5px; display: flex; align-items: center; gap: 6px; }
+     gleich eine leere Formatzeile mit.
+     Der Name steht als Klartext in Navy und deutlich groesser als die
+     Spaltenkoepfe darunter. Zuvor war er genauso gesetzt wie sie — klein, grau,
+     versal, gesperrt: zwei Zeilen im selben Kleid direkt uebereinander, die das
+     Auge beide als Tabellenkopf las. Der Name der Kategorie ging darin unter,
+     und versal gesperrter Satz ist fuer ein Eingabefeld ohnehin unguenstig.
+     Zahl und „Entfernen" bleiben klein und grau — sie sind Beiwerk.
+     Kein Strich und keine Flaeche: Orange gehoert den Aenderungsmarken, und
+     eine dritte Flaeche neben Kopfzeile und Zeilen-Hover streifte die Karte bei
+     vielen Kategorien zu stark. (17.09.2026) */
+  .kat-kopf { font-size: 14px; font-weight: 700; color: var(--navy); padding: 16px 2px 6px; display: flex; align-items: center; gap: 6px; }
   .kat-kopf .kat-name { flex: 1 1 auto; min-width: 0; font: inherit; letter-spacing: inherit;
     color: inherit; text-transform: inherit; padding: 2px 6px; background: transparent;
     border: 1px solid transparent; border-radius: var(--radius-sm); }
   .kat-kopf .kat-name:hover { border-color: var(--border); background: var(--white); }
   .kat-kopf .kat-name:focus { outline: none; border-color: var(--navy); background: var(--white); box-shadow: 0 0 0 2px rgba(0,40,90,.08); }
-  .kat-kopf .kat-zahl { flex: none; }
-  .kat-kopf .kat-tat { flex: none; font: inherit; letter-spacing: .06em; color: var(--grey-500);
+  .kat-kopf .kat-zahl { flex: none; font-size: 10.5px; color: var(--grey-600); letter-spacing: .1em; }
+  .kat-kopf .kat-tat { flex: none; font-family: var(--font-body); font-size: 10.5px; font-weight: 700; text-transform: uppercase; letter-spacing: .06em; color: var(--grey-500);
     background: none; border: none; cursor: pointer; padding: 2px 6px; border-radius: var(--radius-sm); }
   .kat-kopf .kat-tat:hover { color: var(--navy); background: var(--surface-hover); }
   .kat-kopf .kat-tat:active { transform: translateY(1px); }
@@ -439,6 +448,20 @@ button, input, select, textarea { font-family: inherit; }
   td input:focus, td select:focus { outline: none; border-color: var(--navy); background: var(--white); box-shadow: 0 0 0 2px rgba(0,40,90,.08); }
   td input.zahl { text-align: right; }
   td input.fehler, td select.fehler { border-color: var(--red); background: var(--red-bg); }
+  /* Verschieben statt Sortieren: die Reihenfolge der Formate ist kein
+     Anzeigeformat, sondern gepflegter Inhalt — sie bestimmt, in welcher Folge
+     die Formate im MediaSheet-Preisblatt, in MediaQuote, OpenSlots und PreisWerk
+     stehen. Ein Klick auf einen Spaltenkopf wuerde eine ganze Kategorie still
+     umwerfen; die Pfeile ruecken eine Zeile um einen Platz, sichtbar und
+     einzeln. Verschoben wird nur innerhalb der Kategorie.
+     Die Pfeile stehen immer da, auch in der ersten und letzten Zeile: dort
+     blass und ohne Wirkung, damit die Spalte nicht springt und die Funktion
+     nicht erst beim Ueberfahren auffindbar ist. (17.09.2026) */
+  .zeilen-schub { border: none; background: none; color: var(--grey-500); cursor: pointer; font-size: 11px; line-height: 1; padding: 3px 3px; border-radius: var(--radius-sm); }
+  .zeilen-schub:hover { color: var(--navy); background: var(--surface-hover); }
+  .zeilen-schub:active { transform: translateY(1px); }
+  .zeilen-schub[disabled] { color: var(--border); cursor: default; background: none; transform: none; }
+  td.tat { white-space: nowrap; text-align: right; }
   .zeilen-x { border: none; background: none; color: var(--grey-500); cursor: pointer; font-size: 15px; line-height: 1; padding: 2px 5px; border-radius: var(--radius-sm); }
   .zeilen-x:hover { color: var(--red); background: var(--red-bg); }
   .fehlertext { color: var(--red); font-size: 11.5px; padding: 1px 6px 5px; }
@@ -533,6 +556,7 @@ button, input, select, textarea { font-family: inherit; }
   .ueb .jetzt { font-weight: 600; }
   .ueb .art-neu { color: var(--green); font-weight: 600; }
   .ueb .art-weg { color: var(--red); font-weight: 600; }
+  .ueb .art-sortiert { color: var(--navy); font-weight: 600; }
   .ueb .hin { width: 22px; text-align: right; color: var(--grey-500); }
   .ueb-sperre { padding: 9px 20px; font-size: 12.5px; color: var(--red); background: var(--red-bg); border-top: 1px solid var(--red-border); }
 
@@ -1040,7 +1064,11 @@ function offeneAenderungen() {
    Zeile also zweimal. Eine neu angelegte oder entfernte Zeile zaehlt einmal, ein
    neu angelegter oder entfernter Titel ebenfalls, und zwar samt allem, was er
    mitbringt. Das Umbenennen einer Kategorie zaehlt einmal, nicht einmal je Format.
-   Die Reihenfolge zaehlt nicht: sie wird erst beim Speichern vergeben.
+   Eine geaenderte Reihenfolge zaehlt einmal je Kategorie, nicht einmal je
+   verschobener Zeile — sonst zaehlte ein Schritt gleich zwei Aenderungen.
+   Ohne diesen Eintrag stuende nach einem Verschieben „0 offen" bei aktivem
+   „Speichern": die Nummer selbst wird zwar erst beim Speichern vergeben, die
+   Abfolge im Bildschirm ist aber schon die kuenftige. (17.09.2026)
 
    aenderungenVon liefert die Aenderungen eines Titels als Liste. Aus ihr lesen die
    Zaehlung, die Markierung in den Tabellen und die Uebersicht - alle drei zeigen
@@ -1099,6 +1127,24 @@ function aenderungenVon(t) {
   });
   altPreis.forEach(a => {
     if (!neuPreis.some(p => p.id === a.id)) dazu({ bereich: 'Preise', wo: a.format || 'Format ohne Namen', art: 'weg', reiter: 'preise' });
+  });
+  /* Verglichen wird je Kategorie die Abfolge der Zeilen, die es vorher schon
+     gab. Neue Zeilen bleiben aussen vor: sie zaehlen bereits als „neu angelegt"
+     und haetten vorher keinen Platz, mit dem sich der heutige vergleichen liesse.
+     Ein Format, das die Kategorie gewechselt hat, ebenfalls nicht — dessen
+     Wechsel steht schon als Aenderung des Kategorienamens da. */
+  const katFolge = new Map();
+  neuPreis.forEach(p => {
+    const a = altPreis.find(x => x.id === p.id);
+    if (!a || roh(a.kategorie) !== roh(p.kategorie)) return;
+    const k = roh(p.kategorie);
+    if (!katFolge.has(k)) katFolge.set(k, []);
+    katFolge.get(k).push(p.id);
+  });
+  katFolge.forEach((jetzt, k) => {
+    const vorher = altPreis.filter(a => jetzt.includes(a.id)).map(a => a.id);
+    if (!gleich(vorher, jetzt)) dazu({ bereich: 'Preise', wo: k || 'Ohne Kategorie',
+      art: 'sortiert', reiter: 'preise', stelle: 'kat-' + k });
   });
 
   const altTermin = u.termin || [], neuTermin = t.termin || [];
@@ -1206,6 +1252,7 @@ function uebersichtOeffnen() {
     const geht = !!x.titelId;
     const wert = x.art === 'neu' ? '<td colspan="2" class="art-neu">neu angelegt</td>'
                : x.art === 'weg' ? '<td colspan="2" class="art-weg">entfernt</td>'
+               : x.art === 'sortiert' ? '<td colspan="2" class="art-sortiert">Reihenfolge geändert</td>'
                : '<td class="fe">' + esc(x.name) + '</td><td class="wert"><span class="alt">' + esc(x.alt) +
                  '</span><span class="pf">→</span><span class="jetzt">' + esc(x.neu) + '</span></td>';
     html += '<tr' + (geht ? ' class="geht" onclick="uebersichtSprung(' + i + ')"' : '') + '>' +
@@ -1714,9 +1761,9 @@ function preiseZeichnen(t, karte) {
       '<span class="kat-zahl">' + g.zeilen.length + '</span>' +
       '<button class="kat-tat kat-weg" title="Diese Kategorie mit allen ihren Formaten entfernen" onclick="kategorieEntfernen(' + i + ')">Entfernen</button>' +
       '</div>';
-    html += '<table><colgroup><col style="width:34%"><col style="width:13%"><col style="width:13%"><col style="width:9%"><col style="width:9%"><col style="width:9%"><col style="width:10%"><col style="width:36px"></colgroup>' +
+    html += '<table><colgroup><col style="width:34%"><col style="width:13%"><col style="width:13%"><col style="width:9%"><col style="width:9%"><col style="width:9%"><col style="width:10%"><col style="width:84px"></colgroup>' +
       '<tr><th>Format</th><th class="r">Preis €</th><th class="r">4c-Zuschlag €</th><th>rabatt</th><th>AE</th><th>Termin</th><th class="r">Seiten-Äqu.</th><th></th></tr>';
-    g.zeilen.forEach(p => {
+    g.zeilen.forEach((p, nr) => {
       /* Jedes geaenderte Feld wird markiert, eine neu angelegte Zeile als Ganzes
          (Hintergrund, Strich am Zeilenanfang, Marke „neu") - nicht jedes ihrer Felder. */
       const neu = karte.neu.has(p.id);
@@ -1732,7 +1779,10 @@ function preiseZeichnen(t, karte) {
           ['', 'DU', 'EH'].map(w => '<option value="' + w + '"' + ((p.termin_art || '') === w ? ' selected' : '') + '>' + (w || '—') + '</option>').join('') +
         '</select>') +
         aendZelle(karte, st('seiten_aequivalent'), 'r', '<input class="zahl" placeholder="auto" value="' + esc(zahlText(p.seiten_aequivalent)) + '" onchange="preisSetzen(\'' + p.id + '\',\'seiten_aequivalent\',this.value)">') +
-        '<td><button class="zeilen-x" title="Format entfernen" onclick="preisEntfernen(\'' + p.id + '\')">×</button></td>' +
+        '<td class="tat">' +
+          schubKnopf(i, nr, -1, nr === 0) + schubKnopf(i, nr, 1, nr === g.zeilen.length - 1) +
+          '<button class="zeilen-x" title="Format entfernen" onclick="preisEntfernen(\'' + p.id + '\')">×</button>' +
+        '</td>' +
       '</tr>';
     });
     html += '<tr class="neu-format"><td colspan="8">' +
@@ -1740,6 +1790,35 @@ function preiseZeichnen(t, karte) {
       '</td></tr></table>';
   });
   return html;
+}
+
+/* Ein Pfeil je Richtung. Die Kennung traegt Zeile und Richtung, damit der
+   Fokus nach dem Neuzeichnen wieder auf demselben Knopf landet. */
+function schubKnopf(katIndex, nr, richtung, aus) {
+  const hoch = richtung < 0;
+  return '<button class="zeilen-schub" data-schub="' + katIndex + '-' + nr + '-' + (hoch ? 'h' : 'r') + '"' +
+    (aus ? ' disabled' : '') +
+    ' title="' + (hoch ? 'Einen Platz nach oben' : 'Einen Platz nach unten') + '"' +
+    ' onclick="formatSchieben(' + katIndex + ',' + nr + ',' + richtung + ')">' +
+    (hoch ? '&#9650;' : '&#9660;') + '</button>';
+}
+
+/* Verschoben wird innerhalb der Kategorie. Die Zeilen einer Kategorie muessen
+   in t.preis nicht zusammenhaengen — eine neu angelegte Zeile haengt sich hinten
+   an, auch wenn ihre Kategorie weiter oben steht. Getauscht wird deshalb, was an
+   den Plaetzen der Gruppenmitglieder steht; was dazwischenliegt, bleibt unberuehrt. */
+function formatSchieben(katIndex, nr, richtung) {
+  const t = titelVonId(gewTitel); if (!t) return;
+  const g = katGruppen(t)[katIndex]; if (!g) return;
+  const ziel = nr + richtung;
+  if (ziel < 0 || ziel >= g.zeilen.length) return;
+  const plaetze = g.zeilen.map(z => t.preis.indexOf(z));
+  const folge = g.zeilen.slice();
+  folge.splice(ziel, 0, folge.splice(nr, 1)[0]);
+  plaetze.forEach((platz, i) => { t.preis[platz] = folge[i]; });
+  zeichnen();
+  const knopf = document.querySelector('#inhalt [data-schub="' + katIndex + '-' + ziel + '-' + (richtung < 0 ? 'h' : 'r') + '"]');
+  if (knopf && !knopf.disabled) knopf.focus({ preventScroll: true });
 }
 
 function jaNein(id, feld, wert) {
