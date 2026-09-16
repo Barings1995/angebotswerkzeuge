@@ -1842,6 +1842,35 @@ function ursprungPreis(t, id) {
   const u = ursprungTitel(t.id);
   return u ? (u.preis || []).find(p => p.id === id) || null : null;
 }
+function ursprungTermin(t, id) {
+  const u = ursprungTitel(t.id);
+  return u ? (u.termin || []).find(a => a.id === id) || null : null;
+}
+
+/* ── Rueckfragen beim Entfernen ──
+   Beim Entfernen wird gefragt, weil ein Format oder eine Ausgabe mit allem
+   daran haengenden verschwindet. Der Hinweis „Wirksam mit Speichern, zurueck
+   mit Verwerfen" gilt dabei aber nur fuer das, was schon einmal gespeichert
+   wurde: „Verwerfen" stellt den zuletzt gespeicherten Stand her, und eine
+   Zeile, die es dort nie gab, kommt damit nicht zurueck. Bei einer eben erst
+   angelegten Zeile war die Rueckfrage deshalb nicht nur ueberfluessig, sie
+   versprach eine Rueckholung, die es nicht gibt.
+   Drei Faelle: eine neue, noch leere Zeile geht ohne Rueckfrage; eine neue
+   Zeile mit Eingaben wird gefragt, aber mit zutreffendem Text — hier ist es
+   endgueltig; alles Gespeicherte bleibt wie bisher. (16.09.2026) */
+function leerFeld(w) { return w == null || String(w).trim() === ''; }
+function preisZeileLeer(p) {
+  return leerFeld(p.format) && leerFeld(p.preis) && leerFeld(p.zuschlag_4c) &&
+         leerFeld(p.seiten_aequivalent);
+}
+function terminZeileLeer(a) {
+  /* „Heft" traegt beim Anlegen schon die naechste Nummer und zaehlt nicht als
+     Eingabe. */
+  return ['monat', 'et', 'anzeigenschluss', 'du_schluss', 'eh_termin', 'themen', 'kongresse']
+    .every(f => leerFeld(a[f]));
+}
+const NICHT_GESPEICHERT = '<p>Die Zeile wurde noch nicht gespeichert; die Eingaben sind damit endg\u00fcltig weg — „Verwerfen" holt sie nicht zur\u00fcck.</p>';
+const ERST_MIT_SPEICHERN = '<p>Wirksam wird das erst mit „Speichern"; bis dahin holt „Verwerfen" es zur\u00fcck.</p>';
 
 /* ── Ändern ───────────────────────────────────────────────────────────────── */
 function stammSetzen(feld, wert) {
@@ -1873,9 +1902,10 @@ async function preisEntfernen(id) {
   const t = titelVonId(gewTitel); if (!t) return;
   const p = (t.preis || []).find(x => x.id === id);
   if (!p) return;
-  if (!await frage('Format entfernen?',
+  const neu = !ursprungPreis(t, id);
+  if (!(neu && preisZeileLeer(p)) && !await frage('Format entfernen?',
     '<p>„' + esc(p.format || '') + '" wird aus der Preisliste genommen.</p>' +
-    '<p>Wirksam wird das erst mit „Speichern"; bis dahin holt „Verwerfen" es zurück.</p>',
+    (neu ? NICHT_GESPEICHERT : ERST_MIT_SPEICHERN),
     'Entfernen')) return;
   t.preis = t.preis.filter(x => x.id !== id);
   zeichnen();
@@ -1884,9 +1914,10 @@ async function terminEntfernen(id) {
   const t = titelVonId(gewTitel); if (!t) return;
   const a = (t.termin || []).find(x => x.id === id);
   if (!a) return;
-  if (!await frage('Ausgabe entfernen?',
+  const neu = !ursprungTermin(t, id);
+  if (!(neu && terminZeileLeer(a)) && !await frage('Ausgabe entfernen?',
     '<p>' + esc(heftText(a.heft) || 'Diese Ausgabe') + ' wird mit allen Terminen, Themen und Kongressen entfernt.</p>' +
-    '<p>Wirksam wird das erst mit „Speichern"; bis dahin holt „Verwerfen" es zurück.</p>',
+    (neu ? NICHT_GESPEICHERT : ERST_MIT_SPEICHERN),
     'Entfernen')) return;
   t.termin = t.termin.filter(x => x.id !== id);
   zeichnen();
@@ -1941,10 +1972,17 @@ async function kategorieEntfernen(i) {
   const t = titelVonId(gewTitel); if (!t) return;
   const g = katGruppen(t)[i]; if (!g) return;
   const n = g.zeilen.length;
-  if (!await frage('Kategorie entfernen?',
+  /* Fuer die ganze Kategorie gilt der kuerzere Weg nur, wenn jede ihrer Zeilen
+     neu ist — sobald eine gespeicherte darunter liegt, holt „Verwerfen" diese
+     zurueck, und der gewohnte Hinweis stimmt wieder. */
+  const alleNeu = g.zeilen.every(p => !ursprungPreis(t, p.id));
+  const alleLeer = g.zeilen.every(preisZeileLeer);
+  if (!(alleNeu && alleLeer) && !await frage('Kategorie entfernen?',
     '<p>„' + esc(g.kat) + '" wird mit <b>' + n + '</b> ' + (n === 1 ? 'Format' : 'Formaten') +
     ' aus der Preisliste genommen.</p>' +
-    '<p>Wirksam wird das erst mit „Speichern"; bis dahin holt „Verwerfen" sie zurück.</p>',
+    (alleNeu
+      ? '<p>' + (n === 1 ? 'Die Zeile wurde' : 'Die Zeilen wurden') + ' noch nicht gespeichert; die Eingaben sind damit endg\u00fcltig weg — „Verwerfen" holt sie nicht zur\u00fcck.</p>'
+      : '<p>Wirksam wird das erst mit „Speichern"; bis dahin holt „Verwerfen" sie zur\u00fcck.</p>'),
     'Entfernen')) return;
   const weg = new Set(g.zeilen.map(p => p.id));
   t.preis = t.preis.filter(p => !weg.has(p.id));
