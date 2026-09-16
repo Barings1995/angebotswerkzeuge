@@ -96,6 +96,13 @@ button, input, select, textarea { font-family: inherit; }
     appearance: none; -webkit-appearance: none; transition: background-color .15s;
     background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 12' fill='none' stroke='%23ffffff' stroke-width='1.8'%3E%3Cpath d='M2.5 4.5 6 8l3.5-3.5'/%3E%3C/svg%3E");
     background-repeat: no-repeat; background-position: right 4px center; background-size: 12px; }
+  /* Solange kein Jahrgang gilt, steht im Kopf nur der Name des Werkzeugs. Das
+     trifft zwei Faelle: waehrend des Ladens, weil die Jahrgaenge aus der Daten-
+     bank kommen und erst nach der Antwort feststehen — sonst haenge fuer ein,
+     zwei Sekunden ein leeres Feld mit Pfeil hinter dem Wort und die Ueber-
+     schrift spraenge beim Fuellen breiter; und auf der Anmeldeseite, wo ein
+     Jahrgang nichts zu sagen haette. (16.09.2026) */
+  .sm-hero h1 .hero-jahr:empty { display: none; }
   .sm-hero h1 .hero-jahr:hover { background-color: rgba(255,255,255,.16); }
   .sm-hero h1 .hero-jahr:focus-visible { outline: 2px solid rgba(255,255,255,.6); outline-offset: 2px; }
   /* Die Klappliste selbst steht auf weissem Grund des Systems — dort gilt die
@@ -814,9 +821,7 @@ async function abmelden() {
     'Abmelden')) return;
   sitzungVergessen();
   URSPRUNG = ARBEIT = null;
-  document.getElementById('arbeitSchirm').classList.add('verborgen');
-  document.getElementById('kontoBox').classList.add('verborgen');
-  document.getElementById('anmeldeSchirm').classList.remove('verborgen');
+  anmeldeSchirmZeigen();
 }
 
 /* ── Laden ────────────────────────────────────────────────────────────────── */
@@ -877,6 +882,13 @@ function anmeldeSchirmZeigen() {
   document.getElementById('arbeitSchirm').classList.add('verborgen');
   document.getElementById('kontoBox').classList.add('verborgen');
   document.getElementById('anmeldeSchirm').classList.remove('verborgen');
+  /* Ohne Anmeldung gilt kein Jahrgang: die Auswahl im Kopf wird geleert und
+     verschwindet damit (`.hero-jahr:empty`), der Reiter verliert die Jahres-
+     zahl. Sonst stuende nach dem Abmelden weiter ein Jahrgang ueber einer
+     Anmeldemaske, an dem sich sogar drehen liesse. */
+  gewJahr = '';
+  document.getElementById('jahrWahl').innerHTML = '';
+  reiterTitelSetzen();
 }
 
 /* ── Hilfen ───────────────────────────────────────────────────────────────── */
@@ -1296,10 +1308,16 @@ function alleFehler() {
 function jahrAuswahlAufbauen() {
   const s = document.getElementById('jahrWahl');
   s.innerHTML = jahrgaenge().map(j => '<option value="' + j + '"' + (j === gewJahr ? ' selected' : '') + '>' + j + '</option>').join('');
-  /* Auch der Reiter des Browsers nennt den Jahrgang. Das hilft beim Zurueck-
-     kommen aus einem anderen Fenster und haelt zwei offene Jahrgaenge
-     auseinander — ohne den Zusatz hiessen beide Reiter gleich. */
-  document.title = 'Datenpflege ' + (gewJahr || '') + ' \u2013 Preise und Termine \u00b7 Springer Medizin';
+  reiterTitelSetzen();
+}
+
+/* Auch der Reiter des Browsers nennt den Jahrgang. Das hilft beim Zurueck-
+   kommen aus einem anderen Fenster und haelt zwei offene Jahrgaenge
+   auseinander — ohne den Zusatz hiessen beide Reiter gleich. Ohne Jahrgang
+   entfaellt der Zusatz ganz, statt eine Luecke zu hinterlassen. */
+function reiterTitelSetzen() {
+  document.title = 'Datenpflege' + (gewJahr ? ' ' + gewJahr : '') +
+    ' \u2013 Preise und Termine \u00b7 Springer Medizin';
 }
 
 /* Beim Wechsel des Jahrgangs bleibt der gewaehlte Titel stehen, sofern der neue
