@@ -665,7 +665,7 @@ td.fmt{width:44%}
   </div>
   <div class="o-grp" id="gKontakt"><div class="o-kopf">Ansprechpartner</div>
     <textarea id="sKontakt" rows="2" placeholder="Name &middot; Funktion" aria-label="Ansprechpartner im Fu&szlig; des Blattes" autocomplete="off" spellcheck="false"></textarea>
-    <div class="o-hinweis">Erscheint im Fu&szlig; jeder Seite.</div>
+    <div class="o-hinweis">Erscheint im Fu&szlig; jeder Seite. Gilt f&uuml;r den gew&auml;hlten Titel.</div>
   </div>
 </div>
 </aside>
@@ -1350,7 +1350,8 @@ function terminseitenBauen(L){
 
 let GEWAEHLT = { jahr:'', titel:'' };
 let AKTUELL = null;
-const KONTAKT_SCHLUESSEL = 'mediaSheetKontakt';
+const KONTAKT_SCHLUESSEL  = 'mediaSheetKontakt';    /* zuletzt eingetragen */
+const KONTAKTE_SCHLUESSEL = 'mediaSheetKontakte';   /* je Titel */
 
 function umfang(){
   const b = document.querySelector('.umfang button[aria-pressed="true"]');
@@ -1374,6 +1375,7 @@ function zeichnen(){
     b.querySelector('.seite').textContent =
       kopf + ' · Seite ' + (i+1) + ' von ' + SEITEN.length;
   });
+  kontaktFeldNachfuehren();
   kontaktSetzen();
   document.getElementById('druckKnopf').disabled = SEITEN.length === 0;
   if(!SEITEN.length){
@@ -1395,13 +1397,48 @@ function zeichnen(){
    Geschrieben wird im Feld „Ansprechpartner“ der Leiste (seit 15.09.2026, vorher
    unmittelbar im Fuss der ersten Seite). Jede Eingabe steht sofort auf allen
    Seiten und im Zwischenspeicher des Geraetes — mit eigenem Schluessel, die
-   Werkzeuge sollen nicht aneinanderhaengen. */
+   Werkzeuge sollen nicht aneinanderhaengen.
+
+   Der Eintrag gehoert zum gewaehlten Titel (seit 16.09.2026): verschiedene
+   Titel haben verschiedene Ansprechpartner. Gemerkt wird eine Zuordnung
+   Titel -> Name; wer den Titel wechselt, findet im Feld den Namen dieses
+   Titels. Fuer einen Titel, zu dem noch nichts hinterlegt ist, steht der
+   zuletzt eingetragene Name als Vorbelegung da — wer fuer die meisten Titel
+   derselbe ist, tippt sonst immer wieder dasselbe. Der alte einzelne
+   Schluessel bleibt genau dafuer in Gebrauch, ein Umziehen der bisherigen
+   Eingabe eruebrigt sich damit. */
+function kontakteLesen(){
+  try{
+    const o = JSON.parse(localStorage.getItem(KONTAKTE_SCHLUESSEL) || '{}');
+    return (o && typeof o === 'object' && !Array.isArray(o)) ? o : {};
+  }catch(e){ return {}; }
+}
 function kontaktLesen(){
+  const o = kontakteLesen();
+  if(GEWAEHLT.titel && Object.prototype.hasOwnProperty.call(o, GEWAEHLT.titel)){
+    return String(o[GEWAEHLT.titel] || '');
+  }
   try{ return localStorage.getItem(KONTAKT_SCHLUESSEL) || ''; }catch(e){ return ''; }
+}
+function kontaktSchreiben(text){
+  if(GEWAEHLT.titel){
+    const o = kontakteLesen();
+    o[GEWAEHLT.titel] = text;
+    try{ localStorage.setItem(KONTAKTE_SCHLUESSEL, JSON.stringify(o)); }catch(e){}
+  }
+  try{ localStorage.setItem(KONTAKT_SCHLUESSEL, text); }catch(e){}
 }
 function kontaktSetzen(){
   const text = kontaktLesen().trim();
   SEITEN.forEach(b => { b.querySelector('.kontakt').textContent = text; });
+}
+/* Beim Wechsel von Titel oder Jahrgang das Feld nachziehen. Waehrend des
+   Tippens laeuft nichts davon — nur das Zeichnen ruft es auf. */
+let kontaktHoehe = () => {};
+function kontaktFeldNachfuehren(){
+  const feld = document.getElementById('sKontakt');
+  const wert = kontaktLesen();
+  if(feld.value !== wert){ feld.value = wert; kontaktHoehe(); }
 }
 function kontaktFeldVerbinden(){
   const feld = document.getElementById('sKontakt');
@@ -1414,6 +1451,7 @@ function kontaktFeldVerbinden(){
     feld.style.height = 'auto';
     feld.style.height = (feld.scrollHeight + feld.offsetHeight - feld.clientHeight) + 'px';
   };
+  kontaktHoehe = hoeheAnpassen;
   let letzteBreite = 0;
   new ResizeObserver(() => {
     if(feld.offsetWidth !== letzteBreite){ letzteBreite = feld.offsetWidth; hoeheAnpassen(); }
@@ -1422,7 +1460,7 @@ function kontaktFeldVerbinden(){
   feld.addEventListener('input', () => {
     const einzeilig = feld.value.replace(/\s*[\r\n]+\s*/g, ' ');
     if(einzeilig !== feld.value) feld.value = einzeilig;
-    try{ localStorage.setItem(KONTAKT_SCHLUESSEL, feld.value); }catch(e){}
+    kontaktSchreiben(feld.value);
     hoeheAnpassen();
     kontaktSetzen();
   });
