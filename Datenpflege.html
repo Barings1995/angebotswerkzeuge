@@ -1527,6 +1527,62 @@ function sucheZeichnen() {
   return html;
 }
 
+/* ── Fokus ueber das Neuzeichnen retten ───────────────────────────────────
+   Ein geaendertes Feld wird erst beim Verlassen uebernommen; dabei zeichnet
+   `zeichnen()` die ganze Tafel neu, weil Marke, Zaehler und Knoepfe mitgehen
+   muessen. Alle Felder werden dadurch durch neue ersetzt — auch das, in das
+   gerade geklickt wurde. Der Klick ging bisher ins Leere, erst der zweite traf
+   ein Feld, das es noch gab; nach Enter stand der Fokus ueberhaupt nirgends.
+   Gemerkt wird deshalb, wohin der Fokus gehoert, und nach dem Neubau wieder
+   dorthin gesetzt. Die Zellen tragen mit `data-stelle` bereits eine Kennung aus
+   Zeile und Feldname, die das Neuzeichnen uebersteht; wo keine steht (etwa der
+   Name einer Kategorie), hilft die Position unter den Feldern der Tafel.
+   (16.09.2026) */
+let KLICK_ZIEL = null;      /* zuletzt angeklicktes Feld samt Zeitpunkt */
+const KLICK_FRIST = 700;    /* danach zaehlt der Klick nicht mehr als Ziel */
+
+document.addEventListener('mousedown', e => {
+  const f = e.target.closest && e.target.closest('input, select, textarea');
+  KLICK_ZIEL = (f && document.getElementById('inhalt').contains(f))
+    ? { kennung: feldKennung(f), zeit: Date.now() } : null;
+}, true);
+
+function feldKennung(f) {
+  const inhalt = document.getElementById('inhalt');
+  const zelle = f.closest('[data-stelle]');
+  if (zelle) return { stelle: zelle.dataset.stelle };
+  return { platz: [...inhalt.querySelectorAll('input, select, textarea')].indexOf(f) };
+}
+
+/* Vor dem Neubau: Wohin gehoert der Fokus? Beim Klick in ein anderes Feld steht
+   im aktiven Feld noch das alte — dann gilt das Klickziel. Sonst (Enter, Tab)
+   bleibt es beim Feld selbst, samt Stelle des Schreibzeigers. */
+function fokusMerken() {
+  if (KLICK_ZIEL && Date.now() - KLICK_ZIEL.zeit < KLICK_FRIST) {
+    const z = KLICK_ZIEL.kennung; KLICK_ZIEL = null; return z;
+  }
+  const f = document.activeElement;
+  if (!f || !f.matches || !f.matches('input, select, textarea')) return null;
+  if (!document.getElementById('inhalt').contains(f)) return null;
+  const k = feldKennung(f);
+  try { k.von = f.selectionStart; k.bis = f.selectionEnd; } catch (e) { /* Auswahl gibt es nicht bei jedem Feld */ }
+  return k;
+}
+
+function fokusZurueck(k) {
+  if (!k) return;
+  const inhalt = document.getElementById('inhalt');
+  const alle = [...inhalt.querySelectorAll('input, select, textarea')];
+  const f = k.stelle !== undefined
+    ? inhalt.querySelector('[data-stelle="' + (window.CSS && CSS.escape ? CSS.escape(k.stelle) : k.stelle) + '"] input, ' +
+                           '[data-stelle="' + (window.CSS && CSS.escape ? CSS.escape(k.stelle) : k.stelle) + '"] select, ' +
+                           '[data-stelle="' + (window.CSS && CSS.escape ? CSS.escape(k.stelle) : k.stelle) + '"] textarea')
+    : alle[k.platz];
+  if (!f) return;   /* die Zeile kann inzwischen weg sein */
+  f.focus({ preventScroll: true });
+  if (k.von != null) { try { f.setSelectionRange(k.von, k.bis); } catch (e) { /* s. o. */ } }
+}
+
 function zeichnen() {
   document.getElementById('standHinweis').textContent = standText;
   /* Die Jahrgangsauswahl wird aus den Titeln gebildet, nicht aus der
@@ -1535,12 +1591,14 @@ function zeichnen() {
      mitgehen. Zuvor wurde sie nur beim Start und aus zwei Dialogen aufgebaut -
      nach dem Zuruecknehmen einer Loeschung fehlte der Jahrgang in der Liste,
      obwohl seine Titel wieder dastanden. */
+  const fokus = fokusMerken();
   vorherTippWeg();
   jahrAuswahlAufbauen();
   titellisteZeichnen();
   inhaltZeichnen();
   knoepfeAuffrischen();
   rollfelderAnpassen();
+  fokusZurueck(fokus);
 }
 
 function titellisteZeichnen() {
