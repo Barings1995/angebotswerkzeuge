@@ -615,6 +615,8 @@ button, input, select, textarea { font-family: inherit; }
     border: none;
     color: #c0392b;
     cursor: pointer;
+    display: inline-flex;
+    align-items: center;
     font-size: 16px;
     line-height: 1;
     padding: 2px 4px;
@@ -2108,7 +2110,7 @@ function addPosition() {
     <td class="col-ae deduct-cell" id="ae-${id}">–</td>
     <td class="col-gp gp-cell" id="gp-${id}">–</td>
     <td class="col-del">
-      <button class="btn-del" onclick="removePosition(${id})" title="Position entfernen">✕</button>
+      <button class="btn-del" onclick="removePosition(${id})" title="Position entfernen"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
     </td>`;
 
   tbody.appendChild(tr);
@@ -2485,7 +2487,7 @@ function flash(id, msg) {
     b.style.minWidth = '';
   }
   b.dataset.orig = b.innerHTML;
-  /* Breite festhalten, bevor die Beschriftung wechselt: „✓ Gespeichert" ist rund
+  /* Breite festhalten, bevor die Beschriftung wechselt: „Gespeichert" mit Haken ist rund
      40 px schmaler als „Angebot speichern". Ohne die Sperre schrumpfte der Knopf
      für zwei Sekunden, und alles rechts von ihm rückte zweimal nach — beim
      Erscheinen der Quittung und beim Zurückspringen. Gemessen statt fest
@@ -2668,7 +2670,7 @@ async function saveAngebot() {
       angebotFileName = angebotFileHandle.name || '';
       angebotSavedAt  = new Date().toISOString();
       updAngStatus();
-      flash('angSaveBtn', '✓ Gespeichert');
+      flash('angSaveBtn', '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"/></svg>Gespeichert');
       return;
     } catch (e) {
       // Vom Nutzer abgebrochen — entweder der Auswahl-Dialog (AbortError) oder
@@ -2696,7 +2698,7 @@ function downloadAngebotFallback(json) {
   angebotFileName = name;
   angebotSavedAt  = new Date().toISOString();
   updAngStatus();
-  flash('angSaveBtn', '✓ Gespeichert');
+  flash('angSaveBtn', '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"/></svg>Gespeichert');
 }
 
 async function openAngebot() {

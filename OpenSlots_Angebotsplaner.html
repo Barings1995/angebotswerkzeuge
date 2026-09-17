@@ -710,7 +710,15 @@ th.iss-th {
   box-shadow: 0 0 0 2px rgba(0,40,90,.08);
 }
 .rm-iss {
-  padding: 2px 6px;
+  /* Feste Flaeche, seit das Kreuz gezeichnet ist: die Hoehe kam vorher vom
+     Schriftzeichen, das Symbol allein liesse den Knopf von 24 auf 18 px
+     schrumpfen, und ohne Breite waere er von 22 auf 26 px gewachsen. */
+  width: 22px;
+  height: 24px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
   border: 1px solid var(--sm-border);
   border-radius: var(--radius-sm);
   background: transparent;
@@ -2020,7 +2028,7 @@ async function saveAngebot(){
       await w.write(json);await w.close();
       angebotFileName=angebotFileHandle.name||'';
       angebotSavedAt=new Date().toISOString();
-      updAngStatus();flash('angSaveBtn','✓ Gespeichert');
+      updAngStatus();flash('angSaveBtn','<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"/></svg>Gespeichert');
       return;
     }catch(e){
       /* Vom Nutzer abgebrochen - entweder der Auswahl-Dialog (AbortError) oder die
@@ -2038,7 +2046,7 @@ async function saveAngebot(){
   document.body.appendChild(a);a.click();
   setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove();},100);
   angebotFileName=name;angebotSavedAt=new Date().toISOString();
-  updAngStatus();flash('angSaveBtn','✓ Gespeichert');
+  updAngStatus();flash('angSaveBtn','<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"/></svg>Gespeichert');
 }
 
 async function openAngebot(){
@@ -2655,7 +2663,7 @@ function tPl(iid,gi,ii,chk){
   chk?iss.sel.add(nm):iss.sel.delete(nm);
   const allOn=ST[cJ].issues.length>0&&ST[cJ].issues.every(i=>i.sel.has(nm));
   const ab=document.getElementById('ab_'+gi+'_'+ii);
-  if(ab){ab.className='alle'+(allOn?' full':'');ab.textContent=allOn?'\u2713 Alle':'Alle';}
+  if(ab){ab.className='alle'+(allOn?' full':'');ab.textContent='Alle';}
   render();
 }
 
@@ -2719,7 +2727,7 @@ function rMx(){
     h+=`<select class="iss-sel" onchange="selIss(${s.id},this.value)"><option value="">Heft wählen …</option>${opts}</select>`;
     h+=`<input type="text" value="${esc(s.et)}" placeholder="ET" oninput="updI(${s.id},'et',this.value)">`;
     h+=`<input type="text" value="${esc(s.ds)}" placeholder="AS" oninput="updI(${s.id},'ds',this.value)">`;
-    h+=`<button class="rm-iss" onclick="remIss(${s.id})" title="Ausgabe entfernen">&times;</button>`;
+    h+=`<button class="rm-iss" onclick="remIss(${s.id})" title="Ausgabe entfernen"><svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M18 6 6 18M6 6l12 12"/></svg></button>`;
     h+=`</div></th>`;
   });
   h+='</tr></thead><tbody>';
@@ -2729,7 +2737,7 @@ function rMx(){
       const allOn=iss.length>0&&iss.every(i=>i.sel.has(nm));
       h+=`<tr class="pl-row${ii%2?' alt':''}" data-cat="${ji}_${gi}"><td class="pl-cell"><div class="pl-inner"><span class="pl-nm">${esc(nm)}</span>`;
       if(preisOn())h+=`<span class="pr-tag">${preisTag(pr)}</span>`;
-      if(iss.length>1)h+=`<button class="alle${allOn?' full':''}" id="ab_${gi}_${ii}" onclick="tAll(${gi},${ii})">${allOn?'\u2713 Alle':'Alle'}</button>`;
+      if(iss.length>1)h+=`<button class="alle${allOn?' full':''}" id="ab_${gi}_${ii}" onclick="tAll(${gi},${ii})">Alle</button>`;
       h+=`</div></td>`;
       iss.forEach((s,ci)=>{
         h+=`<td class="cb" data-col="${ci}"><label><input type="checkbox" ${s.sel.has(nm)?'checked':''} onchange="tPl(${s.id},${gi},${ii},this.checked)"></label></td>`;
@@ -2968,11 +2976,11 @@ async function cpHtml(){
   const html=buildHtml(),txt=buildTxt();
   try{
     await navigator.clipboard.write([new ClipboardItem({'text/html':new Blob([html],{type:'text/html'}),'text/plain':new Blob([txt],{type:'text/plain'})})]);
-    flash('cb-html','\u2713 Kopiert');
-  }catch(e){await navigator.clipboard.writeText(txt);flash('cb-html','\u2713 Kopiert (Text)');}
+    flash('cb-html','<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"/></svg>Kopiert');
+  }catch(e){await navigator.clipboard.writeText(txt);flash('cb-html','<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"/></svg>Kopiert (Text)');}
 }
 
-async function cpTxt(){await navigator.clipboard.writeText(buildTxt());flash('cb-txt','\u2713 Kopiert');}
+async function cpTxt(){await navigator.clipboard.writeText(buildTxt());flash('cb-txt','<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"/></svg>Kopiert');}
 
 /* Die Breite wird festgehalten, bevor die Beschriftung wechselt: Die Quittung ist
    kuerzer als der Ruhetext (bei „Angebot speichern" rund 40 px), ohne die Sperre

@@ -130,6 +130,7 @@ button, input, select, textarea { font-family: inherit; }
     border-radius: var(--radius-md); padding: 4px 6px 4px 10px; max-width: 100%; }
   .data-note svg { flex: none; color: var(--navy); }
   .note-x { border: none; background: none; cursor: pointer; color: var(--grey-500);
+    display: inline-flex; align-items: center;
     font-size: 12px; line-height: 1; padding: 3px 4px; border-radius: var(--radius-sm); }
   .note-x:hover { color: var(--navy); background: var(--surface-hover); }
   .note-x:focus-visible { outline: 2px solid var(--navy); outline-offset: 1px; }
@@ -181,7 +182,7 @@ button, input, select, textarea { font-family: inherit; }
   input:checked + .slider { background: var(--navy); }
   input:checked + .slider:before { transform: translateX(16px); }
 
-  .btn-add { flex-shrink: 0; display: inline-flex; align-items: center; justify-content: center; height: 30px; padding: 0 15px; background: var(--navy); color: var(--white); border: none; border-radius: var(--radius-md); font-size: 13px; font-weight: 700; cursor: pointer; transition: background .15s; white-space: nowrap; align-self: flex-end; }
+  .btn-add { flex-shrink: 0; display: inline-flex; align-items: center; justify-content: center; gap: 6px; height: 30px; padding: 0 15px; background: var(--navy); color: var(--white); border: none; border-radius: var(--radius-md); font-size: 13px; font-weight: 700; cursor: pointer; transition: background .15s; white-space: nowrap; align-self: flex-end; }
   .btn-add:hover { background: var(--navy-hover); }
 
   /* ── Options bar ── */
@@ -245,7 +246,7 @@ button, input, select, textarea { font-family: inherit; }
   tbody tr.fach-row .fach-rab { font-weight: 600; color: var(--blue); text-transform: none; letter-spacing: 0; margin-left: 8px; }
 
   .count-inp { width: 56px; padding: 5px 8px; font-size: 13px; text-align: center; border: 1px solid var(--border); border-radius: var(--radius-sm); font-variant-numeric: tabular-nums; }
-  .btn-rm { background: none; border: none; color: var(--grey-500); cursor: pointer; font-size: 15px; padding: 4px 7px; border-radius: var(--radius-sm); transition: color .15s; }
+  .btn-rm { background: none; border: none; color: var(--grey-500); cursor: pointer; display: inline-flex; align-items: center; font-size: 15px; padding: 4px 7px; border-radius: var(--radius-sm); transition: color .15s; }
   .btn-rm:hover { color: var(--red); background: #fdeaea; }
 
   /* Subtotal row */
@@ -360,7 +361,7 @@ button, input, select, textarea { font-family: inherit; }
   <span class="data-note" id="standNote" style="display:none;">
     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
     <span id="standNoteMsg"></span>
-    <button type="button" class="note-x" onclick="schliesseStandHinweis()" title="Hinweis schließen" aria-label="Hinweis schließen">✕</button>
+    <button type="button" class="note-x" onclick="schliesseStandHinweis()" title="Hinweis schließen" aria-label="Hinweis schließen"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
   </span>
   <span class="leiste-ende">
   <span class="bar-status">
@@ -410,7 +411,7 @@ button, input, select, textarea { font-family: inherit; }
         <label for="aAnz">Anzahl</label>
         <input type="number" id="aAnz" min="1" max="99" value="1">
       </div>
-      <button class="btn-add" onclick="addItem()">+ Hinzufügen</button>
+      <button class="btn-add" onclick="addItem()"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>Hinzufügen</button>
     </div>
   </div>
 
@@ -828,8 +829,8 @@ function addItem() {
 
   // Feedback
   const btn = document.querySelector('.btn-add');
-  btn.textContent = '✓ Hinzugefügt'; btn.style.background = 'var(--orange-dark)';
-  setTimeout(() => { btn.textContent = '+ Hinzufügen'; btn.style.background = ''; }, 1100);
+  btn.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"/></svg>Hinzugefügt'; btn.style.background = 'var(--orange-dark)';
+  setTimeout(() => { btn.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>Hinzufügen'; btn.style.background = ''; }, 1100);
 }
 
 function removeItem(id) { items = items.filter(it => it.id !== id); render(); saveStand(); }
@@ -937,7 +938,7 @@ function render() {
         <td class="r">${euro(after)}</td>
         ${aeDisp}
         <td class="r navy">${euro(net)}</td>
-        <td><button class="btn-rm" onclick="removeItem(${it.id})" title="Entfernen">✕</button></td>
+        <td><button class="btn-rm" onclick="removeItem(${it.id})" title="Entfernen"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button></td>
       </tr>`;
     });
   });
