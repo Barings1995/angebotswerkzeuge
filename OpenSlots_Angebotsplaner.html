@@ -1812,7 +1812,7 @@ function saveState(){
    Nicht betroffen ist das Oeffnen einer Angebotsdatei - dort wandert der Datenstand
    bewusst mit und es gibt dafuer die eigene Rueckfrage (frageDatenstand). */
 function refreshTermineImStand(neuDs){
-  const bericht={geaendert:[],entfallen:[]};
+  const bericht={geaendert:[],entfallen:[],platzierungen:[]};
   let raw;
   try{raw=localStorage.getItem(STATE_KEY);}catch(e){return bericht;}
   if(!raw)return bericht;
@@ -1835,8 +1835,30 @@ function refreshTermineImStand(neuDs){
       /* Der Jahrgang gehoert in die Meldung: abgeglichen werden alle Jahrgaenge der
          Datei, und "Heft 2" allein waere zwischen 2026 und 2027 nicht zu unterscheiden. */
       const titelName=sv.J[ji].n+' '+year;
+      /* Alle Platzierungsnamen, die dieser Titel im neuen Stand kennt. Angekreuzt
+         wird ueber den Namen, nicht ueber eine Kennung - eine in der Datenpflege
+         umbenannte Platzierung ist hier deshalb eine andere. */
+      const namen=new Set();
+      (sv.J[ji].g||[]).forEach(g=>(g.i||[]).forEach(e=>namen.add(e[0])));
       titelStand.issues.forEach(i=>{
-        if(!i||!i.ausgabe)return;                 // leere Spalte: nichts nachzuziehen
+        if(!i)return;
+        /* Angekreuzte Platzierungen, die es nicht mehr gibt, aus dem Stand nehmen.
+           Sonst stuenden sie ohne Preis in der Kopiervorschau und liessen sich dort
+           auch nicht mehr abwaehlen: In der Matrix fehlt die Zeile, an der das
+           Haekchen sitzt. Vor der Heftpruefung, weil eine Spalte ohne Heftzuordnung
+           angekreuzte Platzierungen tragen kann. */
+        if(Array.isArray(i.sel)&&i.sel.length){
+          const bleibt=i.sel.filter(n=>namen.has(n));
+          if(bleibt.length!==i.sel.length){
+            i.sel.forEach(n=>{
+              if(namen.has(n))return;
+              const zeile=titelName+': '+n;       // je Name einmal, auch bei mehreren Ausgaben
+              if(bericht.platzierungen.indexOf(zeile)<0)bericht.platzierungen.push(zeile);
+            });
+            i.sel=bleibt;
+          }
+        }
+        if(!i.ausgabe)return;                     // leere Spalte: nichts nachzuziehen
         const idx=findIssIdx(sv.ISSUES[ji],i.ausgabe);
         if(idx==null){
           /* Die Ausgabe gibt es in der neuen Preisliste nicht mehr. Die alten Termine
@@ -1859,7 +1881,7 @@ function refreshTermineImStand(neuDs){
     });
   });
 
-  if(bericht.geaendert.length||bericht.entfallen.length){
+  if(bericht.geaendert.length||bericht.entfallen.length||bericht.platzierungen.length){
     try{localStorage.setItem(STATE_KEY,JSON.stringify(all));}catch(e){}
   }
   return bericht;
@@ -1868,7 +1890,7 @@ function refreshTermineImStand(neuDs){
 /* Meldung nach dem Laden einer neuen Preisliste. Erscheint nur, wenn sich am
    Arbeitsstand tatsaechlich etwas geaendert hat. */
 async function meldeTerminAbgleich(b){
-  if(!b||(!b.geaendert.length&&!b.entfallen.length))return;
+  if(!b||(!b.geaendert.length&&!b.entfallen.length&&!b.platzierungen.length))return;
   let t='';
   if(b.geaendert.length){
     t+='<p>In '+b.geaendert.length+' Ausgabe(n) wurden die Termine an die neu geladene '+
@@ -1878,6 +1900,11 @@ async function meldeTerminAbgleich(b){
     t+='<p>'+b.entfallen.length+' Ausgabe(n) aus dem Arbeitsstand gibt es in der neuen '+
        'Preisliste nicht mehr. Die Heftzuordnung wurde geleert, die angekreuzten '+
        'Platzierungen bleiben stehen:</p>'+hinweisListe(b.entfallen,12);
+  }
+  if(b.platzierungen.length){
+    t+='<p>'+b.platzierungen.length+' angekreuzte Platzierung(en) gibt es in der neuen '+
+       'Preisliste nicht mehr – etwa, weil sie in der Datenpflege umbenannt wurde(n). '+
+       'Die Häkchen wurden entfernt:</p>'+hinweisListe(b.platzierungen,12);
   }
   await hinweis('Preisliste abgeglichen',t);
 }
