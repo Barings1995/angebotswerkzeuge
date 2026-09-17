@@ -443,7 +443,7 @@ button, input, select, textarea { font-family: inherit; }
   <div class="basket-wrap">
     <div id="basketContent">
       <div class="basket-empty">
-        <p>Noch keine Positionen im Paket.<br>Oben Titel, Kategorie und Format auswählen und auf <strong>+ Hinzufügen</strong> klicken.</p>
+        <p>Noch keine Positionen im Paket.<br>Oben Titel, Kategorie und Format auswählen und auf <strong>Hinzufügen</strong> klicken.</p>
       </div>
     </div>
   </div>
@@ -880,7 +880,7 @@ function render() {
   // Empty state
   if (items.length === 0) {
     const emptyMsg = isCustomData
-      ? 'Noch keine Positionen im Paket.<br>Oben Titel, Kategorie und Format auswählen und auf <strong>+ Hinzufügen</strong> klicken.'
+      ? 'Noch keine Positionen im Paket.<br>Oben Titel, Kategorie und Format auswählen und auf <strong>Hinzufügen</strong> klicken.'
       : 'Keine Daten geladen — bitte oben auf „Daten laden“ klicken und die Angebotsdaten.xlsx wählen.';
     document.getElementById('basketContent').innerHTML = `
       <div class="basket-empty">
@@ -999,8 +999,8 @@ function setStaffelHinweis(gemein) {
 function staffelBarHtml(g, mitUeberschrift, i) {
   const malWins   = g.whichLabel === 'Malstaffel';
   const mengeWins = g.whichLabel === 'Mengenstaffel';
-  const malNote   = g.malPct   > 0 ? (malWins   ? '✓ wird angewendet' : '') : g.totalMal   < 3 ? 'ab 3 Schaltungen' : '';
-  const mengeNote = g.mengePct > 0 ? (mengeWins ? '✓ wird angewendet' : '') : g.totalMenge < 3 ? 'ab 3 Seiten' : '';
+  const malNote   = g.malPct   > 0 ? (malWins   ? 'wird angewendet' : '') : g.totalMal   < 3 ? 'ab 3 Schaltungen' : '';
+  const mengeNote = g.mengePct > 0 ? (mengeWins ? 'wird angewendet' : '') : g.totalMenge < 3 ? 'ab 3 Seiten' : '';
   const appNote   = g.whichLabel ? '(' + g.whichLabel + ')' : 'Normal-/Vorzugs-/Festplatz. buchen';
   return `<div class="staffel-group">
     ${mitUeberschrift ? `<div class="staffel-fach">${esc(g.fach)}</div>` : ''}
