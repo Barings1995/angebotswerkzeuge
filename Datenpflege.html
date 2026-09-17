@@ -3174,9 +3174,20 @@ async function excelEingangGewaehlt(ereignis) {
   }
 }
 
+/* Die Weiche. Eine Mappe mit dem Blatt „Preise" ist der vollstaendige Abzug und
+   ersetzt die Jahrgaenge im Ganzen. Jede andere Mappe wird als Ergaenzung
+   gelesen: Sie traegt nur Jahrgang, Titel, Heft und die Spalten, die sie
+   ergaenzen will. Zuvor wurde sie abgewiesen ("keine Preiszeilen gefunden") —
+   und wer die falsche Datei erwischte, verlor die Preise des Jahrgangs.
+   Jetzt entscheidet der Inhalt, nicht der Knopf. */
 function excelLesen(mappe, dateiname) {
+  return mappe.getWorksheet('Preise')
+    ? abzugLesen(mappe, dateiname)
+    : ergaenzungLesen(mappe, dateiname);
+}
+
+function abzugLesen(mappe, dateiname) {
   const bP = mappe.getWorksheet('Preise');
-  if (!bP) throw new Error('In der Datei fehlt das Tabellenblatt „Preise".');
   const bT = mappe.getWorksheet('Termine');
 
   const jahre = {};
@@ -3239,10 +3250,111 @@ function excelLesen(mappe, dateiname) {
   });
 
   if (!Object.keys(jahre).length) throw new Error('In der Datei wurden keine Preiszeilen gefunden.');
-  return { dateiname, jahre, beanstandet, ohneTitel: [...new Set(ohneTitel)] };
+  return { art: 'abzug', dateiname, jahre, beanstandet, ohneTitel: [...new Set(ohneTitel)] };
+}
+
+/* ── Excel: Ergaenzung ────────────────────────────────────────────────────────
+   Eine Tabelle, die nur einen Teil der Angaben traegt. Sie wird ueber Jahrgang,
+   Titel und Heft auf die vorhandenen Ausgaben gelegt; angeruehrt werden nur die
+   Spalten, die in der Datei stehen. Preise, Termine und jeder Jahrgang, der
+   nicht vorkommt, bleiben unberuehrt.
+
+   Erkannt wird die Datei an ihrer Kopfzeile, nicht an Blattnamen oder festen
+   Spaltennummern: So laesst sie sich auch von Hand bauen — aus einer
+   Redaktionsliste etwa — und die Spalten duerfen in beliebiger Folge stehen. */
+const ERG_SPALTEN = [
+  { feld: 'jahr',      wort: 'Jahrgang',           erkennt: ['jahrgang', 'jahr'] },
+  { feld: 'name',      wort: 'Titel',              erkennt: ['titel', 'zeitschrift'] },
+  { feld: 'heft',      wort: 'Heft',               erkennt: ['heft', 'ausgabe'] },
+  { feld: 'themen',    wort: 'Themenschwerpunkte', erkennt: ['themenschwerpunkte', 'themen', 'thema'] },
+  { feld: 'kongresse', wort: 'Kongresse',          erkennt: ['kongresse', 'kongress'] }
+];
+const ERG_INHALT = ['themen', 'kongresse'];
+
+/* Kopfzeile suchen: das erste Blatt, dessen erste zwoelf Zeilen eine Zeile mit
+   Titel UND Heft enthalten. Zwoelf, weil eine von Hand gebaute Tabelle gern
+   eine Ueberschrift und ein paar Hinweiszeilen darueber traegt. */
+function ergKopfSuchen(mappe) {
+  let gefunden = null;
+  mappe.eachSheet(blatt => {
+    if (gefunden) return;
+    for (let nr = 1; nr <= Math.min(12, blatt.rowCount); nr++) {
+      const zeile = blatt.getRow(nr);
+      const spalten = {};
+      zeile.eachCell({ includeEmpty: false }, (zelle, sp) => {
+        const wort = zelleText(zelle).toLowerCase().replace(/[.:]/g, '').trim();
+        const treffer = ERG_SPALTEN.find(s => s.erkennt.indexOf(wort) >= 0);
+        if (treffer && !spalten[treffer.feld]) spalten[treffer.feld] = sp;
+      });
+      if (spalten.name && spalten.heft) { gefunden = { blatt, kopfzeile: nr, spalten }; return; }
+    }
+  });
+  return gefunden;
+}
+
+function ergNorm(text) {
+  return String(text == null ? '' : text).replace(/\r\n?/g, '\n').replace(/[ \t]+\n/g, '\n').trim();
+}
+
+function ergaenzungLesen(mappe, dateiname) {
+  const kopf = ergKopfSuchen(mappe);
+  if (!kopf) {
+    throw new Error('Die Datei ist weder ein vollständiger Abzug (Blatt „Preise") ' +
+      'noch eine Ergänzung: In den ersten zwölf Zeilen steht keine Kopfzeile mit „Titel" und „Heft".');
+  }
+  const { blatt, kopfzeile, spalten } = kopf;
+  const inhalt = ERG_INHALT.filter(f => spalten[f]);
+  if (!inhalt.length) {
+    throw new Error('In der Kopfzeile fehlt die Spalte, die ergänzt werden soll — ' +
+      '„Themenschwerpunkte" oder „Kongresse".');
+  }
+  if (!spalten.jahr) {
+    throw new Error('In der Kopfzeile fehlt die Spalte „Jahrgang". Ohne sie ist nicht ' +
+      'erkennbar, welcher Jahrgang gemeint ist.');
+  }
+
+  const beanstandet = [], ohneZuordnung = [], aenderungen = [];
+  const jahre = new Set(), gesehen = new Set();
+  let unveraendert = 0;
+
+  for (let nr = kopfzeile + 1; nr <= blatt.rowCount; nr++) {
+    const zeile = blatt.getRow(nr);
+    const lies = feld => spalten[feld] ? zelleText(zeile.getCell(spalten[feld])) : '';
+    const jahr = lies('jahr'), name = lies('name'), heft = lies('heft');
+    if (!jahr && !name && !heft) continue;
+    if (!jahr || !name || !heft) {
+      beanstandet.push('Zeile ' + nr + ': Jahrgang, Titel oder Heft fehlt');
+      continue;
+    }
+    const schl = jahr + '|' + name + '|' + heft;
+    if (gesehen.has(schl)) {
+      beanstandet.push('Zeile ' + nr + ': ' + name + ', ' + heftText(heft) + ' steht zweimal in der Datei');
+      continue;
+    }
+    gesehen.add(schl);
+
+    const titel = (ARBEIT || []).find(t => t.jahr === jahr && t.name === name);
+    const ausgabe = titel && (titel.termin || []).find(a => String(a.heft) === heft);
+    if (!ausgabe) { ohneZuordnung.push(jahr + ' · ' + name + ' · ' + heftText(heft)); continue; }
+
+    jahre.add(jahr);
+    inhalt.forEach(feld => {
+      const neu = ergNorm(lies(feld)), alt = ergNorm(ausgabe[feld]);
+      if (neu === alt) { unveraendert++; return; }
+      aenderungen.push({ id: ausgabe.id, jahr, name, heft, feld, alt, neu });
+    });
+  }
+
+  if (!aenderungen.length && !unveraendert && !ohneZuordnung.length) {
+    throw new Error('Unter der Kopfzeile stehen keine Ausgaben.');
+  }
+  return { art: 'ergaenzung', dateiname, blatt: blatt.name, inhalt,
+    jahre: [...jahre].sort(), aenderungen, unveraendert, beanstandet,
+    ohneZuordnung: [...new Set(ohneZuordnung)] };
 }
 
 function excelBerichtZeigen() {
+  if (excelStapel && excelStapel.art === 'ergaenzung') return ergaenzungBerichtZeigen();
   const st = excelStapel;
   const jahre = Object.keys(st.jahre).sort();
   let zeilen = '';
@@ -3319,6 +3431,93 @@ async function excelUebernehmen() {
     jahrAuswahlAufbauen();
     zeichnen();
     meldung('Übernommen — ' + nP + ' Preise und ' + nT + ' Termine aus ' + st.dateiname + '.');
+  } catch (fehler) {
+    meldung('Nicht übernommen: ' + fehler.message + ' — der Sicherungspunkt steht.', true);
+    if (knopf) { knopf.disabled = false; knopf.textContent = 'Übernehmen'; }
+  }
+}
+
+/* Der Bericht nennt zuerst, was die Datei NICHT ist: Wer sie fuer den Abzug
+   gehalten hat, soll das lesen, bevor er "Uebernehmen" drueckt. */
+function ergaenzungBerichtZeigen() {
+  const st = excelStapel;
+  const wort = f => (ERG_SPALTEN.find(s => s.feld === f) || {}).wort || f;
+  const schlimm = st.beanstandet.length > 0;
+
+  let zeilen = '';
+  st.inhalt.forEach(feld => {
+    const eigene = st.aenderungen.filter(a => a.feld === feld);
+    const neu = eigene.filter(a => !a.alt).length;
+    const leer = eigene.filter(a => !a.neu).length;
+    const geaendert = eigene.length - neu - leer;
+    const teile = [];
+    if (geaendert) teile.push(geaendert + ' geändert');
+    if (neu) teile.push(neu + ' neu eingetragen');
+    if (leer) teile.push('<span style="color:var(--orange-dark)">' + leer + ' geleert</span>');
+    zeilen += '<div class="dialog-zeile"><span>' + esc(wort(feld)) + '</span><span style="color:var(--text)">' +
+      (teile.length ? teile.join(' · ') : 'nichts zu ändern') + '</span></div>';
+  });
+  const fehlend = ERG_INHALT.filter(f => st.inhalt.indexOf(f) < 0);
+  fehlend.forEach(feld => {
+    zeilen += '<div class="dialog-zeile"><span>' + esc(wort(feld)) +
+      '</span><span style="color:var(--grey-600)">nicht in der Datei — bleibt unangetastet</span></div>';
+  });
+
+  dialogZeigen(
+    '<h3>Aus Excel laden</h3>' +
+    '<div class="erklaerung">' + esc(st.dateiname) + ' · Blatt „' + esc(st.blatt) + '"<br>' +
+    '<b>Ergänzung, kein vollständiger Abzug.</b> Preise und Erscheinungstermine bleiben unangetastet.</div>' +
+    '<div class="dialog-zeile"><span>Jahrgang ' + (st.jahre.length ? st.jahre.map(esc).join(', ') : '—') +
+      '</span><span style="color:var(--grey-600)">' + st.unveraendert + ' Angaben schon so vorhanden</span></div>' +
+    zeilen +
+    (st.ohneZuordnung.length ? '<div class="dialog-zeile"><span>Nicht zugeordnet</span><span style="color:var(--orange-dark)">' +
+      st.ohneZuordnung.slice(0, 3).map(esc).join(' · ') + (st.ohneZuordnung.length > 3 ? ' …' : '') + ' — übergangen</span></div>' : '') +
+    '<div class="dialog-summe">' +
+      (schlimm
+        ? '<b>' + st.beanstandet.length + ' Beanstandungen.</b> Es wird nichts übernommen.<br>' +
+          st.beanstandet.slice(0, 5).map(esc).join('<br>') + (st.beanstandet.length > 5 ? '<br>…' : '')
+        : (st.aenderungen.length
+            ? 'Übernommen werden nur die aufgeführten Spalten. Eine leere Zelle leert die Angabe — ' +
+              'die Datei gilt für die Spalten, die sie führt. Vor der Übernahme entsteht je Jahrgang ' +
+              'ohne Zutun ein Sicherungspunkt.'
+            : 'Die Datei enthält nichts, was sich von den gespeicherten Angaben unterscheidet.')) +
+    '</div>' +
+    '<div class="dialog-knoepfe">' +
+      '<button class="btn" onclick="dialogSchliessen()">Abbrechen</button>' +
+      (schlimm || !st.aenderungen.length ? '' : '<button class="btn btn-primär" id="exKnopf" onclick="ergaenzungUebernehmen()">Übernehmen</button>') +
+    '</div>');
+}
+
+/* Geschrieben wird je Ausgabe eine Zeile, nicht der Jahrgang im Ganzen: Die
+   Ergaenzung soll nur ihre eigenen Spalten anruehren, alles daneben bleibt
+   stehen — auch das, was seit dem Erzeugen der Datei hier geaendert wurde. */
+async function ergaenzungUebernehmen() {
+  const st = excelStapel;
+  if (!st) return;
+  const knopf = document.getElementById('exKnopf');
+  knopf.disabled = true; knopf.textContent = 'Wird übernommen …';
+  try {
+    if (sitzung && sitzung.ablauf && sitzung.ablauf < Date.now() + 60000) await sitzungErneuern();
+    for (const jahr of st.jahre) await sicherungAnlegen(jahr, 'vor dem Einlesen von ' + st.dateiname, true);
+
+    const jeAusgabe = new Map();
+    st.aenderungen.forEach(a => {
+      const satz = jeAusgabe.get(a.id) || {};
+      satz[a.feld] = a.neu || null;
+      jeAusgabe.set(a.id, satz);
+    });
+    for (const [id, satz] of jeAusgabe) {
+      await schreiben('termin?id=eq.' + encodeURIComponent(id), 'PATCH', satz);
+    }
+
+    dialogSchliessen();
+    const anzahl = st.aenderungen.length, ausgaben = jeAusgabe.size, name = st.dateiname;
+    excelStapel = null;
+    await ladenAusDatenbank();
+    jahrAuswahlAufbauen();
+    zeichnen();
+    meldung('Übernommen — ' + anzahl + ' Angabe' + (anzahl === 1 ? '' : 'n') + ' in ' +
+      ausgaben + ' Ausgabe' + (ausgaben === 1 ? '' : 'n') + ' aus ' + name + '.');
   } catch (fehler) {
     meldung('Nicht übernommen: ' + fehler.message + ' — der Sicherungspunkt steht.', true);
     if (knopf) { knopf.disabled = false; knopf.textContent = 'Übernehmen'; }
