@@ -143,8 +143,16 @@ button, input, select, textarea { font-family: inherit; }
      Die Schaltfläche sinkt beim Drücken um 1 px ab und federt beim Loslassen
      zurück — wie in den vier übrigen Werkzeugen. Ausgenommen sind gesperrte
      Knöpfe: was nicht auslöst, soll auch nicht nachgeben. */
-  .btn:active:not(:disabled),
-  .reiter button:active { transform: translateY(1px); }
+  .btn:active:not(:disabled) { transform: translateY(1px); }
+  /* Ausnahme Reiter: Die beiden Knoepfe stecken in einer gemeinsamen Huelle mit
+     overflow:hidden. Sinkt dort der ganze Knopf ab, reisst oben eine helle Fuge
+     auf und unten wird die Fuellung beschnitten — die Gruppe wirkt verschoben.
+     Deshalb bleibt der Kasten stehen und nur die Beschriftung gibt nach. Sie
+     steht dafuer in einem eigenen Element; inline-block, weil transform an rein
+     inline stehendem Text nicht greift. Gleiche Loesung wie beim Umfangs-
+     Schalter in MediaSheet. */
+  .reiter button span { display: inline-block; }
+  .reiter button:active span { transform: translateY(1px); }
   .btn-voll { width: 100%; justify-content: center; height: 34px; }
   /* Sinnbilder derselben Zeichenfamilie: duenne Striche, runde Enden, 24er Raster.
      Pfeil hinein/heraus stammen aus der Jahresvorschau, dieselben zwei Zeichnungen.
@@ -639,8 +647,8 @@ button, input, select, textarea { font-family: inherit; }
   <section id="arbeitSchirm" class="verborgen">
     <div class="leiste">
       <div class="reiter">
-        <button id="reiterPreise"  class="an" onclick="reiterWechseln('preise')">Preise</button>
-        <button id="reiterTermine"           onclick="reiterWechseln('termine')">Termine</button>
+        <button id="reiterPreise"  class="an" onclick="reiterWechseln('preise')"><span>Preise</span></button>
+        <button id="reiterTermine"           onclick="reiterWechseln('termine')"><span>Termine</span></button>
       </div>
       <div class="suche">
         <span class="huelle">

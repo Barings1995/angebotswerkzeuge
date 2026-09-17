@@ -195,7 +195,15 @@ select:disabled{opacity:.5; cursor:not-allowed}
 .knopf svg{width:13px; height:13px; flex:none}
 /* Druckpunkt: der Knopf sinkt beim Druecken um 1 px ab, wie in allen vier
    uebrigen Werkzeugen. Gesperrte Knoepfe geben nicht nach. */
-.knopf:active:not(:disabled), .umfang button:active:not(:disabled){transform:translateY(1px)}
+.knopf:active:not(:disabled){transform:translateY(1px)}
+/* Ausnahme Umfang: Die drei Knoepfe stecken in einer gemeinsamen Huelle mit
+   overflow:hidden. Sinkt dort der ganze Knopf ab, reisst oben eine helle Fuge
+   auf und unten wird die Fuellung beschnitten — die Gruppe wirkt verschoben.
+   Deshalb bleibt der Kasten stehen und nur die Beschriftung gibt nach. Die
+   Beschriftung steht dafuer in einem eigenen Element; inline-block, weil
+   transform an rein inline stehendem Text nicht greift. */
+.umfang button span{display:inline-block}
+.umfang button:active:not(:disabled) span{transform:translateY(1px)}
 .pfeil{font-size:.58rem; opacity:.8; transition:transform .15s}
 /* Klapppfeil wie in der Jahresvorschau: Arial ausdruecklich, weil Source Sans 3
    kein Zeichen ▼ hat und sonst die Systemschrift einen schmaleren Pfeil zeichnet.
@@ -636,9 +644,9 @@ td.fmt{width:44%}
 <div class="schalter" id="schalter">
   <div class="o-grp" id="gUmfang"><div class="o-kopf">Umfang</div>
   <span class="umfang" role="group" aria-label="Umfang des Blattes">
-      <button type="button" id="uBeides" aria-pressed="true">Preise und Termine</button>
-      <button type="button" id="uPreise" aria-pressed="false">Nur Preise</button>
-      <button type="button" id="uTermine" aria-pressed="false">Nur Termine</button>
+      <button type="button" id="uBeides" aria-pressed="true"><span>Preise und Termine</span></button>
+      <button type="button" id="uPreise" aria-pressed="false"><span>Nur Preise</span></button>
+      <button type="button" id="uTermine" aria-pressed="false"><span>Nur Termine</span></button>
     </span>
   </div>
   <div class="o-grp" id="gPreis"><div class="o-kopf">Preisteil</div>
