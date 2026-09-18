@@ -1237,7 +1237,7 @@ tr.pl-row.alt td:not(.pl-cell) {
     <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg>
     Ausgabe hinzuf&uuml;gen
   </button>
-  <button class="add-iss" style="flex:1;margin-bottom:0;border-style:solid;border-color:var(--sm-navy);color:var(--sm-navy)" onclick="addAllIssues()">
+  <button class="add-iss" style="flex:1;margin-bottom:0;border-style:solid;border-color:var(--sm-navy);color:var(--sm-navy)" id="addAllBtn" onclick="addAllIssues()">
     <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><line x1="7.5" y1="8.5" x2="16.5" y2="8.5"/><line x1="7.5" y1="12" x2="16.5" y2="12"/><line x1="7.5" y1="15.5" x2="16.5" y2="15.5"/></svg>
     Alle Ausgaben
   </button>
@@ -2496,6 +2496,15 @@ function updMxTools(){
     const voll=!!j&&!!ST[cJ]&&ST[cJ].issues.length>=issMax(cJ);
     ab.disabled=voll;
     ab.title=voll?`Alle ${issMax(cJ)} Ausgaben des Titels stehen bereits in der Auswahl`:'';
+  }
+  /* "Alle Ausgaben" bleibt bedienbar, solange ein Heft fehlt - auch bei voller
+     Spaltenzahl, denn dann fuellt es die Spalten ohne gewaehltes Heft. */
+  const aa=document.getElementById('addAllBtn');
+  if(aa){
+    const da=new Set(ST[cJ]?ST[cJ].issues.map(i=>i.issIdx).filter(x=>x!=null):[]);
+    const komplett=!!j&&issMax(cJ)>0&&da.size>=issMax(cJ);
+    aa.disabled=komplett;
+    aa.title=komplett?'Alle Ausgaben des Titels stehen bereits in der Auswahl':'';
   }
   const tb=document.getElementById('toggleAll');
   if(tb){
