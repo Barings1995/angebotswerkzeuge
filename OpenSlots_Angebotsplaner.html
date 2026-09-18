@@ -590,6 +590,11 @@ button, input, select, textarea { font-family: inherit; }
   margin-bottom: .85rem;
   transition: all .15s;
 }
+.add-iss:disabled {
+  opacity: .45;
+  cursor: default;
+  pointer-events: none;
+}
 .add-iss:hover {
   border-color: var(--sm-orange);
   color: var(--sm-orange);
@@ -1228,7 +1233,7 @@ tr.pl-row.alt td:not(.pl-cell) {
   <div class="main">
   <div class="sec-label">Ausgaben</div>
   <div style="display:flex;gap:8px;margin-bottom:.85rem">
-  <button class="add-iss" style="flex:1;margin-bottom:0" onclick="addIssue()">
+  <button class="add-iss" id="addIssBtn" style="flex:1;margin-bottom:0" onclick="addIssue()">
     <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg>
     Ausgabe hinzuf&uuml;gen
   </button>
@@ -2486,6 +2491,12 @@ function tOnly(){applyVisibility();updMxTools();}
 function updMxTools(){
   const j=J[cJ],hasMx=!!j&&!!ST[cJ]&&ST[cJ].issues.length>0;
   const bar=document.getElementById('mxTools');if(bar)bar.style.display=hasMx?'flex':'none';
+  const ab=document.getElementById('addIssBtn');
+  if(ab){
+    const voll=!!j&&!!ST[cJ]&&ST[cJ].issues.length>=issMax(cJ);
+    ab.disabled=voll;
+    ab.title=voll?`Alle ${issMax(cJ)} Ausgaben des Titels stehen bereits in der Auswahl`:'';
+  }
   const tb=document.getElementById('toggleAll');
   if(tb){
     tb.style.display=onlyFilledOn()?'none':'inline-flex';
@@ -2505,13 +2516,28 @@ function updCatBadges(){
     else b.style.display='none';
   });
 }
-function addIssue(){const s=ST[cJ];if(!s)return;s.issues.push({id:s.nid++,ausgabe:'',et:'',ds:'',du:'',eh:'',themen:'',issIdx:null,sel:new Set()});rMx();}
+/* Je Titel stehen hoechstens so viele Ausgaben in der Auswahl, wie der Jahrgang
+   Hefte hat. Eine Spalte ohne gewaehltes Heft ist ein Platzhalter: Kommt ein Heft
+   ueber "Alle Ausgaben" oder die Kongress-Vorauswahl hinzu, fuellt es zuerst den
+   Platzhalter (samt dort schon gesetzten Haken), statt eine Spalte anzuhaengen. */
+function issMax(ji){return (ISSUES[ji]||[]).length;}
+function issBelegen(ji,idx){
+  const s=ST[ji],row=ISSUES[ji]&&ISSUES[ji][idx];
+  if(!s||!row)return false;
+  const frei=s.issues.find(x=>x.issIdx==null);
+  if(!frei&&s.issues.length>=issMax(ji))return false;
+  const neu={ausgabe:heftText(row[0]),et:row[1],ds:row[2],du:row[5]||'',eh:row[6]||'',themen:row[3]||'',kongress:row[4]||'',issIdx:idx};
+  if(frei)Object.assign(frei,neu);
+  else s.issues.push(Object.assign({id:s.nid++,sel:new Set()},neu));
+  return true;
+}
+function addIssue(){const s=ST[cJ];if(!s||s.issues.length>=issMax(cJ))return;s.issues.push({id:s.nid++,ausgabe:'',et:'',ds:'',du:'',eh:'',themen:'',issIdx:null,sel:new Set()});rMx();}
 function addAllIssues(){
   const s=ST[cJ];if(!s)return;
   const existing=new Set(s.issues.map(i=>i.issIdx).filter(x=>x!=null));
   ISSUES[cJ].forEach((row,idx)=>{
     if(existing.has(idx))return;
-    s.issues.push({id:s.nid++,ausgabe:heftText(row[0]),et:row[1],ds:row[2],du:row[5]||'',eh:row[6]||'',themen:row[3]||'',kongress:row[4]||'',issIdx:idx,sel:new Set()});
+    issBelegen(cJ,idx);
   });
   rMx();
 }
@@ -2614,7 +2640,7 @@ function applyKongress(i){
     const s=ST[ji],row=ISSUES[ji]&&ISSUES[ji][idx];
     if(!s||!row)return;
     if(s.issues.some(x=>x.issIdx===idx))return;
-    s.issues.push({id:s.nid++,ausgabe:heftText(row[0]),et:row[1],ds:row[2],du:row[5]||'',eh:row[6]||'',themen:row[3]||'',kongress:row[4]||'',issIdx:idx,sel:new Set()});
+    if(!issBelegen(ji,idx))return;
     added++;titles.add(ji);
   });
   const kgEl=document.getElementById('ck-kg');
