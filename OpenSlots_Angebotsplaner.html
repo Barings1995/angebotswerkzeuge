@@ -2748,7 +2748,30 @@ function rBadges(){
   });
 }
 
+/* Die Spalten stehen immer nach Erscheinungstermin, gleich in welcher Reihenfolge die
+   Hefte gewaehlt wurden. Massgeblich ist der ET des Heftes laut Preisliste, nicht das
+   editierbare ET-Feld der Spalte (sonst sprangen Spalten beim Tippen). Hefte ohne
+   lesbaren ET folgen den datierten in Preislisten-Reihenfolge, Spalten ohne gewaehltes
+   Heft stehen am Ende. */
+function etSchluessel(s){
+  const m=/(\d{1,2})\.(\d{1,2})\.(\d{2,4})?/.exec(s||'');
+  if(!m)return Infinity;
+  let y=m[3]?+m[3]:+currentYear||0;if(y<100)y+=2000;
+  return y*10000+(+m[2])*100+(+m[1]);
+}
+function sortIss(ji){
+  const s=ST[ji];if(!s)return;
+  const rows=ISSUES[ji]||[];
+  const key=i=>i.issIdx==null||!rows[i.issIdx]?[2,0,0]:[0,etSchluessel(rows[i.issIdx][1]),i.issIdx];
+  const pos=new Map(s.issues.map((x,k)=>[x,k]));
+  s.issues.sort((a,b)=>{const ka=key(a),kb=key(b);
+    for(let k=0;k<3;k++){if(ka[k]!==kb[k])return ka[k]<kb[k]?-1:1;}
+    return pos.get(a)-pos.get(b);});
+}
 function rMx(){
+  /* alle Titel: die Kongress-Vorauswahl und geladene Angebote fuellen auch Titel, die
+     gerade nicht angezeigt werden, und Angebot/Export lesen alle */
+  ST.forEach((_,k)=>sortIss(k));
   const ji=cJ,j=J[ji],iss=ST[ji]?ST[ji].issues:[];
   const mx=document.getElementById('mx');
   updMxTools();
