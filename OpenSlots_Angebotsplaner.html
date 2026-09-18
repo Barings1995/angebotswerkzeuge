@@ -48,7 +48,6 @@
    Kopiertext für Outlook wird an anderer Stelle erzeugt und bleibt unverändert. */
 .opt-num,
 .year-sel,
-.iss-head input,
 .badge,
 .cat-badge,
 .kg-cnt,
@@ -571,35 +570,36 @@ button, input, select, textarea { font-family: inherit; }
   font-weight: 700;
 }
 
-/* ── ADD ISSUE BUTTON ── */
-.add-iss {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 6px;
-  width: 100%;
-  padding: 8px 14px;
-  border: 1.5px dashed var(--sm-border);
-  border-radius: var(--radius-md);
-  background: transparent;
-  color: var(--sm-muted);
-  font-family: 'Source Sans 3', sans-serif;
-  font-size: 12.5px;
-  font-weight: 500;
-  cursor: pointer;
-  margin-bottom: .85rem;
-  transition: all .15s;
+/* ── HEFTE-LEISTE (je Heft ein Knopf; ersetzt "Ausgabe hinzufügen" + "Alle Ausgaben") ── */
+.sec-label-row { display:flex; justify-content:space-between; align-items:baseline; }
+.sec-label-row #heftCnt { letter-spacing:.06em; font-weight:600; }
+.heft-row { display:flex; align-items:stretch; gap:10px; margin-bottom:.85rem; }
+.heft-bar { flex:1; display:grid; gap:6px; min-width:0; }
+.heft-alle { display:grid; grid-template-columns:1fr 1fr; gap:6px; padding-left:10px; border-left:1px solid var(--sm-border); }
+/* Wie frueher "Alle Ausgaben": dunkelblauer Rahmen und Schrift statt Grau. */
+.heft-alle .mx-tool-btn {
+  justify-content:center; padding:4px 12px;
+  border-color:var(--sm-navy); color:var(--sm-navy); font-size:12.5px;
 }
-.add-iss:disabled {
-  opacity: .45;
-  cursor: default;
-  pointer-events: none;
+.heft-alle .mx-tool-btn:hover { background:var(--sm-navy); color:#fff; }
+.heft-chip {
+  display:flex; flex-direction:column; align-items:center; gap:1px;
+  min-width:0; white-space:nowrap; padding:5px 8px 4px;
+  border:1.5px solid var(--sm-border); border-radius:var(--radius-md);
+  background:var(--sm-white); color:var(--sm-navy);
+  font-family:'Source Sans 3',sans-serif; font-size:12.5px; font-weight:600; line-height:1.2;
+  cursor:pointer; transition:all .15s; box-shadow:var(--shadow-sm);
+  font-variant-numeric: tabular-nums;
 }
-.add-iss:hover {
-  border-color: var(--sm-orange);
-  color: var(--sm-orange);
-  background: var(--sm-orange-l);
-}
+.heft-chip small { font-size:10px; font-weight:500; color:var(--sm-muted); }
+.heft-chip:hover { border-color:var(--sm-navy); background:var(--sm-navy-05); }
+.heft-chip.on { border-color:var(--sm-navy); background:var(--sm-navy); color:#fff; box-shadow:0 2px 6px rgba(0,40,90,.22); }
+.heft-chip.on small { color:rgba(255,255,255,.78); }
+.heft-chip.mem { border-style:dashed; border-color:var(--sm-navy); }
+
+.iss-termine { display:flex; flex-direction:column; align-items:flex-start; align-self:center; gap:1px; text-align:left; font-weight:400; font-size:11px; line-height:1.35; color:var(--sm-text); font-variant-numeric:tabular-nums; }
+.iss-termine b { display:inline-block; width:22px; font-size:10px; font-weight:600; letter-spacing:.04em; color:var(--sm-muted); }
+.iss-name { font-size:11.5px; font-weight:700; color:var(--sm-navy); padding:2px 0 1px; text-align:center; white-space:nowrap; }
 
 /* ── TABLE WRAPPER ── */
 .mx-outer {
@@ -630,6 +630,10 @@ table.mx {
   border-bottom: 1px solid #e8ecf3;
 }
 .mx thead th { border-top: 1px solid #e8ecf3; }
+/* Trenner im Spaltenkopf kraeftiger als im Raster: Auf dem blaugrauen Kopfgrund
+   ist #e8ecf3 kaum zu sehen. */
+.mx thead th { border-right-color: #c3cadb; }
+.mx thead th.pl-hd { border-left-color: #c3cadb; }
 .mx th.pl-hd, .mx td.pl-cell { border-left: 1px solid #e8ecf3; }
 .mx td.empty-st { border: 1px solid #e8ecf3; }
 
@@ -673,7 +677,7 @@ th.iss-th {
   position: sticky;
   top: 0;
   z-index: var(--z-mx-head);
-  min-width: 130px;
+  min-width: 112px;
   vertical-align: top;
   padding: 0;
   background: var(--sm-navy-05);
@@ -684,61 +688,6 @@ th.iss-th {
   display: flex;
   flex-direction: column;
   gap: 4px;
-}
-.iss-sel {
-  width: 100%;
-  font-size: 10px;
-  font-family: 'Source Sans 3', sans-serif;
-  padding: 3px 6px;
-  border: 1.5px solid var(--sm-orange);
-  border-radius: var(--radius-sm);
-  color: var(--sm-text);
-  background: var(--sm-white);
-  cursor: pointer;
-  margin-bottom: 2px;
-}
-.iss-sel:focus { outline: none; box-shadow: 0 0 0 2px rgba(238,125,17,.18); }
-.iss-head input {
-  width: 100%;
-  font-size: 10px;
-  font-family: 'Source Sans 3', sans-serif;
-  padding: 3px 6px;
-  border: 1px solid var(--sm-border);
-  border-radius: var(--radius-sm);
-  color: var(--sm-text);
-  background: var(--sm-white);
-  transition: border-color .12s;
-}
-.iss-head input:focus {
-  outline: none;
-  border-color: var(--sm-navy);
-  box-shadow: 0 0 0 2px rgba(0,40,90,.08);
-}
-.rm-iss {
-  /* Feste Flaeche, seit das Kreuz gezeichnet ist: die Hoehe kam vorher vom
-     Schriftzeichen, das Symbol allein liesse den Knopf von 24 auf 18 px
-     schrumpfen, und ohne Breite waere er von 22 auf 26 px gewachsen. */
-  width: 22px;
-  height: 24px;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  padding: 0;
-  border: 1px solid var(--sm-border);
-  border-radius: var(--radius-sm);
-  background: transparent;
-  color: var(--sm-muted-l);
-  font-size: 14px;
-  cursor: pointer;
-  align-self: flex-end;
-  line-height: 1.3;
-  transition: all .15s;
-  font-family: 'Source Sans 3', sans-serif;
-}
-.rm-iss:hover {
-  border-color: var(--sm-red);
-  color: var(--sm-red);
-  background: #fdf0ef;
 }
 .pl-inner {
   display: flex;
@@ -1091,7 +1040,7 @@ tr.pl-row.alt td:not(.pl-cell) {
 .data-btn:active,
 .copy-btn:active,
 .tab:active,
-.add-iss:active,
+.heft-chip:active,
 .mx-tool-btn:active { transform: translateY(1px); }
 
 /* ── KATEGORIE-ZÄHLER ── */
@@ -1154,7 +1103,7 @@ tr.pl-row.alt td:not(.pl-cell) {
       Angebotswerkzeuge
     </a>
   </div>
-  <p>Titel-Tab w&auml;hlen &rarr; Ausgabe hinzuf&uuml;gen &rarr; Platzierungen ankreuzen. <strong>&bdquo;Alle&ldquo;</strong> &uuml;bertr&auml;gt eine Zeile auf alle Ausgaben des Titels.</p>
+  <p>Titel-Tab w&auml;hlen &rarr; Hefte w&auml;hlen &rarr; Platzierungen ankreuzen. <strong>&bdquo;Alle&ldquo;</strong> &uuml;bertr&auml;gt eine Zeile auf alle Ausgaben des Titels.</p>
   </div>
 </div>
 
@@ -1231,20 +1180,17 @@ tr.pl-row.alt td:not(.pl-cell) {
   </aside>
 
   <div class="main">
-  <div class="sec-label">Ausgaben</div>
-  <div style="display:flex;gap:8px;margin-bottom:.85rem">
-  <button class="add-iss" id="addIssBtn" style="flex:1;margin-bottom:0" onclick="addIssue()">
-    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg>
-    Ausgabe hinzuf&uuml;gen
-  </button>
-  <button class="add-iss" style="flex:1;margin-bottom:0;border-style:solid;border-color:var(--sm-navy);color:var(--sm-navy)" id="addAllBtn" onclick="addAllIssues()">
-    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><line x1="7.5" y1="8.5" x2="16.5" y2="8.5"/><line x1="7.5" y1="12" x2="16.5" y2="12"/><line x1="7.5" y1="15.5" x2="16.5" y2="15.5"/></svg>
-    Alle Ausgaben
-  </button>
+  <div class="sec-label sec-label-row">Ausgaben<span id="heftCnt"></span></div>
+  <div class="heft-row">
+    <div class="heft-bar" id="heftBar"></div>
+    <div class="heft-alle">
+      <button class="mx-tool-btn" onclick="hefteAlle(true)" title="Alle Hefte des Titels wählen"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="m8 12 3 3 5-6"/></svg>Alle</button>
+      <button class="mx-tool-btn" onclick="hefteAlle(false)" title="Alle Hefte abwählen – gesetzte Haken bleiben gemerkt"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><line x1="8" y1="12" x2="16" y2="12"/></svg>Keine</button>
+    </div>
   </div>
 
   <div class="mx-tools" id="mxTools" style="display:none">
-    <button class="mx-tool-btn" id="toggleAll" onclick="toggleAllCats()">Alle einklappen</button>
+    <button class="mx-tool-btn" id="toggleAll" onclick="toggleAllCats()"></button>
     <span class="mx-tool-spacer"></span>
     <label class="mx-tool-toggle"><input type="checkbox" id="ck-preis" onchange="tPreis()"> Preise anzeigen</label>
     <label class="mx-tool-toggle"><input type="checkbox" id="ck-only" onchange="tOnly()"> Nur belegte Platzierungen anzeigen</label>
@@ -1252,7 +1198,7 @@ tr.pl-row.alt td:not(.pl-cell) {
 
   <div class="mx-outer">
     <table class="mx" id="mx">
-      <tbody><tr><td class="empty-st" colspan="20">Noch keine Ausgaben &mdash; oben auf &ldquo;Ausgabe hinzuf&uuml;gen&rdquo; klicken.</td></tr></tbody>
+      <tbody><tr><td class="empty-st" colspan="20">Noch keine Ausgaben &mdash; oben in der Leiste die Hefte w&auml;hlen.</td></tr></tbody>
     </table>
   </div>
 
@@ -1814,7 +1760,7 @@ function saveState(){
 }
 /* Termine im gespeicherten Arbeitsstand an eine neu geladene Preisliste angleichen.
    Hintergrund: ET, AS, DU/EH, Themen und Kongresse werden beim Auswaehlen einer Ausgabe
-   einmalig in den Stand kopiert (selIss). Wird spaeter eine korrigierte Angebotsdaten.xlsx
+   einmalig in den Stand kopiert (heftAn). Wird spaeter eine korrigierte Angebotsdaten.xlsx
    geladen, sind die Preise sofort aktuell, diese Kopien aber nicht - der alte Anzeigen-
    schluss stuende weiter im Kundenangebot. Deshalb wird der Stand hier direkt im
    Zwischenspeicher nachgezogen, bevor applyYear() ihn ueber restoreState() einliest.
@@ -1858,8 +1804,7 @@ function refreshTermineImStand(neuDs){
         /* Angekreuzte Platzierungen, die es nicht mehr gibt, aus dem Stand nehmen.
            Sonst stuenden sie ohne Preis in der Kopiervorschau und liessen sich dort
            auch nicht mehr abwaehlen: In der Matrix fehlt die Zeile, an der das
-           Haekchen sitzt. Vor der Heftpruefung, weil eine Spalte ohne Heftzuordnung
-           angekreuzte Platzierungen tragen kann. */
+           Haekchen sitzt. */
         if(Array.isArray(i.sel)&&i.sel.length){
           const bleibt=i.sel.filter(n=>namen.has(n));
           if(bleibt.length!==i.sel.length){
@@ -1871,15 +1816,15 @@ function refreshTermineImStand(neuDs){
             i.sel=bleibt;
           }
         }
-        if(!i.ausgabe)return;                     // leere Spalte: nichts nachzuziehen
+        /* Spalte aus der Zeit vor der Hefte-Leiste: entfernt sie restoreState(). */
+        if(!i.ausgabe)return;
         const idx=findIssIdx(sv.ISSUES[ji],i.ausgabe);
         if(idx==null){
-          /* Die Ausgabe gibt es in der neuen Preisliste nicht mehr. Die alten Termine
-             stehen zu lassen waere still falsch, deshalb wird die Heftzuordnung geleert.
-             Angekreuzte Platzierungen bleiben erhalten; der Titelreiter bekommt dadurch
-             seine Kante (has-iss), die auf die offene Heftzuordnung hinweist. */
-          bericht.entfallen.push(titelName+': '+i.ausgabe);
-          i.issIdx=null;i.ausgabe='';i.et='';i.ds='';i.du='';i.eh='';i.themen='';i.kongress='';
+          /* Die Ausgabe gibt es in der neuen Preisliste nicht mehr. Jede Spalte steht
+             fuer genau ein Heft, deshalb faellt die Spalte samt ihren Haken weg. */
+          const n=Array.isArray(i.sel)?i.sel.length:0;
+          bericht.entfallen.push(titelName+': '+i.ausgabe+(n?' ('+n+' Häkchen)':''));
+          i.entfaellt=true;
           return;
         }
         const row=sv.ISSUES[ji][idx];
@@ -1891,6 +1836,7 @@ function refreshTermineImStand(neuDs){
            hat, und dann soll das Laden kommentarlos durchlaufen. */
         if(alt.some((v,k)=>v!==neu[k]))bericht.geaendert.push(titelName+': '+i.ausgabe);
       });
+      titelStand.issues=titelStand.issues.filter(i=>!(i&&i.entfaellt));
     });
   });
 
@@ -1911,8 +1857,8 @@ async function meldeTerminAbgleich(b){
   }
   if(b.entfallen.length){
     t+='<p>'+b.entfallen.length+' Ausgabe(n) aus dem Arbeitsstand gibt es in der neuen '+
-       'Preisliste nicht mehr. Die Heftzuordnung wurde geleert, die angekreuzten '+
-       'Platzierungen bleiben stehen:</p>'+hinweisListe(b.entfallen,12);
+       'Preisliste nicht mehr. Ihre Spalten wurden samt den dort angekreuzten '+
+       'Platzierungen entfernt:</p>'+hinweisListe(b.entfallen,12);
   }
   if(b.platzierungen.length){
     t+='<p>'+b.platzierungen.length+' angekreuzte Platzierung(en) gibt es in der neuen '+
@@ -1932,6 +1878,8 @@ function restoreState(){
       issues:(s.issues||[]).map(i=>({id:i.id,ausgabe:i.ausgabe||'',et:i.et||'',ds:i.ds||'',du:i.du||'',eh:i.eh||'',themen:i.themen||'',kongress:i.kongress||'',issIdx:(i.issIdx==null?null:i.issIdx),sel:new Set(i.sel||[])}))
     }));
     if(rec.opt)applyOptionen(rec.opt);
+    const verloren=spaltenOhneHeft(currentYear);
+    if(verloren.length)setTimeout(()=>meldeSpaltenOhneHeft(verloren),0);
     return true;
   }catch(e){return false;}
 }
@@ -2248,6 +2196,7 @@ async function applyAngebot(data){
     });
     return {issues:issues,nid:nid};
   });
+  const ohneHeft=spaltenOhneHeft(jahr);
   applyOptionen(data.optionen);
   angebotSavedAt=data.savedAt||'';
   collapsedCats=buildCollapsed();
@@ -2258,6 +2207,7 @@ async function applyAngebot(data){
     await hinweis('Nicht alle Platzierungen übernommen',
       '<p>'+fehlend+' Platzierung(en) aus dem gespeicherten Angebot gibt es in der '+
       'aktuellen Preisliste nicht mehr und wurden weggelassen.</p>');
+  await meldeSpaltenOhneHeft(ohneHeft);
   return true;
 }
 
@@ -2418,6 +2368,7 @@ function applyYear(year){
   }
   saveCacheYear();
   ST=J.map(()=>({issues:[],nid:1}));
+  heftMemLeeren();
   kgPick=null;                    /* gilt nur für seinen Jahrgang; restoreState() setzt ihn ggf. neu */
   cJ=0;
   restoreState();
@@ -2491,27 +2442,16 @@ function tOnly(){applyVisibility();updMxTools();}
 function updMxTools(){
   const j=J[cJ],hasMx=!!j&&!!ST[cJ]&&ST[cJ].issues.length>0;
   const bar=document.getElementById('mxTools');if(bar)bar.style.display=hasMx?'flex':'none';
-  const ab=document.getElementById('addIssBtn');
-  if(ab){
-    const voll=!!j&&!!ST[cJ]&&ST[cJ].issues.length>=issMax(cJ);
-    ab.disabled=voll;
-    ab.title=voll?`Alle ${issMax(cJ)} Ausgaben des Titels stehen bereits in der Auswahl`:'';
-  }
-  /* "Alle Ausgaben" bleibt bedienbar, solange ein Heft fehlt - auch bei voller
-     Spaltenzahl, denn dann fuellt es die Spalten ohne gewaehltes Heft. */
-  const aa=document.getElementById('addAllBtn');
-  if(aa){
-    const da=new Set(ST[cJ]?ST[cJ].issues.map(i=>i.issIdx).filter(x=>x!=null):[]);
-    const komplett=!!j&&issMax(cJ)>0&&da.size>=issMax(cJ);
-    aa.disabled=komplett;
-    aa.title=komplett?'Alle Ausgaben des Titels stehen bereits in der Auswahl':'';
-  }
   const tb=document.getElementById('toggleAll');
   if(tb){
     tb.style.display=onlyFilledOn()?'none':'inline-flex';
     if(j){
       const anyCollapsed=j.g.map((_,gi)=>cJ+'_'+gi).some(k=>collapsedCats.has(k));
-      tb.textContent=anyCollapsed?'Alle ausklappen':'Alle einklappen';
+      /* Pfeile nach aussen = ausklappen, nach innen = einklappen; Wortlaut nennt,
+         was sich bewegt: die Platzierungen unter den Kategoriezeilen. */
+      const pf=anyCollapsed?'<path d="m7 15 5 5 5-5"/><path d="m7 9 5-5 5 5"/>':'<path d="m7 20 5-5 5 5"/><path d="m7 4 5 5 5-5"/>';
+      tb.innerHTML='<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">'+pf+'</svg>'+(anyCollapsed?'Alle Platzierungen ausklappen':'Alle Platzierungen einklappen');
+      tb.title=anyCollapsed?'Alle Kategorien öffnen und ihre Platzierungen zeigen':'Alle Kategorien schließen – nur die Kategoriezeilen bleiben sichtbar';
     }
   }
 }
@@ -2525,30 +2465,97 @@ function updCatBadges(){
     else b.style.display='none';
   });
 }
-/* Je Titel stehen hoechstens so viele Ausgaben in der Auswahl, wie der Jahrgang
-   Hefte hat. Eine Spalte ohne gewaehltes Heft ist ein Platzhalter: Kommt ein Heft
-   ueber "Alle Ausgaben" oder die Kongress-Vorauswahl hinzu, fuellt es zuerst den
-   Platzhalter (samt dort schon gesetzten Haken), statt eine Spalte anzuhaengen. */
-function issMax(ji){return (ISSUES[ji]||[]).length;}
-function issBelegen(ji,idx){
-  const s=ST[ji],row=ISSUES[ji]&&ISSUES[ji][idx];
-  if(!s||!row)return false;
-  const frei=s.issues.find(x=>x.issIdx==null);
-  if(!frei&&s.issues.length>=issMax(ji))return false;
-  const neu={ausgabe:heftText(row[0]),et:row[1],ds:row[2],du:row[5]||'',eh:row[6]||'',themen:row[3]||'',kongress:row[4]||'',issIdx:idx};
-  if(frei)Object.assign(frei,neu);
-  else s.issues.push(Object.assign({id:s.nid++,sel:new Set()},neu));
-  return true;
-}
-function addIssue(){const s=ST[cJ];if(!s||s.issues.length>=issMax(cJ))return;s.issues.push({id:s.nid++,ausgabe:'',et:'',ds:'',du:'',eh:'',themen:'',issIdx:null,sel:new Set()});rMx();}
-function addAllIssues(){
-  const s=ST[cJ];if(!s)return;
-  const existing=new Set(s.issues.map(i=>i.issIdx).filter(x=>x!=null));
-  ISSUES[cJ].forEach((row,idx)=>{
-    if(existing.has(idx))return;
-    issBelegen(cJ,idx);
+/* Gemerkte Haken abgewaehlter Hefte: je Titel Heft -> Platzierungsnamen.
+   Gilt nur fuer den laufenden Jahrgang und wird beim Wechsel geleert, weil Titel-
+   und Heftnummern je Jahrgang andere sind. Nicht im Zwischenspeicher. */
+const HEFT_MEM={};
+function heftMemLeeren(){Object.keys(HEFT_MEM).forEach(k=>delete HEFT_MEM[k]);}
+/* Seit die Hefte ueber die Leiste gewaehlt werden, steht jede Spalte fuer genau ein
+   Heft. Aeltere Staende und Angebotsdateien koennen noch Spalten ohne Heft tragen
+   (frueher "Ausgabe hinzufuegen"), Spalten mit einem Heft, das der Datenstand nicht
+   mehr kennt, oder ein Heft zweimal. Solche Spalten fallen weg; ein doppeltes Heft
+   gibt seine Haken an die erste Spalte ab. Zurueck kommt je verworfener Spalte mit
+   Haken eine Zeile fuer die Meldung - leere Spalten verschwinden kommentarlos. */
+function spaltenOhneHeft(jahr){
+  const verloren=[];
+  ST.forEach((s,ji)=>{
+    if(!s||!J[ji])return;
+    const rows=ISSUES[ji]||[],erste=new Map();
+    s.issues=s.issues.filter(i=>{
+      if(i.issIdx!=null&&rows[i.issIdx]){
+        const e=erste.get(i.issIdx);
+        if(!e){erste.set(i.issIdx,i);return true;}
+        i.sel.forEach(n=>e.sel.add(n));
+        return false;
+      }
+      if(i.sel.size)verloren.push(J[ji].n+' '+jahr+': '+(i.ausgabe?i.ausgabe:'Spalte ohne Heft')+
+        ' ('+i.sel.size+' Häkchen)');
+      return false;
+    });
   });
+  return verloren;
+}
+function meldeSpaltenOhneHeft(z){
+  if(!z||!z.length)return Promise.resolve();
+  return hinweis('Spalten ohne Heft entfernt',
+    '<p>Die Hefte werden über die Leiste oberhalb der Tabelle gewählt; jede Spalte steht '+
+    'seitdem für genau ein Heft. '+z.length+' Spalte(n) ohne gültiges Heft trugen '+
+    'angekreuzte Platzierungen und wurden mit ihnen entfernt:</p>'+hinweisListe(z,12)+
+    '<p>Die Platzierungen lassen sich im passenden Heft neu ankreuzen.</p>');
+}
+/* Knopfbeschriftung: Heftnummer/Jahrgang zweistellig, etwa "1/27" oder "7–8/27".
+   Hefte ohne Nummer (Sonderhefte) behalten ihren Namen. */
+function heftKurz(l){
+  const t=String(l==null?'':l).trim(),kopf=t.split(' – ')[0];
+  const yy=String(currentYear||'').slice(-2);
+  return istHeftnummer(kopf)&&yy?kopf.replace(/\s+/g,'')+'/'+yy:kopf;
+}
+function heftAn(ji,idx){
+  const s=ST[ji],row=ISSUES[ji]&&ISSUES[ji][idx];if(!s||!row)return;
+  if(s.issues.some(x=>x.issIdx===idx))return;
+  const mem=(HEFT_MEM[ji]||{})[idx];
+  s.issues.push({id:s.nid++,ausgabe:heftText(row[0]),et:row[1],ds:row[2],du:row[5]||'',eh:row[6]||'',themen:row[3]||'',kongress:row[4]||'',issIdx:idx,sel:new Set(mem||[])});
+  if(HEFT_MEM[ji])delete HEFT_MEM[ji][idx];
+}
+function heftAus(ji,idx){
+  const s=ST[ji];if(!s)return;
+  const i=s.issues.find(x=>x.issIdx===idx);if(!i)return;
+  if(i.sel.size)(HEFT_MEM[ji]=HEFT_MEM[ji]||{})[idx]=[...i.sel];
+  s.issues=s.issues.filter(x=>x!==i);
+}
+function toggleHeft(idx){
+  const s=ST[cJ];if(!s)return;
+  s.issues.some(x=>x.issIdx===idx)?heftAus(cJ,idx):heftAn(cJ,idx);
   rMx();
+}
+function hefteAlle(an){
+  (ISSUES[cJ]||[]).forEach((_,idx)=>an?heftAn(cJ,idx):heftAus(cJ,idx));
+  rMx();
+}
+/* Gleich breite Knoepfe in gleichmaessig gefuellten Zeilen: passt nicht alles in
+   eine Zeile, werden es zwei (oder mehr) gleich lange - 12 Hefte also 6 + 6
+   statt 9 + 3. Mindestbreite je Knopf: genug fuer "ET 21.01.". */
+const HEFT_MIN=66;
+function heftRaster(){
+  const bar=document.getElementById('heftBar');if(!bar)return;
+  const n=bar.children.length;if(!n){bar.style.gridTemplateColumns='';return;}
+  const proZeile=Math.max(1,Math.floor((bar.clientWidth+6)/(HEFT_MIN+6)));
+  const zeilen=Math.ceil(n/proZeile);
+  bar.style.gridTemplateColumns=`repeat(${Math.ceil(n/zeilen)},minmax(0,1fr))`;
+}
+window.addEventListener('resize',heftRaster);
+function rHeftBar(){
+  const bar=document.getElementById('heftBar'),cnt=document.getElementById('heftCnt');
+  if(!bar)return;
+  const rows=(J[cJ]&&ISSUES[cJ])||[],s=ST[cJ];
+  const da=new Set(s?s.issues.map(i=>i.issIdx):[]),mem=HEFT_MEM[cJ]||{};
+  bar.innerHTML=rows.map((r,idx)=>{
+    const on=da.has(idx),m=!on&&mem[idx]&&mem[idx].length;
+    const tip=heftText(r[0])+(m?' – angekreuzte Platzierungen sind gemerkt':'');
+    return `<button class="heft-chip${on?' on':''}${m?' mem':''}" aria-pressed="${on}" title="${esc(tip)}" onclick="toggleHeft(${idx})">${esc(heftKurz(r[0]))}<small>${r[1]?"ET ":""}${esc(String(r[1]||"–").replace(/(\d{1,2}\.\d{1,2}\.)\d{2,4}$/,"$1"))}</small></button>`;
+  }).join('');
+  heftRaster();
+  if(cnt)cnt.textContent=rows.length?`${da.size} von ${rows.length} gewählt`:'';
 }
 /* ===== KONGRESS-VORAUSWAHL (legt Heftzeilen über alle Titel an) ===== */
 let KG_LIST=[], kgStatusTmr=null;
@@ -2649,7 +2656,7 @@ function applyKongress(i){
     const s=ST[ji],row=ISSUES[ji]&&ISSUES[ji][idx];
     if(!s||!row)return;
     if(s.issues.some(x=>x.issIdx===idx))return;
-    if(!issBelegen(ji,idx))return;
+    heftAn(ji,idx);
     added++;titles.add(ji);
   });
   const kgEl=document.getElementById('ck-kg');
@@ -2679,19 +2686,6 @@ function kgOnList(txt){
 document.addEventListener('click',e=>{const w=document.getElementById('kgWrap');if(w&&!w.contains(e.target))closeKgMenu();});
 document.addEventListener('keydown',e=>{if(e.key==='Escape')closeKgMenu();});
 
-function remIss(id){ST[cJ].issues=ST[cJ].issues.filter(i=>i.id!==id);rMx();}
-function updI(id,f,v){const i=ST[cJ].issues.find(i=>i.id===id);if(i)i[f]=v;render();}
-function selIss(id,raw){
-  const s=ST[cJ].issues.find(i=>i.id===id);
-  if(!s)return;
-  if(raw===''){s.issIdx=null;s.ausgabe='';s.et='';s.ds='';s.du='';s.eh='';s.themen='';s.kongress='';rMx();return;}
-  const idx=parseInt(raw,10),row=ISSUES[cJ][idx];
-  if(!row)return;
-  // Ein Heft steht hoechstens in einer Spalte; die Liste blendet vergebene Hefte ab.
-  if(ST[cJ].issues.some(x=>x!==s&&x.issIdx===idx)){rMx();return;}
-  s.issIdx=idx;s.ausgabe=heftText(row[0]);s.et=row[1];s.ds=row[2];s.du=row[5]||'';s.eh=row[6]||'';s.themen=row[3]||'';s.kongress=row[4]||'';
-  rMx();
-}
 
 function tPl(iid,gi,ii,chk){
   const nm=J[cJ].g[gi].i[ii][0];
@@ -2730,7 +2724,7 @@ function rBadges(){
     let b=tab.querySelector('.badge');
     if(c>0){if(!b){b=document.createElement('span');b.className='badge';tab.appendChild(b);}b.textContent=c;}
     else if(b)b.remove();
-    tab.classList.toggle('has-iss',s.issues.some(i=>i.sel.size===0||i.issIdx==null));
+    tab.classList.toggle('has-iss',s.issues.some(i=>i.sel.size===0));
   });
   /* Zugeklappte Bereiche dürfen nichts verstecken: der Kopf trägt die Summe des
      Fachbereichs und übernimmt die Warnung, sobald ein Titel darin unvollständig ist. */
@@ -2740,7 +2734,7 @@ function rBadges(){
     g.idx.forEach(ji=>{
       const s=ST[ji];if(!s)return;
       sum+=s.issues.reduce((a,i)=>a+i.sel.size,0);
-      if(s.issues.some(i=>i.sel.size===0||i.issIdx==null))warn=true;
+      if(s.issues.some(i=>i.sel.size===0))warn=true;
     });
     const b=document.getElementById('fbbadge_'+gi);
     if(b){if(sum>0){b.textContent=sum;b.style.display='inline-flex';}else b.style.display='none';}
@@ -2749,10 +2743,8 @@ function rBadges(){
 }
 
 /* Die Spalten stehen immer nach Erscheinungstermin, gleich in welcher Reihenfolge die
-   Hefte gewaehlt wurden. Massgeblich ist der ET des Heftes laut Preisliste, nicht das
-   editierbare ET-Feld der Spalte (sonst sprangen Spalten beim Tippen). Hefte ohne
-   lesbaren ET folgen den datierten in Preislisten-Reihenfolge, Spalten ohne gewaehltes
-   Heft stehen am Ende. */
+   Hefte gewaehlt wurden. Massgeblich ist der ET des Heftes laut Preisliste. Hefte ohne
+   lesbaren ET folgen den datierten in Preislisten-Reihenfolge. */
 function etSchluessel(s){
   const m=/(\d{1,2})\.(\d{1,2})\.(\d{2,4})?/.exec(s||'');
   if(!m)return Infinity;
@@ -2762,11 +2754,10 @@ function etSchluessel(s){
 function sortIss(ji){
   const s=ST[ji];if(!s)return;
   const rows=ISSUES[ji]||[];
-  const key=i=>i.issIdx==null||!rows[i.issIdx]?[2,0,0]:[0,etSchluessel(rows[i.issIdx][1]),i.issIdx];
-  const pos=new Map(s.issues.map((x,k)=>[x,k]));
+  const key=i=>[etSchluessel((rows[i.issIdx]||[])[1]),i.issIdx];
   s.issues.sort((a,b)=>{const ka=key(a),kb=key(b);
-    for(let k=0;k<3;k++){if(ka[k]!==kb[k])return ka[k]<kb[k]?-1:1;}
-    return pos.get(a)-pos.get(b);});
+    for(let k=0;k<2;k++){if(ka[k]!==kb[k])return ka[k]<kb[k]?-1:1;}
+    return 0;});
 }
 function rMx(){
   /* alle Titel: die Kongress-Vorauswahl und geladene Angebote fuellen auch Titel, die
@@ -2775,20 +2766,19 @@ function rMx(){
   const ji=cJ,j=J[ji],iss=ST[ji]?ST[ji].issues:[];
   const mx=document.getElementById('mx');
   updMxTools();
+  rHeftBar();
   if(!j){mx.innerHTML='<tbody><tr><td class="empty-st" colspan="20">Keine Daten geladen &mdash; bitte oben auf &bdquo;Daten laden&ldquo; klicken und die Angebotsdaten.xlsx wählen.</td></tr></tbody>';render();return;}
   if(!iss.length){
-    mx.innerHTML='<tbody><tr><td class="empty-st" colspan="20">Noch keine Ausgaben &mdash; oben auf &ldquo;Ausgabe hinzuf\u00fcgen&rdquo; klicken.</td></tr></tbody>';
+    mx.innerHTML='<tbody><tr><td class="empty-st" colspan="20">Noch keine Ausgaben &mdash; oben in der Leiste die Hefte w\u00e4hlen.</td></tr></tbody>';
     render();return;
   }
   let h='<thead><tr><th class="pl-hd">Platzierung</th>';
   iss.forEach((s,ci)=>{
-    const vergeben=new Set(iss.filter(x=>x!==s&&x.issIdx!=null).map(x=>x.issIdx));
-    const opts=ISSUES[ji].map(([l],i)=>`<option value="${i}"${s.issIdx===i?' selected':''}${vergeben.has(i)&&s.issIdx!==i?' disabled':''}>${esc(heftText(l))}</option>`).join('');
     h+=`<th class="iss-th" data-col="${ci}"><div class="iss-head">`;
-    h+=`<select class="iss-sel" onchange="selIss(${s.id},this.value)"><option value="">Heft wählen …</option>${opts}</select>`;
-    h+=`<input type="text" value="${esc(s.et)}" placeholder="ET" oninput="updI(${s.id},'et',this.value)">`;
-    h+=`<input type="text" value="${esc(s.ds)}" placeholder="AS" oninput="updI(${s.id},'ds',this.value)">`;
-    h+=`<button class="rm-iss" onclick="remIss(${s.id})" title="Ausgabe entfernen"><svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M18 6 6 18M6 6l12 12"/></svg></button>`;
+    h+=`<div class="iss-name" title="${esc(s.ausgabe)}">${esc(s.ausgabe)}</div>`;
+    /* Termine nur zur Ansicht: Sie kommen aus der Datenpflege und wuerden beim
+       naechsten Laden der Preisliste ohnehin wieder von dort gesetzt. */
+    h+=`<div class="iss-termine"><span><b>ET</b>${esc(s.et||'–')}</span><span><b>AS</b>${esc(s.ds||'–')}</span></div>`;
     h+=`</div></th>`;
   });
   h+='</tr></thead><tbody>';
@@ -2990,6 +2980,7 @@ async function resetAll(){
     '<p>Der aktuelle Angebotsstand wird gelöscht.</p>',
     'Alles zurücksetzen'))return;
   ST=J.map(()=>({issues:[],nid:1}));
+  heftMemLeeren();
   /* setzt zugleich kgPick auf „alle Kongresse" zurück */
   applyOptionen(OPTIONEN_LEER);
   /* Die Verknüpfung zur geöffneten Angebotsdatei wird mit gelöst, damit ein
