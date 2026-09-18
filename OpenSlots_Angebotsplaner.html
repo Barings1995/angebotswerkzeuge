@@ -2687,6 +2687,8 @@ function selIss(id,raw){
   if(raw===''){s.issIdx=null;s.ausgabe='';s.et='';s.ds='';s.du='';s.eh='';s.themen='';s.kongress='';rMx();return;}
   const idx=parseInt(raw,10),row=ISSUES[cJ][idx];
   if(!row)return;
+  // Ein Heft steht hoechstens in einer Spalte; die Liste blendet vergebene Hefte ab.
+  if(ST[cJ].issues.some(x=>x!==s&&x.issIdx===idx)){rMx();return;}
   s.issIdx=idx;s.ausgabe=heftText(row[0]);s.et=row[1];s.ds=row[2];s.du=row[5]||'';s.eh=row[6]||'';s.themen=row[3]||'';s.kongress=row[4]||'';
   rMx();
 }
@@ -2757,7 +2759,8 @@ function rMx(){
   }
   let h='<thead><tr><th class="pl-hd">Platzierung</th>';
   iss.forEach((s,ci)=>{
-    const opts=ISSUES[ji].map(([l],i)=>`<option value="${i}"${s.issIdx===i?' selected':''}>${esc(heftText(l))}</option>`).join('');
+    const vergeben=new Set(iss.filter(x=>x!==s&&x.issIdx!=null).map(x=>x.issIdx));
+    const opts=ISSUES[ji].map(([l],i)=>`<option value="${i}"${s.issIdx===i?' selected':''}${vergeben.has(i)&&s.issIdx!==i?' disabled':''}>${esc(heftText(l))}</option>`).join('');
     h+=`<th class="iss-th" data-col="${ci}"><div class="iss-head">`;
     h+=`<select class="iss-sel" onchange="selIss(${s.id},this.value)"><option value="">Heft wählen …</option>${opts}</select>`;
     h+=`<input type="text" value="${esc(s.et)}" placeholder="ET" oninput="updI(${s.id},'et',this.value)">`;
