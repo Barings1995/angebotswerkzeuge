@@ -2322,6 +2322,39 @@ function onPriceEdit(id) {
   }
 }
 
+/* ══ RECHNUNG ══════════════════════════════════════════════════════════════════
+   Rabatt, AE und Summen ohne Zugriff auf die Seite: onAnzahlChange und recalcTotal
+   lesen Preis, Kopf-Prozente, Sperren und den MwSt-Schalter und reichen die Werte
+   hierher weiter. Die Pruefung vor jeder Veroeffentlichung (Ordner „Prüffälle")
+   liest genau diesen Abschnitt und rechnet ihn ohne Browser nach. Deshalb gilt hier:
+   kein document, kein window, keine Daten der Seite - nur, was als Wert hereinkommt.
+   Gerundet wird hier nicht, erst in der Anzeige (formatEur) - anders als in OpenSlots
+   und PreisWerk, die Rabatt und AE je Position auf den Cent runden. */
+/* Eine Zeile: Rabatt und AE auf den vollen 4C-Preis (auch einen von Hand
+   ueberschriebenen), AE auf den Betrag nach Rabatt. Gesperrt heisst: laut Preisliste
+   nicht rabatt- bzw. nicht AE-faehig. */
+function zeileRechnen(preis, rabattPct, aePct, rabattGesperrt, aeGesperrt) {
+  const rabatt     = rabattGesperrt ? 0 : preis * rabattPct / 100;
+  const nachRabatt = preis - rabatt;
+  const ae         = aeGesperrt ? 0 : nachRabatt * aePct / 100;
+  return { rabatt, ae, gp: nachRabatt - ae };
+}
+/* Euro-Text in Zahl (de-DE) – null bei leer/„–"/ungültig */
+function parseEur(s) {
+  if (!s || s.trim() === '–' || s.trim() === '') return null;
+  const n = parseFloat(s.replace(/\./g, '').replace(',', '.').replace(/[^\d.\-]/g, ''));
+  return isNaN(n) ? null : n;
+}
+/* Summe der Zeilen (GP netto) in der Reihenfolge der Tabelle, dazu 19 % MwSt -
+   bei Kunden im Ausland (ohneMwst) keine. */
+function summeRechnen(gps, ohneMwst) {
+  let netto = 0;
+  gps.forEach(gp => { netto += gp; });
+  const mwst = ohneMwst ? 0 : netto * 0.19;
+  return { netto, mwst, brutto: netto + mwst };
+}
+/* ══ ENDE RECHNUNG ═════════════════════════════════════════════════════════════ */
+
 // ─────────────────────────────────────────
 //  Zeile neu berechnen (Preis / Rabatt / AE / GP netto)
 // ─────────────────────────────────────────
@@ -2339,10 +2372,7 @@ function onAnzahlChange(id) {
   const aePct     = (!aeBlocked && colActive.ae)     ? (parseFloat(document.getElementById('hdr-ae').value) || 0) : 0;
 
   if (!isNaN(preis)) {
-    const rabattAmt   = blocked ? 0 : preis * rabattPct / 100;
-    const afterRabatt = preis - rabattAmt;
-    const aeAmt       = aeBlocked ? 0 : afterRabatt * aePct / 100;
-    const gpRaw       = afterRabatt - aeAmt;
+    const { rabatt: rabattAmt, ae: aeAmt, gp: gpRaw } = zeileRechnen(preis, rabattPct, aePct, blocked, aeBlocked);
 
     rabCell.textContent = blocked   ? '–' : (rabattPct > 0 ? '− ' + formatEur(rabattAmt) : '–');
     aeCell.textContent  = aeBlocked ? '–' : (aePct > 0 ? '− ' + formatEur(aeAmt) : '–');
@@ -2419,17 +2449,16 @@ function renumberPositions() {
 //  Recalculate total
 // ─────────────────────────────────────────
 function recalcTotal() {
-  let netto = 0;
+  const gps = [];
   document.querySelectorAll('#posBody tr').forEach(tr => {
     const gpCell = tr.querySelector('.gp-cell');
     if (gpCell && gpCell.dataset.gp) {
-      netto += parseFloat(gpCell.dataset.gp) || 0;
+      gps.push(parseFloat(gpCell.dataset.gp) || 0);
     }
   });
 
   const ohneMwst = document.getElementById('auslandMwst')?.checked;
-  const mwst   = ohneMwst ? 0 : netto * 0.19;
-  const brutto = netto + mwst;
+  const { netto, mwst, brutto } = summeRechnen(gps, ohneMwst);
 
   document.getElementById('sumNetto').textContent = formatEur(netto);
   document.getElementById('sumMwst').textContent  = ohneMwst ? '–' : formatEur(mwst);
@@ -2975,15 +3004,6 @@ function restorePosition(pos) {
 // ─────────────────────────────────────────
 function formatEur(n) {
   return n.toLocaleString('de-DE', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' €';
-}
-
-// ─────────────────────────────────────────
-//  Euro-Text in Zahl (de-DE) – null bei leer/„–"/ungültig
-// ─────────────────────────────────────────
-function parseEur(s) {
-  if (!s || s.trim() === '–' || s.trim() === '') return null;
-  const n = parseFloat(s.replace(/\./g, '').replace(',', '.').replace(/[^\d.\-]/g, ''));
-  return isNaN(n) ? null : n;
 }
 
 /* Umbruch der Datenleiste: CSS kann nicht abfragen, ob eine Gruppe eine neue
