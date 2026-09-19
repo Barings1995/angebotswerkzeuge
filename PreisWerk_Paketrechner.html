@@ -633,6 +633,14 @@ function applyYear(year){
 
 // ─── HELPERS ──────────────────────────────────────────────────────────────────
 const euro = n => n.toLocaleString('de-DE', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' €';
+
+/* ══ RECHNUNG ══════════════════════════════════════════════════════════════════
+   Staffel, Rabatt und AE ohne Zugriff auf die Seite: render() liest die Schalter
+   und reicht Paket, Schalterstellung und die Fachbereichszuordnung hierher weiter.
+   Die Pruefung vor jeder Veroeffentlichung (Ordner „Prüffälle") liest genau diesen
+   Abschnitt und rechnet ihn ohne Browser nach. Deshalb gilt hier: kein document,
+   kein window, keine Daten der Seite - nur, was als Wert hereinkommt.
+   Eine Position it ist {journal, fn, base, s4c, use4c, rabatt, eq, count}. */
 const round2 = n => Math.round((n + Number.EPSILON) * 100) / 100;
 function getMalRabatt(n)   { return n>=18?.15 : n>=12?.10 : n>=6?.05 : n>=3?.03 : 0; }
 function getMengeRabatt(n) { return n>=18?.20 : n>=12?.15 : n>=6?.10 : n>=3?.05 : 0; }
@@ -658,6 +666,59 @@ function pageEquiv(it) {
   if (it && typeof it === 'object') return it.eq != null ? it.eq : pageEquivAuto(it.fn);
   return pageEquivAuto(it);
 }
+
+const GEMEIN_FACH = 'Alle Fachbereiche gemeinsam';
+/* Staffel je Fachgruppe: der Rabatt gilt titelübergreifend, aber nur innerhalb einer
+   Fachgruppe - Onkologie zählt nicht zu Urologie und umgekehrt. Die Reihenfolge der
+   Gruppen ist die des Pakets, damit Leiste und Tabelle gleich sortiert sind.
+   gemein: Gemeinschaftsangebot, alle Positionen in einem Topf (siehe gemeinsameStaffel).
+   fachVon: ordnet einem Titel seinen Fachbereich zu. */
+function staffelGruppenRechnen(items, gemein, fachVon) {
+  const g = new Map();
+  items.forEach(it => {
+    const k = gemein ? GEMEIN_FACH : fachVon(it.journal);
+    if (!g.has(k)) g.set(k, { fach: k, items: [], totalMal: 0, totalMenge: 0 });
+    const e = g.get(k);
+    e.items.push(it);
+    if (it.rabatt) { e.totalMal += it.count; e.totalMenge += it.count * pageEquiv(it); }
+  });
+  return [...g.values()].map(e => {
+    e.totalMenge = round2(e.totalMenge);
+    e.malPct     = getMalRabatt(e.totalMal);
+    e.mengePct   = getMengeRabatt(e.totalMenge);
+    e.applied    = Math.max(e.malPct, e.mengePct);
+    e.whichLabel = e.mengePct > e.malPct ? 'Mengenstaffel' : e.malPct > 0 ? 'Malstaffel' : null;
+    return e;
+  });
+}
+/* Eine Tabellenzeile: Staffelrabatt nur auf den s/w-Grundpreis (ungerundet), AE 10 %
+   auf den Betrag nach Rabatt, auf den Cent gerundet. satz ist der Staffelsatz der Gruppe. */
+function zeileRechnen(it, satz, useAE) {
+  const s4cVal   = it.use4c ? (it.s4c || 0) : 0;
+  const list     = (it.base + s4cVal) * it.count;
+  const rBase    = it.rabatt ? it.base : 0;
+  const rabEuro  = rBase * satz * it.count;
+  const after    = list - rabEuro;
+  const aeEuro   = useAE ? round2(after * 0.10) : 0;
+  const net      = after - aeEuro;
+  return { list, rabEuro, after, aeEuro, net };
+}
+/* Das ganze Paket: Gruppen mit ihren Zeilen (g.zeilen parallel zu g.items) und die
+   Summen, aufaddiert in der Reihenfolge der Tabelle. */
+function paketRechnen(items, gemein, fachVon, useAE) {
+  const gruppen = staffelGruppenRechnen(items, gemein, fachVon);
+  const summe = { list: 0, rabatt: 0, after: 0, ae: 0, net: 0 };
+  gruppen.forEach(g => {
+    g.zeilen = g.items.map(it => {
+      const z = zeileRechnen(it, g.applied, useAE);
+      summe.list += z.list; summe.rabatt += z.rabEuro; summe.after += z.after;
+      summe.ae += z.aeEuro; summe.net += z.net;
+      return z;
+    });
+  });
+  return { gruppen, summe };
+}
+/* ══ ENDE RECHNUNG ═════════════════════════════════════════════════════════════ */
 
 /* Fachbereiche: Titel ohne Angabe (oder eine Preisliste ohne die Spalte) landen
    gemeinsam in einer Sammelgruppe - dort gilt der Staffelrabatt wie früher über alle
@@ -722,9 +783,6 @@ function titelOptionenHtml(titles) {
   return ls.map(l => `<optgroup label="${esc(l)}">` + opts(m.get(l)) + '</optgroup>').join('');
 }
 
-/* Staffel je Fachgruppe: der Rabatt gilt titelübergreifend, aber nur innerhalb einer
-   Fachgruppe - Onkologie zählt nicht zu Urologie und umgekehrt. Die Reihenfolge der
-   Gruppen ist die des Pakets, damit Leiste und Tabelle gleich sortiert sind. */
 /* Gemeinschaftsangebot: Wird der Schalter gesetzt, wandern alle Positionen in einen
    einzigen Topf. Die Staffel selbst bleibt unverändert - es ist dieselbe Mal- und
    Mengenstaffel, sie zählt nur über die Fachgrenzen hinweg. Der Ausnahmefall wird
@@ -733,31 +791,11 @@ function gemeinsameStaffel() {
   const el = document.getElementById('optGemein');
   return !!(el && el.checked);
 }
-const GEMEIN_FACH = 'Alle Fachbereiche gemeinsam';
 // Wie viele Fachbereiche das Paket tatsächlich enthält - unabhängig vom Schalter.
 function fachAnzahl() {
   return new Set(items.map(it => fachVon(it.journal))).size;
 }
 
-function staffelGruppen() {
-  const gemein = gemeinsameStaffel();
-  const g = new Map();
-  items.forEach(it => {
-    const k = gemein ? GEMEIN_FACH : fachVon(it.journal);
-    if (!g.has(k)) g.set(k, { fach: k, items: [], totalMal: 0, totalMenge: 0 });
-    const e = g.get(k);
-    e.items.push(it);
-    if (it.rabatt) { e.totalMal += it.count; e.totalMenge += it.count * pageEquiv(it); }
-  });
-  return [...g.values()].map(e => {
-    e.totalMenge = round2(e.totalMenge);
-    e.malPct     = getMalRabatt(e.totalMal);
-    e.mengePct   = getMengeRabatt(e.totalMenge);
-    e.applied    = Math.max(e.malPct, e.mengePct);
-    e.whichLabel = e.mengePct > e.malPct ? 'Mengenstaffel' : e.malPct > 0 ? 'Malstaffel' : null;
-    return e;
-  });
-}
 
 // ─── STATE ────────────────────────────────────────────────────────────────────
 let items = [], nextId = 1;
@@ -855,8 +893,9 @@ function render() {
   const useAE = document.getElementById('optAE').checked;
 
   // Staffel: je Fachgruppe getrennt, gezählt werden nur rabattfähige Positionen
-  const gruppen = staffelGruppen();
   const gemein  = gemeinsameStaffel();
+  const paket   = paketRechnen(items, gemein, fachVon, useAE);
+  const gruppen = paket.gruppen;
   /* Überschrift immer dann, wenn sie etwas erklärt: bei mehreren Gruppen ohnehin - und
      beim Gemeinschaftsangebot auch dann, wenn der eine Topf mehrere Fachbereiche
      zusammenfasst. Sonst wäre am Paket nicht abzulesen, dass die Ausnahme greift. */
@@ -890,7 +929,7 @@ function render() {
   }
 
   // Build table rows
-  let sumList = 0, sumRabatt = 0, sumAfter = 0, sumAE = 0, sumNet = 0;
+  const { list: sumList, rabatt: sumRabatt, after: sumAfter, ae: sumAE, net: sumNet } = paket.summe;
   let rows = '';
 
   const spalten = useAE ? 9 : 8;   // Titel, Format, Anzahl, Listenpreis, Rabatt, nach Rabatt, [AE], Netto, Entfernen
@@ -902,20 +941,8 @@ function render() {
         : '<span class="fach-rab">kein Staffelrabatt</span>';
       rows += `<tr class="fach-row"><td colspan="${spalten}">${g.fach}${satz}</td></tr>`;
     }
-    g.items.forEach(it => {
-      const s4cVal   = it.use4c ? (it.s4c || 0) : 0;
-      const list     = (it.base + s4cVal) * it.count;
-      const rBase    = it.rabatt ? it.base : 0;
-      const rabEuro  = rBase * g.applied * it.count;
-      const after    = list - rabEuro;
-      const aeEuro   = useAE ? round2(after * 0.10) : 0;
-      const net      = after - aeEuro;
-
-      sumList   += list;
-      sumRabatt += rabEuro;
-      sumAfter  += after;
-      sumAE     += aeEuro;
-      sumNet    += net;
+    g.items.forEach((it, k) => {
+      const { list, rabEuro, after, aeEuro, net } = g.zeilen[k];
 
       const colorTag = it.s4c ? (it.use4c
         ? '<span class="tag-4c">4c</span>'
