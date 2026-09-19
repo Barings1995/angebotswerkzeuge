@@ -87,40 +87,65 @@ a:focus-visible, button:focus-visible, label:focus-visible, [tabindex]:focus-vis
   outline:2px solid var(--navy); outline-offset:2px; border-radius:var(--radius-sm);
 }
 
-/* ── Kopfleiste (Hero-Streifen) ───────────────────────────────────────────
-   Zeichengleich mit den vier uebrigen Werkzeugen, samt der beiden festen
-   Zeilenhoehen: MediaSheet fuehrt im body ein line-height von 1.5, OpenSlots
-   und MediaQuote nicht — ohne die festen Werte waere die Leiste hier um einen
-   halben Pixel hoeher als dort. */
-.sm-hero{
-  background:linear-gradient(135deg,#002050 0%,var(--navy) 60%,#004080 100%);
-  padding:1.1rem 0 1rem; border-bottom:3px solid var(--orange);
+/* ── Kopfleiste (Hero-Streifen) ─────────────────────────────────────────── */
+/* ══ BAUSTEIN kopfleiste.css ══ Nicht hier ändern: gepflegt in Bausteine/kopfleiste.css, eingesetzt mit „node Bausteine/einsetzen.mjs". */
+/* Kopfleiste (Hero-Streifen) mit Logo, Name des Werkzeugs, Unterzeile, Rückweg
+   zur Startseite und einer Zeile Anleitung. Dieselbe Leiste in allen Werkzeugen
+   und der Datenpflege, damit sie als Familie zu erkennen sind.
+   Farben und Maße stehen hier fest und nicht über die Tokens der Werkzeuge: sie
+   sind die der Marke und in allen Dateien gleich, die Tokens aber heißen nicht
+   überall gleich (--navy, --sm-navy).
+   Was nur ein Werkzeug hat, steht dort direkt hinter dem Baustein: der
+   Jahrgang im Namen und das Konto in der Datenpflege, die negativen Ränder in
+   MediaQuote, das Ausblenden im Druck. */
+
+/* Die Schrift wird gesetzt, nicht geerbt: in MediaQuote erbte die Leiste sonst die
+   Aptos des Angebotsblatts. Deren Zeilenhöhe fällt bei „normal" niedriger aus;
+   die Unterzeile wäre 14 statt 17,5 px hoch und die ganze Leiste 3,5 px flacher. */
+.sm-hero {
+  font-family: 'Source Sans 3', system-ui, sans-serif;
+  background: linear-gradient(135deg, #002050 0%, #00285a 60%, #004080 100%);
+  padding: 1.1rem 0 1rem;
+  border-bottom: 3px solid #ee7d11;
 }
-.sm-hero-inner{padding:0 1.5rem}
-.sm-hero-head{display:flex; flex-wrap:wrap; align-items:center; gap:1rem; margin-bottom:8px}
-.sm-hero-head svg{flex:none}
-.sm-hero-div{width:1px; align-self:stretch; background:rgba(255,255,255,.28); flex:none}
-.sm-hero h1{
-  font-family:var(--font-title); font-size:25px; font-weight:700; color:#fff;
-  line-height:1.2; margin-bottom:2px; letter-spacing:-.01em;
+.sm-hero-inner { padding: 0 1.5rem; }
+.sm-hero-head { display: flex; align-items: center; gap: 1rem; margin-bottom: 8px; }
+.sm-hero-head svg { flex: none; }
+.sm-hero-div { width: 1px; align-self: stretch; background: rgba(255,255,255,.28); flex: none; }
+.sm-hero h1 {
+  font-family: 'Playfair Display', Georgia, 'Times New Roman', serif;
+  font-size: 25px; font-weight: 700; color: #fff;
+  line-height: 1.2; margin-bottom: 2px; letter-spacing: -.01em;
 }
-.sm-hero h1 .sm-hero-mark{color:var(--orange)}
-.sm-hero-sub{
-  line-height:17.5px; font-size:12px; font-weight:600; color:rgba(255,255,255,.72);
-  letter-spacing:.16em; text-transform:uppercase;
+.sm-hero h1 .sm-hero-mark { color: #ee7d11; }
+/* Zeilenhöhen fest, nicht vom Blatt geerbt. PreisWerk, MediaSheet und die
+   Datenpflege führen im body ein line-height von 1.5, OpenSlots und MediaQuote
+   nicht; geerbt war die Unterzeile dort 18 statt 17,5 px hoch und die Leiste
+   einen halben Pixel höher. 17,5 und 16,5 px sind die Werte, die „normal" bei
+   Source Sans 3 in 12 und 11,5 px ergibt, gemessen. */
+.sm-hero-sub {
+  line-height: 17.5px; font-size: 12px; font-weight: 600; color: rgba(255,255,255,.72);
+  letter-spacing: .16em; text-transform: uppercase; margin-bottom: 0;
 }
-.sm-hero p{font-size:12.5px; color:rgba(255,255,255,.72); line-height:1.4; text-wrap:pretty}
-.sm-hero p strong{color:rgba(255,255,255,.9); font-weight:600}
-/* Rueckweg zur Startseite: weisser Rand auf Blau, gefuellt erst beim
-   Ueberfahren. 16,5 px ist der Wert, den „normal" bei Source Sans 3 in 11,5 px
-   ergibt — damit ist der Knopf hier so hoch wie in den uebrigen Werkzeugen. */
-.hero-zurueck{
-  margin-left:auto; display:inline-flex; align-items:center; gap:6px;
-  background:none; border:1px solid rgba(255,255,255,.35); color:#fff;
-  border-radius:var(--radius-md); font-size:11.5px; line-height:16.5px; font-weight:600;
-  padding:5px 11px; text-decoration:none; white-space:nowrap; flex:none;
+.sm-hero p { font-size: 12.5px; color: rgba(255,255,255,.72); font-weight: 400; line-height: 1.4; }
+.sm-hero p strong { color: rgba(255,255,255,.9); font-weight: 600; }
+/* Rückweg zur Startseite: weißer Rand auf Blau, gefüllt erst beim Überfahren,
+   wie „Abmelden" in der Datenpflege. Er trägt vor allem beim Wechsel von einem
+   Werkzeug ins nächste. */
+.hero-zurueck {
+  margin-left: auto; display: inline-flex; align-items: center; gap: 6px;
+  background: none; border: 1px solid rgba(255,255,255,.35); color: #fff;
+  border-radius: 6px; font-size: 11.5px; line-height: 16.5px; font-weight: 600;
+  padding: 5px 11px; text-decoration: none; white-space: nowrap; flex: none;
 }
-.hero-zurueck:hover{background:rgba(255,255,255,.12)}
+.hero-zurueck:hover { background: rgba(255,255,255,.12); }
+/* ══ ENDE BAUSTEIN kopfleiste.css ══ */
+/* Bis zur Entscheidung, ob die Kopfleiste überall so umbricht (Stand 19.09.2026:
+   auch in der Datenpflege): im schmalen Fenster rutscht der Rückweg in eine zweite
+   Zeile, statt über den Rand zu laufen, und die Anleitungszeile bricht
+   ausgewogen um. */
+.sm-hero-head{flex-wrap:wrap}
+.sm-hero p{text-wrap:pretty}
 
 /* ── Datenleiste ──────────────────────────────────────────────────────────
    Flaeche, Rundung und Polster der Datenleiste aus OpenSlots, MediaQuote und

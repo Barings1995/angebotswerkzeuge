@@ -45,8 +45,8 @@ Nicht im Repository, nur im Arbeitsordner: die beiden Änderungslogs, der Ordner
 
 Was in mehreren Werkzeugen gleich aussehen und gleich arbeiten soll, liegt einmal im
 Ordner `Bausteine/` — zurzeit die Rückfrage- und Hinweisfenster (`fenster.css`,
-`frage.js`, `hinweis.js`). In den Werkzeugen steht der Baustein zwischen zwei
-Markierungen:
+`frage.js`, `hinweis.js`) und die Kopfleiste (`kopfleiste.css`, auch in der Datenpflege).
+In den Werkzeugen steht der Baustein zwischen zwei Markierungen:
 
 ```
 /* ══ BAUSTEIN fenster.css ══ … */

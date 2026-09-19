@@ -63,36 +63,63 @@ button, input, select, textarea { font-family: inherit; }
   html { background: var(--bg); }
   body { font-family: var(--font-body); background: var(--bg); color: var(--text); font-size: 14px; line-height: 1.5; }
 
-  /* ── Header (Hero-Strip · identisch zu OpenSlots/MediaQuote) ── */
-  .sm-hero { background: linear-gradient(135deg, #002050 0%, var(--navy) 60%, #004080 100%); padding: 1.1rem 0 1rem; border-bottom: 3px solid var(--orange); }
-  .sm-hero-inner { max-width: none; margin: 0 auto; padding: 0 1.5rem; }
+  /* ── Kopfleiste ── */
+  /* ══ BAUSTEIN kopfleiste.css ══ Nicht hier ändern: gepflegt in Bausteine/kopfleiste.css, eingesetzt mit „node Bausteine/einsetzen.mjs". */
+  /* Kopfleiste (Hero-Streifen) mit Logo, Name des Werkzeugs, Unterzeile, Rückweg
+     zur Startseite und einer Zeile Anleitung. Dieselbe Leiste in allen Werkzeugen
+     und der Datenpflege, damit sie als Familie zu erkennen sind.
+     Farben und Maße stehen hier fest und nicht über die Tokens der Werkzeuge: sie
+     sind die der Marke und in allen Dateien gleich, die Tokens aber heißen nicht
+     überall gleich (--navy, --sm-navy).
+     Was nur ein Werkzeug hat, steht dort direkt hinter dem Baustein: der
+     Jahrgang im Namen und das Konto in der Datenpflege, die negativen Ränder in
+     MediaQuote, das Ausblenden im Druck. */
+
+  /* Die Schrift wird gesetzt, nicht geerbt: in MediaQuote erbte die Leiste sonst die
+     Aptos des Angebotsblatts. Deren Zeilenhöhe fällt bei „normal" niedriger aus;
+     die Unterzeile wäre 14 statt 17,5 px hoch und die ganze Leiste 3,5 px flacher. */
+  .sm-hero {
+    font-family: 'Source Sans 3', system-ui, sans-serif;
+    background: linear-gradient(135deg, #002050 0%, #00285a 60%, #004080 100%);
+    padding: 1.1rem 0 1rem;
+    border-bottom: 3px solid #ee7d11;
+  }
+  .sm-hero-inner { padding: 0 1.5rem; }
   .sm-hero-head { display: flex; align-items: center; gap: 1rem; margin-bottom: 8px; }
   .sm-hero-head svg { flex: none; }
   .sm-hero-div { width: 1px; align-self: stretch; background: rgba(255,255,255,.28); flex: none; }
-
-  /* Rueckweg zur Startseite. Die Startseite verlinkt alle fuenf Werkzeuge, der
-     Weg zurueck fehlte bisher — er traegt vor allem beim Wechsel von einem
-     Werkzeug ins naechste. Optik wie „Abmelden" in der Datenpflege: weisser
-     Rand auf Blau, gefuellt erst beim Ueberfahren. Schrift bewusst geerbt,
-     nicht ueber ein Token — nicht jedes Werkzeug fuehrt --font-body.
-     Zeilenhoehe fest, nicht geerbt: ohne sie war der Knopf in PreisWerk und der
-     Datenpflege 29,25 statt 28,5 px hoch, weil diese beiden im body ein
-     line-height von 1.5 fuehren. 16,5 px ist der Wert, den 'normal' bei Source
-     Sans 3 in 11,5 px ergibt - dieselbe Angleichung wie bei der Unterzeile. */
-  .hero-zurueck { margin-left: auto; display: inline-flex; align-items: center; gap: 6px;
-    background: none; border: 1px solid rgba(255,255,255,.35); color: #fff;
-    border-radius: var(--radius-md); font-size: 11.5px; line-height: 16.5px; font-weight: 600;
-    padding: 5px 11px; text-decoration: none; white-space: nowrap; flex: none; }
-  .hero-zurueck:hover { background: rgba(255,255,255,.12); }
-  .sm-hero h1 { font-family: var(--font-title); font-size: 25px; font-weight: 700; color: #fff; line-height: 1.2; margin-bottom: 2px; letter-spacing: -.01em; }
-  .sm-hero h1 .sm-hero-mark { color: var(--orange); }
-  /* Zeilenhöhe fest, nicht vom Blatt geerbt. PreisWerk und Datenpflege führen im
-     body ein line-height von 1.5, OpenSlots und MediaQuote nicht — die Unterzeile
-     war dadurch 18 statt 17,5 px hoch und die ganze Leiste in zwei Werkzeugen
-     0,5 px höher als in den anderen drei. */
-  .sm-hero-sub { line-height: 17.5px; font-size: 12px; font-weight: 600; color: rgba(255,255,255,.72); letter-spacing: .16em; text-transform: uppercase; margin-bottom: 0; }
-  .sm-hero p { font-size: 12.5px; color: rgba(255,255,255,.72); font-weight: 400; line-height: 1.4; text-wrap: pretty; }
+  .sm-hero h1 {
+    font-family: 'Playfair Display', Georgia, 'Times New Roman', serif;
+    font-size: 25px; font-weight: 700; color: #fff;
+    line-height: 1.2; margin-bottom: 2px; letter-spacing: -.01em;
+  }
+  .sm-hero h1 .sm-hero-mark { color: #ee7d11; }
+  /* Zeilenhöhen fest, nicht vom Blatt geerbt. PreisWerk, MediaSheet und die
+     Datenpflege führen im body ein line-height von 1.5, OpenSlots und MediaQuote
+     nicht; geerbt war die Unterzeile dort 18 statt 17,5 px hoch und die Leiste
+     einen halben Pixel höher. 17,5 und 16,5 px sind die Werte, die „normal" bei
+     Source Sans 3 in 12 und 11,5 px ergibt, gemessen. */
+  .sm-hero-sub {
+    line-height: 17.5px; font-size: 12px; font-weight: 600; color: rgba(255,255,255,.72);
+    letter-spacing: .16em; text-transform: uppercase; margin-bottom: 0;
+  }
+  .sm-hero p { font-size: 12.5px; color: rgba(255,255,255,.72); font-weight: 400; line-height: 1.4; }
   .sm-hero p strong { color: rgba(255,255,255,.9); font-weight: 600; }
+  /* Rückweg zur Startseite: weißer Rand auf Blau, gefüllt erst beim Überfahren,
+     wie „Abmelden" in der Datenpflege. Er trägt vor allem beim Wechsel von einem
+     Werkzeug ins nächste. */
+  .hero-zurueck {
+    margin-left: auto; display: inline-flex; align-items: center; gap: 6px;
+    background: none; border: 1px solid rgba(255,255,255,.35); color: #fff;
+    border-radius: 6px; font-size: 11.5px; line-height: 16.5px; font-weight: 600;
+    padding: 5px 11px; text-decoration: none; white-space: nowrap; flex: none;
+  }
+  .hero-zurueck:hover { background: rgba(255,255,255,.12); }
+  /* ══ ENDE BAUSTEIN kopfleiste.css ══ */
+  /* Bis zur Entscheidung, ob die Anleitungszeile überall so umbricht: ausgewogene
+     Zeilen statt einer letzten mit nur einem Wort. Wirkt erst, wenn die Zeile im
+     schmalen Fenster umbricht (Stand 19.09.2026: auch in MediaSheet). */
+  .sm-hero p { text-wrap: pretty; }
   /* ── Daten-Leiste ──
      Sie steuert das Werkzeug und gehoert nicht zum Rechenblatt: deshalb steht sie
      ausserhalb der 1240 px breiten Spalte und nutzt die volle Fensterbreite, mit
