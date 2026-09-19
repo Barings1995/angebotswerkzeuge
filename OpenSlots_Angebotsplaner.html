@@ -1522,7 +1522,7 @@ function dateY(s,year){s=(s||'').trim();return /^\d{1,2}\.\d{1,2}\.$/.test(s)?s+
 // Excel-Arbeitsmappe -> { jahr: { J:[...], ISSUES:[...] } }
 function parseWorkbookToDataset(wb){
   const wsP=wb.getWorksheet('Preise');
-  if(!wsP)throw new Error('Im Excel fehlt das Tabellenblatt „Preise".');
+  if(!wsP)throw new Error('Im Excel fehlt das Tabellenblatt „Preise“.');
   const Y={};
   wsP.eachRow((row,rn)=>{
     if(rn===1)return;
@@ -1605,8 +1605,7 @@ async function onDataFileChosen(ev){
     await hinweis('Datei nicht lesbar',
       '<p>Die Datei konnte nicht gelesen werden:</p>'+
       '<p><b>'+esc(/Preise|Datenzeilen|Jahrgänge|Bibliothek/.test(roh)?roh:'Die Datei ist keine Excel-Datei (.xlsx).')+'</b></p>'+
-      '<p>Bitte ein Excel mit den Blättern „Preise" und „Termine" verwenden '+
-      '(z. B. die Angebotsdaten der Angebotsvorlage).</p>');
+      '<p>Bitte die Angebotsdaten.xlsx mit den Blättern „Preise“ und „Termine“ verwenden.</p>');
     syncDataUI();
   }finally{ev.target.value='';}
 }

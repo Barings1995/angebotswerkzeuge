@@ -1702,7 +1702,7 @@ function cellBool(cell) {
 // Excel-Arbeitsmappe → DATASET-Struktur
 function parseWorkbookToDataset(wb) {
   const wsP = wb.getWorksheet('Preise');
-  if (!wsP) throw new Error('Im Excel fehlt das Tabellenblatt „Preise".');
+  if (!wsP) throw new Error('Im Excel fehlt das Tabellenblatt „Preise“.');
   const ds = {};
   wsP.eachRow((row, rn) => {
     if (rn === 1) return;                       // Kopfzeile
@@ -1803,7 +1803,7 @@ async function onDataFileChosen(event) {
     await hinweis('Datei nicht lesbar',
       '<p>Die Datei konnte nicht gelesen werden:</p>'
       + '<p><b>' + esc(/Preise|Datenzeilen|Jahrgänge|Bibliothek/.test(roh) ? roh : 'Die Datei ist keine Excel-Datei (.xlsx).') + '</b></p>'
-      + '<p>Bitte eine Excel-Datei mit den Tabellenblättern „Preise" und „Termine" verwenden.</p>');
+      + '<p>Bitte die Angebotsdaten.xlsx mit den Blättern „Preise“ und „Termine“ verwenden.</p>');
     updateDataStatus(isCustomData ? `geladen: ${loadedFileName}` : 'Keine Daten geladen – bitte Angebotsdaten.xlsx laden', isCustomData);
   } finally {
     event.target.value = '';                     // erlaubt erneutes Laden derselben Datei

@@ -812,7 +812,7 @@ async function schreiben(pfad, methode, koerper, mindestens) {
   const soll = (mindestens === undefined) ? 1 : mindestens;
   if (anzahl < soll) {
     throw new Error(anzahl === 0
-      ? 'Die Datenbank hat nichts geändert. Das Konto ist vermutlich nicht freigegeben (Tabelle „berechtigt").'
+      ? 'Die Datenbank hat nichts geändert. Das Konto ist vermutlich nicht freigegeben (Tabelle „berechtigt“).'
       : ('Nur ' + anzahl + ' von ' + soll + ' Zeilen geschrieben.'));
   }
   return zurueck;
@@ -1368,7 +1368,7 @@ function alleFehler() {
     const name = String(t.name || '').trim();
     const menge = namenJeJahr[t.jahr] = namenJeJahr[t.jahr] || new Set();
     if (!name) fehler.push('Jahrgang ' + t.jahr + ': ein Titel ohne Namen');
-    else if (menge.has(name)) fehler.push('Der Titel „' + name + '" steht zweimal im Jahrgang ' + t.jahr + '.');
+    else if (menge.has(name)) fehler.push('Der Titel „' + name + '“ steht zweimal im Jahrgang ' + t.jahr + '.');
     else menge.add(name);
     const gesehen = new Set();
     (t.preis || []).forEach(p => {
@@ -1997,8 +1997,8 @@ function terminZeileLeer(a) {
 }
 /* Zwei Saetze statt Gedankenstrich: ein Strich kann beim Umbruch an den
    Zeilenanfang rutschen und steht dort wie ein Listenpunkt. (16.09.2026) */
-const NICHT_GESPEICHERT = '<p>Die Zeile wurde noch nicht gespeichert. Die Eingaben sind damit endg\u00fcltig weg; „Verwerfen" holt sie nicht zur\u00fcck.</p>';
-const ERST_MIT_SPEICHERN = '<p>Wirksam wird das erst mit „Speichern"; bis dahin holt „Verwerfen" es zur\u00fcck.</p>';
+const NICHT_GESPEICHERT = '<p>Die Zeile wurde noch nicht gespeichert. Die Eingaben sind damit endg\u00fcltig weg; „Verwerfen“ holt sie nicht zur\u00fcck.</p>';
+const ERST_MIT_SPEICHERN = '<p>Wirksam wird das erst mit „Speichern“; bis dahin holt „Verwerfen“ es zur\u00fcck.</p>';
 
 /* ── Ändern ───────────────────────────────────────────────────────────────── */
 function stammSetzen(feld, wert) {
@@ -2032,7 +2032,7 @@ async function preisEntfernen(id) {
   if (!p) return;
   const neu = !ursprungPreis(t, id);
   if (!(neu && preisZeileLeer(p)) && !await frage('Format entfernen?',
-    '<p>„' + esc(p.format || '') + '" wird aus der Preisliste genommen.</p>' +
+    '<p>„' + esc(p.format || '') + '“ wird aus der Preisliste genommen.</p>' +
     (neu ? NICHT_GESPEICHERT : ERST_MIT_SPEICHERN),
     'Entfernen')) return;
   t.preis = t.preis.filter(x => x.id !== id);
@@ -2106,11 +2106,11 @@ async function kategorieEntfernen(i) {
   const alleNeu = g.zeilen.every(p => !ursprungPreis(t, p.id));
   const alleLeer = g.zeilen.every(preisZeileLeer);
   if (!(alleNeu && alleLeer) && !await frage('Kategorie entfernen?',
-    '<p>„' + esc(g.kat) + '" wird mit <b>' + n + '</b> ' + (n === 1 ? 'Format' : 'Formaten') +
+    '<p>„' + esc(g.kat) + '“ wird mit <b>' + n + '</b> ' + (n === 1 ? 'Format' : 'Formaten') +
     ' aus der Preisliste genommen.</p>' +
     (alleNeu
-      ? '<p>' + (n === 1 ? 'Die Zeile wurde' : 'Die Zeilen wurden') + ' noch nicht gespeichert. Die Eingaben sind damit endg\u00fcltig weg; „Verwerfen" holt sie nicht zur\u00fcck.</p>'
-      : '<p>Wirksam wird das erst mit „Speichern"; bis dahin holt „Verwerfen" sie zur\u00fcck.</p>'),
+      ? '<p>' + (n === 1 ? 'Die Zeile wurde' : 'Die Zeilen wurden') + ' noch nicht gespeichert. Die Eingaben sind damit endg\u00fcltig weg; „Verwerfen“ holt sie nicht zur\u00fcck.</p>'
+      : '<p>Wirksam wird das erst mit „Speichern“; bis dahin holt „Verwerfen“ sie zur\u00fcck.</p>'),
     'Entfernen')) return;
   const weg = new Set(g.zeilen.map(p => p.id));
   t.preis = t.preis.filter(p => !weg.has(p.id));
@@ -2411,7 +2411,7 @@ function titelAnlegenOeffnen() {
   const vorFach = (gew && gew.fachbereich) || '';
   dialogZeigen('<h3>Titel anlegen</h3>' +
     '<div class="erklaerung">Der Titel entsteht im Jahrgang ' + esc(gewJahr) +
-      '. Wirksam wird er erst mit „Speichern".</div>' +
+      '. Wirksam wird er erst mit „Speichern“.</div>' +
     '<div class="dialog-zeile"><span>Titel</span>' +
       '<input id="taName" style="width:240px" oninput="titelAnlegenRechnen()"></div>' +
     '<div class="dialog-zeile"><span>Fachbereich</span><select id="taFach" onchange="titelAnlegenRechnen()">' +
@@ -2461,16 +2461,16 @@ function titelAnlegenRechnen() {
   if (!v.name) {
     text = 'Der Titel braucht einen Namen.'; gesperrt = true;
   } else if (titelDesJahres().some(t => String(t.name || '').trim() === v.name)) {
-    text = 'Der Titel „' + esc(v.name) + '" steht bereits im Jahrgang ' + esc(gewJahr) + '.'; gesperrt = true;
+    text = 'Der Titel „' + esc(v.name) + '“ steht bereits im Jahrgang ' + esc(gewJahr) + '.'; gesperrt = true;
   } else if (v.neuerFach && !v.fach) {
     text = 'Der neue Fachbereich braucht einen Namen.'; gesperrt = true;
   } else {
     text = '<b>' + esc(v.name) + '</b> wird angelegt' +
       (v.fach ? ', im Fachbereich <b>' + esc(v.fach) + '</b>' : ', ohne Fachbereich') + '.<br>' +
       (v.formate
-        ? '<b>' + v.formate + ' Formate</b> kommen ohne Preise von „' + esc(v.vorbild.name) + '" mit'
+        ? '<b>' + v.formate + ' Formate</b> kommen ohne Preise von „' + esc(v.vorbild.name) + '“ mit'
         : 'Formate entstehen keine') +
-      '; Ausgaben entstehen keine.<br>Wirksam wird das erst mit „Speichern".';
+      '; Ausgaben entstehen keine.<br>Wirksam wird das erst mit „Speichern“.';
   }
   kasten.innerHTML = text;
   knopf.disabled = gesperrt;
@@ -2495,14 +2495,14 @@ function titelAnlegenAusfuehren() {
   gewTitel = neu.id;
   dialogSchliessen();
   reiterWechseln('preise');
-  meldung('Titel „' + neu.name + '" angelegt — noch nicht gespeichert.');
+  meldung('Titel „' + neu.name + '“ angelegt — noch nicht gespeichert.');
 }
 
 async function titelNeuEntfernen() {
   const t = titelVonId(gewTitel);
   if (!t || !istNeu(t.id)) return;
   if (!await frage('Neuen Titel entfernen?',
-    '<p>„' + esc(t.name || '') + '" wird wieder entfernt.</p>' +
+    '<p>„' + esc(t.name || '') + '“ wird wieder entfernt.</p>' +
     '<p>Der Titel ist noch nicht gespeichert; andere offene Änderungen bleiben unberührt.</p>',
     'Entfernen')) return;
   ARBEIT = ARBEIT.filter(x => x.id !== t.id);
@@ -2545,7 +2545,7 @@ function titelLoeschenOeffnen() {
         : 'In keinem anderen Jahrgang steht dieser Titel.') +
       (letzter ? '<br>Es ist der <b>letzte Titel des Jahrgangs ' + esc(t.jahr) +
         '</b> — mit ihm verschwindet der Jahrgang aus der Auswahl.' : '') +
-      '<br>Wirksam wird das erst mit „Speichern"; bis dahin holt „Verwerfen" den Titel zurück.' +
+      '<br>Wirksam wird das erst mit „Speichern“; bis dahin holt „Verwerfen“ den Titel zurück.' +
     '</div>' +
     '<div class="dialog-knoepfe">' +
       '<button class="btn" onclick="dialogSchliessen()">Abbrechen</button>' +
@@ -2568,7 +2568,7 @@ function titelLoeschenAusfuehren() {
   gewTitel = e ? e.id : null;
   dialogSchliessen();
   zeichnen();
-  meldung('„' + name + '" gelöscht — wirksam mit „Speichern", zurück mit „Verwerfen".');
+  meldung('„' + name + '“ gelöscht — wirksam mit „Speichern“, zurück mit „Verwerfen“.');
 }
 
 /* ── Jahrgang loeschen ────────────────────────────────────────────────────────
@@ -2615,7 +2615,7 @@ function jahrgangLoeschenOeffnen() {
         '<br>Vor dem Löschen entsteht ein Sicherungspunkt. Die Sicherungspunkte dieses Jahrgangs ' +
         'bleiben erhalten, sind aber erst wieder erreichbar, wenn der Jahrgang neu angelegt ist — ' +
         'das ist der Weg zurück.' +
-        '<br><b>Gelöscht wird sofort.</b> „Verwerfen" hilft hier nicht.') +
+        '<br><b>Gelöscht wird sofort.</b> „Verwerfen“ hilft hier nicht.') +
     '</div>' +
     (sperrgrund ? '' :
       '<div class="dialog-zeile"><span>Zur Bestätigung die Jahreszahl eintippen</span>' +
@@ -2904,7 +2904,7 @@ function jahrgangAnlegenRechnen() {
     text = 'Der Jahrgang muss eine vierstellige Jahreszahl sein.'; gesperrt = true;
   } else if ((ARBEIT || []).some(t => t.jahr === v.ziel)) {
     text = 'Der Jahrgang ' + esc(v.ziel) + ' besteht bereits. Anlegen legt an — ersetzt wird über ' +
-           '„Preise fortschreiben" oder den Excel-Eingang, beide mit Sicherungspunkt.'; gesperrt = true;
+           '„Preise fortschreiben“ oder den Excel-Eingang, beide mit Sicherungspunkt.'; gesperrt = true;
   } else if (!v.quellen.length) {
     text = 'Der Vorlagejahrgang enthält keine Titel.'; gesperrt = true;
   } else {
@@ -3237,7 +3237,7 @@ function abzugLesen(mappe, dateiname) {
     if (!jahr || !name || !fmt) return;
     const kat = zelleText(zeile.getCell(4)) || 'Sonstige';
     const schl = jahr + '|' + name + '|' + kat + '|' + fmt;
-    if (gesehen.has(schl)) { beanstandet.push('Zeile ' + nr + ': „' + fmt + '" steht bei ' + name + ' zweimal in derselben Kategorie'); return; }
+    if (gesehen.has(schl)) { beanstandet.push('Zeile ' + nr + ': „' + fmt + '“ steht bei ' + name + ' zweimal in derselben Kategorie'); return; }
     gesehen.add(schl);
     const preis = zelleZahl(zeile.getCell(6)), zuschlag = zelleZahl(zeile.getCell(7));
     const eq = zelleZahl(zeile.getCell(12));
@@ -3276,7 +3276,7 @@ function abzugLesen(mappe, dateiname) {
     if (t.termine.some(a => a.heft === heft)) { beanstandet.push('Termine, Zeile ' + nr + ': ' + heftText(heft) + ' steht bei ' + name + ' zweimal'); return; }
     ['et', 'anzeigenschluss', 'du_schluss', 'eh_termin'].forEach((f, i) => {
       const w = zelleText(zeile.getCell(5 + i));
-      if (!terminGueltig(w)) beanstandet.push('Termine, Zeile ' + nr + ': „' + w + '" ist kein Termin der Form TT.MM.');
+      if (!terminGueltig(w)) beanstandet.push('Termine, Zeile ' + nr + ': „' + w + '“ ist kein Termin der Form TT.MM.');
     });
     t.termine.push({ reihenfolge: t.termine.length + 1, heft: heft,
       monat: zelleText(zeile.getCell(4)), et: zelleText(zeile.getCell(5)),
@@ -3335,17 +3335,17 @@ function ergNorm(text) {
 function ergaenzungLesen(mappe, dateiname) {
   const kopf = ergKopfSuchen(mappe);
   if (!kopf) {
-    throw new Error('Die Datei ist weder ein vollständiger Abzug (Blatt „Preise") ' +
-      'noch eine Ergänzung: In den ersten zwölf Zeilen steht keine Kopfzeile mit „Titel" und „Heft".');
+    throw new Error('Die Datei ist weder ein vollständiger Abzug (Blatt „Preise“) ' +
+      'noch eine Ergänzung: In den ersten zwölf Zeilen steht keine Kopfzeile mit „Titel“ und „Heft“.');
   }
   const { blatt, kopfzeile, spalten } = kopf;
   const inhalt = ERG_INHALT.filter(f => spalten[f]);
   if (!inhalt.length) {
     throw new Error('In der Kopfzeile fehlt die Spalte, die ergänzt werden soll — ' +
-      '„Themenschwerpunkte" oder „Kongresse".');
+      '„Themenschwerpunkte“ oder „Kongresse“.');
   }
   if (!spalten.jahr) {
-    throw new Error('In der Kopfzeile fehlt die Spalte „Jahrgang". Ohne sie ist nicht ' +
+    throw new Error('In der Kopfzeile fehlt die Spalte „Jahrgang“. Ohne sie ist nicht ' +
       'erkennbar, welcher Jahrgang gemeint ist.');
   }
 
@@ -3501,7 +3501,7 @@ function ergaenzungBerichtZeigen() {
 
   dialogZeigen(
     '<h3>Aus Excel laden</h3>' +
-    '<div class="erklaerung">' + esc(st.dateiname) + ' · Blatt „' + esc(st.blatt) + '"<br>' +
+    '<div class="erklaerung">' + esc(st.dateiname) + ' · Blatt „' + esc(st.blatt) + '“<br>' +
     '<b>Ergänzung, kein vollständiger Abzug.</b> Preise und Erscheinungstermine bleiben unangetastet.</div>' +
     '<div class="dialog-zeile"><span>Jahrgang ' + (st.jahre.length ? st.jahre.map(esc).join(', ') : '—') +
       '</span><span style="color:var(--grey-600)">' + st.unveraendert + ' Angaben schon so vorhanden</span></div>' +

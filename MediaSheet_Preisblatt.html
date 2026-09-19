@@ -1030,7 +1030,7 @@ function mappeZuBestand(mappe){
   const B = {};
   const bl = (name) => mappe.getWorksheet(name);
   const preise = bl('Preise'), termine = bl('Termine');
-  if(!preise) throw new Error('Blatt „Preise" fehlt.');
+  if(!preise) throw new Error('Im Excel fehlt das Tabellenblatt „Preise“.');
 
   const fach = (jahr, titel, wert) => {
     if(!B[jahr]) B[jahr] = {};
