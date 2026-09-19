@@ -625,6 +625,9 @@ button, input, select, textarea { font-family: inherit; }
    Einklappen ab (bei eingeklappter letzter Rubrik deren Kopfzeile) - deshalb nicht
    :last-child, sondern: sichtbar, und keine sichtbare Zeile folgt mehr. */
 .mx-karte .mx tbody tr:not(.hidden):not(:has(~ tr:not(.hidden))) > * { border-bottom:none; }
+/* Die Zelle unten rechts folgt der Kartenrundung (10 px abzueglich 1 px Rahmen).
+   Sonst schnitt die Karte den orangen Hover-Ring dort eckig ab. */
+.mx-karte .mx tbody tr:not(.hidden):not(:has(~ tr:not(.hidden))) > :last-child { border-bottom-right-radius:calc(var(--radius-lg) - 1px); }
 /* Das Rollfeld beginnt je nach Browser-Zoom auf einem Bruchteil eines Geraetepixels.
    Chrome rundet die klebenden Teile (Kopf, Platzierungsspalte) auf ganze Pixel, den
    durchlaufenden Inhalt nicht - an der Ober- und der linken Kante blieb so eine
