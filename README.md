@@ -27,8 +27,8 @@ Browser aus `file://` heraus keine Nachbardateien lesen darf.
 |---|---|
 | `index.html` | Startseite mit den vier Werkzeugen und dem Stand der Preisliste |
 | `OpenSlots_Angebotsplaner.html` | Platzierungen über die Ausgaben eines Jahrgangs ankreuzen |
-| `MediaQuote_Angebotsvorlage.html` | Angebot mit Positionen, Rabatt und Summen; Farbzuschlag getrennt ausgewiesen (s/w-Preis, 4c-Zuschlag, 4c-Preis) |
-| `MediaQuote_Angebotsvorlage_4C.html` | dieselbe Vorlage mit einer einzigen Preisspalte (nur 4c-Preis) |
+| `MediaQuote_Angebotsvorlage.html` | Angebot mit Positionen, Rabatt und Summen. Zwei Ansichten: „s/w und 4C" (s/w-Preis, 4c-Zuschlag, 4c-Preis; Rabatt nur auf den s/w-Preis) und „nur 4C" (ein Preis, von Hand überschreibbar). Die Wahl steht nur bei Jahrgängen mit 4c-Zuschlag zur Verfügung |
+| `MediaQuote_Angebotsvorlage_4C.html` | nur Weiterleitung: bis zum 19.09.2026 die eigene Fassung „nur 4C" |
 | `PreisWerk_Paketrechner.html` | Formate mehrerer Titel zu einem Paket rechnen: Staffelrabatt titelübergreifend innerhalb eines Fachbereichs, AE-Provision, Ersparnis |
 | `Angebotsvorlage_Print*.html` | nur Weiterleitungen: die Vorlagen hießen bis zum 14.08.2026 so. Können entfallen, sobald keine Lesezeichen mehr darauf zeigen |
 | `Datenpflege.html` | Preise und Termine pflegen — mit Anmeldung, siehe unten |

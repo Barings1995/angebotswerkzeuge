@@ -35,7 +35,11 @@
      drei Karten stehen darin auf rund 376 px, also bequem über ihrer Mindestbreite.
      Ist das Fenster schmaler, gehen die Spalten auf zwei und zuletzt auf eine zurück.
      Die Textblöcke bleiben schmal (siehe die ch-Angaben bei .intro und .hinweise),
-     die Breite gilt den Karten. */
+     die Breite gilt den Karten.
+     Seit dem 19.09.2026 sind es wieder vier Karten (die beiden MediaQuote-Fassungen
+     sind eine geworden). Vier passen in eine Reihe: 4 × 258 px und 3 × 16 px Abstand
+     sind 1080 px, die Inhaltsbreite gibt 1108 px her. Darunter stehen zwei und zwei
+     statt drei und eine allein, zuletzt eine je Reihe. */
   main{max-width:1160px; margin:0 auto; padding:38px 26px 60px}
   h1{
     font-family:'Playfair Display',Georgia,serif; font-weight:600;
@@ -53,8 +57,8 @@
   .stand b{color:var(--sm-text); font-weight:600}
   .stand .punkt{width:7px; height:7px; border-radius:50%; background:var(--sm-blue)}
   .stand.fehlt .punkt{background:var(--sm-orange)}
-  .karten{display:grid; grid-template-columns:repeat(3,1fr); gap:16px}
-  @media (max-width:900px){ .karten{grid-template-columns:repeat(2,1fr)} }
+  .karten{display:grid; grid-template-columns:repeat(4,1fr); gap:16px}
+  @media (max-width:1140px){ .karten{grid-template-columns:repeat(2,1fr)} }
   @media (max-width:620px){ .karten{grid-template-columns:1fr} }
   a.karte{
     display:flex; flex-direction:column; text-decoration:none; color:inherit;
@@ -104,7 +108,7 @@
 <main>
   <h1>Angebotswerkzeuge</h1>
   <p class="intro">
-    F&uuml;nf Werkzeuge f&uuml;r Platzierungs- und Preisangebote der Printtitel &ndash;
+    Vier Werkzeuge f&uuml;r Platzierungs- und Preisangebote der Printtitel &ndash;
     mit einer gemeinsamen Preisliste, die hier hinterlegt ist und nicht mehr von Hand
     geladen werden muss.
   </p>
@@ -123,16 +127,9 @@
     </a>
     <a class="karte" href="MediaQuote_Angebotsvorlage.html">
       <h2>MediaQuote</h2>
-      <div class="zusatz">Angebotsvorlage &middot; s/w und 4C</div>
-      <p>Angebot mit Positionen, Rabatt und Summen &ndash; mit getrenntem Ausweis
-         des Farbzuschlags (s/w-Preis, 4c-Zuschlag, 4c-Preis).</p>
-      <span class="mehr">&ouml;ffnen &rarr;</span>
-    </a>
-    <a class="karte" href="MediaQuote_Angebotsvorlage_4C.html">
-      <h2>MediaQuote</h2>
-      <div class="zusatz">Angebotsvorlage &middot; nur 4C</div>
-      <p>Dieselbe Vorlage mit einer einzigen Preisspalte &ndash; f&uuml;r Titel,
-         die nur noch einen 4c-Preis f&uuml;hren.</p>
+      <div class="zusatz">Angebotsvorlage</div>
+      <p>Angebot mit Positionen, Rabatt und Summen &ndash; bei Titeln mit Farbzuschlag
+         wahlweise mit s/w-Preis und Zuschlag in eigenen Spalten.</p>
       <span class="mehr">&ouml;ffnen &rarr;</span>
     </a>
     <a class="karte" href="PreisWerk_Paketrechner.html">

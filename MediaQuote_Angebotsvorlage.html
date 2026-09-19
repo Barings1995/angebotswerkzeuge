@@ -411,12 +411,15 @@ button, input, select, textarea { font-family: inherit; }
     white-space: normal;
     word-break: break-word;
   }
-  .positions-table th:nth-child(5),
-  .positions-table th:nth-child(6),
-  .positions-table th:nth-child(7),
-  .positions-table th:nth-child(8),
-  .positions-table th:nth-child(9),
-  .positions-table th:nth-child(10) { text-align: right; }
+  /* Betragsspalten rechtsbuendig. Nach Klassen statt nach Platz (nth-child): seit
+     der Zusammenlegung stehen die Spalten beider Ansichten im Geruest, die der
+     anderen Ansicht ausgeblendet, und zaehlen beim Abzaehlen mit. */
+  .positions-table th.col-sw,
+  .positions-table th.col-z4c,
+  .positions-table th.col-ep,
+  .positions-table th.col-rabatt,
+  .positions-table th.col-ae,
+  .positions-table th.col-gp { text-align: right; }
 
   .positions-table td {
     padding: 5px 5px;
@@ -429,6 +432,9 @@ button, input, select, textarea { font-family: inherit; }
   .positions-table td.gp-cell {
     padding-top: 10px;
   }
+  /* Preisfeld-Kästchen (.price-input) bringt Rahmen+Innenabstand mit → 4 px weniger Zell-Abstand,
+     damit die Zahl auf Höhe der Dropdowns/anderen €-Beträge sitzt */
+  .positions-table td.preis-hand { padding-top: 6px; }
   .positions-table tr:nth-child(even) td { background: var(--light-bg); }
   .positions-table tr:hover td { background: #eef2f8; }
 
@@ -458,6 +464,10 @@ button, input, select, textarea { font-family: inherit; }
   .col-titel  { width: 170px; }
   .col-fmt    { width: 210px; }
   .col-datum  { width: 135px; }
+  /* Ansicht „nur 4C": ohne die beiden s/w-Spalten ist Platz, die Termine stehen
+     in einer Zeile (ET oben in der Ausgabe, darunter AS und DU/Anlieferung). */
+  .ansicht-4c .col-fmt   { width: 200px; }
+  .ansicht-4c .col-datum { width: 185px; }
   .sel-label {
     white-space: normal;
     word-break: break-word;
@@ -494,6 +504,7 @@ button, input, select, textarea { font-family: inherit; }
     line-height: 1.4;
   }
   .termin-label:empty { display: none; }
+  .ansicht-4c .termin-label { white-space: nowrap; }
   .col-sw     { width: 88px; text-align: right; }
   .col-z4c    { width: 88px; text-align: right; }
   .col-ep     { width: 118px; text-align: right; }
@@ -504,6 +515,15 @@ button, input, select, textarea { font-family: inherit; }
 
   /* ── Toggle columns ── */
   .col-hidden { display: none !important; }
+
+  /* ── Zwei Ansichten in einer Datei ──
+     Bis zum 19.09.2026 waren es zwei Dateien: „s/w und 4C" (s/w-Preis, abwaehlbarer
+     4c-Zuschlag, Rabatt nur auf den s/w-Preis) und „nur 4C" (ein Preis, von Hand
+     ueberschreibbar, Rabatt und AE auf den vollen Preis). Jede Zeile traegt die
+     Zellen beider Ansichten; angezeigt werden die der geltenden. So bleibt beim
+     Umschalten alles erhalten, auch ein von Hand gesetzter Preis. */
+  .ansicht-4c .nur-sw,
+  body:not(.ansicht-4c) .nur-4c { display: none; }
 
   .th-ctrl {
     display: flex;
@@ -602,6 +622,23 @@ button, input, select, textarea { font-family: inherit; }
     transition: background 0.15s;
   }
   .btn-del:hover { background: #fdecea; }
+
+  /* Preis als dauerhaft erkennbares Eingabefeld (wie die Dropdowns), von Hand überschreibbar */
+  .price-input {
+    display: inline-block;
+    min-width: 80px;
+    padding: 3px 7px;
+    border: 1px solid #c9d2de;
+    border-radius: var(--radius-sm);
+    background: #fff;
+    cursor: text;
+  }
+  .price-input:hover { border-color: #9aa7b6; }
+  .price-input:focus {
+    outline: none;
+    border-color: var(--navy);
+    box-shadow: 0 0 0 2px rgba(0,40,90,0.12);
+  }
 
   .checkbox-4c {
     width: 15px; height: 15px;
@@ -917,6 +954,7 @@ button, input, select, textarea { font-family: inherit; }
     .umfeld-label { display: block; font-size: 10.5px; font-style: italic; color: var(--springer-blue); margin-top: 1px; line-height: 1.2; white-space: pre-wrap; }
     .umfeld-label:empty { display: none; }
     .termin-label { display: block; font-size: 10px; color: var(--springer-blue); margin-top: 1px; line-height: 1.25; white-space: pre-line; }
+    .ansicht-4c .termin-label { white-space: nowrap; }
     .termin-label:empty { display: none; }
     .adress-box-text,
     .bemerkungen-text {
@@ -937,6 +975,14 @@ button, input, select, textarea { font-family: inherit; }
     .positions-table td.price-cell,
     .positions-table td.deduct-cell,
     .positions-table td.gp-cell { padding-top: 3px; }
+    /* Feld-Optik des Preisfeldes im Druck/PDF unsichtbar machen – nur die Zahl bleibt */
+    .price-input, .price-input:hover, .price-input:focus {
+      border: none !important;
+      background: transparent !important;
+      box-shadow: none !important;
+      padding: 0 !important;
+      min-width: 0 !important;
+    }
 
     /* Verdichtetes Layout fuer mehr Positionen pro Seite (nur Druck/PDF, Bildschirm unveraendert) */
     .header { margin-bottom: 12px; padding-bottom: 8px; }
@@ -1000,7 +1046,7 @@ button, input, select, textarea { font-family: inherit; }
       <div class="sm-hero-div"></div>
       <div>
         <h1>Media<span class="sm-hero-mark">Quote</span></h1>
-        <div class="sm-hero-sub">Angebotsvorlage &middot; s/w und 4C</div>
+        <div class="sm-hero-sub">Angebotsvorlage</div>
       </div>
       <a class="hero-zurueck" href="index.html" title="Zur Übersicht der Angebotswerkzeuge">
         <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 12H5"/><path d="m12 19-7-7 7-7"/></svg>
@@ -1039,8 +1085,9 @@ button, input, select, textarea { font-family: inherit; }
     </button>
   </span>
   <span class="bar-grp">
-    <span class="col-toggles" title="Spalten Rabatt / AE ein- oder ausblenden">
+    <span class="col-toggles" title="Spalten ein- oder ausblenden">
       <span class="ct-label">Spalten:</span>
+      <label id="ansichtWahl" title="Nur bei Jahrgängen mit 4c-Zuschlag. Mit Haken: s/w-Preis und 4c-Zuschlag in eigenen Spalten, Rabatt nur auf den s/w-Preis. Ohne Haken: ein Preis, von Hand überschreibbar, Rabatt und AE auf den vollen Preis."><input type="checkbox" id="chkAnsicht" checked onchange="onAnsichtToggle(this.checked)"> s/w + 4c-Zuschlag</label>
       <label><input type="checkbox" id="colchk-rabatt" checked onchange="onColToggle('rabatt', this.checked)"> Rabatt</label>
       <label><input type="checkbox" id="colchk-ae" checked onchange="onColToggle('ae', this.checked)"> AE</label>
     </span>
@@ -1134,9 +1181,9 @@ button, input, select, textarea { font-family: inherit; }
         <th class="col-titel">Titel</th>
         <th class="col-datum">Ausgabe / Termine</th>
         <th class="col-fmt">Format / Platzierung</th>
-        <th class="col-sw">s/w-Preis (€)</th>
-        <th class="col-z4c">4c-Zuschlag (€)</th>
-        <th class="col-ep">4c-Preis (€)</th>
+        <th class="col-sw nur-sw">s/w-Preis (€)</th>
+        <th class="col-z4c nur-sw">4c-Zuschlag (€)</th>
+        <th class="col-ep" id="thPreis">4c-Preis (€)</th>
         <th class="col-rabatt">
           <div class="th-ctrl">
             Rabatt
@@ -1344,6 +1391,73 @@ function heftText(heft) {
   return istHeftnummer(h) ? 'Heft ' + h : h;
 }
 
+// ─────────────────────────────────────────
+//  Ansicht: „s/w und 4C" oder „nur 4C"
+// ─────────────────────────────────────────
+// Bis zum 19.09.2026 zwei Dateien, seither eine. Der Haken „s/w + 4c-Zuschlag" steht nur
+// da, solange der gewählte Jahrgang einen 4c-Zuschlag kennt (2026); ohne Zuschlag gibt
+// es nichts zu trennen, und es gilt die Ansicht „nur 4C". Vorbelegt ist die zuletzt
+// gewählte Ansicht; ein geöffnetes Angebot bringt seine eigene mit.
+const ANSICHT_KEY = 'onkoAngebotAnsicht';
+let ansichtSw = (() => {
+  try { return localStorage.getItem(ANSICHT_KEY) !== '4c'; } catch (e) { return true; }
+})();
+function jahrgangHatZuschlag() {
+  return Object.values(TITEL_DATA).some(t => t && t.hat4c);
+}
+// Gilt gerade „s/w und 4C"? Sonst „nur 4C".
+function swAktiv() { return ansichtSw && jahrgangHatZuschlag(); }
+function ansichtMerken() {
+  try { localStorage.setItem(ANSICHT_KEY, ansichtSw ? 'sw4c' : '4c'); } catch (e) {}
+}
+// Nur Leiste und Tabellenkopf; nach jedem Jahrgangswechsel, bevor Zeilen entstehen.
+function ansichtSetzen() {
+  const zuschlag = jahrgangHatZuschlag();
+  document.body.classList.toggle('ansicht-4c', !(ansichtSw && zuschlag));
+  const wahl = document.getElementById('ansichtWahl');
+  if (wahl) wahl.style.display = zuschlag ? '' : 'none';
+  const chk = document.getElementById('chkAnsicht');
+  if (chk) chk.checked = ansichtSw;
+  // Ganzer Text statt eines ausgeblendeten Vorsatzes „4c-": so wird die Überschrift
+  // wie früher in einem Zug gesetzt (mit getrenntem Vorsatz rückte sie im PDF um
+  // einen Hauch).
+  const th = document.getElementById('thPreis');
+  if (th) th.textContent = (ansichtSw && zuschlag) ? '4c-Preis (€)' : 'Preis (€)';
+}
+// Umschalten: die Ausgabezeile (mit oder ohne ET) und die Termine je Zeile neu
+// schreiben, dann neu rechnen. Auswahl, Preise und Eingaben bleiben stehen.
+function ansichtAnwenden() {
+  ansichtSetzen();
+  document.querySelectorAll('#posBody tr[id^="row-"]').forEach(tr => {
+    const id = parseInt(tr.id.replace('row-', ''));
+    const dSel = document.getElementById('datum-' + id);
+    if (!id || !dSel) return;
+    const wert = dSel.value;
+    dSel.innerHTML = buildAusgabeOptions(document.getElementById('titel-' + id)?.value);
+    if ([...dSel.options].some(o => o.value === wert)) dSel.value = wert;
+    const lbl = document.getElementById('datum-lbl-' + id);
+    if (lbl && (wert || lbl.textContent)) lbl.textContent = dSel.options[dSel.selectedIndex]?.text || '';
+    updateTerminLabel(id);
+  });
+  recalcAll();
+}
+function onAnsichtToggle(checked) {
+  ansichtSw = checked;
+  ansichtMerken();
+  ansichtAnwenden();
+}
+/* Ansicht eines gespeicherten Angebots (oder Arbeitsstands). Seit der Zusammenlegung
+   steht sie darin; ältere Dateien verraten sie am 4c-Zuschlag: die Fassung „s/w und 4C"
+   hat ihn in jeder Position mitgeschrieben, die Fassung „nur 4C" nie. Ohne Positionen
+   bleibt es bei der gewählten Ansicht (null). */
+function ansichtAusAngebot(data) {
+  if (data.ansicht === 'sw4c') return true;
+  if (data.ansicht === '4c') return false;
+  const pos = (data.positions || []).filter(p => p && p.titel);
+  if (!pos.length) return null;
+  return pos.some(p => p.z4c != null);
+}
+
 function onZ4cChange(id) {
   const z4cSel = document.getElementById('z4c-sel-' + id);
   const lbl    = document.getElementById('z4c-lbl-' + id);
@@ -1352,7 +1466,7 @@ function onZ4cChange(id) {
   const z4cCell = document.getElementById('z4c-' + id);
   const gpSw    = parseFloat(z4cCell.dataset.gpSw);
   const z4cVal  = parseFloat(z4cSel.value) || 0;
-  const epCell  = document.getElementById('ep-' + id);
+  const epCell  = document.getElementById('ep4c-' + id);
   if (!isNaN(gpSw)) {
     const z4cMax = parseFloat(z4cCell.dataset.z4cMax) || 0;
     epCell.textContent = (z4cMax > 0 && z4cVal === 0) ? '–' : formatEur(gpSw + z4cVal);
@@ -1380,7 +1494,7 @@ function buildAusgabeOptions(titelName) {
     ausgaben.map(a =>
       `<option value="${esc(heftText(a.heft) + '/' + a.monat.slice(0,3) + '.')}"` +
       ` data-et="${esc(a.et || '')}" data-as="${esc(a.as || '')}" data-du="${esc(a.du || '')}" data-eh="${esc(a.eh || '')}">` +
-      `${esc(heftText(a.heft))} · ${esc(a.monat)}</option>`
+      `${esc(heftText(a.heft))} · ${esc(a.monat)}${!swAktiv() && a.et ? ' · ET ' + esc(a.et) : ''}</option>`
     ).join('');
 }
 
@@ -1474,6 +1588,7 @@ function applyYear(year) {
   currentYear   = year;
   TITEL_DATA    = DATASET[year].titel;
   AUSGABEN_DATA = DATASET[year].ausgaben || {};
+  ansichtSetzen();   // kennt der Jahrgang keinen 4c-Zuschlag, gilt „nur 4C"
   const sel = document.getElementById('yearSelect');
   if (sel && sel.value !== year) sel.value = year;
   document.querySelectorAll('#posBody tr').forEach(tr => {
@@ -1970,10 +2085,14 @@ function loadAbsender() {
 // Preisdaten liegen bereits unter CACHE_KEY, doppelt wäre nur Ballast. Was der
 // Browser-Speicher nicht halten kann, ist der Zeiger auf eine geöffnete Angebotsdatei:
 // „Speichern" fragt nach einem Neustart deshalb nach einer Datei.
-// Eigener Schlüssel je Fassung: s/w und 4C sind zwei Dokumente, der zuletzt
-// bearbeitete Stand der einen darf nicht in der anderen auftauchen. Die
-// Preisdaten (CACHE_KEY) teilen sie sich dagegen bewusst – es ist dieselbe Excel.
+// Bis zur Zusammenlegung am 19.09.2026 hatte jede Fassung ihren eigenen Schlüssel;
+// die Preisdaten (CACHE_KEY) teilten sie sich schon immer. Seither gilt der Schlüssel
+// der Fassung „s/w und 4C". Beim ersten Start danach gilt der jüngere der beiden Stände
+// (restoreStand). Der Stand der Fassung „nur 4C" bleibt unberührt liegen; war er der
+// jüngere, wird der ältere unter STAND_KEY vorher beiseitegelegt statt überschrieben.
 const STAND_KEY = 'onkoAngebotStand';
+const STAND_KEY_4C = 'onkoAngebotStand4c';
+const STAND_4C_GESEHEN = 'onkoAngebotStand4cUebernommen';
 let standTimer = null;
 function saveStand() {
   if (standTimer) clearTimeout(standTimer);
@@ -1990,13 +2109,25 @@ function clearStand() {
   if (standTimer) { clearTimeout(standTimer); standTimer = null; }
   try { localStorage.removeItem(STAND_KEY); } catch (e) {}
 }
+function standLesen(key) {
+  try {
+    const s = JSON.parse(localStorage.getItem(key) || 'null');
+    return (s && s.app === 'Angebotsvorlage' && s.form) ? s : null;
+  } catch (e) { return null; }
+}
 function restoreStand() {
   try {
-    const raw = localStorage.getItem(STAND_KEY);
-    if (!raw) return;
-    const stand = JSON.parse(raw);
-    if (!stand || stand.app !== 'Angebotsvorlage' || !stand.form) return;
     if (!Object.keys(DATASET).length) return;      // ohne Preisdaten keine Positionen
+    let stand = standLesen(STAND_KEY);
+    if (!localStorage.getItem(STAND_4C_GESEHEN)) {
+      const vierC = standLesen(STAND_KEY_4C);
+      if (vierC && (!stand || String(vierC.savedAt || '') > String(stand.savedAt || ''))) {
+        if (stand) localStorage.setItem(STAND_KEY + 'VorZusammenlegung', JSON.stringify(stand));
+        stand = vierC;
+      }
+      localStorage.setItem(STAND_4C_GESEHEN, '1');
+    }
+    if (!stand) return;
     // Der Stand gehört zu seinem Jahrgang – erst dorthin wechseln, dann aufbauen.
     if (stand.currentYear && DATASET[stand.currentYear] && stand.currentYear !== currentYear) {
       applyYear(stand.currentYear);
@@ -2021,6 +2152,7 @@ window.addEventListener('DOMContentLoaded', async () => {
   const fromCache = loadCache();
   rebuildYearDropdown();
   applyYear(currentYear);
+  ansichtSetzen();   // auch ohne Preisdaten (dann ohne Haken, wie ohne 4c-Zuschlag)
   updateDataStatus(
     fromCache
       ? (loadedFileName ? `aus Browser-Speicher: ${loadedFileName}${datenStand}` : `zuletzt geladene Daten (Browser-Speicher)${datenStand}`)
@@ -2125,14 +2257,20 @@ function addPosition() {
       <textarea class="umfeld-input" id="umfeld-${id}" rows="1" placeholder="+ Platzierung/sonstige Info." aria-label="Platzierung (optional)" oninput="onUmfeldChange(${id})"></textarea>
       <div class="umfeld-label" id="umfeld-lbl-${id}"></div>
     </td>
-    <td class="col-sw price-cell" id="sw-${id}">–</td>
-    <td class="col-z4c" id="z4c-${id}" data-gp-sw="" data-z4c-max="">
+    <td class="col-sw price-cell nur-sw" id="sw-${id}">–</td>
+    <td class="col-z4c nur-sw" id="z4c-${id}" data-gp-sw="" data-z4c-max="">
       <select id="z4c-sel-${id}" onchange="onZ4cChange(${id})" style="font-size:11px;">
         <option value="0">–</option>
       </select>
       <div class="sel-label" id="z4c-lbl-${id}"></div>
     </td>
-    <td class="col-ep price-cell" id="ep-${id}">–</td>
+    <td class="col-ep price-cell nur-sw" id="ep4c-${id}">–</td>
+    <td class="col-ep price-cell preis-hand nur-4c">
+      <span class="price-input" id="ep-${id}" data-price="" contenteditable="true"
+            spellcheck="false" title="Preis anklicken, um ihn von Hand zu überschreiben"
+            onblur="onPriceEdit(${id})"
+            onkeydown="if(event.key==='Enter'){event.preventDefault();this.blur();}">–</span>
+    </td>
     <td class="col-rabatt deduct-cell" id="rabatt-${id}">–</td>
     <td class="col-ae deduct-cell" id="ae-${id}">–</td>
     <td class="col-gp gp-cell" id="gp-${id}">–</td>
@@ -2246,6 +2384,12 @@ function updateTerminLabel(id) {
   if (!lbl) return;
   const datumSel = document.getElementById('datum-' + id);
   const opt = (datumSel && datumSel.selectedIndex >= 0) ? datumSel.options[datumSel.selectedIndex] : null;
+  const sw = swAktiv();
+  if (!sw) {
+    // „nur 4C": die Ausgabe-Zeile trägt den ET schon im Options-Text → immer daraus
+    const datumLbl = document.getElementById('datum-lbl-' + id);
+    if (datumLbl) datumLbl.textContent = opt ? (opt.text || '') : '';
+  }
   if (!opt || !opt.value) { lbl.textContent = ''; return; }
   const et = (opt.dataset.et || '').trim();
   const as = (opt.dataset.as || '').trim();
@@ -2256,6 +2400,16 @@ function updateTerminLabel(id) {
   const titel = document.getElementById('titel-' + id)?.value || '';
   const fmt   = document.getElementById('fmt-'   + id)?.value || '';
   const art   = terminArt(titel, fmt);
+  if (!sw) {
+    // „nur 4C": in EINER Zeile der Anzeigenschluss und der Termin, der für das
+    // gewählte Format gilt (CSS white-space:nowrap verhindert den Umbruch)
+    const parts = [];
+    if (as) parts.push('AS' + NB + as);
+    if (art === 'EH' && eh) parts.push('Anlieferung' + NB + eh);
+    if (art === 'DU' && du) parts.push('DU' + NB + du);
+    lbl.textContent = parts.join(' · ');
+    return;
+  }
   const zeile1 = [];
   if (et) zeile1.push('ET' + NB + et);
   if (as) zeile1.push('AS' + NB + as);
@@ -2295,7 +2449,8 @@ function onFormatChange(id) {
   const swCell  = document.getElementById('sw-'      + id);
   const z4cCell = document.getElementById('z4c-'     + id);
   const z4cSel  = document.getElementById('z4c-sel-' + id);
-  const epCell  = document.getElementById('ep-'      + id);
+  const epCell  = document.getElementById('ep4c-'    + id);   // „s/w und 4C": 4c-Preis
+  const preisEl = document.getElementById('ep-'      + id);   // „nur 4C": Preisfeld
   const rabCell = document.getElementById('rabatt-'  + id);
   const aeCell  = document.getElementById('ae-'      + id);
   const blocked   = isRabattBlocked(titel, fmt);
@@ -2323,12 +2478,20 @@ function onFormatChange(id) {
       const z4cSelected = parseFloat(z4cSel.value) || 0;
       epCell.textContent = (z4cStored > 0 && z4cSelected === 0) ? '–' : formatEur(gpSw + z4cSelected);
     }
+    // „nur 4C": ein Preis, der volle 4C-Preis = Grundpreis + (evtl.) 4C-Zuschlag
+    const preis = gpSw + z4cStored;
+    preisEl.dataset.price  = preis;
+    preisEl.dataset.manual = '';   // Format-/Titelwechsel lädt Katalogpreis → Handmarke entfernen
+    preisEl.textContent    = formatEur(preis);
   } else {
     swCell.textContent       = '–';
     z4cSel.innerHTML         = '<option value="0" disabled selected>–</option>';
     z4cCell.dataset.gpSw     = '';
     z4cCell.dataset.z4cMax   = '';
     epCell.textContent       = '–';
+    preisEl.dataset.price    = '';
+    preisEl.dataset.manual   = '';
+    preisEl.textContent      = '–';
   }
 
   if (blocked) {
@@ -2352,6 +2515,26 @@ function onFormatChange(id) {
   onAnzahlChange(id);
 }
 
+// ─────────────────────────────────────────
+//  Preis von Hand überschreiben (Ansicht „nur 4C", contenteditable-Zelle)
+// ─────────────────────────────────────────
+function onPriceEdit(id) {
+  const epCell = document.getElementById('ep-' + id);
+  if (!epCell) return;
+  const wert = parseEur(epCell.textContent);   // null bei leer/„–"/ungültig
+  if (wert !== null && !isNaN(wert) && wert >= 0) {
+    // Gültige Handeingabe übernehmen und sauber formatieren
+    epCell.dataset.price  = wert;
+    epCell.dataset.manual = '1';
+    epCell.textContent    = formatEur(wert);
+    onAnzahlChange(id);
+  } else {
+    // Leer/ungültig → Handmarke weg, Katalogpreis wiederherstellen (ruft intern onAnzahlChange)
+    epCell.dataset.manual = '';
+    onFormatChange(id);
+  }
+}
+
 /* ══ RECHNUNG ══════════════════════════════════════════════════════════════════
    Rabatt, AE und Summen ohne Zugriff auf die Seite: onAnzahlChange und recalcTotal
    lesen Preis, Kopf-Prozente, Sperren und den MwSt-Schalter und reichen die Werte
@@ -2367,7 +2550,9 @@ function onFormatChange(id) {
 function cent(n) { return Math.round(Number((n * 100).toPrecision(12))) / 100; }
 /* Eine Zeile: sw = s/w-Grundpreis, z4c = gewaehlter 4c-Zuschlag (0 = s/w). Rabatt
    nur auf den s/w-Grundpreis, AE auf den Betrag nach Rabatt samt Zuschlag. Gesperrt
-   heisst: laut Preisliste nicht rabatt- bzw. nicht AE-faehig. */
+   heisst: laut Preisliste nicht rabatt- bzw. nicht AE-faehig.
+   Ansicht „nur 4C": der volle Preis (auch ein von Hand ueberschriebener) als sw,
+   z4c = 0 - dann Rabatt und AE auf den vollen Preis, AE auf den Betrag nach Rabatt. */
 function zeileRechnen(sw, z4c, rabattPct, aePct, rabattGesperrt, aeGesperrt) {
   const rabatt     = rabattGesperrt ? 0 : cent(sw * rabattPct / 100);
   const nachRabatt = cent((sw - rabatt) + z4c);
@@ -2383,37 +2568,46 @@ function summeRechnen(gps, ohneMwst) {
   const mwst = ohneMwst ? 0 : cent(netto * 0.19);
   return { netto, mwst, brutto: cent(netto + mwst) };
 }
+/* Euro-Text in Zahl (de-DE) – null bei leer/„–"/ungültig */
+function parseEur(s) {
+  if (!s || s.trim() === '–' || s.trim() === '') return null;
+  const n = parseFloat(s.replace(/\./g, '').replace(',', '.').replace(/[^\d.\-]/g, ''));
+  return isNaN(n) ? null : n;
+}
 /* ══ ENDE RECHNUNG ═════════════════════════════════════════════════════════════ */
 
 // ─────────────────────────────────────────
 //  Zeile neu berechnen (Preis / Rabatt / AE / GP netto)
 // ─────────────────────────────────────────
 function onAnzahlChange(id) {
-  const epCell  = document.getElementById('ep-'     + id);
+  const epCell  = document.getElementById('ep4c-'    + id);
   const gpCell  = document.getElementById('gp-'      + id);
   const rabCell = document.getElementById('rabatt-'  + id);
   const aeCell  = document.getElementById('ae-'      + id);
   const z4cCell   = document.getElementById('z4c-'     + id);
   const z4cSel    = document.getElementById('z4c-sel-' + id);
   const gpSw      = parseFloat(z4cCell.dataset.gpSw);
-  const z4cVal    = parseFloat(z4cSel?.value) || 0;
+  const z4cWahl   = parseFloat(z4cSel?.value) || 0;
 
   // 4c-Preis-Anzeige aktuell halten
   if (!isNaN(gpSw)) {
     const z4cMax = parseFloat(z4cCell.dataset.z4cMax) || 0;
-    epCell.textContent = (z4cMax > 0 && z4cVal === 0) ? '–' : formatEur(gpSw + z4cVal);
+    epCell.textContent = (z4cMax > 0 && z4cWahl === 0) ? '–' : formatEur(gpSw + z4cWahl);
   }
 
-  // Rabatt-Basis: immer nur s/w-Grundpreis
-  const rabattBase    = !isNaN(gpSw) ? gpSw : 0;
-  const selectedPrice = !isNaN(gpSw) ? gpSw + z4cVal : NaN;
+  // „s/w und 4C": Rabatt-Basis immer nur der s/w-Grundpreis.
+  // „nur 4C": Rabatt-/AE-Basis der volle Preis aus dem Preisfeld, ohne eigenen Zuschlag.
+  const sw         = swAktiv();
+  const preis      = parseFloat(document.getElementById('ep-' + id)?.dataset.price);
+  const rabattBase = sw ? gpSw : preis;
+  const z4cVal     = sw ? z4cWahl : 0;
 
   const blocked   = rabCell.dataset.blocked === '1';
   const aeBlocked = aeCell.dataset.blocked === '1';
   const rabattPct = (!blocked   && colActive.rabatt) ? (parseFloat(document.getElementById('hdr-rabatt').value) || 0) : 0;
   const aePct     = (!aeBlocked && colActive.ae)     ? (parseFloat(document.getElementById('hdr-ae').value) || 0) : 0;
 
-  if (!isNaN(selectedPrice) && !isNaN(gpSw)) {
+  if (!isNaN(rabattBase)) {
     const { rabatt: rabattAmt, ae: aeAmt, gp: gpRaw } = zeileRechnen(rabattBase, z4cVal, rabattPct, aePct, blocked, aeBlocked);
 
     rabCell.textContent = blocked   ? '–' : (rabattPct > 0 ? '− ' + formatEur(rabattAmt) : '–');
@@ -2686,18 +2880,26 @@ function collectAngebot() {
     if (!id) return;
     const titelSel = document.getElementById('titel-' + id);
     if (!titelSel) return;   // Hinweiszeile (ohne Daten) überspringen
-    positions.push({
+    const pos = {
       titel:  titelSel.value,
       fmt:    document.getElementById('fmt-'     + id)?.value || '',
       umfeld: document.getElementById('umfeld-'  + id)?.value || '',
       datum:  document.getElementById('datum-'   + id)?.value || '',
       z4c:    document.getElementById('z4c-sel-' + id)?.value || '0',
-    });
+    };
+    // Nur einen von Hand überschriebenen Preis mitspeichern (sonst gilt der Katalogpreis)
+    const epCell = document.getElementById('ep-' + id);
+    if (epCell && epCell.dataset.manual === '1' && epCell.dataset.price !== '') {
+      pos.manual = true;
+      pos.preis  = parseFloat(epCell.dataset.price);
+    }
+    positions.push(pos);
   });
   return {
     app: 'Angebotsvorlage',
     version: ANGEBOT_VERSION,
     savedAt: new Date().toISOString(),
+    ansicht: ansichtSw ? 'sw4c' : '4c',   // seit 19.09.2026; ältere Dateien siehe ansichtAusAngebot()
     dataset: DATASET,
     currentYear: currentYear,
     loadedFileName: loadedFileName,
@@ -2970,9 +3172,12 @@ async function applyAngebot(data) {
   setColActive('rabatt', f.colRabatt !== false);
   setColActive('ae',     f.colAe     !== false);
 
-  // 4) Positionen neu aufbauen
+  // 4) Positionen neu aufbauen – in der Ansicht, die das Angebot mitbringt
   document.getElementById('posBody').innerHTML = '';
   posCounter = 0;
+  const ansichtDatei = ansichtAusAngebot(data);
+  if (ansichtDatei !== null && ansichtDatei !== ansichtSw) { ansichtSw = ansichtDatei; ansichtMerken(); }
+  ansichtSetzen();
   fehlendeAngaben = [];
   (data.positions || []).forEach(pos => restorePosition(pos));
 
@@ -3024,6 +3229,16 @@ function restorePosition(pos) {
   const z4cSel = document.getElementById('z4c-sel-' + id);
   if (z4cSel && pos.z4c != null && [...z4cSel.options].some(o => o.value === String(pos.z4c))) {
     z4cSel.value = String(pos.z4c);
+  }
+  // Von Hand überschriebenen Preis wiederherstellen (nach onFormatChange, das den Katalogpreis setzt)
+  if (pos.manual && pos.preis != null && !isNaN(parseFloat(pos.preis))) {
+    const epCell = document.getElementById('ep-' + id);
+    if (epCell) {
+      const wert = parseFloat(pos.preis);
+      epCell.dataset.price  = wert;
+      epCell.dataset.manual = '1';
+      epCell.textContent    = formatEur(wert);
+    }
   }
   onZ4cChange(id);         // 4c-Preis aktualisieren + onAnzahlChange
 }
