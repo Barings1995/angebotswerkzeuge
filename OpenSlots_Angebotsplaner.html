@@ -1599,9 +1599,12 @@ async function onDataFileChosen(ev){
     applyYear(currentYear);
   }catch(e){
     console.error(e);
+    // Eigene Prüf-Meldungen (Blatt/Datenzeilen/Internet) sind bereits verständlich und werden direkt gezeigt;
+    // technische Fehler der Excel-Bibliothek (defekte/keine .xlsx) durch eine klare Meldung ersetzen.
+    const roh=e.message||String(e);
     await hinweis('Datei nicht lesbar',
       '<p>Die Datei konnte nicht gelesen werden:</p>'+
-      '<p><b>'+esc(e.message||e)+'</b></p>'+
+      '<p><b>'+esc(/Preise|Datenzeilen|Jahrgänge|Bibliothek/.test(roh)?roh:'Die Datei ist keine Excel-Datei (.xlsx).')+'</b></p>'+
       '<p>Bitte ein Excel mit den Blättern „Preise" und „Termine" verwenden '+
       '(z. B. die Angebotsdaten der Angebotsvorlage).</p>');
     syncDataUI();

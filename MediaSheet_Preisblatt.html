@@ -61,6 +61,9 @@
   /* Haarlinie zwischen den Zeilen des Blattes. Heller als --border, damit die
      Preisliste auf dem Papier nicht als Gitter erscheint. */
   --linie:#eef1f6;
+  /* Rueckfragen (Baustein fenster.css): in MediaSheet von keinem Knopf gebraucht. */
+  --dlg-gefahr:#c0392b;
+  --dlg-gefahr-dunkel:#9c2e22;
 }
 *, *::before, *::after{box-sizing:border-box; margin:0; padding:0}
 [hidden]{display:none!important}
@@ -308,15 +311,6 @@ select:disabled{opacity:.5; cursor:not-allowed}
   border-radius:var(--radius-md); padding:4px 10px; max-width:100%;
 }
 .data-note svg{width:14px; height:14px; flex:none; color:var(--navy)}
-/* Laesst sich eine gewaehlte Datei nicht lesen: rote Blase wie .data-error in
-   PreisWerk. */
-.data-error{
-  display:inline-flex; align-items:center; gap:6px; font-size:12.5px; font-weight:600;
-  color:#be1818; background:#fdeaea; border:1px solid #f3c0c0;
-  border-radius:var(--radius-md); padding:4px 10px;
-}
-.data-error svg{width:14px; height:14px; flex:none}
-
 /* ── Spaltenueberschriften ────────────────────────────────────────────────
    Titel, Vorschau und Blattinhalt tragen je eine Ueberschrift wie .sec-label in
    OpenSlots (10 px fett, gesperrt, Linie darunter). Sie stehen auf einer Hoehe,
@@ -556,6 +550,62 @@ td.fmt{width:44%}
 .kontakt{min-width:180px}
 .fuss .seite{white-space:nowrap; text-align:right}
 
+/* ── Rueckfrage- und Hinweisfenster ──────────────────────────────────────── */
+/* ══ BAUSTEIN fenster.css ══ Nicht hier ändern: gepflegt in Bausteine/fenster.css, eingesetzt mit „node Bausteine/einsetzen.mjs". */
+/* Rückfrage- und Hinweisfenster: frage(), hinweis() und die Rückfrage nach dem
+   Datenstand. Bewusst ohne Klick-daneben-schließt: die Frage soll beantwortet und
+   die Meldung gelesen, nicht versehentlich weggeklickt werden. Escape bleibt als
+   Ausweg.
+   Braucht: --dlg-gefahr, --dlg-gefahr-dunkel
+   Das Rot des bestätigenden Knopfs einer Rückfrage, die etwas verwirft. Es folgt
+   dem Knopf, der die Rückfrage auslöst („Zurücksetzen"), und steht deshalb im
+   :root des jeweiligen Werkzeugs. Alle übrigen Farben sind die der Marke und in
+   allen Werkzeugen gleich. */
+.dlg-back {
+  position: fixed; inset: 0; z-index: 10000;
+  background: rgba(0,40,90,.32);
+  display: flex; align-items: center; justify-content: center;
+  padding: 20px;
+}
+/* Die Schrift wird gesetzt, nicht geerbt: in MediaQuote erbte das Fenster sonst
+   die Aptos des Angebotsblatts. Die Fenster gehören zum Werkzeug, nicht zum Blatt. */
+.dlg-box {
+  font-family: 'Source Sans 3', system-ui, sans-serif;
+  background: #fff;
+  border: 1px solid #d6dbe8;
+  border-radius: 10px;
+  box-shadow: 0 6px 24px rgba(0,40,90,.28);
+  max-width: 520px; width: 100%;
+  padding: 18px 22px 17px;
+}
+/* Zeilenhöhe fest, nicht vom Blatt geerbt: 21,5 px ist der Wert, den „normal" bei
+   Source Sans 3 in 15 px ergibt, gemessen. Geerbt stand die Überschrift in
+   PreisWerk 22,5 px hoch. */
+.dlg-hd { font-size: 15px; line-height: 21.5px; font-weight: 700; color: #00285a; margin-bottom: 9px; }
+.dlg-tx { font-size: 13px; color: #1a2340; line-height: 1.55; }
+.dlg-tx p { margin-bottom: 8px; }
+.dlg-tx p:last-child { margin-bottom: 0; }
+.dlg-tx b { font-weight: 600; }
+/* Aufzählungen im Hinweisfenster (hinweisListe). Einzug und Punkt müssen gesetzt
+   werden, der Vorspann der Werkzeuge nimmt allen Listen beides. Lange Listen
+   rollen in sich, damit der Knopf sichtbar bleibt. */
+.dlg-tx ul { margin: 6px 0 8px; padding-left: 1.25em; list-style: disc; }
+.dlg-tx li { margin-bottom: 2px; }
+.dlg-tx ul.dlg-liste { max-height: min(300px, 34vh); overflow-y: auto; }
+.dlg-row { display: flex; gap: 8px; justify-content: flex-end; margin-top: 16px; flex-wrap: wrap; }
+.dlg-btn {
+  font-family: inherit; font-size: 13px; font-weight: 600;
+  padding: 7px 14px; border-radius: 6px; cursor: pointer;
+  border: 1px solid #00285a; background: #00285a; color: #fff;
+}
+.dlg-btn.sekundaer { background: #fff; color: #00285a; border-color: #d6dbe8; }
+.dlg-btn.sekundaer:hover { border-color: #00285a; }
+.dlg-btn.gefahr { background: var(--dlg-gefahr); border-color: var(--dlg-gefahr); color: #fff; }
+.dlg-btn.gefahr:hover { background: var(--dlg-gefahr-dunkel); border-color: var(--dlg-gefahr-dunkel); }
+/* Ein offenes Fenster darf nie im Ausdruck oder im PDF landen. */
+@media print { .dlg-back { display: none !important; } }
+/* ══ ENDE BAUSTEIN fenster.css ══ */
+
 /* ── Druck ────────────────────────────────────────────────────────────────
    Nur die Blaetter, je Blatt eine Seite. Die Bedienung verschwindet. */
 @media print{
@@ -619,20 +669,16 @@ td.fmt{width:44%}
 
 <!-- Datenleiste: womit gearbeitet wird, und der Weg zum PDF. -->
 <div class="leiste">
-  <button type="button" class="knopf prim&auml;r" id="ladeKnopf" title="Preise und Termine aus Excel laden (Bl&auml;tter &bdquo;Preise&ldquo; + &bdquo;Termine&ldquo;)">
+  <button type="button" class="knopf prim&auml;r" id="ladeKnopf" title="Preis- und Termindaten aus Excel laden (Bl&auml;tter &bdquo;Preise&ldquo; + &bdquo;Termine&ldquo;)">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/><line x1="12" y1="10" x2="12" y2="17"/><polyline points="9 14 12 17 15 14"/></svg>
     Daten laden
   </button>
   <span class="feld"><label for="wJahr">Jahrgang</label><select id="wJahr"></select></span>
   <span class="feld" hidden><label for="wTitel">Titel</label><select id="wTitel" tabindex="-1"></select></span>
 
-  <span class="data-note" id="hinweis" hidden>
+  <span class="data-note" id="leisteHinweis" hidden>
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
-    <span id="hinweisText"></span>
-  </span>
-  <span class="data-error" id="fehler" role="alert" hidden>
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
-    <span id="fehlerText"></span>
+    <span id="leisteHinweisText"></span>
   </span>
 
   <span class="leiste-ende">
@@ -799,6 +845,52 @@ function kopieLaden(){
    Nachbardatei; dann bleibt es bei der Meldung, statt etwas Falsches zu
    behaupten. Die Mappe fuehrt keine Zeitstempel je Zeile — der Stand kommt
    deshalb aus ihrem Speicherzeitpunkt und gilt fuer alle Titel gleich. */
+/* ══ BAUSTEIN hinweis.js ══ Nicht hier ändern: gepflegt in Bausteine/hinweis.js, eingesetzt mit „node Bausteine/einsetzen.mjs". */
+/* ── HINWEISFENSTER ───────────────────────────────────────────────────────────
+   Tritt an die Stelle von alert(). Aussehen aus dem Baustein fenster.css: die
+   Meldung steht in der Optik des Werkzeugs statt in der des Browsers, hat eine
+   Überschrift, und Aufzählungen lassen sich als Liste setzen statt als
+   Zeilenumbrüche im Fließtext.
+   Ein Klick daneben schließt nicht: die Meldung soll gelesen und nicht
+   versehentlich weggewischt werden. Escape und der Knopf schließen.
+   Zurück kommt ein Versprechen, das beim Schließen einlöst – so wartet der
+   Aufrufer wie zuvor bei alert(), bis die Meldung zur Kenntnis genommen ist.
+   Das Fenster wird bei jedem Aufruf neu angelegt und beim Schließen wieder
+   entfernt; im Ruhezustand steht nichts davon im Seitengerüst.
+   Braucht: esc() */
+function hinweis(titel, html) {
+  return new Promise(res => {
+    const back = document.createElement('div');
+    back.className = 'dlg-back';
+    back.innerHTML = '<div class="dlg-box" role="alertdialog" aria-modal="true">'
+      + '<div class="dlg-hd"></div><div class="dlg-tx"></div>'
+      + '<div class="dlg-row"><button type="button" class="dlg-btn">Verstanden</button></div></div>';
+    back.querySelector('.dlg-box').setAttribute('aria-label', titel);
+    back.querySelector('.dlg-hd').textContent = titel;
+    back.querySelector('.dlg-tx').innerHTML = html;
+    const knopf = back.querySelector('button');
+    const zu = () => {
+      document.removeEventListener('keydown', escHinweis, true);
+      back.remove();
+      res();
+    };
+    function escHinweis(e) { if (e.key === 'Escape') { e.stopPropagation(); zu(); } }
+    knopf.onclick = zu;
+    document.addEventListener('keydown', escHinweis, true);
+    document.body.appendChild(back);
+    knopf.focus();
+  });
+}
+
+/* Aufzählung für das Hinweisfenster. Ohne `max` stehen alle Zeilen darin und die
+   Liste rollt in sich; mit `max` wird gedeckelt und der Rest gezählt. */
+function hinweisListe(a, max = 0) {
+  const zeigen = max ? a.slice(0, max) : a;
+  return '<ul class="dlg-liste">' + zeigen.map(x => '<li>' + esc(x) + '</li>').join('') + '</ul>'
+    + (max && a.length > max ? '<p>… und ' + (a.length - max) + ' weitere</p>' : '');
+}
+/* ══ ENDE BAUSTEIN hinweis.js ══ */
+
 /* ══ BAUSTEIN excel-laden.js ══ Nicht hier ändern: gepflegt in Bausteine/excel-laden.js, eingesetzt mit „node Bausteine/einsetzen.mjs". */
 /* ── EXCEL-BIBLIOTHEK BEI BEDARF ──────────────────────────────────────────────
    ExcelJS wird erst geladen, wenn eine Excel gelesen oder geschrieben wird, und
@@ -820,15 +912,8 @@ function ensureExcelJS() {
    Wie in den uebrigen Werkzeugen: eine Angebotsdaten.xlsx waehlen, sie ersetzt
    die geladene Preisliste bis zum naechsten Oeffnen der Seite. Titel und
    Jahrgang bleiben stehen, solange die Datei sie kennt. */
-function fehlerZeigen(text){
-  document.getElementById('fehlerText').textContent = text;
-  document.getElementById('fehler').hidden = false;
-}
-function fehlerWeg(){ document.getElementById('fehler').hidden = true; }
-
 async function dateiGewaehlt(ev){
   const datei = ev.target.files[0]; if(!datei) return;
-  fehlerWeg();
   const st = document.getElementById('status');
   const vorher = st.textContent, vorherKlasse = st.className;
   st.textContent = 'lädt …'; st.className = 'data-status';
@@ -846,9 +931,11 @@ async function dateiGewaehlt(ev){
     console.error(e);
     st.textContent = vorher; st.className = vorherKlasse;
     const roh = e.message || String(e);
-    fehlerZeigen(/Preise|Jahrgänge|ExcelJS/.test(roh)
-      ? roh
-      : 'Die Datei konnte nicht als Excel-Datei (.xlsx) gelesen werden. Bitte die Angebotsdaten.xlsx mit den Blättern „Preise“ und „Termine“ verwenden.');
+    const eigene = /Preise|Datenzeilen|Jahrgänge|Bibliothek/.test(roh);
+    await hinweis('Datei nicht lesbar',
+      '<p>Die Datei konnte nicht gelesen werden:</p>'
+      + '<p><b>' + esc(eigene ? roh : 'Die Datei ist keine Excel-Datei (.xlsx).') + '</b></p>'
+      + '<p>Bitte die Angebotsdaten.xlsx mit den Blättern „Preise“ und „Termine“ verwenden.</p>');
   }finally{ ev.target.value = ''; }
 }
 
@@ -1549,8 +1636,8 @@ function fachAufbauen(){
     nach[p.kategorie].push(p);
   });
 
-  let h = '<div class="kopf"><button type="button" id="fachAlle">Alle wählen</button>' +
-          '<button type="button" id="fachKeins">Alle abwählen</button></div>';
+  let h = '<div class="kopf"><button type="button" id="fachAlle" title="Alle Formate wählen">Alle</button>' +
+          '<button type="button" id="fachKeins" title="Alle Formate abwählen">Keine</button></div>';
   folge.forEach(k => {
     h += '<div class="gruppe">' + esc(k) + '</div>';
     nach[k].forEach(p => {
@@ -1634,7 +1721,7 @@ function leisteNachfuehren(){
                    (L && L.stand ? ' · Stand ' + L.stand : '');
   st.className = 'data-status loaded';
 
-  const hw = document.getElementById('hinweis');
+  const hw = document.getElementById('leisteHinweis');
   const text = (ohnePreise && ohneTermine)
       ? 'Für diesen Titel und Jahrgang sind weder Preise noch Termine hinterlegt.'
     : ohnePreise
@@ -1642,7 +1729,7 @@ function leisteNachfuehren(){
     : ohneTermine
       ? 'Für diesen Jahrgang sind noch keine Termine hinterlegt – ausgegeben wird die Preisliste.'
       : '';
-  document.getElementById('hinweisText').textContent = text;
+  document.getElementById('leisteHinweisText').textContent = text;
   hw.hidden = !text;
 }
 

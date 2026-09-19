@@ -1797,9 +1797,12 @@ async function onDataFileChosen(event) {
     }
   } catch (e) {
     console.error(e);
+    // Eigene Prüf-Meldungen (Blatt/Datenzeilen/Internet) sind bereits verständlich und werden direkt gezeigt;
+    // technische Fehler der Excel-Bibliothek (defekte/keine .xlsx) durch eine klare Meldung ersetzen.
+    const roh = e.message || String(e);
     await hinweis('Datei nicht lesbar',
       '<p>Die Datei konnte nicht gelesen werden:</p>'
-      + '<p><b>' + esc(e.message || e) + '</b></p>'
+      + '<p><b>' + esc(/Preise|Datenzeilen|Jahrgänge|Bibliothek/.test(roh) ? roh : 'Die Datei ist keine Excel-Datei (.xlsx).') + '</b></p>'
       + '<p>Bitte eine Excel-Datei mit den Tabellenblättern „Preise" und „Termine" verwenden.</p>');
     updateDataStatus(isCustomData ? `geladen: ${loadedFileName}` : 'Keine Daten geladen – bitte Angebotsdaten.xlsx laden', isCustomData);
   } finally {

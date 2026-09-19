@@ -150,8 +150,6 @@ button, input, select, textarea { font-family: inherit; }
      beiden anderen Werkzeugen: 1 x 16 px, senkrecht mittig. */
   .bar-grp { display: inline-flex; align-items: center; gap: 8px; padding-left: 10px; position: relative; }
   .bar-grp::before { content: ""; position: absolute; left: 0; top: 50%; margin-top: -8px; width: 1px; height: 16px; background: var(--border); }
-  .data-error { display: inline-flex; align-items: center; gap: 6px; font-size: 12.5px; font-weight: 600; color: var(--red); background: #fdeaea; border: 1px solid #f3c0c0; border-radius: var(--radius-md); padding: 4px 10px; }
-  .data-error svg { flex: none; }
   /* Hinweis, kein Fehler: bewusst neutral gehalten. Rot wäre falsch - es ist nichts
      schiefgegangen, es fehlt nur ein Posten in der Preisliste. Das helle Springer-Blau
      bleibt der Ersparnis vorbehalten, deshalb die neutrale Fläche. */
@@ -394,7 +392,7 @@ button, input, select, textarea { font-family: inherit; }
         Angebotswerkzeuge
       </a>
     </div>
-    <p>Daten laden &rarr; Titel, Kategorie und Format w&auml;hlen &rarr; Positionen ins Paket legen. Der <strong>Staffelrabatt</strong> gilt <span id="heroRegel">titel&uuml;bergreifend, aber nur innerhalb eines Fachbereichs</span>.</p>
+    <p>Titel, Kategorie und Format w&auml;hlen &rarr; Positionen ins Paket legen. Der <strong>Staffelrabatt</strong> gilt <span id="heroRegel">titel&uuml;bergreifend, aber nur innerhalb eines Fachbereichs</span>.</p>
   </div>
 </header>
 
@@ -407,10 +405,6 @@ button, input, select, textarea { font-family: inherit; }
   <label class="data-year" id="yearWrap" for="yearSel" style="display:none;">Jahrgang
     <select id="yearSel" onchange="applyYear(this.value)"></select>
   </label>
-  <span class="data-error" id="dataError" role="alert" style="display:none;">
-    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
-    <span id="dataErrorMsg"></span>
-  </span>
   <span class="data-note" id="standNote" style="display:none;">
     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
     <span id="standNoteMsg"></span>
@@ -603,19 +597,8 @@ function standAusMappe(wb){
 
 function years(){return Object.keys(DATASET).sort();}
 
-function showDataError(msg){
-  const box=document.getElementById('dataError'), m=document.getElementById('dataErrorMsg');
-  if(m)m.textContent=msg;
-  if(box)box.style.display='';
-}
-function clearDataError(){
-  const box=document.getElementById('dataError');
-  if(box)box.style.display='none';
-}
-
 async function onDataFileChosen(ev){
   const file=ev.target.files[0];if(!file)return;
-  clearDataError();
   const st=document.getElementById('dataStatus');if(st)st.textContent='lädt …';
   try{
     await ensureExcelJS();
@@ -632,10 +615,11 @@ async function onDataFileChosen(ev){
     // Eigene Prüf-Meldungen (Blatt/Datenzeilen/Internet) sind bereits verständlich und werden direkt gezeigt;
     // technische Fehler der Excel-Bibliothek (defekte/keine .xlsx) durch eine klare Meldung ersetzen.
     const raw=e.message||String(e);
-    const ownMsg=/Preise|Datenzeilen|ExcelJS/.test(raw);
-    showDataError(ownMsg
-      ? raw
-      : 'Die Datei konnte nicht als Excel-Datei (.xlsx) gelesen werden. Bitte die Angebotsdaten.xlsx mit dem Blatt „Preise“ verwenden.');
+    const ownMsg=/Preise|Datenzeilen|Jahrgänge|Bibliothek/.test(raw);
+    await hinweis('Datei nicht lesbar',
+      '<p>Die Datei konnte nicht gelesen werden:</p>'
+      +'<p><b>'+esc(ownMsg?raw:'Die Datei ist keine Excel-Datei (.xlsx).')+'</b></p>'
+      +'<p>Bitte die Angebotsdaten.xlsx mit dem Blatt „Preise“ verwenden.</p>');
   }finally{ev.target.value='';}
 }
 
@@ -788,6 +772,52 @@ function paketRechnen(items, gemein, fachVon, useAE) {
    gemeinsam in einer Sammelgruppe - dort gilt der Staffelrabatt wie früher über alle
    diese Titel hinweg. */
 const OHNE_FACH = 'Ohne Fachbereich';
+/* ══ BAUSTEIN hinweis.js ══ Nicht hier ändern: gepflegt in Bausteine/hinweis.js, eingesetzt mit „node Bausteine/einsetzen.mjs". */
+/* ── HINWEISFENSTER ───────────────────────────────────────────────────────────
+   Tritt an die Stelle von alert(). Aussehen aus dem Baustein fenster.css: die
+   Meldung steht in der Optik des Werkzeugs statt in der des Browsers, hat eine
+   Überschrift, und Aufzählungen lassen sich als Liste setzen statt als
+   Zeilenumbrüche im Fließtext.
+   Ein Klick daneben schließt nicht: die Meldung soll gelesen und nicht
+   versehentlich weggewischt werden. Escape und der Knopf schließen.
+   Zurück kommt ein Versprechen, das beim Schließen einlöst – so wartet der
+   Aufrufer wie zuvor bei alert(), bis die Meldung zur Kenntnis genommen ist.
+   Das Fenster wird bei jedem Aufruf neu angelegt und beim Schließen wieder
+   entfernt; im Ruhezustand steht nichts davon im Seitengerüst.
+   Braucht: esc() */
+function hinweis(titel, html) {
+  return new Promise(res => {
+    const back = document.createElement('div');
+    back.className = 'dlg-back';
+    back.innerHTML = '<div class="dlg-box" role="alertdialog" aria-modal="true">'
+      + '<div class="dlg-hd"></div><div class="dlg-tx"></div>'
+      + '<div class="dlg-row"><button type="button" class="dlg-btn">Verstanden</button></div></div>';
+    back.querySelector('.dlg-box').setAttribute('aria-label', titel);
+    back.querySelector('.dlg-hd').textContent = titel;
+    back.querySelector('.dlg-tx').innerHTML = html;
+    const knopf = back.querySelector('button');
+    const zu = () => {
+      document.removeEventListener('keydown', escHinweis, true);
+      back.remove();
+      res();
+    };
+    function escHinweis(e) { if (e.key === 'Escape') { e.stopPropagation(); zu(); } }
+    knopf.onclick = zu;
+    document.addEventListener('keydown', escHinweis, true);
+    document.body.appendChild(back);
+    knopf.focus();
+  });
+}
+
+/* Aufzählung für das Hinweisfenster. Ohne `max` stehen alle Zeilen darin und die
+   Liste rollt in sich; mit `max` wird gedeckelt und der Rest gezählt. */
+function hinweisListe(a, max = 0) {
+  const zeigen = max ? a.slice(0, max) : a;
+  return '<ul class="dlg-liste">' + zeigen.map(x => '<li>' + esc(x) + '</li>').join('') + '</ul>'
+    + (max && a.length > max ? '<p>… und ' + (a.length - max) + ' weitere</p>' : '');
+}
+/* ══ ENDE BAUSTEIN hinweis.js ══ */
+
 /* ══ BAUSTEIN frage.js ══ Nicht hier ändern: gepflegt in Bausteine/frage.js, eingesetzt mit „node Bausteine/einsetzen.mjs". */
 /* ── RÜCKFRAGEFENSTER ─────────────────────────────────────────────────────────
    Tritt an die Stelle von confirm(). Aufbau wie das Hinweisfenster, nur mit zwei
@@ -1321,7 +1351,6 @@ async function ladePreislisteAusDatenbank(){
     DATASET=ds;isCustomData=true;loadedFileName='Preisliste';
     const ys=years();
     if(!currentYear||!DATASET[currentYear])currentYear=ys.includes('2026')?'2026':ys[0];
-    clearDataError();
     const merk=standAktiv; standAktiv=false;
     applyYear(currentYear);
     standAktiv=merk;
@@ -1352,7 +1381,6 @@ async function ladePreislisteVonServer(){
        dieselbe Vorgabe wie beim Laden von Hand. */
     const ys=years();
     if(!currentYear||!DATASET[currentYear])currentYear=ys.includes('2026')?'2026':ys[0];
-    clearDataError();
     /* applyYear() leert das Paket. Beim Start ist das kein Datensatzwechsel, sondern der
        normale Weg - der gemerkte Stand darf dabei weder überschrieben noch verloren gehen.
        Deshalb das Schreiben aussetzen und den Stand danach neu aufbauen. */
