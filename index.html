@@ -47,6 +47,9 @@
     padding:5px 12px; border:1px solid var(--sm-border); border-radius:999px;
     background:#fff; font-size:13px; color:var(--sm-muted);
   }
+  /* Ohne diese Zeile schlaegt display:inline-flex das hidden-Attribut: die Pille
+     stuende leer da, bis der Stand geladen ist (lokal als Datei: dauerhaft). */
+  .stand[hidden]{display:none}
   .stand b{color:var(--sm-text); font-weight:600}
   .stand .punkt{width:7px; height:7px; border-radius:50%; background:var(--sm-blue)}
   .stand.fehlt .punkt{background:var(--sm-orange)}
