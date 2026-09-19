@@ -630,8 +630,10 @@ button, input, select, textarea { font-family: inherit; }
 .mx-karte th.iss-th, .mx-karte th.pl-hd { top:-1px; }
 .mx-karte th.pl-hd, .mx-karte td.pl-cell { left:-1px; }
 /* Damit der Kopf nicht erst beim Blaettern um diesen Pixel nach oben (und die Spalte
-   nach links) springt, steht die Tabelle von Anfang an einen Pixel ueber der Kante. */
-.mx-karte .mx { margin-top:-1px; margin-left:-1px; }
+   nach links) springt, steht die Tabelle von Anfang an einen Pixel ueber der Kante.
+   Um diesen Pixel ist sie auch breiter - sonst endete sie rechts einen Pixel vor dem
+   Rahmen, und dort stand ein weisser Streifen. */
+.mx-karte .mx { margin-top:-1px; margin-left:-1px; min-width:calc(100% + 1px); }
 
 /* ── TABLE WRAPPER ── */
 .mx-outer {
