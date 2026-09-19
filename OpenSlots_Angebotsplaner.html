@@ -1581,11 +1581,7 @@ async function onDataFileChosen(ev){
     clearAngebotDatei();
     currentYear=defaultYear();
     saveCache();
-    /* Vor applyYear: der Abgleich schreibt in den Zwischenspeicher, aus dem
-       restoreState() gleich darauf liest. */
-    const abgleich=refreshTermineImStand(DATASET);
     applyYear(currentYear);
-    await meldeTerminAbgleich(abgleich);
   }catch(e){
     console.error(e);
     await hinweis('Datei nicht lesbar',
@@ -1603,8 +1599,8 @@ async function onDataFileChosen(ev){
    Doppelklick geöffnet (file://) verbietet der Browser das Lesen von Nachbardateien;
    dann bleibt es bei der Dateiauswahl wie bisher. Ein Fehlschlag ist deshalb kein
    Fehler, sondern der zweite vorgesehene Weg – gemeldet wird er nur in der Statuszeile.
-   Der Ablauf entspricht dem Laden von Hand: erst der Terminabgleich am gespeicherten
-   Arbeitsstand, dann der Aufbau. Dadurch bleiben Ankreuzungen erhalten. */
+   Der Ablauf entspricht dem Laden von Hand: Der Aufbau liest den gemerkten Arbeitsstand
+   ueber Nummer und Name wieder ein (KENNUNGEN). Dadurch bleiben Ankreuzungen erhalten. */
 const DATEN_DATEI='Angebotsdaten.xlsx';
 let datenStand='';
 /* Der Stand kommt aus der Preisliste selbst: jede xlsx-Datei führt intern Buch
@@ -1627,11 +1623,16 @@ function standAusMappe(wb){
    Die Termine kommen als Text („22.01.") wie aus der Preisliste und laufen durch
    dasselbe dateY() wie bisher: es haengt den Jahrgang an, laesst aber eine eigene
    Jahreszahl („04.12.25") stehen. So bleibt der Jahreswechsel beim Anzeigenschluss
-   richtig getroffen. */
+   richtig getroffen.
+
+   Mitgelesen wird die feste Nummer jeder Zeile (id). Sie steht am Titel (J[].id), je
+   Kategorie parallel zu den Platzierungen (g.k) und am Heft als achtes Feld (Zeile[7]).
+   Die Excel kennt keine Nummern; dort fehlen diese Felder einfach. Wozu sie dienen,
+   steht bei den KENNUNGEN. */
 const DB_FELDER =
-  'jahr,name,auflage,fachbereich,reihenfolge,' +
-  'preis(reihenfolge,kategorie,format,preis,zuschlag_4c,rabattfaehig,ae_faehig,termin_art),' +
-  'termin(reihenfolge,heft,monat,et,anzeigenschluss,du_schluss,eh_termin,themen,kongresse)';
+  'id,jahr,name,auflage,fachbereich,reihenfolge,' +
+  'preis(id,reihenfolge,kategorie,format,preis,zuschlag_4c,rabattfaehig,ae_faehig,termin_art),' +
+  'termin(id,reihenfolge,heft,monat,et,anzeigenschluss,du_schluss,eh_termin,themen,kongresse)';
 
 function dbErreichbar(){
   return typeof SUPABASE_URL==='string'&&typeof SUPABASE_ANON_KEY==='string'
@@ -1654,7 +1655,7 @@ function datenbankZuDataset(zeilen){
     const year=String(t.jahr),titel=t.name;
     if(!year||!titel)return;
     if(!Y[year]){Y[year]={order:[],t:{}};}
-    if(!Y[year].t[titel]){Y[year].t[titel]={order:[],c:{},a:0,f:'',iss:[]};Y[year].order.push(titel);}
+    if(!Y[year].t[titel]){Y[year].t[titel]={order:[],c:{},k:{},a:0,f:'',iss:[],id:t.id||''};Y[year].order.push(titel);}
     const T=Y[year].t[titel];
     const aufl=Number(t.auflage)||0;
     if(!T.a&&aufl>0)T.a=aufl;
@@ -1665,24 +1666,25 @@ function datenbankZuDataset(zeilen){
       const gp=z.preis==null?0:Number(z.preis);
       const z4c=z.zuschlag_4c==null?0:Number(z.zuschlag_4c);
       const price=z4c>0?[gp,z4c]:gp;
-      if(!T.c[kat]){T.c[kat]=[];T.order.push(kat);}
+      if(!T.c[kat]){T.c[kat]=[];T.k[kat]=[];T.order.push(kat);}
       const eintrag=[fmt,price,!!z.rabattfaehig,!!z.ae_faehig];
       if(z.termin_art)eintrag.push(z.termin_art);
       T.c[kat].push(eintrag);
+      T.k[kat].push(z.id||'');
     });
     (t.termin||[]).forEach(a=>{
       const heft=a.heft||'',monat=a.monat||'';
       const label=(heft&&monat)?(heft+' – '+monat):(heft||monat);
       T.iss.push([label,dateY(a.et||'',year),dateY(a.anzeigenschluss||'',year),
                   a.themen||'',a.kongresse||'',
-                  dateY(a.du_schluss||'',year),dateY(a.eh_termin||'',year)]);
+                  dateY(a.du_schluss||'',year),dateY(a.eh_termin||'',year),a.id||'']);
     });
   });
   const DS={};
   Object.keys(Y).forEach(year=>{
     DS[year]={
-      J:Y[year].order.map(titel=>({n:titel,a:Y[year].t[titel].a||0,f:Y[year].t[titel].f||'',
-        g:Y[year].t[titel].order.map(kat=>({l:kat,i:Y[year].t[titel].c[kat]}))})),
+      J:Y[year].order.map(titel=>({n:titel,a:Y[year].t[titel].a||0,f:Y[year].t[titel].f||'',id:Y[year].t[titel].id,
+        g:Y[year].t[titel].order.map(kat=>({l:kat,i:Y[year].t[titel].c[kat],k:Y[year].t[titel].k[kat]}))})),
       ISSUES:Y[year].order.map(titel=>Y[year].t[titel].iss)
     };
   });
@@ -1712,9 +1714,7 @@ async function ladePreislisteAusDatenbank(){
     DATASET=ds;isCustomData=true;loadedFileName='Preisliste';datenAusAngebot=false;
     if(!currentYear||!DATASET[currentYear])currentYear=defaultYear();
     saveCache();
-    const abgleich=refreshTermineImStand(DATASET);
     applyYear(currentYear);
-    await meldeTerminAbgleich(abgleich);
     return true;
   }catch(e){
     console.warn('Preisliste nicht aus der Datenbank geholt:',e);
@@ -1740,9 +1740,7 @@ async function ladePreislisteVonServer(){
     /* Der gemerkte Jahrgang bleibt stehen, solange die Preisliste ihn kennt. */
     if(!currentYear||!DATASET[currentYear])currentYear=defaultYear();
     saveCache();
-    const abgleich=refreshTermineImStand(DATASET);
     applyYear(currentYear);
-    await meldeTerminAbgleich(abgleich);
     return true;
   }catch(e){
     console.warn('Preisliste nicht von der Adresse geholt:',e);
@@ -1784,13 +1782,147 @@ function loadCache(){
 }
 
 /* ===== AUTOSAVE ARBEITSSTAND (Ankreuzungen/Ausgaben je Jahrgang) ===== */
-function titleSig(){return J.map(j=>j.n).join('|');}
-function serializeST(){
-  return ST.map(s=>({
-    nid:s.nid,
-    issues:s.issues.map(i=>({id:i.id,ausgabe:i.ausgabe,et:i.et,ds:i.ds,du:i.du||'',eh:i.eh||'',themen:i.themen||'',kongress:i.kongress||'',issIdx:i.issIdx,sel:[...i.sel]}))
-  }));
+/* ===== KENNUNGEN: Titel, Hefte und Platzierungen wiederfinden =====
+   Was gemerkt wird (Zwischenspeicher, Angebotsdatei), traegt je Titel, Heft und
+   angekreuzter Platzierung zwei Angaben: die feste Nummer aus der Datenbank und den
+   Namen. Gesucht wird zuerst nach der Nummer - sie uebersteht das Umbenennen in der
+   Datenpflege -, dann nach dem Namen. Der Name bleibt noetig: Die Excel (Notweg) kennt
+   keine Nummern, und die Datenpflege vergibt beim Zuruecksetzen auf einen Sicherungs-
+   punkt und beim Einlesen einer Excel alle Nummern neu.
+   Termine stehen nicht im gemerkten Stand. Sie kommen bei jeder Anzeige aus der
+   geladenen Preisliste (heftZeile) und sind damit immer aktuell.
+   Innerhalb einer Sitzung arbeitet das Werkzeug weiter mit Listenplaetzen und Namen.
+
+   Gemerkt wird je Titel mit mindestens einem Heft:
+     {n, id, hefte:[{n, id, sel:[{n, id}, …]}, …]}
+   n am Heft ist die Bezeichnung aus der Preisliste („5 – Juni"), id fehlt ohne Datenbank. */
+function refVon(id,n){const r={n:n==null?'':String(n)};if(id)r.id=id;return r;}
+/* Nummern, die der gemerkte Stand mitbrachte, die aktuelle Preisliste aber nicht kennt
+   (Excel-Notweg). Sie werden beim Speichern wieder mitgeschrieben, damit ein kurzer
+   Betrieb ohne Datenbank sie nicht verliert. Schluessel: Jahrgang, Art, Namen. */
+const KENNUNG_MERK=new Map();
+function kennungMerken(k,ref){if(ref&&ref.id)KENNUNG_MERK.set(currentYear+'|'+k,ref.id);}
+function kennungGemerkt(k){return KENNUNG_MERK.get(currentYear+'|'+k)||'';}
+function titelFinden(y,ref){
+  const L=(y&&y.J)||[];if(!ref)return null;
+  if(ref.id){const k=L.findIndex(j=>j.id===ref.id);if(k>-1)return k;}
+  const k=L.findIndex(j=>j.n===ref.n);return k>-1?k:null;
 }
+function heftFinden(rows,ref){
+  rows=rows||[];if(!ref)return null;
+  if(ref.id){const k=rows.findIndex(r=>r[7]===ref.id);if(k>-1)return k;}
+  const nm=String(ref.n||'').trim();if(!nm)return null;
+  const k=rows.findIndex(r=>String(r[0]).trim()===nm);
+  /* Aeltere Staende merken die Bezeichnung mit „Heft " davor (heftText) */
+  return k>-1?k:findIssIdx(rows,nm);
+}
+/* Liefert den heutigen Namen der Platzierung, oder null */
+function plFinden(j,ref){
+  if(!j||!ref)return null;
+  if(ref.id)for(const g of j.g){const k=(g.k||[]).indexOf(ref.id);if(k>-1)return g.i[k][0];}
+  for(const g of j.g)for(const e of g.i)if(e[0]===ref.n)return e[0];
+  return null;
+}
+function plNummer(j,name){
+  for(const g of j.g){const k=g.i.findIndex(e=>e[0]===name);if(k>-1)return (g.k&&g.k[k])||'';}
+  return '';
+}
+/* Das Heft einer Spalte, frisch aus der geladenen Preisliste */
+function heftZeile(ji,s){return (ISSUES[ji]||[])[s.issIdx]||null;}
+function heftDaten(ji,s){
+  const r=heftZeile(ji,s)||[];
+  return {ausgabe:heftText(r[0]),et:r[1]||'',ds:r[2]||'',themen:r[3]||'',kongress:r[4]||'',du:r[5]||'',eh:r[6]||''};
+}
+
+/* Arbeitsstand -> gemerkte Form (siehe oben) */
+function standListe(){
+  const out=[];
+  ST.forEach((s,ji)=>{
+    const j=J[ji],rows=ISSUES[ji]||[];
+    if(!s||!j)return;
+    const hefte=s.issues.filter(i=>rows[i.issIdx]).map(i=>{
+      const r=rows[i.issIdx];
+      return Object.assign(refVon(r[7]||kennungGemerkt('h|'+j.n+'|'+r[0]),r[0]),{
+        sel:[...i.sel].map(n=>refVon(plNummer(j,n)||kennungGemerkt('p|'+j.n+'|'+n),n))});
+    });
+    if(hefte.length)out.push(Object.assign(refVon(j.id||kennungGemerkt('t|'+j.n),j.n),{hefte}));
+  });
+  return out;
+}
+
+/* Gemerkte Form -> Arbeitsstand fuer den geladenen Jahrgang (J/ISSUES).
+   Was sich nicht mehr findet, faellt weg und kommt in den Bericht. Ein Heft, das
+   zweimal vorkommt (aeltere Staende), gibt seine Haken an die erste Spalte ab. */
+function standEinlesen(liste,jahr){
+  const st=J.map(()=>({issues:[],nid:1}));
+  const bericht={titel:[],hefte:[],platzierungen:[]};
+  const hk=n=>n?' ('+n+' Häkchen)':'';
+  (liste||[]).forEach(t=>{
+    const hefte=(t&&Array.isArray(t.hefte))?t.hefte.filter(Boolean):[];
+    if(!hefte.length)return;
+    const ji=titelFinden({J},t);
+    if(ji==null){
+      const n=hefte.reduce((a,h)=>a+(h.sel||[]).length,0);
+      bericht.titel.push(t.n+' '+jahr+hk(n));
+      return;
+    }
+    const j=J[ji],s=st[ji],rows=ISSUES[ji]||[],name=j.n+' '+jahr;
+    kennungMerken('t|'+j.n,t);
+    hefte.forEach(h=>{
+      const sel=Array.isArray(h.sel)?h.sel:[];
+      const idx=heftFinden(rows,h);
+      if(idx==null){
+        /* Spalte ohne Heft (aus der Zeit vor der Hefte-Leiste): nur melden, wenn sie
+           Haken trug. Ein Heft, das es nicht mehr gibt, wird immer gemeldet - seine
+           Spalte war zu sehen. */
+        if(h.n||sel.length)bericht.hefte.push(name+': '+(h.n?heftText(h.n):'Spalte ohne Heft')+hk(sel.length));
+        return;
+      }
+      kennungMerken('h|'+j.n+'|'+rows[idx][0],h);
+      let col=s.issues.find(x=>x.issIdx===idx);
+      if(!col){col={id:s.nid++,issIdx:idx,sel:new Set()};s.issues.push(col);}
+      sel.forEach(r=>{
+        const nm=plFinden(j,r);
+        if(nm==null){
+          const z=name+': '+(r&&r.n);             // je Name einmal, auch bei mehreren Ausgaben
+          if(bericht.platzierungen.indexOf(z)<0)bericht.platzierungen.push(z);
+          return;
+        }
+        kennungMerken('p|'+j.n+'|'+nm,r);
+        col.sel.add(nm);
+      });
+    });
+  });
+  return {st,bericht};
+}
+function berichtLeer(b){return !b||(!b.titel.length&&!b.hefte.length&&!b.platzierungen.length);}
+function meldeVerluste(b,ueberschrift){
+  if(berichtLeer(b))return Promise.resolve();
+  let t='';
+  if(b.titel.length)
+    t+='<p>'+b.titel.length+' Titel gibt es in der geladenen Preisliste nicht mehr. '+
+       'Ihre Ausgaben wurden samt den angekreuzten Platzierungen entfernt:</p>'+hinweisListe(b.titel,12);
+  if(b.hefte.length)
+    t+='<p>'+b.hefte.length+' Ausgabe(n) gibt es in der geladenen Preisliste nicht mehr. '+
+       'Ihre Spalten wurden samt den dort angekreuzten Platzierungen entfernt:</p>'+hinweisListe(b.hefte,12);
+  if(b.platzierungen.length)
+    t+='<p>'+b.platzierungen.length+' angekreuzte Platzierung(en) gibt es in der geladenen '+
+       'Preisliste nicht mehr. Die Häkchen wurden entfernt:</p>'+hinweisListe(b.platzierungen,12);
+  return hinweis(ueberschrift,t);
+}
+
+/* Aeltere Staende (bis September 2026) merkten die Titel nach Listenplatz, dazu eine
+   Pruefkennung aus allen Titelnamen in derselben Reihenfolge („sig"). Aus ihr laesst
+   sich ablesen, welcher Titel an welchem Platz stand - so wird auch ein Stand gerettet,
+   dessen Titelliste sich seither geaendert hat (frueher wurde er dann verworfen).
+   Hefte und Platzierungen standen dort schon als Namen. */
+function altStandListe(rec){
+  const namen=(typeof rec.sig==='string'&&rec.sig)?rec.sig.split('|'):[];
+  if(namen.length!==rec.st.length)return [];
+  return rec.st.map((s,k)=>({n:namen[k],hefte:((s&&s.issues)||[]).map(i=>({
+    n:i.ausgabe||'',sel:(i.sel||[]).map(n=>({n}))}))}));
+}
+
 function saveState(){
   if(!isCustomData||!currentYear)return;
   try{
@@ -1799,132 +1931,25 @@ function saveState(){
     /* „opt": die Häkchen unter der Matrix. Sie gehören zum Angebotsstand und
        standen nach jedem Neuladen wieder auf Anfang. Ältere Einträge ohne
        dieses Feld bleiben lesbar – dann bleiben die Häkchen eben, wie sie sind. */
-    all[currentYear]={sig:titleSig(),st:serializeST(),opt:collectOptionen()};
+    all[currentYear]={titel:standListe(),opt:collectOptionen()};
     localStorage.setItem(STATE_KEY,JSON.stringify(all));
   }catch(e){}
 }
-/* Termine im gespeicherten Arbeitsstand an eine neu geladene Preisliste angleichen.
-   Hintergrund: ET, AS, DU/EH, Themen und Kongresse werden beim Auswaehlen einer Ausgabe
-   einmalig in den Stand kopiert (heftAn). Wird spaeter eine korrigierte Angebotsdaten.xlsx
-   geladen, sind die Preise sofort aktuell, diese Kopien aber nicht - der alte Anzeigen-
-   schluss stuende weiter im Kundenangebot. Deshalb wird der Stand hier direkt im
-   Zwischenspeicher nachgezogen, bevor applyYear() ihn ueber restoreState() einliest.
-   Bewusst fuer ALLE Jahrgaenge der neuen Datei, nicht nur den gerade gewaehlten -
-   sonst bliebe der Fehler im anderen Jahrgang bis zum naechsten Wechsel stehen.
-   Die Zuordnung laeuft ueber die Heftbezeichnung (findIssIdx), nicht ueber die
-   gespeicherte Position: ein eingeschobenes Heft verschiebt sonst alles.
-   Nicht betroffen ist das Oeffnen einer Angebotsdatei - dort wandert der Datenstand
-   bewusst mit und es gibt dafuer die eigene Rueckfrage (frageDatenstand). */
-function refreshTermineImStand(neuDs){
-  const bericht={geaendert:[],entfallen:[],platzierungen:[]};
-  let raw;
-  try{raw=localStorage.getItem(STATE_KEY);}catch(e){return bericht;}
-  if(!raw)return bericht;
-  let all;
-  try{all=JSON.parse(raw);}catch(e){return bericht;}
-  if(!all||typeof all!=='object')return bericht;
 
-  Object.keys(all).forEach(year=>{
-    const rec=all[year];
-    if(!rec||!Array.isArray(rec.st))return;
-    const sv=sortedYear(neuDs,year);
-    /* Jahrgang steckt nicht mehr in der Datei, oder die Titelliste passt nicht mehr:
-       In beiden Faellen verwirft restoreState() den Stand ohnehin (Signaturpruefung). */
-    if(!sv.J.length)return;
-    if(rec.sig!==sv.J.map(j=>j.n).join('|'))return;
-    if(rec.st.length!==sv.J.length)return;
-
-    rec.st.forEach((titelStand,ji)=>{
-      if(!titelStand||!Array.isArray(titelStand.issues))return;
-      /* Der Jahrgang gehoert in die Meldung: abgeglichen werden alle Jahrgaenge der
-         Datei, und "Heft 2" allein waere zwischen 2026 und 2027 nicht zu unterscheiden. */
-      const titelName=sv.J[ji].n+' '+year;
-      /* Alle Platzierungsnamen, die dieser Titel im neuen Stand kennt. Angekreuzt
-         wird ueber den Namen, nicht ueber eine Kennung - eine in der Datenpflege
-         umbenannte Platzierung ist hier deshalb eine andere. */
-      const namen=new Set();
-      (sv.J[ji].g||[]).forEach(g=>(g.i||[]).forEach(e=>namen.add(e[0])));
-      titelStand.issues.forEach(i=>{
-        if(!i)return;
-        /* Angekreuzte Platzierungen, die es nicht mehr gibt, aus dem Stand nehmen.
-           Sonst stuenden sie ohne Preis in der Kopiervorschau und liessen sich dort
-           auch nicht mehr abwaehlen: In der Matrix fehlt die Zeile, an der das
-           Haekchen sitzt. */
-        if(Array.isArray(i.sel)&&i.sel.length){
-          const bleibt=i.sel.filter(n=>namen.has(n));
-          if(bleibt.length!==i.sel.length){
-            i.sel.forEach(n=>{
-              if(namen.has(n))return;
-              const zeile=titelName+': '+n;       // je Name einmal, auch bei mehreren Ausgaben
-              if(bericht.platzierungen.indexOf(zeile)<0)bericht.platzierungen.push(zeile);
-            });
-            i.sel=bleibt;
-          }
-        }
-        /* Spalte aus der Zeit vor der Hefte-Leiste: entfernt sie restoreState(). */
-        if(!i.ausgabe)return;
-        const idx=findIssIdx(sv.ISSUES[ji],i.ausgabe);
-        if(idx==null){
-          /* Die Ausgabe gibt es in der neuen Preisliste nicht mehr. Jede Spalte steht
-             fuer genau ein Heft, deshalb faellt die Spalte samt ihren Haken weg. */
-          const n=Array.isArray(i.sel)?i.sel.length:0;
-          bericht.entfallen.push(titelName+': '+i.ausgabe+(n?' ('+n+' Häkchen)':''));
-          i.entfaellt=true;
-          return;
-        }
-        const row=sv.ISSUES[ji][idx];
-        const alt=[i.et||'',i.ds||'',i.du||'',i.eh||'',i.themen||'',i.kongress||''];
-        const neu=[row[1]||'',row[2]||'',row[5]||'',row[6]||'',row[3]||'',row[4]||''];
-        i.issIdx=idx;
-        i.et=neu[0];i.ds=neu[1];i.du=neu[2];i.eh=neu[3];i.themen=neu[4];i.kongress=neu[5];
-        /* Nur echte Abweichungen melden - der Regelfall ist, dass sich nichts geaendert
-           hat, und dann soll das Laden kommentarlos durchlaufen. */
-        if(alt.some((v,k)=>v!==neu[k]))bericht.geaendert.push(titelName+': '+i.ausgabe);
-      });
-      titelStand.issues=titelStand.issues.filter(i=>!(i&&i.entfaellt));
-    });
-  });
-
-  if(bericht.geaendert.length||bericht.entfallen.length||bericht.platzierungen.length){
-    try{localStorage.setItem(STATE_KEY,JSON.stringify(all));}catch(e){}
-  }
-  return bericht;
-}
-
-/* Meldung nach dem Laden einer neuen Preisliste. Erscheint nur, wenn sich am
-   Arbeitsstand tatsaechlich etwas geaendert hat. */
-async function meldeTerminAbgleich(b){
-  if(!b||(!b.geaendert.length&&!b.entfallen.length&&!b.platzierungen.length))return;
-  let t='';
-  if(b.geaendert.length){
-    t+='<p>In '+b.geaendert.length+' Ausgabe(n) wurden die Termine an die neu geladene '+
-       'Preisliste angepasst:</p>'+hinweisListe(b.geaendert,12);
-  }
-  if(b.entfallen.length){
-    t+='<p>'+b.entfallen.length+' Ausgabe(n) aus dem Arbeitsstand gibt es in der neuen '+
-       'Preisliste nicht mehr. Ihre Spalten wurden samt den dort angekreuzten '+
-       'Platzierungen entfernt:</p>'+hinweisListe(b.entfallen,12);
-  }
-  if(b.platzierungen.length){
-    t+='<p>'+b.platzierungen.length+' angekreuzte Platzierung(en) gibt es in der neuen '+
-       'Preisliste nicht mehr – etwa, weil sie in der Datenpflege umbenannt wurde(n). '+
-       'Die Häkchen wurden entfernt:</p>'+hinweisListe(b.platzierungen,12);
-  }
-  await hinweis('Preisliste abgeglichen',t);
-}
-
+/* Liest den gemerkten Stand des Jahrgangs gegen die geladene Preisliste ein. Was es
+   dort nicht mehr gibt, meldet ein Hinweis - einmal, denn das naechste render()
+   speichert den bereinigten Stand. */
 function restoreState(){
   try{
     const raw=localStorage.getItem(STATE_KEY);if(!raw)return false;
     const rec=JSON.parse(raw)[currentYear];
-    if(!rec||rec.sig!==titleSig()||!Array.isArray(rec.st)||rec.st.length!==J.length)return false;
-    ST=rec.st.map(s=>({
-      nid:s.nid||1,
-      issues:(s.issues||[]).map(i=>({id:i.id,ausgabe:i.ausgabe||'',et:i.et||'',ds:i.ds||'',du:i.du||'',eh:i.eh||'',themen:i.themen||'',kongress:i.kongress||'',issIdx:(i.issIdx==null?null:i.issIdx),sel:new Set(i.sel||[])}))
-    }));
+    if(!rec)return false;
+    const liste=Array.isArray(rec.titel)?rec.titel:(Array.isArray(rec.st)?altStandListe(rec):null);
+    if(!liste)return false;
+    const r=standEinlesen(liste,currentYear);
+    ST=r.st;
     if(rec.opt)applyOptionen(rec.opt);
-    const verloren=spaltenOhneHeft(currentYear);
-    if(verloren.length)setTimeout(()=>meldeSpaltenOhneHeft(verloren),0);
+    if(!berichtLeer(r.bericht))setTimeout(()=>meldeVerluste(r.bericht,'Arbeitsstand abgeglichen'),0);
     return true;
   }catch(e){return false;}
 }
@@ -1938,7 +1963,9 @@ function restoreState(){
    andere Browser (u. a. Safari) legen stattdessen eine neue Datei im
    Download-Ordner ab. */
 const ANGEBOT_APP='OpenSlots-Angebotsplaner';
-const ANGEBOT_VERSION=1;
+/* Version 2 (September 2026): Titel, Hefte und Platzierungen mit Nummer und Name,
+   ohne Termine (siehe KENNUNGEN). Version 1 wird beim Öffnen weiter gelesen. */
+const ANGEBOT_VERSION=2;
 let angebotFileHandle=null;   // Datei-Handle (Chrome/Edge) zum Überschreiben
 let angebotFileName='';       // zuletzt verwendeter Dateiname
 let angebotSavedAt='';        // Speicherzeitpunkt der geöffneten Datei
@@ -1975,9 +2002,10 @@ function applyOptionen(o){
   rvGrow();   /* geladener Text kann länger sein als der zuletzt gezeigte */
 }
 
-/* Aktuellen Stand einsammeln. Titel und Platzierungen stehen als Klartext in
-   der Datei, nicht als Nummern – so bleibt sie lesbar und übersteht es, wenn
-   die Excel später um einen Titel wächst. */
+/* Aktuellen Stand einsammeln. Titel, Hefte und Platzierungen stehen mit Namen in
+   der Datei - so bleibt sie lesbar -, dazu mit ihrer festen Nummer, damit ein
+   Umbenennen in der Datenpflege sie nicht verliert. Die Termine stehen im
+   mitgegebenen Datenstand, nicht noch einmal je Heft. */
 function collectAngebot(){
   return {
     app:ANGEBOT_APP,
@@ -1987,14 +2015,7 @@ function collectAngebot(){
     loadedFileName:loadedFileName,
     dataset:(currentYear&&DATASET[currentYear])?{[currentYear]:DATASET[currentYear]}:{},
     optionen:collectOptionen(),
-    titel:J.map((j,ji)=>({
-      n:j.n,
-      issues:(ST[ji]?ST[ji].issues:[]).map(i=>({
-        ausgabe:i.ausgabe,et:i.et,ds:i.ds,du:i.du||'',eh:i.eh||'',
-        themen:i.themen||'',kongress:i.kongress||'',
-        issIdx:i.issIdx,sel:[...i.sel]
-      }))
-    }))
+    titel:standListe()
   };
 }
 
@@ -2134,35 +2155,40 @@ function findIssIdx(rows,ausgabe){
 }
 
 /* ── Betrifft ein anderer Datenstand dieses Angebot? ──
-   Verglichen wird nur, was im Angebot steht: die Titel mit Ausgaben oder angekreuzten
-   Platzierungen, deren Auflage (sie steht in der Titelzeile), die angekreuzten
-   Platzierungen mit Preis, Rabatt- und AE-Merkmal und Terminart, und ob es die
-   gewählte Ausgabe noch gibt. Weitere Titel, andere Platzierungen und andere Hefte
-   ändern am Angebot nichts und lösen deshalb keine Rückfrage mehr aus.
-   Die Termine selbst (ET, AS, DU, Anlieferung) stehen in der Angebotsdatei und werden
-   beim Öffnen von dort übernommen – der Datenstand ändert sie nicht. */
-function titelIndex(y,name){const k=((y&&y.J)||[]).findIndex(j=>j.n===name);return k>-1?k:null;}
-function plMerkmale(y,ji,name){
-  const j=y.J[ji];if(!j)return null;
-  for(const g of (j.g||[]))for(const e of (g.i||[]))if(e[0]===name)
-    return JSON.stringify([e[1],e[2]===true,e[3]===true,(typeof e[4]==='string')?e[4].trim().toUpperCase():'']);
+   Verglichen wird nur, was im Angebot steht: die Titel mit Ausgaben, deren Auflage
+   (sie steht in der Titelzeile), je gewählter Ausgabe, ob es sie noch gibt und ob
+   ihre Termine, Themen und Kongresse gleich sind, und die angekreuzten Platzierungen
+   mit Name, Preis, Rabatt- und AE-Merkmal und Terminart. Weitere Titel, andere
+   Platzierungen und andere Hefte ändern am Angebot nichts und lösen deshalb keine
+   Rückfrage aus. Wiedergefunden wird alles über Nummer und Name (KENNUNGEN). */
+function plMerkmale(y,ji,ref){
+  const j=y.J[ji],nm=plFinden(j,ref);if(nm==null)return null;
+  for(const g of (j.g||[]))for(const e of (g.i||[]))if(e[0]===nm)
+    return JSON.stringify([e[0],e[1],e[2]===true,e[3]===true,(typeof e[4]==='string')?e[4].trim().toUpperCase():'']);
   return null;
 }
-function angebotBetroffen(ausDatei,geladen,titelListe){
-  return (titelListe||[]).some(t=>{
-    if(!t||!t.n)return false;
-    const benutzt=(t.issues||[]).filter(i=>i&&(((i.sel||[]).length>0)||i.ausgabe));
-    if(!benutzt.length)return false;                        /* Titel steht nicht im Angebot */
-    const a=titelIndex(ausDatei,t.n),b=titelIndex(geladen,t.n);
+function heftTermine(r){return JSON.stringify([1,2,3,4,5,6].map(k=>String(r[k]||'')));}
+function angebotBetroffen(ausDatei,geladen,liste){
+  return (liste||[]).some(t=>{
+    const hefte=((t&&t.hefte)||[]).filter(h=>h&&(h.n||(h.sel||[]).length));
+    if(!hefte.length)return false;                          /* Titel steht nicht im Angebot */
+    const a=titelFinden(ausDatei,t),b=titelFinden(geladen,t);
     if(a==null||b==null)return true;                        /* Titel nur auf einer Seite */
     if((ausDatei.J[a].a||0)!==(geladen.J[b].a||0))return true;   /* Auflage steht in der Titelzeile */
-    return benutzt.some(i=>{
-      /* Ausgabe über ihre Bezeichnung: fehlt sie in den geladenen Daten, bleibt die
-         Heftauswahl der Zeile leer – das ist sichtbar. */
-      if(i.ausgabe&&findIssIdx(ausDatei.ISSUES[a],i.ausgabe)!=null&&findIssIdx(geladen.ISSUES[b],i.ausgabe)==null)return true;
-      return (i.sel||[]).some(n=>plMerkmale(ausDatei,a,n)!==plMerkmale(geladen,b,n));
+    return hefte.some(h=>{
+      const ra=ausDatei.ISSUES[a]||[],rb=geladen.ISSUES[b]||[];
+      const ia=heftFinden(ra,h),ib=heftFinden(rb,h);
+      if(ia!=null&&ib==null)return true;                    /* Ausgabe fehlt im geladenen Stand */
+      if(ia!=null&&heftTermine(ra[ia])!==heftTermine(rb[ib]))return true;
+      return (h.sel||[]).some(r=>plMerkmale(ausDatei,a,r)!==plMerkmale(geladen,b,r));
     });
   });
+}
+/* Angebotsdatei Version 1: Titel und Platzierungen als Namen, das Heft als Text
+   („Heft 5 – Juni"), die Termine je Heft kopiert (werden nicht mehr gebraucht). */
+function altAngebotListe(titel){
+  return titel.map(t=>Array.isArray(t&&t.hefte)?t:{n:(t&&t.n)||'',
+    hefte:((t&&t.issues)||[]).map(i=>({n:(i&&i.ausgabe)||'',sel:((i&&i.sel)||[]).map(n=>({n}))}))});
 }
 
 /* Gespeichertes Angebot wiederherstellen. Rückgabe: true, wenn es geklappt hat. */
@@ -2190,13 +2216,14 @@ async function applyAngebot(data){
   }
   const jahr=data.jahrgang||'';
   const ausDatei=data.dataset&&data.dataset[jahr];
+  const liste=altAngebotListe(data.titel);
   /* Gefragt wird nur, wenn der geladene Stand die Titel und Platzierungen dieses
      Angebots anders beziffert (siehe angebotBetroffen). Betrifft der Unterschied nur
      Titel, Platzierungen oder Hefte, die hier nicht vorkommen, gilt stillschweigend der
      geladene Stand – er ist der jüngere, und am Angebot ändert er nichts. Ist für den
      Jahrgang gar nichts geladen, bleibt nur die Datei. */
   let nimmDatei=!(ausDatei&&DATASET[jahr]);
-  if(ausDatei&&DATASET[jahr]&&angebotBetroffen(ausDatei,DATASET[jahr],data.titel)){
+  if(ausDatei&&DATASET[jahr]&&angebotBetroffen(ausDatei,DATASET[jahr],liste)){
     nimmDatei=await frageDatenstand(data.savedAt,loadedFileName);
     if(nimmDatei===null)return false;                 // abgebrochen: nichts ändern
   }
@@ -2218,41 +2245,19 @@ async function applyAngebot(data){
   }
 
   currentYear=jahr;
-  applyYear(jahr);            // baut Titel + Ausgabenraster auf (holt den Zwischenspeicher)
-  /* Der Zwischenspeicher wird jetzt durch den Stand aus der Datei ersetzt.
-     Die Zuordnung läuft über den Titelnamen, nicht über die Reihenfolge. */
-  const byName={};
-  data.titel.forEach(t=>{byName[t.n]=t;});
-  let fehlend=0;
-  ST=J.map((j,ji)=>{
-    const t=byName[j.n];
-    if(!t)return {issues:[],nid:1};
-    const namen=new Set();
-    j.g.forEach(g=>g.i.forEach(e=>namen.add(e[0])));
-    let nid=1;
-    const issues=(t.issues||[]).map(i=>{
-      const sel=(i.sel||[]).filter(n=>{
-        if(namen.has(n))return true;
-        fehlend++;return false;            // Platzierung gibt es in dieser Preisliste nicht mehr
-      });
-      return {id:nid++,ausgabe:i.ausgabe||'',et:i.et||'',ds:i.ds||'',du:i.du||'',eh:i.eh||'',
-              themen:i.themen||'',kongress:i.kongress||'',
-              issIdx:findIssIdx(ISSUES[ji],i.ausgabe),sel:new Set(sel)};
-    });
-    return {issues:issues,nid:nid};
-  });
-  const ohneHeft=spaltenOhneHeft(jahr);
+  /* Baut Titel und Ausgabenraster auf. Den Zwischenspeicher liest es dabei nicht ein:
+     Der Stand kommt gleich aus der Datei, und eine Meldung zum ersetzten Stand
+     wäre hier fehl am Platz. */
+  applyYear(jahr,true);
+  const r=standEinlesen(liste,jahr);
+  ST=r.st;
   applyOptionen(data.optionen);
   angebotSavedAt=data.savedAt||'';
   collapsedCats=buildCollapsed();
   buildTabs();
   setJ(0);                    // zeichnet Matrix + Vorschau und sichert den Stand
   syncDataUI();
-  if(fehlend)
-    await hinweis('Nicht alle Platzierungen übernommen',
-      '<p>'+fehlend+' Platzierung(en) aus dem gespeicherten Angebot gibt es in der '+
-      'aktuellen Preisliste nicht mehr und wurden weggelassen.</p>');
-  await meldeSpaltenOhneHeft(ohneHeft);
+  await meldeVerluste(r.bericht,'Nicht alles übernommen');
   return true;
 }
 
@@ -2291,10 +2296,10 @@ function yearHasEntries(y){
     if(!DATASET[y])return false;
     const raw=localStorage.getItem(STATE_KEY);if(!raw)return false;
     const rec=JSON.parse(raw)[y];
-    if(!rec||!Array.isArray(rec.st))return false;
-    const names=DATASET[y].J.map(j=>j.n).sort((a,b)=>a.localeCompare(b,'de',{numeric:true,sensitivity:'base'})).join('|');
-    if(rec.sig!==names||rec.st.length!==DATASET[y].J.length)return false;
-    return rec.st.some(s=>(s.issues||[]).some(i=>(i.sel&&i.sel.length>0)||i.ausgabe));
+    if(!rec)return false;
+    if(Array.isArray(rec.titel))return rec.titel.some(t=>t&&(t.hefte||[]).length>0);
+    if(Array.isArray(rec.st))return rec.st.some(s=>(s.issues||[]).some(i=>(i.sel&&i.sel.length>0)||i.ausgabe));
+    return false;
   }catch(e){return false;}
 }
 /* Startjahr: zuletzt gewähltes Jahr; ist es leer, ein Jahrgang mit Platzierungen */
@@ -2320,7 +2325,8 @@ let collapsedFb=new Set(), fbGroups=[];
 /* Fachbereiche in Anzeigereihenfolge: alphabetisch, „Ohne Fachbereich" immer zuletzt.
    Liefert eine leere Liste, solange es weniger als zwei Bereiche gibt – dann bleibt die
    Titelliste flach wie bisher. Die Reihenfolge von J bleibt unangetastet, weil der
-   gespeicherte Arbeitsstand an ihr hängt (siehe sortedYear). */
+   laufende Arbeitsstand (ST) und die Klappzustände nach Listenplatz auf sie zeigen
+   (siehe sortedYear). */
 function fachbereiche(){
   const m=new Map();
   J.forEach((j,i)=>{
@@ -2401,7 +2407,7 @@ function sortedYear(ds,year){
   return {J:ord.map(i=>y.J[i]),ISSUES:ord.map(i=>y.ISSUES[i])};
 }
 
-function applyYear(year){
+function applyYear(year,ohneStand){
   const ys=years();
   if(ys.length){
     if(!DATASET[year])year=ys.includes(currentYear)?currentYear:ys[0];
@@ -2416,7 +2422,7 @@ function applyYear(year){
   heftMemLeeren();
   kgPick=null;                    /* gilt nur für seinen Jahrgang; restoreState() setzt ihn ggf. neu */
   cJ=0;
-  restoreState();
+  if(!ohneStand)restoreState();
   collapsedCats=buildCollapsed();
   buildTabs();
   rMx();
@@ -2515,39 +2521,6 @@ function updCatBadges(){
    und Heftnummern je Jahrgang andere sind. Nicht im Zwischenspeicher. */
 const HEFT_MEM={};
 function heftMemLeeren(){Object.keys(HEFT_MEM).forEach(k=>delete HEFT_MEM[k]);}
-/* Seit die Hefte ueber die Leiste gewaehlt werden, steht jede Spalte fuer genau ein
-   Heft. Aeltere Staende und Angebotsdateien koennen noch Spalten ohne Heft tragen
-   (frueher "Ausgabe hinzufuegen"), Spalten mit einem Heft, das der Datenstand nicht
-   mehr kennt, oder ein Heft zweimal. Solche Spalten fallen weg; ein doppeltes Heft
-   gibt seine Haken an die erste Spalte ab. Zurueck kommt je verworfener Spalte mit
-   Haken eine Zeile fuer die Meldung - leere Spalten verschwinden kommentarlos. */
-function spaltenOhneHeft(jahr){
-  const verloren=[];
-  ST.forEach((s,ji)=>{
-    if(!s||!J[ji])return;
-    const rows=ISSUES[ji]||[],erste=new Map();
-    s.issues=s.issues.filter(i=>{
-      if(i.issIdx!=null&&rows[i.issIdx]){
-        const e=erste.get(i.issIdx);
-        if(!e){erste.set(i.issIdx,i);return true;}
-        i.sel.forEach(n=>e.sel.add(n));
-        return false;
-      }
-      if(i.sel.size)verloren.push(J[ji].n+' '+jahr+': '+(i.ausgabe?i.ausgabe:'Spalte ohne Heft')+
-        ' ('+i.sel.size+' Häkchen)');
-      return false;
-    });
-  });
-  return verloren;
-}
-function meldeSpaltenOhneHeft(z){
-  if(!z||!z.length)return Promise.resolve();
-  return hinweis('Spalten ohne Heft entfernt',
-    '<p>Die Hefte werden über die Leiste oberhalb der Tabelle gewählt; jede Spalte steht '+
-    'seitdem für genau ein Heft. '+z.length+' Spalte(n) ohne gültiges Heft trugen '+
-    'angekreuzte Platzierungen und wurden mit ihnen entfernt:</p>'+hinweisListe(z,12)+
-    '<p>Die Platzierungen lassen sich im passenden Heft neu ankreuzen.</p>');
-}
 /* Knopfbeschriftung: Heftnummer/Jahrgang zweistellig, etwa "1/27" oder "7–8/27".
    Hefte ohne Nummer (Sonderhefte) behalten ihren Namen. */
 function heftKurz(l){
@@ -2559,7 +2532,7 @@ function heftAn(ji,idx){
   const s=ST[ji],row=ISSUES[ji]&&ISSUES[ji][idx];if(!s||!row)return;
   if(s.issues.some(x=>x.issIdx===idx))return;
   const mem=(HEFT_MEM[ji]||{})[idx];
-  s.issues.push({id:s.nid++,ausgabe:heftText(row[0]),et:row[1],ds:row[2],du:row[5]||'',eh:row[6]||'',themen:row[3]||'',kongress:row[4]||'',issIdx:idx,sel:new Set(mem||[])});
+  s.issues.push({id:s.nid++,issIdx:idx,sel:new Set(mem||[])});
   if(HEFT_MEM[ji])delete HEFT_MEM[ji][idx];
 }
 function heftAus(ji,idx){
@@ -2819,11 +2792,11 @@ function rMx(){
   }
   let h='<thead><tr><th class="pl-hd">Platzierung</th>';
   iss.forEach((s,ci)=>{
+    /* Name und Termine kommen bei jeder Anzeige aus der geladenen Preisliste */
+    const t=heftDaten(ji,s);
     h+=`<th class="iss-th" data-col="${ci}"><div class="iss-head">`;
-    h+=`<div class="iss-name" title="${esc(s.ausgabe)}">${esc(s.ausgabe)}</div>`;
-    /* Termine nur zur Ansicht: Sie kommen aus der Datenpflege und wuerden beim
-       naechsten Laden der Preisliste ohnehin wieder von dort gesetzt. */
-    h+=`<div class="iss-termine"><span><b>ET</b>${esc(s.et||'–')}</span><span><b>AS</b>${esc(s.ds||'–')}</span></div>`;
+    h+=`<div class="iss-name" title="${esc(t.ausgabe)}">${esc(t.ausgabe)}</div>`;
+    h+=`<div class="iss-termine"><span><b>ET</b>${esc(t.et||'–')}</span><span><b>AS</b>${esc(t.ds||'–')}</span></div>`;
     h+=`</div></th>`;
   });
   h+='</tr></thead><tbody>';
@@ -2869,7 +2842,7 @@ function sumTitle(ji,iss,discOn,aeOn,pct){
   return {preis,rabatt,ae,netto:preis-rabatt-ae};
 }
 function buildHtml(){
-  const act=J.map((j,ji)=>({ji,j,iss:ST[ji].issues.filter(s=>s.sel.size>0||s.ausgabe)})).filter(({iss})=>iss.length);
+  const act=J.map((j,ji)=>({ji,j,iss:ST[ji].issues.filter(s=>heftZeile(ji,s))})).filter(({iss})=>iss.length);
   if(!act.length)return '';
   const thS='background:#f2f4f8;font-weight:600;text-align:left;padding:6px 10px;border:1px solid #d6dbe8;font-size:12px;color:#00285a;font-family:Arial,sans-serif';
   const tdS='padding:5px 9px;border:1px solid #e4e7ef;vertical-align:top;font-size:12px;font-family:Arial,sans-serif;color:#1a2340';
@@ -2911,21 +2884,22 @@ function buildHtml(){
          entsteht allein dadurch, dass jede Zeile gleich hoch ist. Bräche ein langer
          Name um, rutschte alles darunter gegen die Nachbarspalten. */
       const tdN=td+';white-space:nowrap';
+      const t=heftDaten(ji,s);
       const names=s.sel.size>0?[...s.sel]:[];
       const cells=names.map(n=>{const e=entryOf(ji,n);return e?posCalc(e,discOn,aeOn,pct):null;});
       const pl=names.length?names.map(esc).join('<br>'):'&ndash;';
       const priceLines=names.length?names.map(n=>{const p=pOf(ji,n);return p!=null?fmtP(p):'&ndash;';}).join('<br>'):'&ndash;';
-      h+=`<tr><td style="${td}">${esc(s.ausgabe)||'&ndash;'}</td>`;
-      if(tsOn)h+=`<td style="${td}">${escNl(s.themen)||'&ndash;'}</td>`;
-      if(kgOn)h+=`<td style="${td}">${escNl(kgOnList(s.kongress))||'&ndash;'}</td>`;
+      h+=`<tr><td style="${td}">${esc(t.ausgabe)||'&ndash;'}</td>`;
+      if(tsOn)h+=`<td style="${td}">${escNl(t.themen)||'&ndash;'}</td>`;
+      if(kgOn)h+=`<td style="${td}">${escNl(kgOnList(t.kongress))||'&ndash;'}</td>`;
       /* Je Platzierung genau ein Termin: DU-Schluss oder Anlieferung – Zeile für Zeile
          passend zu den Platzierungen und Preisen daneben. */
       const terminLines=names.length?names.map(n=>{
-        const art=terminArt(ji,n),d=(art==='EH')?s.eh:((art==='DU')?s.du:'');
+        const art=terminArt(ji,n),d=(art==='EH')?t.eh:((art==='DU')?t.du:'');
         if(!d)return '&ndash;';
         return (art==='EH')?(esc(d)+' Anlieferung'):esc(d);
       }).join('<br>'):'&ndash;';
-      h+=`<td style="${td}">${esc(s.et)||'&ndash;'}</td><td style="${td}">${esc(s.ds)||'&ndash;'}</td>`;
+      h+=`<td style="${td}">${esc(t.et)||'&ndash;'}</td><td style="${td}">${esc(t.ds)||'&ndash;'}</td>`;
       if(duOn)h+=`<td style="${tdN}">${terminLines}</td>`;
       h+=`<td style="${tdN}">${pl}</td><td style="${tdr}">${priceLines}</td>`;
       if(discOn)h+=`<td style="${tdr}">${names.length?cells.map(c=>c?negH(c.rabatt):'&ndash;').join('<br>'):'&ndash;'}</td>`;
@@ -2963,7 +2937,7 @@ function buildHtml(){
 }
 
 function buildTxt(){
-  const act=J.map((j,ji)=>({ji,j,iss:ST[ji].issues.filter(s=>s.sel.size>0||s.ausgabe)})).filter(({iss})=>iss.length);
+  const act=J.map((j,ji)=>({ji,j,iss:ST[ji].issues.filter(s=>heftZeile(ji,s))})).filter(({iss})=>iss.length);
   if(!act.length)return '';
   const de=document.getElementById('ck-disc'),aeEl=document.getElementById('ck-ae');
   const discOn=!!(de&&de.checked),aeOn=!!(aeEl&&aeEl.checked),pct=discPct();
@@ -2977,19 +2951,20 @@ function buildTxt(){
        hintereinander; der Mittelpunkt trennt die Zeile schon deutlich genug. */
     L.push(j.a>0?(j.n+' · Auflage '+nf(j.a)+' Expl.'):(j.n+':'));
     iss.forEach(s=>{
-      let hdr=s.ausgabe?`Ausgabe ${s.ausgabe}`:'(Ausgabe)';
-      const inf=[];if(s.et)inf.push('ET: '+s.et);if(s.ds)inf.push('AS: '+s.ds);
+      const t=heftDaten(ji,s);
+      let hdr=t.ausgabe?`Ausgabe ${t.ausgabe}`:'(Ausgabe)';
+      const inf=[];if(t.et)inf.push('ET: '+t.et);if(t.ds)inf.push('AS: '+t.ds);
       /* DU nur nennen, wenn ihn überhaupt eine Platzierung braucht; die Anlieferung
          steht stattdessen hinter der einzelnen Platzierung. */
-      if(duOn&&s.du&&[...s.sel].some(n=>terminArt(ji,n)==='DU'))inf.push('DU: '+s.du);
-      if(tsOn&&s.themen)inf.push('Themenschwerpunkte: '+flatNl(s.themen));
-      if(kgOn){const kgT=kgOnList(s.kongress);if(kgT)inf.push('Kongresse: '+flatNl(kgT));}
+      if(duOn&&t.du&&[...s.sel].some(n=>terminArt(ji,n)==='DU'))inf.push('DU: '+t.du);
+      if(tsOn&&t.themen)inf.push('Themenschwerpunkte: '+flatNl(t.themen));
+      if(kgOn){const kgT=kgOnList(t.kongress);if(kgT)inf.push('Kongresse: '+flatNl(kgT));}
       if(inf.length)hdr+=` (${inf.join(', ')})`;
       L.push(hdr);
       if(!s.sel.size)L.push('  \u2013');
       else s.sel.forEach(n=>{
         const art=terminArt(ji,n);
-        L.push('  '+n+((duOn&&art==='EH'&&s.eh)?(' (Anlieferung '+s.eh+')'):''));
+        L.push('  '+n+((duOn&&art==='EH'&&t.eh)?(' (Anlieferung '+t.eh+')'):''));
       });
     });
     const pm=new Map();
