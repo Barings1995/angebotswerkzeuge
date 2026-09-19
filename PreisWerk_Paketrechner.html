@@ -497,7 +497,7 @@ function cellNum(cell){
 }
 function truthy(s){return /^(ja|j|x|yes|y|true|1|wahr)$/i.test(String(s).trim());}
 
-// Excel-Arbeitsmappe (Blatt „Preise“) -> { jahr: { titel: {fach, categories:{kat:{fmt:{base,s4c,rabatt}}}} } }
+// Excel-Arbeitsmappe (Blatt „Preise“) -> { jahr: { titel: {fach, categories:{kat:{fmt:{base,s4c,rabatt,ae,eq}}}} } }
 function parseWorkbookToDataset(wb){
   const ws=wb.getWorksheet('Preise');
   if(!ws)throw new Error('Im Excel fehlt das Tabellenblatt „Preise“.');
@@ -509,6 +509,7 @@ function parseWorkbookToDataset(wb){
     if(!year||!titel||!fmt)return;
     const base=cellNum(row.getCell(6)), z4c=cellNum(row.getCell(7));
     const rabatt=truthy(cellStr(row.getCell(8)));
+    const ae=truthy(cellStr(row.getCell(9)));   // Spalte 9 „AE-fähig“, leer wirkt wie „nein“
     if(!DS[year])DS[year]={};
     if(!DS[year][titel])DS[year][titel]={fach:'',categories:{}};
     /* Spalte 11 „Fachbereich“: je Titel ein fester Wert, der in jeder Preiszeile erneut
@@ -523,7 +524,7 @@ function parseWorkbookToDataset(wb){
     const eq=(eqRoh>0?eqRoh:null);
     const cats=DS[year][titel].categories;
     if(!cats[kat])cats[kat]={};
-    cats[kat][fmt]={base:base, s4c:(z4c>0?z4c:null), rabatt:rabatt, eq:eq};
+    cats[kat][fmt]={base:base, s4c:(z4c>0?z4c:null), rabatt:rabatt, ae:ae, eq:eq};
   });
   if(!Object.keys(DS).length)throw new Error('Es wurden keine Datenzeilen gefunden.');
   return DS;
@@ -640,7 +641,7 @@ const euro = n => n.toLocaleString('de-DE', { minimumFractionDigits: 2, maximumF
    Die Pruefung vor jeder Veroeffentlichung (Ordner „Prüffälle") liest genau diesen
    Abschnitt und rechnet ihn ohne Browser nach. Deshalb gilt hier: kein document,
    kein window, keine Daten der Seite - nur, was als Wert hereinkommt.
-   Eine Position it ist {journal, fn, base, s4c, use4c, rabatt, eq, count}. */
+   Eine Position it ist {journal, fn, base, s4c, use4c, rabatt, ae, eq, count}. */
 const round2 = n => Math.round((n + Number.EPSILON) * 100) / 100;
 function getMalRabatt(n)   { return n>=18?.15 : n>=12?.10 : n>=6?.05 : n>=3?.03 : 0; }
 function getMengeRabatt(n) { return n>=18?.20 : n>=12?.15 : n>=6?.10 : n>=3?.05 : 0; }
@@ -692,14 +693,17 @@ function staffelGruppenRechnen(items, gemein, fachVon) {
   });
 }
 /* Eine Tabellenzeile: Staffelrabatt nur auf den s/w-Grundpreis (ungerundet), AE 10 %
-   auf den Betrag nach Rabatt, auf den Cent gerundet. satz ist der Staffelsatz der Gruppe. */
+   auf den Betrag nach Rabatt, auf den Cent gerundet. satz ist der Staffelsatz der Gruppe.
+   AE nur auf AE-fähige Positionen, wie in OpenSlots und MediaQuote (seit 19.09.2026;
+   vorher auf jede). Eine Position ohne Angabe - aus einer Preisliste im Zwischenspeicher,
+   die vor dieser Aenderung gemerkt wurde - gilt als AE-fähig, wie bisher. */
 function zeileRechnen(it, satz, useAE) {
   const s4cVal   = it.use4c ? (it.s4c || 0) : 0;
   const list     = (it.base + s4cVal) * it.count;
   const rBase    = it.rabatt ? it.base : 0;
   const rabEuro  = rBase * satz * it.count;
   const after    = list - rabEuro;
-  const aeEuro   = useAE ? round2(after * 0.10) : 0;
+  const aeEuro   = (useAE && it.ae !== false) ? round2(after * 0.10) : 0;
   const net      = after - aeEuro;
   return { list, rabEuro, after, aeEuro, net };
 }
@@ -861,7 +865,7 @@ function addItem() {
   const use4c = has4c && document.getElementById('a4c').checked;
   const anz   = Math.min(99, Math.max(1, parseInt(document.getElementById('aAnz').value) || 1));
 
-  items.push({ id: nextId++, journal: j, cat, fn, base: fmt.base, s4c: fmt.s4c, use4c, rabatt: fmt.rabatt, eq: (fmt.eq != null ? fmt.eq : null), count: anz });
+  items.push({ id: nextId++, journal: j, cat, fn, base: fmt.base, s4c: fmt.s4c, use4c, rabatt: fmt.rabatt, ae: fmt.ae, eq: (fmt.eq != null ? fmt.eq : null), count: anz });
   render();
   saveStand();
 
@@ -952,8 +956,9 @@ function render() {
       const rabDisp = (it.rabatt && g.applied > 0)
         ? `<td class="r save">–${euro(rabEuro)}<br><span style="font-size:10px;color:var(--grey-500);">(${Math.round(g.applied*100)} %)</span></td>`
         : `<td class="r" style="color:var(--grey-500);">–</td>`;
-      const aeDisp = useAE
-        ? `<td class="r orange">–${euro(aeEuro)}</td>` : '';
+      const aeDisp = !useAE ? ''
+        : it.ae === false ? `<td class="r" style="color:var(--grey-500);">–</td>`
+        : `<td class="r orange">–${euro(aeEuro)}</td>`;
 
       rows += `<tr>
         <td class="journal">${it.journal}</td>
@@ -1133,7 +1138,7 @@ function restoreStand(){
       if(!fmt){fehlend.push(p.journal+' · '+p.cat+' · '+p.fn);return;}
       const has4c=fmt.s4c!==null&&fmt.s4c>0;
       neu.push({id:nextId++,journal:p.journal,cat:p.cat,fn:p.fn,
-                base:fmt.base,s4c:fmt.s4c,rabatt:fmt.rabatt,
+                base:fmt.base,s4c:fmt.s4c,rabatt:fmt.rabatt,ae:fmt.ae,
                 eq:(fmt.eq!=null?fmt.eq:null),
                 use4c:has4c&&!!p.use4c,
                 count:Math.min(99,Math.max(1,parseInt(p.count)||1))});
@@ -1212,7 +1217,7 @@ function datenbankZuDataset(titel){
       const base=z.preis==null?0:Number(z.preis);
       const z4c=z.zuschlag_4c==null?0:Number(z.zuschlag_4c);
       if(!cats[kat])cats[kat]={};
-      cats[kat][fmt]={ base:base, s4c:(z4c>0?z4c:null), rabatt:!!z.rabattfaehig,
+      cats[kat][fmt]={ base:base, s4c:(z4c>0?z4c:null), rabatt:!!z.rabattfaehig, ae:!!z.ae_faehig,
                        eq:(z.seiten_aequivalent==null?null:Number(z.seiten_aequivalent)) };
     });
   });
