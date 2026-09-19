@@ -601,6 +601,38 @@ button, input, select, textarea { font-family: inherit; }
 .iss-termine b { display:inline-block; width:22px; font-size:10px; font-weight:600; letter-spacing:.04em; color:var(--sm-muted); }
 .iss-name { font-size:11.5px; font-weight:700; color:var(--sm-navy); padding:2px 0 1px; text-align:center; white-space:nowrap; }
 
+/* ── KARTE: Hefte-Leiste, Werkzeugzeile und Matrix in einem Rahmen ──
+   Nach dem Vorbild der Kongressansicht der Jahresvorschau: Die Leiste bestimmt die
+   Spalten darunter und steht deshalb mit ihnen in einer Flaeche. Die Ueberschrift
+   „Ausgaben" bleibt ausserhalb, auf einer Linie mit „Titel" in der linken Spalte. */
+.mx-karte { background:var(--sm-white); border:1px solid var(--sm-border); border-radius:var(--radius-lg); box-shadow:var(--shadow-md); margin-bottom:1.25rem; }
+.mx-karte-kopf { background:var(--sm-navy-05); border-bottom:1px solid var(--sm-border); padding:12px 14px; border-radius:var(--radius-lg) var(--radius-lg) 0 0; }
+.mx-karte-kopf .heft-row { margin-bottom:0; }
+.mx-karte .mx-tools { margin:0; padding:8px 14px; border-bottom:1px solid var(--sm-border); }
+/* Die Matrix rollt in sich, nicht mit der Seite - nur so bleibt der Heftkopf beim
+   Blaettern stehen: Ein klebendes Element haelt sich an seinem naechsten rollenden
+   Vorfahren fest. Solange .mx-outer nur waagerecht rollte, war er das auch fuer
+   die Senkrechte, rollte dort aber nie - der Kopf ging mit der Seite fort. Die Hoehe
+   setzt mxHoeheAnpassen() so, dass Karte samt Leiste ins Fenster passt. */
+.mx-karte .mx-outer { border:none; border-radius:0 0 var(--radius-lg) var(--radius-lg); box-shadow:none; margin-bottom:0; overflow:auto; max-height:calc(100vh - 200px); }
+/* Die Aussenkanten zeichnet in der Karte deren Rahmen. Die Zellen tragen ihre
+   eigene Aussenlinie sonst direkt daneben - links, rechts und oben stuende eine
+   Doppellinie (im Kopf besonders sichtbar, weil dessen Trennlinien dunkler sind). */
+.mx-karte .mx th.pl-hd, .mx-karte .mx td.pl-cell { border-left:none; }
+.mx-karte .mx tr > :last-child { border-right:none; }
+.mx-karte .mx thead th { border-top:none; }
+/* Das Rollfeld beginnt je nach Browser-Zoom auf einem Bruchteil eines Geraetepixels.
+   Chrome rundet die klebenden Teile (Kopf, Platzierungsspalte) auf ganze Pixel, den
+   durchlaufenden Inhalt nicht - an der Ober- und der linken Kante blieb so eine
+   Pixelreihe, in der die Heftspalten durchschienen (gemessen bei 110, 125 und 150 %).
+   Einen Pixel ueber die Kante hinaus geklebt decken beide diese Reihe mit; was
+   ausserhalb liegt, schneidet das Rollfeld ab. */
+.mx-karte th.iss-th, .mx-karte th.pl-hd { top:-1px; }
+.mx-karte th.pl-hd, .mx-karte td.pl-cell { left:-1px; }
+/* Damit der Kopf nicht erst beim Blaettern um diesen Pixel nach oben (und die Spalte
+   nach links) springt, steht die Tabelle von Anfang an einen Pixel ueber der Kante. */
+.mx-karte .mx { margin-top:-1px; margin-left:-1px; }
+
 /* ── TABLE WRAPPER ── */
 .mx-outer {
   overflow-x: auto;
@@ -1181,6 +1213,8 @@ tr.pl-row.alt td:not(.pl-cell) {
 
   <div class="main">
   <div class="sec-label sec-label-row">Ausgaben<span id="heftCnt"></span></div>
+  <div class="mx-karte">
+  <div class="mx-karte-kopf">
   <div class="heft-row">
     <div class="heft-bar" id="heftBar"></div>
     <div class="heft-alle">
@@ -1189,6 +1223,7 @@ tr.pl-row.alt td:not(.pl-cell) {
     </div>
   </div>
 
+  </div>
   <div class="mx-tools" id="mxTools" style="display:none">
     <button class="mx-tool-btn" id="toggleAll" onclick="toggleAllCats()"></button>
     <span class="mx-tool-spacer"></span>
@@ -1200,6 +1235,7 @@ tr.pl-row.alt td:not(.pl-cell) {
     <table class="mx" id="mx">
       <tbody><tr><td class="empty-st" colspan="20">Noch keine Ausgaben &mdash; oben in der Leiste die Hefte w&auml;hlen.</td></tr></tbody>
     </table>
+  </div>
   </div>
 
   <div class="sec-label">Optionen</div>
@@ -3073,6 +3109,26 @@ applyYear(pickStartYear());
    sich die Seite danach nach und baut mit ihr neu auf. */
 /* Erst die Datenbank, dann - falls sie schweigt - die Datei daneben. */
 ladePreislisteAusDatenbank().then(ok=>{ if(!ok) ladePreislisteVonServer(); });
+
+/* Hoehe des Matrix-Rollfelds: Kopfband, Werkzeugzeile und Matrix sollen zusammen ins
+   Fenster passen, mit 12 px Luft wie die klebende Titelspalte. Die Seite rollt dann bis
+   zur Karte, danach rollt die Matrix in sich; an ihrem Ende rollt die Seite weiter zu
+   Optionen und Vorschau. Unter 340 px wird das Feld nicht kleiner - bei sehr flachem
+   Fenster rollt dann wieder die Seite mit. Das Kopfband waechst, wenn die Hefte-Leiste
+   umbricht; deshalb wird auch dort gemessen. */
+(function mxHoeheAnpassen(){
+  const karte=document.querySelector('.mx-karte');
+  if(!karte) return;
+  const kopf=karte.querySelector('.mx-karte-kopf'), tools=document.getElementById('mxTools'),
+        feld=karte.querySelector('.mx-outer');
+  const anpassen=()=>{
+    const rest=kopf.offsetHeight+(tools.offsetParent?tools.offsetHeight:0)+2+24;
+    feld.style.maxHeight=Math.max(340,window.innerHeight-rest)+'px';
+  };
+  window.addEventListener('resize',anpassen);
+  if(window.ResizeObserver){ const ro=new ResizeObserver(anpassen); ro.observe(kopf); ro.observe(tools); }
+  anpassen();
+})();
 
 /* Umbruch der Datenleiste: CSS kann nicht abfragen, ob eine Gruppe eine neue
    Zeile beginnt — deshalb wird bei jeder Groessenaenderung der Leiste und ihrer
