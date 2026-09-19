@@ -2328,16 +2328,21 @@ function onPriceEdit(id) {
    hierher weiter. Die Pruefung vor jeder Veroeffentlichung (Ordner „Prüffälle")
    liest genau diesen Abschnitt und rechnet ihn ohne Browser nach. Deshalb gilt hier:
    kein document, kein window, keine Daten der Seite - nur, was als Wert hereinkommt.
-   Gerundet wird hier nicht, erst in der Anzeige (formatEur) - anders als in OpenSlots
-   und PreisWerk, die Rabatt und AE je Position auf den Cent runden. */
+   Gerundet wird hier auf den Cent, wie in OpenSlots und PreisWerk (seit 19.09.2026,
+   vorher erst in der Anzeige): Rabatt und AE je Zeile, der Endpreis ist Preis minus
+   beides, netto die Summe der Zeilen, die MwSt auf netto. So laesst sich jede
+   angezeigte Zahl aus den anderen angezeigten nachrechnen. */
+/* Auf den Cent, ab einem halben Cent aufwaerts. Der Umweg ueber toPrecision faengt
+   Betraege wie 1,005 ab, die der Rechner knapp darunter speichert (1,00499...). */
+function cent(n) { return Math.round(Number((n * 100).toPrecision(12))) / 100; }
 /* Eine Zeile: Rabatt und AE auf den vollen 4C-Preis (auch einen von Hand
    ueberschriebenen), AE auf den Betrag nach Rabatt. Gesperrt heisst: laut Preisliste
    nicht rabatt- bzw. nicht AE-faehig. */
 function zeileRechnen(preis, rabattPct, aePct, rabattGesperrt, aeGesperrt) {
-  const rabatt     = rabattGesperrt ? 0 : preis * rabattPct / 100;
-  const nachRabatt = preis - rabatt;
-  const ae         = aeGesperrt ? 0 : nachRabatt * aePct / 100;
-  return { rabatt, ae, gp: nachRabatt - ae };
+  const rabatt     = rabattGesperrt ? 0 : cent(preis * rabattPct / 100);
+  const nachRabatt = cent(preis - rabatt);
+  const ae         = aeGesperrt ? 0 : cent(nachRabatt * aePct / 100);
+  return { rabatt, ae, gp: cent(nachRabatt - ae) };
 }
 /* Euro-Text in Zahl (de-DE) – null bei leer/„–"/ungültig */
 function parseEur(s) {
@@ -2350,8 +2355,9 @@ function parseEur(s) {
 function summeRechnen(gps, ohneMwst) {
   let netto = 0;
   gps.forEach(gp => { netto += gp; });
-  const mwst = ohneMwst ? 0 : netto * 0.19;
-  return { netto, mwst, brutto: netto + mwst };
+  netto = cent(netto);
+  const mwst = ohneMwst ? 0 : cent(netto * 0.19);
+  return { netto, mwst, brutto: cent(netto + mwst) };
 }
 /* ══ ENDE RECHNUNG ═════════════════════════════════════════════════════════════ */
 
