@@ -20,3 +20,7 @@ AV_Angebot_*.json
 # Die Hilfsskripte der Uebernahme bleiben oertlich: einmalige Werkzeuge, kein
 # Bestandteil der veroeffentlichten Seite.
 werkzeug/
+
+# Die Pruefaelle laufen oertlich vor jedem Push (.git/hooks/pre-push) und gehoeren
+# nicht zur veroeffentlichten Seite.
+Prüffälle/

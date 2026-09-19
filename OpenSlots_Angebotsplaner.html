@@ -2821,8 +2821,19 @@ function rMx(){
 }
 
 const nf=n=>n.toLocaleString('de-DE');
+
+/* ══ RECHNUNG ══════════════════════════════════════════════════════════════════
+   Preis, Rabatt und AE ohne Zugriff auf die Seite: Die Oberflaeche liest die
+   Schalter (angebotsOptionen) und die Haken und reicht die Werte hierher weiter.
+   Die Pruefung vor jeder Veroeffentlichung (Ordner „Prüffälle") liest genau
+   diesen Abschnitt und rechnet ihn ohne Browser nach. Deshalb gilt hier: kein
+   document, kein window, keine Daten der Seite - nur, was als Wert hereinkommt.
+   Eine Platzierung e ist [Name, Preis, rabattfaehig, AE-faehig, Terminart]; der
+   Preis ist eine Zahl oder [s/w, 4c-Zuschlag]. */
 const r2=n=>Math.round(n*100)/100; /* auf Cent (2 Nachkommastellen) runden */
-function discPct(){const el=document.getElementById('disc-val');const v=el?parseFloat(el.value):NaN;return isNaN(v)?0:Math.max(0,Math.min(100,v));}
+/* Rabattsatz aus dem Eingabefeld: Unlesbares zaehlt als 0, sonst auf 0-100 begrenzt. */
+function prozentBegrenzen(v){const z=parseFloat(v);return isNaN(z)?0:Math.max(0,Math.min(100,z));}
+/* Rabatt nur auf den s/w-Preis, AE (10 %) auf den Betrag nach Rabatt; beide auf den Cent. */
 function posCalc(e,discOn,aeOn,pct){
   const p=e[1],rabOk=e[2]!==false,aeOk=e[3]!==false;
   let sw,c4;
@@ -2832,32 +2843,48 @@ function posCalc(e,discOn,aeOn,pct){
   const ae=(aeOn&&aeOk)?r2((preis-rabatt)*0.10):0;
   return {sw,c4,preis,rabatt,ae,netto:preis-rabatt-ae};
 }
-function sumTitle(ji,iss,discOn,aeOn,pct){
+/* Summe ueber die angekreuzten Platzierungen eines Titels, in der Reihenfolge der
+   Haken. Nicht (mehr) auffindbare Platzierungen kommen als null und zaehlen nicht. */
+function summeRechnen(eintraege,discOn,aeOn,pct){
   let preis=0,rabatt=0,ae=0;
-  iss.forEach(s=>s.sel.forEach(n=>{
-    const e=entryOf(ji,n);if(!e)return;
+  eintraege.forEach(e=>{
+    if(!e)return;
     const c=posCalc(e,discOn,aeOn,pct);
     preis+=c.preis;rabatt+=c.rabatt;ae+=c.ae;
-  }));
+  });
   return {preis,rabatt,ae,netto:preis-rabatt-ae};
 }
-function buildHtml(){
+/* ══ ENDE RECHNUNG ═════════════════════════════════════════════════════════════ */
+
+function discPct(){const el=document.getElementById('disc-val');return prozentBegrenzen(el?el.value:NaN);}
+function sumTitle(ji,iss,discOn,aeOn,pct){
+  const eintraege=[];
+  iss.forEach(s=>s.sel.forEach(n=>eintraege.push(entryOf(ji,n))));
+  return summeRechnen(eintraege,discOn,aeOn,pct);
+}
+/* Die Schalter der Vorschau an einer Stelle gelesen. buildHtml und buildTxt nehmen
+   sie als Wert entgegen, damit sich die Kopiervorlage auch mit festen Optionen
+   erzeugen und gegen eine festgehaltene Fassung pruefen laesst. */
+function angebotsOptionen(){
+  const an=id=>{const el=document.getElementById(id);return !!(el&&el.checked);};
+  return {
+    discOn:an('ck-disc'),aeOn:an('ck-ae'),pct:discPct(),
+    tsOn:an('ck-ts'),kgOn:an('ck-kg'),duOn:an('ck-du'),
+    showRabatt:document.getElementById('ck-r').checked,
+    showResv:document.getElementById('ck-rv').checked,
+    resvTxt:(document.getElementById('rv-t').value||'').trim()
+  };
+}
+function buildHtml(o=angebotsOptionen()){
   const act=J.map((j,ji)=>({ji,j,iss:ST[ji].issues.filter(s=>heftZeile(ji,s))})).filter(({iss})=>iss.length);
   if(!act.length)return '';
   const thS='background:#f2f4f8;font-weight:600;text-align:left;padding:6px 10px;border:1px solid #d6dbe8;font-size:12px;color:#00285a;font-family:Arial,sans-serif';
   const tdS='padding:5px 9px;border:1px solid #e4e7ef;vertical-align:top;font-size:12px;font-family:Arial,sans-serif;color:#1a2340';
   const tdAltS=tdS+';background:#fafbfd';
   const tableS='border-collapse:collapse;width:100%;margin-bottom:8px;font-family:Arial,sans-serif';
-  const de=document.getElementById('ck-disc'),aeEl=document.getElementById('ck-ae');
-  const discOn=!!(de&&de.checked),aeOn=!!(aeEl&&aeEl.checked),pct=discPct();
-  const tsEl=document.getElementById('ck-ts');const tsOn=!!(tsEl&&tsEl.checked);
-  const kgEl=document.getElementById('ck-kg');const kgOn=!!(kgEl&&kgEl.checked);
-  const duEl=document.getElementById('ck-du');const duOn=!!(duEl&&duEl.checked);
+  const {discOn,aeOn,pct,tsOn,kgOn,duOn,showRabatt,showResv,resvTxt}=o;
   const negH=v=>v>0?'&#8722;'+fmt(v):'&ndash;';
   let h='';
-  const showRabatt=document.getElementById('ck-r').checked;
-  const showResv=document.getElementById('ck-rv').checked;
-  const resvTxt=(document.getElementById('rv-t').value||'').trim();
   act.forEach(({ji,j,iss})=>{
     /* Auflage an die Titelzeile anhängen – normal gewichtet und gedämpft, damit der
        Titel selbst die Betonung behält. Sie ist titelbezogen und steht daher nur hier. */
@@ -2936,14 +2963,10 @@ function buildHtml(){
   return h;
 }
 
-function buildTxt(){
+function buildTxt(o=angebotsOptionen()){
   const act=J.map((j,ji)=>({ji,j,iss:ST[ji].issues.filter(s=>heftZeile(ji,s))})).filter(({iss})=>iss.length);
   if(!act.length)return '';
-  const de=document.getElementById('ck-disc'),aeEl=document.getElementById('ck-ae');
-  const discOn=!!(de&&de.checked),aeOn=!!(aeEl&&aeEl.checked),pct=discPct();
-  const tsEl=document.getElementById('ck-ts');const tsOn=!!(tsEl&&tsEl.checked);
-  const kgEl=document.getElementById('ck-kg');const kgOn=!!(kgEl&&kgEl.checked);
-  const duEl=document.getElementById('ck-du');const duOn=!!(duEl&&duEl.checked);
+  const {discOn,aeOn,pct,tsOn,kgOn,duOn,showRabatt,showResv,resvTxt}=o;
   const L=[];
   act.forEach(({ji,j,iss},ai)=>{
     if(ai>0)L.push('');
@@ -2984,9 +3007,7 @@ function buildTxt(){
     if(gTot.length>1)L.push('','GESAMT ÜBER ALLE TITEL','Gesamt (netto, zzgl. MwSt.): '+fmt(gTot.reduce((a,T)=>a+T.netto,0)));
   }
   L.push('');
-  if(document.getElementById('ck-r').checked)L.push('Rabatt gem. Mediadaten\u202f/\u202fAE:\u202f10\u202f%\u202f/\u202fzzgl.\u202fMwSt.');
-  const showResv=document.getElementById('ck-rv').checked;
-  const resvTxt=(document.getElementById('rv-t').value||'').trim();
+  if(showRabatt)L.push('Rabatt gem. Mediadaten\u202f/\u202fAE:\u202f10\u202f%\u202f/\u202fzzgl.\u202fMwSt.');
   if(showResv&&resvTxt)L.push('',resvTxt);
   return L.join('\n');
 }
