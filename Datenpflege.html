@@ -1439,16 +1439,19 @@ function esc(s) {
     .replace(/>/g, '&gt;').replace(/"/g, '&quot;');
 }
 
-/* Vor eine Heftnummer gehoert das Wort "Heft", vor eine Bezeichnung nicht: ein
-   Sonderheft heisst "Sonderheft" oder "Supplement", nicht "Heft Sonderheft".
-   Als Nummer gilt eine Zahl, auch mit Buchstaben dahinter ("4a"), und eine
-   Spanne aus zweien, gleich mit welchem Strich ("1-2", "1–2", "1/2"). Alles
-   andere ist frei eingetragen und benennt sich selbst. Das Leerzeichen ist hier
-   ein gewoehnliches, nicht das schmale der Jahresvorschau: die Bezeichnung
-   steht in Meldungen und Dialogen dieses Werkzeugs. */
+/* ══ BAUSTEIN heftnummer.js ══ Nicht hier ändern: gepflegt in Bausteine/heftnummer.js, eingesetzt mit „node Bausteine/einsetzen.mjs". */
+/* Vor eine Heftnummer gehört das Wort „Heft", vor eine Bezeichnung nicht: ein
+   Sonderheft heißt „Sonderheft" oder „Supplement", nicht „Heft Sonderheft".
+   Als Nummer gilt eine Zahl, auch mit Buchstaben dahinter („4a"), und eine
+   Spanne aus zweien, gleich mit welchem Strich („1-2", „1–2", „1/2"). Alles
+   andere ist frei eingetragen und benennt sich selbst. */
 function istHeftnummer(heft) {
   return /^\d+[a-zA-Z]?(\s*[–—/-]\s*\d+[a-zA-Z]?)?$/.test(String(heft == null ? '' : heft).trim());
 }
+/* ══ ENDE BAUSTEIN heftnummer.js ══ */
+/* Das Leerzeichen hinter "Heft" ist ein gewoehnliches, nicht das schmale der
+   Jahresvorschau: die Bezeichnung steht in Meldungen und Dialogen dieses
+   Werkzeugs. */
 function heftText(heft) {
   const h = String(heft == null ? '' : heft).trim();
   if (!h) return '';
@@ -3057,16 +3060,22 @@ const TERMIN_KOPF = ['Jahrgang', 'Titel', 'Heft', 'Monat', 'ET', 'AS', 'DU-Schlu
   'EH-Termin', 'Themenschwerpunkte', 'Kongresse'];
 const TERMIN_BREITE = [10, 43.29, 6.86, 10.29, 10.14, 10.29, 13.14, 12.14, 122, 60.43];
 
+/* ══ BAUSTEIN excel-laden.js ══ Nicht hier ändern: gepflegt in Bausteine/excel-laden.js, eingesetzt mit „node Bausteine/einsetzen.mjs". */
+/* ── EXCEL-BIBLIOTHEK BEI BEDARF ──────────────────────────────────────────────
+   ExcelJS wird erst geladen, wenn eine Excel gelesen oder geschrieben wird, und
+   nur einmal je Seite. Scheitert das Laden, kommt ein lesbarer Satz zurück: ohne
+   ihn stand in MediaQuote „[object Event]" in der Meldung. */
 function ensureExcelJS() {
   if (window.ExcelJS) return Promise.resolve();
   return new Promise((res, rej) => {
     const s = document.createElement('script');
     s.src = 'https://cdn.jsdelivr.net/npm/exceljs@4.3.0/dist/exceljs.min.js';
     s.onload = res;
-    s.onerror = () => rej(new Error('ExcelJS konnte nicht geladen werden (Internetverbindung?).'));
+    s.onerror = () => rej(new Error('Excel-Bibliothek konnte nicht geladen werden (Internetverbindung?).'));
     document.head.appendChild(s);
   });
 }
+/* ══ ENDE BAUSTEIN excel-laden.js ══ */
 
 function zelleText(zelle) {
   const v = zelle ? zelle.value : null;

@@ -517,15 +517,22 @@ let datenStand = '';    // Stand der Preisliste als fertiger Textzusatz, siehe s
 const CACHE_KEY_OLD = 'mediaquote_dataset_v1'; // einmalige Übernahme der unter dem alten Namen gemerkten Daten
 
 // ─── EXCEL-IMPORT ────────────────────────────────────────
-function ensureExcelJS(){
-  if(window.ExcelJS)return Promise.resolve();
-  return new Promise((res,rej)=>{
-    const s=document.createElement('script');
-    s.src='https://cdn.jsdelivr.net/npm/exceljs@4.3.0/dist/exceljs.min.js';
-    s.onload=res;s.onerror=()=>rej(new Error('Excel-Bibliothek konnte nicht geladen werden (Internetverbindung?).'));
+/* ══ BAUSTEIN excel-laden.js ══ Nicht hier ändern: gepflegt in Bausteine/excel-laden.js, eingesetzt mit „node Bausteine/einsetzen.mjs". */
+/* ── EXCEL-BIBLIOTHEK BEI BEDARF ──────────────────────────────────────────────
+   ExcelJS wird erst geladen, wenn eine Excel gelesen oder geschrieben wird, und
+   nur einmal je Seite. Scheitert das Laden, kommt ein lesbarer Satz zurück: ohne
+   ihn stand in MediaQuote „[object Event]" in der Meldung. */
+function ensureExcelJS() {
+  if (window.ExcelJS) return Promise.resolve();
+  return new Promise((res, rej) => {
+    const s = document.createElement('script');
+    s.src = 'https://cdn.jsdelivr.net/npm/exceljs@4.3.0/dist/exceljs.min.js';
+    s.onload = res;
+    s.onerror = () => rej(new Error('Excel-Bibliothek konnte nicht geladen werden (Internetverbindung?).'));
     document.head.appendChild(s);
   });
 }
+/* ══ ENDE BAUSTEIN excel-laden.js ══ */
 function cellStr(cell){
   const v=cell?cell.value:null;
   if(v===null||v===undefined)return '';
@@ -1242,19 +1249,29 @@ const DB_FELDER =
   'preis(reihenfolge,kategorie,format,preis,zuschlag_4c,rabattfaehig,ae_faehig,' +
   'termin_art,seiten_aequivalent)';
 
-function dbErreichbar(){
+/* ══ BAUSTEIN datenbank.js ══ Nicht hier ändern: gepflegt in Bausteine/datenbank.js, eingesetzt mit „node Bausteine/einsetzen.mjs". */
+/* ── DATENBANK (nur lesen) ────────────────────────────────────────────────────
+   Die Werkzeuge lesen Preise und Termine aus der Datenbank, schreiben aber nie
+   hinein; das tut allein die Datenpflege, mit eigener Anmeldung. Gelesen wird
+   deshalb mit dem öffentlichen Schlüssel aus konfiguration.js.
+   Fehlt konfiguration.js oder ist sie leer, gilt die Datenbank als nicht
+   erreichbar, und das Werkzeug lädt die Preisliste auf anderem Weg.
+   „no-cache" fragt bei jedem Laden nach, ob sich etwas geändert hat, statt einen
+   älteren Stand aus dem Browser zu zeigen. */
+function dbErreichbar() {
   return typeof SUPABASE_URL === 'string' && typeof SUPABASE_ANON_KEY === 'string'
       && SUPABASE_URL && SUPABASE_ANON_KEY;
 }
 
-async function dbHolen(pfad){
+async function dbHolen(pfad) {
   const r = await fetch(SUPABASE_URL + '/rest/v1/' + pfad, {
-    headers:{ apikey: SUPABASE_ANON_KEY, Authorization: 'Bearer ' + SUPABASE_ANON_KEY },
-    cache:'no-cache'
+    headers: { apikey: SUPABASE_ANON_KEY, Authorization: 'Bearer ' + SUPABASE_ANON_KEY },
+    cache: 'no-cache'
   });
-  if(!r.ok) throw new Error('HTTP ' + r.status);
+  if (!r.ok) throw new Error('HTTP ' + r.status);
   return r.json();
 }
+/* ══ ENDE BAUSTEIN datenbank.js ══ */
 
 /* Datenbankzeilen -> dieselbe Form wie parseWorkbookToDataset(). */
 function datenbankZuDataset(titel){

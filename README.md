@@ -45,7 +45,9 @@ Nicht im Repository, nur im Arbeitsordner: die beiden Änderungslogs, der Ordner
 
 Was in mehreren Werkzeugen gleich aussehen und gleich arbeiten soll, liegt einmal im
 Ordner `Bausteine/` — zurzeit die Rückfrage- und Hinweisfenster (`fenster.css`,
-`frage.js`, `hinweis.js`) und die Kopfleiste (`kopfleiste.css`, auch in der Datenpflege).
+`frage.js`, `hinweis.js`), die Kopfleiste (`kopfleiste.css`, auch in der Datenpflege)
+und drei kleine Helfer: das Lesen aus der Datenbank (`datenbank.js`), das Nachladen der
+Excel-Bibliothek (`excel-laden.js`) und die Erkennung einer Heftnummer (`heftnummer.js`).
 In den Werkzeugen steht der Baustein zwischen zwei Markierungen:
 
 ```
