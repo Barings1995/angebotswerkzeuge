@@ -384,14 +384,6 @@ button, input, select, textarea { font-family: inherit; }
 /* Ein offenes Fenster darf nie im Ausdruck oder im PDF landen. */
 @media print { .dlg-back { display: none !important; } }
 /* ══ ENDE BAUSTEIN fenster.css ══ */
-/* Bis zur Entscheidung verhalten sich die Knöpfe der Fenster in OpenSlots beim
-   Überfahren und Drücken wie die der Datenleiste: sie füllen sich (Navy bzw.
-   #013a7a) und sinken beim Drücken um 1 px ab, mit kurzem Übergang. In MediaQuote
-   und PreisWerk wird beim Überfahren nur der Rand dunkler (Stand 19.09.2026).
-   Das Absinken steht beim Druckpunkt weiter unten. */
-.dlg-btn { transition: all .15s; }
-.dlg-btn:hover { background: #013a7a; border-color: #013a7a; }
-.dlg-btn.sekundaer:hover { background: var(--sm-navy); border-color: var(--sm-navy); color: #fff; }
 
 /* ── KONGRESS-AUSWAHL ── */
 .kg-wrap { position: relative; display: inline-flex; }
@@ -1098,7 +1090,6 @@ tr.pl-row.alt td:not(.pl-cell) {
    zurück. Bewusst nur außerhalb der Belegungsmatrix: eine Verschiebung
    innerhalb der klebenden Tabellenzellen würde deren Ebenenaufbau verändern. */
 .data-btn:active,
-.dlg-btn:active,
 .copy-btn:active,
 .tab:active,
 .heft-chip:active,
