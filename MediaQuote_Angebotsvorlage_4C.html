@@ -20,11 +20,11 @@
     --springer-blue-dark: #015d96;
     --light-bg: #f5f7fa;
     --border: #dde2ea;
-    /* Rand der Fenster. Eigene Marke, weil --border die Linien des
-       Angebotsblatts traegt (Empfaengerfeld, Positions- und Summentabelle,
-       Bemerkungen, Fusszeile) und damit im gedruckten Angebot erscheint.
-       Die Fenster gehoeren zum Werkzeug: dort gilt der Wert, den OpenSlots,
-       PreisWerk und die Datenpflege fuehren. */
+    /* Rand der Bedienteile des Werkzeugs (Angebotsknöpfe, Leiste). Eigene Marke,
+       weil --border die Linien des Angebotsblatts traegt (Empfaengerfeld,
+       Positions- und Summentabelle, Bemerkungen, Fusszeile) und damit im
+       gedruckten Angebot erscheint. Derselbe Wert, den OpenSlots, PreisWerk, die
+       Datenpflege und die Fenster (Baustein fenster.css) fuehren. */
     --dlg-border: #d6dbe8;
     /* Seitenhintergrund hinter dem Angebotsblatt. Derselbe Wert, den OpenSlots,
        PreisWerk, die Datenpflege und die Startseite fuehren — MediaQuote stand
@@ -38,6 +38,9 @@
        OpenSlots-Angebotsplaner, damit derselbe Vorgang gleich aussieht. */
     --rot: #c0392b;
     --rot-dunkel: #9c2e22;
+    /* Rot des bestätigenden Knopfs in Rückfragen (Baustein fenster.css) */
+    --dlg-gefahr: var(--rot);
+    --dlg-gefahr-dunkel: var(--rot-dunkel);
     /* Grün der Speicherquittung — derselbe Ton, den der OpenSlots-Angebotsplaner
        für das Häkchen im Knopf führt. Keine Brandfarbe, aber derselbe Vorgang
        soll in beiden Werkzeugen gleich aussehen. */
@@ -45,7 +48,8 @@
     --gruen-hell: #e1f5ee;
     /* Eckenradien als Staffel statt gestreuter Einzelwerte — gleiche Werte wie in
        PreisWerk und im Geist der OpenSlots-Staffel. sm = Felder, Kennzeichen und die
-       Knöpfe der Leiste, md = Dialogknöpfe, lg = Hinweisfähnchen, xl = Dialogfenster.
+       Knöpfe der Leiste, md = Knöpfe, lg = Hinweisfähnchen. Die Fenster führen ihre
+       Radien (6 und 10 px) im Baustein fenster.css.
        Die drei ausdrücklichen Nullen (verbundene Adressfelder, Summenzeile, Druckseite)
        bleiben Nullen — sie meinen »keine Rundung«, nicht »kleinste Stufe«. */
     --radius-sm:  4px;
@@ -54,70 +58,60 @@
     --radius-xl: 10px;
   }
 
-  /* Rückfragefenster „Welche Angebotsdaten sollen gelten?"
-     Bewusst ohne Klick-daneben-schließt: die Frage soll beantwortet und nicht
-     versehentlich weggeklickt werden. Escape bleibt als Ausweg. */
+  /* ══ BAUSTEIN fenster.css ══ Nicht hier ändern: gepflegt in Bausteine/fenster.css, eingesetzt mit „node Bausteine/einsetzen.mjs". */
+  /* Rückfrage- und Hinweisfenster: frage(), hinweis() und die Rückfrage nach dem
+     Datenstand. Bewusst ohne Klick-daneben-schließt: die Frage soll beantwortet und
+     die Meldung gelesen, nicht versehentlich weggeklickt werden. Escape bleibt als
+     Ausweg.
+     Braucht: --dlg-gefahr, --dlg-gefahr-dunkel
+     Das Rot des bestätigenden Knopfs einer Rückfrage, die etwas verwirft. Es folgt
+     dem Knopf, der die Rückfrage auslöst („Zurücksetzen"), und steht deshalb im
+     :root des jeweiligen Werkzeugs. Alle übrigen Farben sind die der Marke und in
+     allen Werkzeugen gleich. */
   .dlg-back {
-    position: fixed;
-    inset: 0;
-    z-index: 10000;
-    background: rgba(0,40,90,0.32);
-    display: flex;
-    align-items: center;
-    justify-content: center;
+    position: fixed; inset: 0; z-index: 10000;
+    background: rgba(0,40,90,.32);
+    display: flex; align-items: center; justify-content: center;
     padding: 20px;
   }
+  /* Die Schrift wird gesetzt, nicht geerbt: in MediaQuote erbte das Fenster sonst
+     die Aptos des Angebotsblatts. Die Fenster gehören zum Werkzeug, nicht zum Blatt. */
   .dlg-box {
-    /* Schrift der Fenster wie in OpenSlots (Source Sans 3), nicht wie im Blatt.
-       Ohne diese Zeile erben sie die Aptos des Angebots - dieselbe Abweichung, die
-       fuer die Kopfleiste weiter unten schon einmal zurueckgeholt wurde. Die Fenster
-       gehoeren zum Werkzeug und nicht zum Angebot; im Druck sind sie ohnehin weg. */
     font-family: 'Source Sans 3', system-ui, sans-serif;
     background: #fff;
-    border: 1px solid var(--dlg-border);
-    border-radius: var(--radius-xl);
-    box-shadow: 0 6px 24px rgba(0,40,90,0.28);
-    max-width: 520px;
-    width: 100%;
+    border: 1px solid #d6dbe8;
+    border-radius: 10px;
+    box-shadow: 0 6px 24px rgba(0,40,90,.28);
+    max-width: 520px; width: 100%;
     padding: 18px 22px 17px;
   }
-  /* Zeilenhöhe fest, nicht vom Blatt geerbt — dieselbe Lücke wie bei der Unterzeile
-  der Kopfleiste und beim Rückweg-Knopf. In PreisWerk stand die Überschrift
-  dadurch 22,5 statt 21,5 px hoch. 21,5 px ist der Wert, den „normal" bei Source
-  Sans 3 in 15 px ergibt, gemessen. */
-  .dlg-hd { font-size: 15px; line-height: 21.5px; font-weight: 700; color: var(--navy); margin-bottom: 9px; }
-  .dlg-tx { font-size: 13px; color: var(--text); line-height: 1.55; }
+  /* Zeilenhöhe fest, nicht vom Blatt geerbt: 21,5 px ist der Wert, den „normal" bei
+     Source Sans 3 in 15 px ergibt, gemessen. Geerbt stand die Überschrift in
+     PreisWerk 22,5 px hoch. */
+  .dlg-hd { font-size: 15px; line-height: 21.5px; font-weight: 700; color: #00285a; margin-bottom: 9px; }
+  .dlg-tx { font-size: 13px; color: #1a2340; line-height: 1.55; }
   .dlg-tx p { margin-bottom: 8px; }
   .dlg-tx p:last-child { margin-bottom: 0; }
   .dlg-tx b { font-weight: 600; }
-  .dlg-row { display: flex; gap: 8px; justify-content: flex-end; margin-top: 16px; flex-wrap: wrap; }
-  /* Aufzählungen im Hinweisfenster: alert() konnte nur Zeilenumbrüche in einem
-     Fließtext, hier stehen die betroffenen Angaben als Liste. Einzug und Punkt
-     müssen gesetzt werden – der Vorspann nimmt allen Listen beides. Lange Listen
+  /* Aufzählungen im Hinweisfenster (hinweisListe). Einzug und Punkt müssen gesetzt
+     werden, der Vorspann der Werkzeuge nimmt allen Listen beides. Lange Listen
      rollen in sich, damit der Knopf sichtbar bleibt. */
   .dlg-tx ul { margin: 6px 0 8px; padding-left: 1.25em; list-style: disc; }
   .dlg-tx li { margin-bottom: 2px; }
   .dlg-tx ul.dlg-liste { max-height: min(300px, 34vh); overflow-y: auto; }
+  .dlg-row { display: flex; gap: 8px; justify-content: flex-end; margin-top: 16px; flex-wrap: wrap; }
   .dlg-btn {
-    font-family: inherit;
-    font-size: 13px;
-    font-weight: 600;
-    padding: 7px 14px;
-    border-radius: var(--radius-md);
-    cursor: pointer;
-    border: 1px solid var(--navy);
-    background: var(--navy);
-    color: #fff;
+    font-family: inherit; font-size: 13px; font-weight: 600;
+    padding: 7px 14px; border-radius: 6px; cursor: pointer;
+    border: 1px solid #00285a; background: #00285a; color: #fff;
   }
-  .dlg-btn.sekundaer { background: #fff; color: var(--navy); border-color: var(--dlg-border); }
-  .dlg-btn.sekundaer:hover { border-color: var(--navy); }
-  /* Der bestaetigende Knopf einer Rueckfrage, die etwas verwirft - in derselben
-     Farbe wie der Knopf „Zuruecksetzen" in der Werkzeugleiste, der die Rueckfrage
-     ausloest. */
-  .dlg-btn.gefahr { background: var(--rot); border-color: var(--rot); color: #fff; }
-  .dlg-btn.gefahr:hover { background: var(--rot-dunkel); border-color: var(--rot-dunkel); }
-  /* Ein offenes Fenster darf niemals im PDF landen */
+  .dlg-btn.sekundaer { background: #fff; color: #00285a; border-color: #d6dbe8; }
+  .dlg-btn.sekundaer:hover { border-color: #00285a; }
+  .dlg-btn.gefahr { background: var(--dlg-gefahr); border-color: var(--dlg-gefahr); color: #fff; }
+  .dlg-btn.gefahr:hover { background: var(--dlg-gefahr-dunkel); border-color: var(--dlg-gefahr-dunkel); }
+  /* Ein offenes Fenster darf nie im Ausdruck oder im PDF landen. */
   @media print { .dlg-back { display: none !important; } }
+  /* ══ ENDE BAUSTEIN fenster.css ══ */
 
   * { box-sizing: border-box; margin: 0; padding: 0; }
 
@@ -1261,17 +1255,19 @@ Es gelten unsere Allgemeinen Geschäftsbedingungen, einsehbar unter <a href="htt
 // Dropdown-/Options-HTML eingesetzt werden (verhindert, dass z. B. ein " oder <
 // in einer Zelle ein Dropdown zerschießt). Der DOM liefert die .value-Property
 // entkodiert zurück, daher bleibt der spätere Abgleich (Auswahl merken) intakt.
+/* ══ BAUSTEIN hinweis.js ══ Nicht hier ändern: gepflegt in Bausteine/hinweis.js, eingesetzt mit „node Bausteine/einsetzen.mjs". */
 /* ── HINWEISFENSTER ───────────────────────────────────────────────────────────
-   Tritt an die Stelle von alert(). Dieselbe Hülle wie die Rückfrage nach dem
-   Datenstand (.dlg-back/.dlg-box) – die Meldung steht damit in der Optik des
-   Werkzeugs statt in der des Browsers, hat eine Überschrift, und Aufzählungen
-   lassen sich als Liste setzen statt als Zeilenumbrüche im Fließtext.
-   Wie dort schließt ein Klick daneben nicht: die Meldung soll gelesen und nicht
+   Tritt an die Stelle von alert(). Aussehen aus dem Baustein fenster.css: die
+   Meldung steht in der Optik des Werkzeugs statt in der des Browsers, hat eine
+   Überschrift, und Aufzählungen lassen sich als Liste setzen statt als
+   Zeilenumbrüche im Fließtext.
+   Ein Klick daneben schließt nicht: die Meldung soll gelesen und nicht
    versehentlich weggewischt werden. Escape und der Knopf schließen.
    Zurück kommt ein Versprechen, das beim Schließen einlöst – so wartet der
    Aufrufer wie zuvor bei alert(), bis die Meldung zur Kenntnis genommen ist.
    Das Fenster wird bei jedem Aufruf neu angelegt und beim Schließen wieder
-   entfernt; im Ruhezustand steht nichts davon im Seitengerüst. */
+   entfernt; im Ruhezustand steht nichts davon im Seitengerüst.
+   Braucht: esc() */
 function hinweis(titel, html) {
   return new Promise(res => {
     const back = document.createElement('div');
@@ -1303,12 +1299,14 @@ function hinweisListe(a, max = 0) {
   return '<ul class="dlg-liste">' + zeigen.map(x => '<li>' + esc(x) + '</li>').join('') + '</ul>'
     + (max && a.length > max ? '<p>… und ' + (a.length - max) + ' weitere</p>' : '');
 }
+/* ══ ENDE BAUSTEIN hinweis.js ══ */
 
+/* ══ BAUSTEIN frage.js ══ Nicht hier ändern: gepflegt in Bausteine/frage.js, eingesetzt mit „node Bausteine/einsetzen.mjs". */
 /* ── RÜCKFRAGEFENSTER ─────────────────────────────────────────────────────────
-   Tritt an die Stelle von confirm(). Aufbau wie das Hinweisfenster darüber, nur
-   mit zwei Knöpfen. Der Vorteil gegenüber confirm() liegt weniger in der Optik
-   als in der Beschriftung: der Browser konnte nur „OK" und „Abbrechen" anbieten,
-   hier steht auf dem Knopf, was er tut.
+   Tritt an die Stelle von confirm(). Aufbau wie das Hinweisfenster, nur mit zwei
+   Knöpfen; Aussehen aus dem Baustein fenster.css. Der Vorteil gegenüber confirm()
+   liegt weniger in der Optik als in der Beschriftung: der Browser konnte nur „OK"
+   und „Abbrechen" anbieten, hier steht auf dem Knopf, was er tut.
    Zurück kommt ein Versprechen mit true (bestätigt) oder false (abgelehnt).
    Abgelehnt wird auch durch Escape – wie bei confirm(), wo Escape „Abbrechen"
    entsprach. Der Fokus liegt auf dem abweisenden Knopf: die Rückfrage steht vor
@@ -1341,6 +1339,7 @@ function frage(titel, html, jaText, neinText = 'Abbrechen') {
     bNein.focus();
   });
 }
+/* ══ ENDE BAUSTEIN frage.js ══ */
 
 function esc(s) {
   return String(s == null ? '' : s)

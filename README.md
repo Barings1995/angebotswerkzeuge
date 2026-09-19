@@ -33,12 +33,37 @@ Browser aus `file://` heraus keine Nachbardateien lesen darf.
 | `Angebotsvorlage_Print*.html` | nur Weiterleitungen: die Vorlagen hießen bis zum 14.08.2026 so. Können entfallen, sobald keine Lesezeichen mehr darauf zeigen |
 | `Datenpflege.html` | Preise und Termine pflegen — mit Anmeldung, siehe unten |
 | `.github/` | der tägliche Ablauf, der die `Angebotsdaten.xlsx` erneuert |
+| `Bausteine/` | was in mehreren Werkzeugen gleich sein soll, einmal gepflegt — siehe unten |
 | `Angebotsdaten.xlsx` | die gemeinsame Preisliste (Blätter „Preise", „Termine", „Info") — Notweg |
 | `manifest.webmanifest` | Name und Symbol beim Ablegen im Dock |
 
 Nicht im Repository, nur im Arbeitsordner: die beiden Änderungslogs, der Ordner
 `Sicherungskopien/` mit den früheren Ständen und `Preisliste abgleichen.command`
 (Doppelklick-Helfer, siehe unten) — interne Arbeitsunterlagen (siehe `.gitignore`).
+
+## Gemeinsame Bausteine
+
+Was in mehreren Werkzeugen gleich aussehen und gleich arbeiten soll, liegt einmal im
+Ordner `Bausteine/` — zurzeit die Rückfrage- und Hinweisfenster (`fenster.css`,
+`frage.js`, `hinweis.js`). In den Werkzeugen steht der Baustein zwischen zwei
+Markierungen:
+
+```
+/* ══ BAUSTEIN fenster.css ══ … */
+…
+/* ══ ENDE BAUSTEIN fenster.css ══ */
+```
+
+Geändert wird nur die Datei im Ordner, danach setzt
+
+```
+node Bausteine/einsetzen.mjs
+```
+
+sie in jede markierte Stelle ein. Die Werkzeuge bleiben Einzeldateien und laufen weiter
+auch per Doppelklick. Vor jedem Push wird geprüft, dass jede Stelle ihrem Baustein
+gleicht; eine veraltete oder von Hand geänderte Stelle hält den Push an
+(`node Bausteine/einsetzen.mjs --pruefen` zeigt, welche).
 
 ## Woher die Zahlen kommen
 

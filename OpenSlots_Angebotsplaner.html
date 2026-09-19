@@ -23,6 +23,9 @@
   --sm-muted:   #6b7a99;
   --sm-muted-l: #9aa3b8;
   --sm-red:     #c0392b;
+  /* Rot des bestätigenden Knopfs in Rückfragen (Baustein fenster.css): wie „Alles zurücksetzen" */
+  --dlg-gefahr:        var(--sm-red);
+  --dlg-gefahr-dunkel: #9c2e22;
   --sm-green:   #0f6e56;
   --sm-green-l: #e1f5ee;
   --sm-bg:      #f4f6fa;
@@ -38,7 +41,7 @@
   --z-mx-corner:  4;  /* Schnittpunkt beider – muss über beiden liegen */
   --z-menu-top:   1;  /* klebender Suchkopf innerhalb des Kongressmenüs */
   --z-menu:      60;  /* Kongressmenü über dem übrigen Inhalt */
-  --z-dialog:   300;  /* Rückfragefenster über allem */
+  /* Die Fenster (Baustein fenster.css) liegen mit 10000 über allem. */
 }
 
 *{box-sizing:border-box;margin:0;padding:0}
@@ -327,52 +330,68 @@ button, input, select, textarea { font-family: inherit; }
 .ang-status.on { display: inline-flex; }
 .ang-status .ang-time { font-weight: 400; color: var(--sm-muted); }
 
-/* ── RÜCKFRAGEFENSTER (welcher Datenstand gilt) ──
-   Bewusst ohne Klick-daneben-schließt: die Frage soll beantwortet und nicht
-   versehentlich weggeklickt werden. Escape bleibt als Ausweg. */
+/* ══ BAUSTEIN fenster.css ══ Nicht hier ändern: gepflegt in Bausteine/fenster.css, eingesetzt mit „node Bausteine/einsetzen.mjs". */
+/* Rückfrage- und Hinweisfenster: frage(), hinweis() und die Rückfrage nach dem
+   Datenstand. Bewusst ohne Klick-daneben-schließt: die Frage soll beantwortet und
+   die Meldung gelesen, nicht versehentlich weggeklickt werden. Escape bleibt als
+   Ausweg.
+   Braucht: --dlg-gefahr, --dlg-gefahr-dunkel
+   Das Rot des bestätigenden Knopfs einer Rückfrage, die etwas verwirft. Es folgt
+   dem Knopf, der die Rückfrage auslöst („Zurücksetzen"), und steht deshalb im
+   :root des jeweiligen Werkzeugs. Alle übrigen Farben sind die der Marke und in
+   allen Werkzeugen gleich. */
 .dlg-back {
-  position: fixed; inset: 0; z-index: var(--z-dialog);
+  position: fixed; inset: 0; z-index: 10000;
   background: rgba(0,40,90,.32);
   display: flex; align-items: center; justify-content: center;
   padding: 20px;
 }
+/* Die Schrift wird gesetzt, nicht geerbt: in MediaQuote erbte das Fenster sonst
+   die Aptos des Angebotsblatts. Die Fenster gehören zum Werkzeug, nicht zum Blatt. */
 .dlg-box {
-  background: var(--sm-white);
-  border: 1px solid var(--sm-border);
-  border-radius: var(--radius-lg);
-  /* Eigener Schatten statt --shadow-md: die Fenster in MediaQuote und PreisWerk
-     stehen mit 0/6/24 px bei 28 % deutlich klarer vom Blatt ab. Die Marke selbst
-     bleibt unberührt, sie trägt anderswo im Werkzeug. */
+  font-family: 'Source Sans 3', system-ui, sans-serif;
+  background: #fff;
+  border: 1px solid #d6dbe8;
+  border-radius: 10px;
   box-shadow: 0 6px 24px rgba(0,40,90,.28);
   max-width: 520px; width: 100%;
-  padding: 1.15rem 1.35rem 1.1rem;
+  padding: 18px 22px 17px;
 }
-/* Zeilenhöhe fest, nicht vom Blatt geerbt — dieselbe Lücke wie bei der Unterzeile
-   der Kopfleiste und beim Rückweg-Knopf. In PreisWerk stand die Überschrift
-   dadurch 22,5 statt 21,5 px hoch. 21,5 px ist der Wert, den „normal" bei Source
-   Sans 3 in 15 px ergibt, gemessen. */
-.dlg-hd { font-size: 15px; line-height: 21.5px; font-weight: 700; color: var(--sm-navy); margin-bottom: 9px; }
-.dlg-tx { font-size: 13px; color: var(--sm-text); line-height: 1.55; }
+/* Zeilenhöhe fest, nicht vom Blatt geerbt: 21,5 px ist der Wert, den „normal" bei
+   Source Sans 3 in 15 px ergibt, gemessen. Geerbt stand die Überschrift in
+   PreisWerk 22,5 px hoch. */
+.dlg-hd { font-size: 15px; line-height: 21.5px; font-weight: 700; color: #00285a; margin-bottom: 9px; }
+.dlg-tx { font-size: 13px; color: #1a2340; line-height: 1.55; }
 .dlg-tx p { margin-bottom: 8px; }
 .dlg-tx p:last-child { margin-bottom: 0; }
 .dlg-tx b { font-weight: 600; }
-.dlg-row { display: flex; gap: 8px; justify-content: flex-end; margin-top: 16px; flex-wrap: wrap; }
-/* Die Knöpfe der Fenster tragen dieselbe Klasse wie die der Datenleiste; hier
-   bekommen sie das Maß, das MediaQuote und PreisWerk ihren .dlg-btn geben —
-   13 px statt 12, Polster 7/14 statt 5/12, also 34,5 statt 30,5 px hoch. Nur im
-   Fenster: die Datenleiste bleibt, wie sie ist. */
-.dlg-row .data-btn { font-size: 13px; padding: 7px 14px; border-width: 1px; }
-/* Der Rand muss mit: .data-btn trägt 1,5 px, .dlg-btn der beiden anderen
-   Werkzeuge 1 px — ohne diese Zeile bliebe der Knopf 35,5 statt 34,5 px hoch.
-   Nur im Fenster; in der Datenleiste bleiben die 1,5 px stehen. */
-/* Aufzählungen im Hinweisfenster: alert() konnte nur Zeilenumbrüche in einem
-   Fließtext, hier stehen die betroffenen Ausgaben als Liste. Die Höhe reicht für
-   die zwölf Zeilen, die aufgezählt werden – auf kleinen Schirmen rollt die Liste
-   in sich, damit der Knopf sichtbar bleibt. Der Punkt vor der Zeile muss gesetzt
-   werden: der Vorspann des Werkzeugs nimmt allen Listen Einzug und Markierung. */
+/* Aufzählungen im Hinweisfenster (hinweisListe). Einzug und Punkt müssen gesetzt
+   werden, der Vorspann der Werkzeuge nimmt allen Listen beides. Lange Listen
+   rollen in sich, damit der Knopf sichtbar bleibt. */
 .dlg-tx ul { margin: 6px 0 8px; padding-left: 1.25em; list-style: disc; }
 .dlg-tx li { margin-bottom: 2px; }
 .dlg-tx ul.dlg-liste { max-height: min(300px, 34vh); overflow-y: auto; }
+.dlg-row { display: flex; gap: 8px; justify-content: flex-end; margin-top: 16px; flex-wrap: wrap; }
+.dlg-btn {
+  font-family: inherit; font-size: 13px; font-weight: 600;
+  padding: 7px 14px; border-radius: 6px; cursor: pointer;
+  border: 1px solid #00285a; background: #00285a; color: #fff;
+}
+.dlg-btn.sekundaer { background: #fff; color: #00285a; border-color: #d6dbe8; }
+.dlg-btn.sekundaer:hover { border-color: #00285a; }
+.dlg-btn.gefahr { background: var(--dlg-gefahr); border-color: var(--dlg-gefahr); color: #fff; }
+.dlg-btn.gefahr:hover { background: var(--dlg-gefahr-dunkel); border-color: var(--dlg-gefahr-dunkel); }
+/* Ein offenes Fenster darf nie im Ausdruck oder im PDF landen. */
+@media print { .dlg-back { display: none !important; } }
+/* ══ ENDE BAUSTEIN fenster.css ══ */
+/* Bis zur Entscheidung verhalten sich die Knöpfe der Fenster in OpenSlots beim
+   Überfahren und Drücken wie die der Datenleiste: sie füllen sich (Navy bzw.
+   #013a7a) und sinken beim Drücken um 1 px ab, mit kurzem Übergang. In MediaQuote
+   und PreisWerk wird beim Überfahren nur der Rand dunkler (Stand 19.09.2026).
+   Das Absinken steht beim Druckpunkt weiter unten. */
+.dlg-btn { transition: all .15s; }
+.dlg-btn:hover { background: #013a7a; border-color: #013a7a; }
+.dlg-btn.sekundaer:hover { background: var(--sm-navy); border-color: var(--sm-navy); color: #fff; }
 
 /* ── KONGRESS-AUSWAHL ── */
 .kg-wrap { position: relative; display: inline-flex; }
@@ -1079,6 +1098,7 @@ tr.pl-row.alt td:not(.pl-cell) {
    zurück. Bewusst nur außerhalb der Belegungsmatrix: eine Verschiebung
    innerhalb der klebenden Tabellenzellen würde deren Ebenenaufbau verändern. */
 .data-btn:active,
+.dlg-btn:active,
 .copy-btn:active,
 .tab:active,
 .heft-chip:active,
@@ -1309,8 +1329,8 @@ Bitte reservieren Sie nur budget- und planungsrelevante Platzierungen.</textarea
     <div class="dlg-hd" id="dlgHd">Welche Angebotsdaten sollen gelten?</div>
     <div class="dlg-tx" id="dlgTx"></div>
     <div class="dlg-row">
-      <button class="data-btn ang-btn" id="dlgBtnNeu">Geladene Daten verwenden</button>
-      <button class="data-btn" id="dlgBtnAlt">Daten aus dem Angebot</button>
+      <button type="button" class="dlg-btn sekundaer" id="dlgBtnNeu">Geladene Daten verwenden</button>
+      <button type="button" class="dlg-btn" id="dlgBtnAlt">Daten aus dem Angebot</button>
     </div>
   </div>
 </div>
@@ -1366,36 +1386,38 @@ function heftText(heft) {
 }
 function flatNl(s){return String(s).replace(/\r?\n/g,'; ').trim();}
 
+/* ══ BAUSTEIN hinweis.js ══ Nicht hier ändern: gepflegt in Bausteine/hinweis.js, eingesetzt mit „node Bausteine/einsetzen.mjs". */
 /* ── HINWEISFENSTER ───────────────────────────────────────────────────────────
-   Tritt an die Stelle von alert(). Dieselbe Hülle wie die Rückfrage nach dem
-   Datenstand (.dlg-back/.dlg-box) – die Meldung steht damit in der Optik des
-   Werkzeugs statt in der des Browsers, hat eine Überschrift, und Aufzählungen
-   lassen sich als Liste setzen statt als Zeilenumbrüche im Fließtext.
-   Wie dort schließt ein Klick daneben nicht: die Meldung soll gelesen und nicht
+   Tritt an die Stelle von alert(). Aussehen aus dem Baustein fenster.css: die
+   Meldung steht in der Optik des Werkzeugs statt in der des Browsers, hat eine
+   Überschrift, und Aufzählungen lassen sich als Liste setzen statt als
+   Zeilenumbrüche im Fließtext.
+   Ein Klick daneben schließt nicht: die Meldung soll gelesen und nicht
    versehentlich weggewischt werden. Escape und der Knopf schließen.
    Zurück kommt ein Versprechen, das beim Schließen einlöst – so wartet der
    Aufrufer wie zuvor bei alert(), bis die Meldung zur Kenntnis genommen ist.
    Das Fenster wird bei jedem Aufruf neu angelegt und beim Schließen wieder
-   entfernt; im Ruhezustand steht nichts davon im Seitengerüst. */
-function hinweis(titel,html){
-  return new Promise(res=>{
-    const back=document.createElement('div');
-    back.className='dlg-back';
-    back.innerHTML='<div class="dlg-box" role="alertdialog" aria-modal="true">'+
-      '<div class="dlg-hd"></div><div class="dlg-tx"></div>'+
-      '<div class="dlg-row"><button class="data-btn">Verstanden</button></div></div>';
-    back.querySelector('.dlg-box').setAttribute('aria-label',titel);
-    back.querySelector('.dlg-hd').textContent=titel;
-    back.querySelector('.dlg-tx').innerHTML=html;
-    const knopf=back.querySelector('button');
-    const zu=()=>{
-      document.removeEventListener('keydown',escHinweis,true);
+   entfernt; im Ruhezustand steht nichts davon im Seitengerüst.
+   Braucht: esc() */
+function hinweis(titel, html) {
+  return new Promise(res => {
+    const back = document.createElement('div');
+    back.className = 'dlg-back';
+    back.innerHTML = '<div class="dlg-box" role="alertdialog" aria-modal="true">'
+      + '<div class="dlg-hd"></div><div class="dlg-tx"></div>'
+      + '<div class="dlg-row"><button type="button" class="dlg-btn">Verstanden</button></div></div>';
+    back.querySelector('.dlg-box').setAttribute('aria-label', titel);
+    back.querySelector('.dlg-hd').textContent = titel;
+    back.querySelector('.dlg-tx').innerHTML = html;
+    const knopf = back.querySelector('button');
+    const zu = () => {
+      document.removeEventListener('keydown', escHinweis, true);
       back.remove();
       res();
     };
-    function escHinweis(e){if(e.key==='Escape'){e.stopPropagation();zu();}}
-    knopf.onclick=zu;
-    document.addEventListener('keydown',escHinweis,true);
+    function escHinweis(e) { if (e.key === 'Escape') { e.stopPropagation(); zu(); } }
+    knopf.onclick = zu;
+    document.addEventListener('keydown', escHinweis, true);
     document.body.appendChild(back);
     knopf.focus();
   });
@@ -1403,49 +1425,52 @@ function hinweis(titel,html){
 
 /* Aufzählung für das Hinweisfenster. Ohne `max` stehen alle Zeilen darin und die
    Liste rollt in sich; mit `max` wird gedeckelt und der Rest gezählt. */
-function hinweisListe(a,max=0){
-  const zeigen=max?a.slice(0,max):a;
-  return '<ul class="dlg-liste">'+zeigen.map(x=>'<li>'+esc(x)+'</li>').join('')+'</ul>'+
-    (max&&a.length>max?'<p>… und '+(a.length-max)+' weitere</p>':'');
+function hinweisListe(a, max = 0) {
+  const zeigen = max ? a.slice(0, max) : a;
+  return '<ul class="dlg-liste">' + zeigen.map(x => '<li>' + esc(x) + '</li>').join('') + '</ul>'
+    + (max && a.length > max ? '<p>… und ' + (a.length - max) + ' weitere</p>' : '');
 }
+/* ══ ENDE BAUSTEIN hinweis.js ══ */
 
+/* ══ BAUSTEIN frage.js ══ Nicht hier ändern: gepflegt in Bausteine/frage.js, eingesetzt mit „node Bausteine/einsetzen.mjs". */
 /* ── RÜCKFRAGEFENSTER ─────────────────────────────────────────────────────────
-   Tritt an die Stelle von confirm(). Aufbau wie das Hinweisfenster darüber, nur
-   mit zwei Knöpfen. Der Vorteil gegenüber confirm() liegt weniger in der Optik
-   als in der Beschriftung: der Browser konnte nur „OK" und „Abbrechen" anbieten,
-   hier steht auf dem Knopf, was er tut.
+   Tritt an die Stelle von confirm(). Aufbau wie das Hinweisfenster, nur mit zwei
+   Knöpfen; Aussehen aus dem Baustein fenster.css. Der Vorteil gegenüber confirm()
+   liegt weniger in der Optik als in der Beschriftung: der Browser konnte nur „OK"
+   und „Abbrechen" anbieten, hier steht auf dem Knopf, was er tut.
    Zurück kommt ein Versprechen mit true (bestätigt) oder false (abgelehnt).
    Abgelehnt wird auch durch Escape – wie bei confirm(), wo Escape „Abbrechen"
    entsprach. Der Fokus liegt auf dem abweisenden Knopf: die Rückfrage steht vor
    einer Handlung, die etwas verwirft, und die Eingabetaste soll dann nichts
    auslösen, was nicht ausdrücklich gewollt ist. */
-function frage(titel,html,jaText,neinText='Abbrechen'){
-  return new Promise(res=>{
-    const back=document.createElement('div');
-    back.className='dlg-back';
-    back.innerHTML='<div class="dlg-box" role="dialog" aria-modal="true">'+
-      '<div class="dlg-hd"></div><div class="dlg-tx"></div>'+
-      '<div class="dlg-row"><button class="data-btn ang-btn" data-w="nein"></button>'+
-      '<button class="data-btn danger" data-w="ja"></button></div></div>';
-    back.querySelector('.dlg-box').setAttribute('aria-label',titel);
-    back.querySelector('.dlg-hd').textContent=titel;
-    back.querySelector('.dlg-tx').innerHTML=html;
-    const bJa=back.querySelector('[data-w="ja"]'),bNein=back.querySelector('[data-w="nein"]');
-    bJa.textContent=jaText;
-    bNein.textContent=neinText;
-    const zu=w=>{
-      document.removeEventListener('keydown',escFrage,true);
+function frage(titel, html, jaText, neinText = 'Abbrechen') {
+  return new Promise(res => {
+    const back = document.createElement('div');
+    back.className = 'dlg-back';
+    back.innerHTML = '<div class="dlg-box" role="dialog" aria-modal="true">'
+      + '<div class="dlg-hd"></div><div class="dlg-tx"></div>'
+      + '<div class="dlg-row"><button type="button" class="dlg-btn sekundaer" data-w="nein"></button>'
+      + '<button type="button" class="dlg-btn gefahr" data-w="ja"></button></div></div>';
+    back.querySelector('.dlg-box').setAttribute('aria-label', titel);
+    back.querySelector('.dlg-hd').textContent = titel;
+    back.querySelector('.dlg-tx').innerHTML = html;
+    const bJa = back.querySelector('[data-w="ja"]'), bNein = back.querySelector('[data-w="nein"]');
+    bJa.textContent = jaText;
+    bNein.textContent = neinText;
+    const zu = w => {
+      document.removeEventListener('keydown', escFrage, true);
       back.remove();
       res(w);
     };
-    function escFrage(e){if(e.key==='Escape'){e.stopPropagation();zu(false);}}
-    bJa.onclick=()=>zu(true);
-    bNein.onclick=()=>zu(false);
-    document.addEventListener('keydown',escFrage,true);
+    function escFrage(e) { if (e.key === 'Escape') { e.stopPropagation(); zu(false); } }
+    bJa.onclick = () => zu(true);
+    bNein.onclick = () => zu(false);
+    document.addEventListener('keydown', escFrage, true);
     document.body.appendChild(back);
     bNein.focus();
   });
 }
+/* ══ ENDE BAUSTEIN frage.js ══ */
 
 function buildCollapsed(){
   const s=new Set();
