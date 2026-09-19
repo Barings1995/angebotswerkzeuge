@@ -720,55 +720,6 @@ async function dbHolen(pfad){
   return r.json();
 }
 
-/* Der Stand eines Blattes ist der juengste Aenderungszeitpunkt aus den Preis-
-   und Terminzeilen genau dieses Titels und Jahrgangs — nicht der verlagsweite
-   Stand, den die uebrigen Werkzeuge zeigen. Nur so bedeutet „Stand 12.09.2026"
-   auch, dass an diesen Preisen seither nichts geaendert wurde. */
-function juengster(zeilen){
-  let m = null;
-  (zeilen || []).forEach(z => {
-    if(!z.geaendert_am) return;
-    const d = new Date(z.geaendert_am);
-    if(!isNaN(d) && (!m || d > m)) m = d;
-  });
-  return m;
-}
-
-function datumText(d){
-  if(!d || isNaN(d)) return '';
-  const q = n => String(n).padStart(2,'0');
-  return q(d.getDate()) + '.' + q(d.getMonth()+1) + '.' + d.getFullYear();
-}
-
-function datenbankZuBestand(titel){
-  const B = {};
-  titel.forEach(t => {
-    const jahr = String(t.jahr), name = t.name;
-    if(!jahr || !name) return;
-    if(!B[jahr]) B[jahr] = {};
-    B[jahr][name] = {
-      auflage: Number(t.auflage) || 0,
-      fach: t.fachbereich || '',
-      preise: (t.preis || []).map(z => ({
-        kategorie: z.kategorie || 'Sonstige',
-        format: z.format || '',
-        preis: z.preis == null ? null : Number(z.preis),
-        zuschlag: z.zuschlag_4c == null ? null : Number(z.zuschlag_4c),
-        rabatt: !!z.rabattfaehig,
-        ae: !!z.ae_faehig,
-        terminart: (z.termin_art || '').trim().toUpperCase()
-      })).filter(z => z.format),
-      termine: (t.termin || []).map(a => ({
-        heft: String(a.heft || ''), monat: a.monat || '', et: a.et || '',
-        as: a.anzeigenschluss || '', du: a.du_schluss || '', eh: a.eh_termin || '',
-        themen: a.themen || '', kongresse: a.kongresse || ''
-      })),
-      stand: datumText(juengster([].concat(t.preis || [], t.termin || [])))
-    };
-  });
-  return B;
-}
-
 async function ausDatenbank(){
   if(!dbErreichbar()) return false;
   try{
@@ -823,65 +774,6 @@ function ensureExcelJS(){
     s.onerror = () => nein(new Error('ExcelJS konnte nicht geladen werden.'));
     document.head.appendChild(s);
   });
-}
-
-function zelle(w){ return (w == null) ? '' : String(w).trim(); }
-function zahl(w){
-  if(w == null || w === '') return null;
-  const n = Number(w);
-  return isNaN(n) ? null : n;
-}
-
-function mappeZuBestand(mappe){
-  const B = {};
-  const bl = (name) => mappe.getWorksheet(name);
-  const preise = bl('Preise'), termine = bl('Termine');
-  if(!preise) throw new Error('Blatt „Preise" fehlt.');
-
-  const fach = (jahr, titel, wert) => {
-    if(!B[jahr]) B[jahr] = {};
-    if(!B[jahr][titel]) B[jahr][titel] = { auflage:0, fach:'', preise:[], termine:[], stand:'' };
-    if(wert && !B[jahr][titel].fach) B[jahr][titel].fach = wert;
-    return B[jahr][titel];
-  };
-
-  preise.eachRow((zeile, nr) => {
-    if(nr === 1) return;
-    const w = i => zeile.getCell(i).value;
-    const jahr = zelle(w(1)), titel = zelle(w(2));
-    if(!jahr || !titel) return;
-    const t = fach(jahr, titel, zelle(w(11)));
-    const a = zahl(w(3)); if(a && !t.auflage) t.auflage = a;
-    const format = zelle(w(5));
-    if(!format) return;
-    t.preise.push({
-      kategorie: zelle(w(4)) || 'Sonstige', format: format,
-      preis: zahl(w(6)), zuschlag: zahl(w(7)),
-      rabatt: zelle(w(8)).toLowerCase() === 'ja',
-      ae: zelle(w(9)).toLowerCase() === 'ja',
-      terminart: zelle(w(10)).toUpperCase()
-    });
-  });
-
-  if(termine) termine.eachRow((zeile, nr) => {
-    if(nr === 1) return;
-    const w = i => zeile.getCell(i).value;
-    const jahr = zelle(w(1)), titel = zelle(w(2));
-    if(!jahr || !titel) return;
-    const t = fach(jahr, titel, '');
-    t.termine.push({
-      heft: zelle(w(3)), monat: zelle(w(4)), et: zelle(w(5)), as: zelle(w(6)),
-      du: zelle(w(7)), eh: zelle(w(8)), themen: zelle(w(9)), kongresse: zelle(w(10))
-    });
-  });
-  return B;
-}
-
-/* Ein Stand fuer alle: der Speicherzeitpunkt der Mappe. */
-function standAusMappe(mappe, B){
-  const d = mappe.modified ? new Date(mappe.modified) : null;
-  const s = datumText(d);
-  Object.keys(B).forEach(j => Object.keys(B[j]).forEach(t => { B[j][t].stand = s; }));
 }
 
 /* ── Daten laden von Hand ─────────────────────────────────────────────────
@@ -940,9 +832,126 @@ async function ausMappe(){
   }
 }
 
-/* ═══════════════════════════════════════════════════════════════════════════
-   Hilfen
+/* ══ RECHNUNG ════════════════════════════════════════════════════════════════
+   Aufbereitung der Preisliste: aus Datenbank oder Excel-Mappe wird derselbe
+   Bestand, daraus die Lage eines Blattes und seine Preisgruppen. Reine
+   Funktionen ohne Zugriff auf Seite, Speicher oder Netz; geprueft vor jedem
+   Push mit festen Faellen (Prueffaelle/rechnung/MediaSheet.mjs, 19.09.2026).
    ═══════════════════════════════════════════════════════════════════════ */
+
+/* Der Stand eines Blattes ist der juengste Aenderungszeitpunkt aus den Preis-
+   und Terminzeilen genau dieses Titels und Jahrgangs — nicht der verlagsweite
+   Stand, den die uebrigen Werkzeuge zeigen. Nur so bedeutet „Stand 12.09.2026"
+   auch, dass an diesen Preisen seither nichts geaendert wurde. */
+function juengster(zeilen){
+  let m = null;
+  (zeilen || []).forEach(z => {
+    if(!z.geaendert_am) return;
+    const d = new Date(z.geaendert_am);
+    if(!isNaN(d) && (!m || d > m)) m = d;
+  });
+  return m;
+}
+
+function datumText(d){
+  if(!d || isNaN(d)) return '';
+  const q = n => String(n).padStart(2,'0');
+  return q(d.getDate()) + '.' + q(d.getMonth()+1) + '.' + d.getFullYear();
+}
+
+function datenbankZuBestand(titel){
+  const B = {};
+  titel.forEach(t => {
+    const jahr = String(t.jahr), name = t.name;
+    if(!jahr || !name) return;
+    if(!B[jahr]) B[jahr] = {};
+    B[jahr][name] = {
+      auflage: Number(t.auflage) || 0,
+      fach: t.fachbereich || '',
+      preise: (t.preis || []).map(z => ({
+        kategorie: z.kategorie || 'Sonstige',
+        format: z.format || '',
+        preis: z.preis == null ? null : Number(z.preis),
+        zuschlag: z.zuschlag_4c == null ? null : Number(z.zuschlag_4c),
+        rabatt: !!z.rabattfaehig,
+        ae: !!z.ae_faehig,
+        terminart: (z.termin_art || '').trim().toUpperCase()
+      })).filter(z => z.format),
+      termine: (t.termin || []).map(a => ({
+        heft: String(a.heft || ''), monat: a.monat || '', et: a.et || '',
+        as: a.anzeigenschluss || '', du: a.du_schluss || '', eh: a.eh_termin || '',
+        themen: a.themen || '', kongresse: a.kongresse || ''
+      })),
+      stand: datumText(juengster([].concat(t.preis || [], t.termin || [])))
+    };
+  });
+  return B;
+}
+
+function zelle(w){ return (w == null) ? '' : String(w).trim(); }
+/* Hiess bis 19.09.2026 zahl() — wie die Anzeigefunktion weiter unten, die sie
+   seit dem 15.09.2026 ueberdeckte: Aus der Mappe kamen Preise dann als Text mit
+   Tausenderpunkt („3.475“), und das Blatt zeigte 3,48 statt 3.475,00. Betroffen
+   war nur der Weg ueber die Excel-Datei. */
+function zahlLesen(w){
+  if(w == null || w === '') return null;
+  const n = Number(w);
+  return isNaN(n) ? null : n;
+}
+
+function mappeZuBestand(mappe){
+  const B = {};
+  const bl = (name) => mappe.getWorksheet(name);
+  const preise = bl('Preise'), termine = bl('Termine');
+  if(!preise) throw new Error('Blatt „Preise" fehlt.');
+
+  const fach = (jahr, titel, wert) => {
+    if(!B[jahr]) B[jahr] = {};
+    if(!B[jahr][titel]) B[jahr][titel] = { auflage:0, fach:'', preise:[], termine:[], stand:'' };
+    if(wert && !B[jahr][titel].fach) B[jahr][titel].fach = wert;
+    return B[jahr][titel];
+  };
+
+  preise.eachRow((zeile, nr) => {
+    if(nr === 1) return;
+    const w = i => zeile.getCell(i).value;
+    const jahr = zelle(w(1)), titel = zelle(w(2));
+    if(!jahr || !titel) return;
+    const t = fach(jahr, titel, zelle(w(11)));
+    const a = zahlLesen(w(3)); if(a && !t.auflage) t.auflage = a;
+    const format = zelle(w(5));
+    if(!format) return;
+    t.preise.push({
+      kategorie: zelle(w(4)) || 'Sonstige', format: format,
+      preis: zahlLesen(w(6)), zuschlag: zahlLesen(w(7)),
+      rabatt: zelle(w(8)).toLowerCase() === 'ja',
+      ae: zelle(w(9)).toLowerCase() === 'ja',
+      terminart: zelle(w(10)).toUpperCase()
+    });
+  });
+
+  if(termine) termine.eachRow((zeile, nr) => {
+    if(nr === 1) return;
+    const w = i => zeile.getCell(i).value;
+    const jahr = zelle(w(1)), titel = zelle(w(2));
+    if(!jahr || !titel) return;
+    const t = fach(jahr, titel, '');
+    t.termine.push({
+      heft: zelle(w(3)), monat: zelle(w(4)), et: zelle(w(5)), as: zelle(w(6)),
+      du: zelle(w(7)), eh: zelle(w(8)), themen: zelle(w(9)), kongresse: zelle(w(10))
+    });
+  });
+  return B;
+}
+
+/* Ein Stand fuer alle: der Speicherzeitpunkt der Mappe. */
+function standAusMappe(mappe, B){
+  const d = mappe.modified ? new Date(mappe.modified) : null;
+  const s = datumText(d);
+  Object.keys(B).forEach(j => Object.keys(B[j]).forEach(t => { B[j][t].stand = s; }));
+}
+
+/* ── Hilfen ───────────────────────────────────────────────────────────────── */
 
 function esc(s){
   return String(s == null ? '' : s)
@@ -963,10 +972,11 @@ function zahl(v, stellen){
   return teile.join(',');
 }
 
-/* Termine stehen als „22.01." ohne Jahr in den Daten; die Werkzeuge ergaenzen
-   es selbst und lassen Angaben mit eigener Jahreszahl unangetastet. Faellt ein
-   Anzeigenschluss in den Dezember vor dem Jahrgang, gehoert er ins Vorjahr —
-   dieselbe Regel wie in den uebrigen Werkzeugen. */
+/* Termine stehen als „22.01." ohne Jahr in den Daten; ergaenzt wird der
+   Jahrgang, Angaben mit eigener Jahreszahl bleiben unangetastet. Ein
+   Anzeigenschluss im Vorjahr traegt seine Jahreszahl in den Daten selbst
+   („22.12.2026" bei Heft 1 des Jahrgangs 2027). Eine hier angedeutete eigene
+   Vorjahresregel war nie wirksam und ist am 19.09.2026 entfallen. */
 function mitJahr(text, jahr){
   const t = String(text || '').trim();
   if(!t) return null;
@@ -979,34 +989,25 @@ function mitJahr(text, jahr){
     if(j < 100) j += 2000;
   }else{
     j = Number(jahr);
-    if(monat >= 11 && Number(jahr) && monat - 1 > 9 && false) j = Number(jahr);
   }
   const d = new Date(j, monat - 1, tag);
   return isNaN(d) ? null : d;
 }
 
-function heuteOhneZeit(){
-  const d = new Date();
-  return new Date(d.getFullYear(), d.getMonth(), d.getDate());
-}
-
-/* ═══════════════════════════════════════════════════════════════════════════
-   Auswertung des gewaehlten Titels
+/* ── Auswertung des gewaehlten Titels ─────────────────────────────────────────
 
    Was das Blatt zeigt, haengt ausschliesslich an den Daten: Fuehrt kein Format
    einen 4c-Zuschlag, steht nur eine Preisspalte. Fuehrt der Titel keine
    Kongresse, entfaellt die Spalte samt Schalter.
-   ═══════════════════════════════════════════════════════════════════════ */
+   ─────────────────────────────────────────────────────────────────────────── */
 
-function lage(jahr, titel){
-  const t = (BESTAND[jahr] || {})[titel];
+function lageRechnen(t, jahr, heute){
   if(!t) return null;
   const preise = t.preise.filter(p => p.preis != null);
   const hatZuschlag = t.preise.some(p => p.zuschlag != null && p.zuschlag > 0);
-  const grenze = heuteOhneZeit();
   const termine = t.termine.map(a => {
     const d = mitJahr(a.as, jahr);
-    return Object.assign({}, a, { verstrichen: !!(d && d < grenze) });
+    return Object.assign({}, a, { verstrichen: !!(d && d < heute) });
   });
   return {
     auflage: t.auflage, fach: t.fach, stand: t.stand,
@@ -1034,14 +1035,25 @@ function lage(jahr, titel){
 /* Die Preiszeilen in der hinterlegten Reihenfolge, nach Kategorien gebuendelt
    und um die abgewaehlten Formate verkuerzt. Eine Kategorie, aus der alles
    abgewaehlt ist, entfaellt mitsamt ihrer Ueberschrift. */
-function gruppen(L){
+function gruppen(L, auswahl){
   const folge = [], nach = {};
   L.preise.forEach(p => {
-    if(AUSWAHL && AUSWAHL.has(p.kategorie + ' § ' + p.format)) return;
+    if(auswahl && auswahl.has(p.kategorie + ' § ' + p.format)) return;
     if(!nach[p.kategorie]){ nach[p.kategorie] = []; folge.push(p.kategorie); }
     nach[p.kategorie].push(p);
   });
   return folge.map(k => ({ name: k, zeilen: nach[k] }));
+}
+
+/* ══ ENDE RECHNUNG ══════════════════════════════════════════════════════════ */
+
+function heuteOhneZeit(){
+  const d = new Date();
+  return new Date(d.getFullYear(), d.getMonth(), d.getDate());
+}
+
+function lage(jahr, titel){
+  return lageRechnen((BESTAND[jahr] || {})[titel], jahr, heuteOhneZeit());
 }
 
 /* ═══════════════════════════════════════════════════════════════════════════
@@ -1197,7 +1209,7 @@ function preisseitenBauen(L){
                 (L.auflage ? ' · Auflage <b>' + zahl(L.auflage) + '</b> Exemplare' : '') +
                 (L.termine.length ? ' · ' + L.termine.length + ' Ausgaben im Jahr' : '');
 
-  const G = gruppen(L);
+  const G = gruppen(L, AUSWAHL);
   if(!G.length) return;
 
   let blatt = neuesBlatt('Anzeigenpreisliste', unter);
