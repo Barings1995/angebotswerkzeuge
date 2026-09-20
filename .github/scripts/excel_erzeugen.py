@@ -38,6 +38,9 @@ TERMIN_KOPF = ['Jahrgang', 'Titel', 'Heft', 'Monat', 'ET', 'AS', 'DU-Schluss',
                'EH-Termin', 'Themenschwerpunkte', 'Kongresse']
 TERMIN_BREITE = [10, 43.29, 6.86, 10.29, 10.14, 10.29, 13.14, 12.14, 122, 60.43]
 
+STAFFEL_KOPF = ['Jahrgang', 'Fachbereich', 'Art', 'ab', 'Prozent']
+STAFFEL_BREITE = [10, 30, 16, 10, 10]
+
 INFO = [
     'Angebotsdaten – Stammdaten für die Angebotswerkzeuge',
     None,
@@ -63,6 +66,13 @@ INFO = [
     None,
     'Blatt »Termine« – eine Zeile je Ausgabe:  Jahrgang · Titel · Heft · Monat · ET · AS · DU-Schluss · EH-Termin · Themenschwerpunkte · Kongresse',
     '   • Termine im Format TT.MM. Fällt einer ins Vor- oder Folgejahr, mit Jahreszahl: 22.12.2026.',
+    None,
+    'Blatt »Staffeln« – eine Zeile je Rabattstufe:  Jahrgang · Fachbereich · Art · ab · Prozent',
+    '   • Fachbereich leer = Standard, gilt für alle Fachgruppen ohne eigene Zeilen.',
+    '   • Art: »Malstaffel« zählt die Belegungen, »Mengenstaffel« die Seiten-Äquivalente;',
+    '     es gilt der höhere der beiden Sätze. Fehlt bei einer Fachgruppe mit eigenen Zeilen',
+    '     eine der beiden Arten, gibt es sie für diese Gruppe nicht.',
+    '   • Ist das Blatt leer, rechnet PreisWerk mit seinen eingebauten Werten.',
     None,
     'Spaltenreihenfolge NICHT ändern – die Werkzeuge lesen nach Position.',
 ]
@@ -110,6 +120,15 @@ def erzeugen():
     titel = holen(*adressen, 'titel?select=' + urllib.parse.quote(felder) +
                   '&order=jahr.asc,reihenfolge.asc&preis.order=reihenfolge.asc'
                   '&termin.order=reihenfolge.asc&limit=500')
+    # Die Staffeltabelle gibt es erst seit dem 20.09.2026. Fehlt sie, bleibt das
+    # Blatt leer und PreisWerk rechnet mit seinen eingebauten Werten weiter --
+    # der taegliche Lauf soll daran nicht scheitern.
+    try:
+        staffel = holen(*adressen, 'staffel?select=jahr,fachbereich,art,ab,prozent'
+                        '&order=jahr.asc,fachbereich.asc.nullsfirst,art.asc,ab.asc'
+                        '&limit=1000')
+    except Exception:
+        staffel = []
     stand = holen(*adressen, 'stand?select=geaendert_am')
     geaendert = None
     if stand and stand[0].get('geaendert_am'):
@@ -126,6 +145,7 @@ def erzeugen():
 
     preise = blatt_anlegen(mappe, 'Preise', PREIS_KOPF, PREIS_BREITE)
     termine = blatt_anlegen(mappe, 'Termine', TERMIN_KOPF, TERMIN_BREITE)
+    staffeln = blatt_anlegen(mappe, 'Staffeln', STAFFEL_KOPF, STAFFEL_BREITE)
 
     n_preis = n_termin = 0
     for t in titel:
@@ -147,6 +167,20 @@ def erzeugen():
             ])
             n_termin += 1
 
+    # Dieselbe Ordnung wie im Fenster der Datenpflege: Jahrgang, Standard vor den
+    # Abweichungen, darin Malstaffel vor Mengenstaffel und die Schwellen aufsteigend.
+    # Das ergibt die Abfrage von selbst ('mal' steht alphabetisch vor 'menge'), nur
+    # der leere Fachbereich braucht 'nullsfirst' - sonst stuende der Standard hinten.
+    n_staffel = 0
+    for z in staffel:
+        art = str(z.get('art') or '').lower()
+        staffeln.append([
+            int(z['jahr']), z.get('fachbereich') or None,
+            'Malstaffel' if art == 'mal' else 'Mengenstaffel' if art == 'menge' else art,
+            zahl(z.get('ab')), zahl(z.get('prozent')),
+        ])
+        n_staffel += 1
+
     # Auswahllisten wie in der bisherigen Datei, damit Eintragen von Hand gefuehrt bleibt
     ja_nein = DataValidation(type='list', formula1='"ja,nein"', allowBlank=True)
     du_eh = DataValidation(type='list', formula1='"DU,EH"', allowBlank=True)
@@ -156,6 +190,7 @@ def erzeugen():
     du_eh.add('J2:J%d' % (n_preis + 1))
     preise.auto_filter.ref = 'A1:L%d' % (n_preis + 1)
     termine.auto_filter.ref = 'A1:J%d' % (n_termin + 1)
+    staffeln.auto_filter.ref = 'A1:E%d' % (n_staffel + 1)
 
     # Der Speicherzeitpunkt ist der juengste Aenderungszeitpunkt der Daten. Die
     # Werkzeuge bilden daraus ihren "Stand"; zugleich bleibt die Datei Byte fuer
@@ -168,7 +203,7 @@ def erzeugen():
 
     puffer = io.BytesIO()
     mappe.save(puffer)
-    return festschreiben(puffer.getvalue(), geaendert), n_preis, n_termin, geaendert
+    return festschreiben(puffer.getvalue(), geaendert), n_preis, n_termin, n_staffel, geaendert
 
 
 def festschreiben(rohdaten, geaendert):
@@ -226,14 +261,16 @@ def _core_xml_setzen(rohdaten, stempel):
 
 
 def main():
-    daten, n_preis, n_termin, geaendert = erzeugen()
+    daten, n_preis, n_termin, n_staffel, geaendert = erzeugen()
     vorher = ZIEL.read_bytes() if ZIEL.exists() else b''
     if daten == vorher:
-        print('unveraendert: %d Preise, %d Termine' % (n_preis, n_termin))
+        print('unveraendert: %d Preise, %d Termine, %d Staffelstufen'
+              % (n_preis, n_termin, n_staffel))
         return 0
     ZIEL.write_bytes(daten)
-    print('geschrieben: %d Preise, %d Termine, Stand %s'
-          % (n_preis, n_termin, geaendert.strftime('%d.%m.%Y %H:%M') if geaendert else '—'))
+    print('geschrieben: %d Preise, %d Termine, %d Staffelstufen, Stand %s'
+          % (n_preis, n_termin, n_staffel,
+             geaendert.strftime('%d.%m.%Y %H:%M') if geaendert else '—'))
     return 0
 
 

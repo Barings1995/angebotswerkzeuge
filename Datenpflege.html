@@ -604,6 +604,36 @@ button, input, select, textarea { font-family: inherit; }
   .ueb .hin { width: 22px; text-align: right; color: var(--grey-500); }
   .ueb-sperre { padding: 9px 20px; font-size: 12.5px; color: var(--red); background: var(--red-bg); border-top: 1px solid var(--red-border); }
 
+  /* Rabattstaffeln: je Fachgruppe ein Block, darin die beiden Staffeln
+     nebeneinander. Der Kopf ist derselbe wie in der Übersicht der offenen
+     Änderungen — beide zeigen eine Sammlung gleichrangiger Blöcke. */
+  .dialog.staffeln { max-width: 680px; }
+  .staffel-koerper { padding: 0 20px 10px; max-height: calc(100vh - 290px); overflow-y: auto; }
+  .staffel-kopf { display: flex; justify-content: space-between; align-items: baseline; gap: 12px;
+    margin-top: 14px; padding: 4px 0; border-bottom: 2px solid var(--navy); }
+  .staffel-kopf b { font-size: 14px; color: var(--navy); }
+  .staffel-kopf span { font-size: 11.5px; color: var(--grey-600); }
+  .staffel-kopf button { background: none; border: none; cursor: pointer; padding: 0 2px;
+    font-size: 11.5px; font-family: inherit; color: var(--red); }
+  .staffel-kopf button:hover { text-decoration: underline; }
+  .staffel-paar { display: grid; grid-template-columns: 1fr 1fr; gap: 0 20px; }
+  .staffel-art h4 { font-size: 10.5px; font-weight: 700; text-transform: uppercase; letter-spacing: .07em;
+    color: var(--grey-600); margin: 10px 0 2px; }
+  .staffel-stufe { display: flex; align-items: center; gap: 5px; padding: 2px 0; font-size: 13px; color: var(--grey-600); }
+  .staffel-stufe input { width: 52px; text-align: right; padding: 3px 6px; border: 1px solid var(--border);
+    border-radius: var(--radius-sm); font-size: 13px; font-family: var(--font-body); color: var(--text); background: var(--white); }
+  .staffel-stufe input:focus { outline: none; border-color: var(--navy); box-shadow: 0 0 0 2px rgba(0,40,90,.08); }
+  .staffel-stufe .weg { margin-left: 4px; background: none; border: none; cursor: pointer; padding: 0 2px;
+    color: var(--grey-500); font-size: 15px; line-height: 1; }
+  .staffel-stufe .weg:hover { color: var(--red); }
+  .staffel-leer { font-size: 12.5px; color: var(--grey-600); padding: 3px 0; }
+  .staffel-mehr { background: none; border: none; cursor: pointer; padding: 4px 0 0;
+    font-size: 12px; font-family: inherit; color: var(--navy); font-weight: 600; }
+  .staffel-mehr:hover { text-decoration: underline; }
+  .staffel-warnung { font-size: 12.5px; color: var(--red); background: var(--red-bg);
+    border: 1px solid var(--red-border); border-radius: var(--radius-md); padding: 7px 10px; margin-top: 8px; }
+  @media (max-width: 620px) { .staffel-paar { grid-template-columns: minmax(0,1fr); } }
+
   .meldung { position: fixed; left: 50%; transform: translateX(-50%); bottom: 22px; background: var(--navy); color: #fff; font-size: 13px; font-weight: 600; padding: 9px 18px; border-radius: var(--radius-md); box-shadow: var(--shadow-lg); z-index: 60; }
   .meldung.schlecht { background: var(--red); }
   .fehlerkasten { display: none; align-items: flex-start; gap: 8px; font-size: 12.5px; color: var(--red); background: var(--red-bg); border: 1px solid var(--red-border); border-radius: var(--radius-md); padding: 8px 12px; margin-bottom: 14px; }
@@ -692,6 +722,14 @@ button, input, select, textarea { font-family: inherit; }
       <span class="stand-hinweis" id="standHinweis"></span>
       <button type="button" class="offen-hinweis" id="offenHinweis" onclick="uebersichtOeffnen()" title="Übersicht der offenen Änderungen öffnen"></button>
       <div class="aktionen">
+        <!-- Eigene Gruppe, bewusst nicht bei „Heftplanung anlegen" und „Preise
+             fortschreiben": die beiden sind Jahreswechsel-Kraftakte, die sofort
+             in die Datenbank schreiben und einen Jahrgang erst erzeugen. Die
+             Staffelpflege ändert den offenen Jahrgang über die Arbeitskopie,
+             wie ein Preis oder ein Termin. So entschieden am 20.09.2026. -->
+        <div class="gruppe">
+          <button class="btn" onclick="staffelnOeffnen()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="4" y1="20" x2="4" y2="14"/><line x1="10" y1="20" x2="10" y2="10"/><line x1="16" y1="20" x2="16" y2="6"/><line x1="22" y1="20" x2="22" y2="4"/></svg>Rabattstaffeln …</button>
+        </div>
         <div class="gruppe">
           <button class="btn" onclick="excelEingangWaehlen()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 9v10a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V9"/><polyline points="7 8 12 3 17 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>Aus Excel laden …</button>
           <input type="file" id="excelDatei" accept=".xlsx" style="display:none" onchange="excelEingangGewaehlt(event)">
@@ -757,6 +795,14 @@ const SITZUNG_SCHLUESSEL = 'preispflege_sitzung_v1';
 let sitzung = null;          // { zugang, erneuerung, ablauf, benutzer }
 let URSPRUNG = null;         // Stand, wie er aus der Datenbank kam
 let ARBEIT   = null;         // Arbeitskopie
+/* Die Rabattstaffeln stehen in einer eigenen Tabelle: sie haengen am Jahrgang,
+   nicht am Titel. Deshalb fuehren sie eine eigene Arbeitskopie, nach demselben
+   Muster wie die Titel - Ursprung und Arbeit, verglichen wird beim Zaehlen der
+   offenen Aenderungen. Eine Zeile ist eine Stufe:
+   { id, jahr, fachbereich, art: 'mal' | 'menge', ab, prozent }.
+   Leerer Fachbereich heisst „Standard, gilt fuer alle Fachgruppen". */
+let URSPRUNG_STAFFEL = [];
+let ARBEIT_STAFFEL   = [];
 let gewJahr  = '';
 let gewTitel = null;         // id des gewaehlten Titels
 let reiter   = 'preise';
@@ -908,6 +954,14 @@ async function ladenAusDatenbank() {
   });
   URSPRUNG = zeilen;
   ARBEIT = JSON.parse(JSON.stringify(zeilen));
+  /* Fehlt die Tabelle, bleibt die Liste leer und in PreisWerk gelten weiter die
+     fest eingebauten Werte. Die Pflege laeuft dann ins Leere, aber nichts bricht. */
+  let staffel = [];
+  try { staffel = await daten('staffel?select=id,jahr,fachbereich,art,ab,prozent&order=jahr.asc,fachbereich.asc.nullsfirst,art.asc,ab.asc&limit=1000') || []; }
+  catch (e) { staffel = []; }
+  URSPRUNG_STAFFEL = staffel.map(z => ({ id: z.id, jahr: String(z.jahr), fachbereich: z.fachbereich || '',
+    art: String(z.art || '').toLowerCase(), ab: z.ab, prozent: z.prozent }));
+  ARBEIT_STAFFEL = JSON.parse(JSON.stringify(URSPRUNG_STAFFEL));
   try {
     const s = await daten('stand?select=geaendert_am');
     const d = (s && s[0] && s[0].geaendert_am) ? new Date(s[0].geaendert_am) : null;
@@ -1084,6 +1138,43 @@ function meldung(text, schlecht) {
   setTimeout(() => d.remove(), schlecht ? 6000 : 3200);
 }
 
+/* ── Rabattstaffeln: Hilfen ───────────────────────────────────────────────────
+   Zwei Staffeln je Fachgruppe: die Malstaffel zaehlt die Belegungen, die
+   Mengenstaffel die Seiten-Aequivalente. Es gilt der hoehere der beiden Saetze.
+   Der Standard gilt fuer jede Fachgruppe ohne eigenen Eintrag; eine Fachgruppe
+   mit eigenem Eintrag folgt ausschliesslich diesem. Fehlt dort eine der beiden
+   Arten, heisst das ausdruecklich „gibt es fuer diese Gruppe nicht" - sie faellt
+   NICHT auf den Standard zurueck. So laesst sich „nur Malstaffel" sagen. */
+const STAFFEL_ARTEN = [['mal', 'Malstaffel', 'Belegungen'], ['menge', 'Mengenstaffel', 'Seiten']];
+const STAFFEL_STANDARD = 'Standard';
+
+function staffelnDesJahres(liste, jahr) {
+  return (liste || []).filter(z => z.jahr === jahr);
+}
+/* Die Stufen einer Staffel, aufsteigend nach Schwelle. Welcher Satz gilt, haengt
+   nicht an der Reihenfolge (PreisWerk nimmt den hoechsten erreichten), die
+   Anzeige aber schon. */
+function staffelStufen(liste, jahr, fach, art) {
+  return staffelnDesJahres(liste, jahr)
+    .filter(z => (z.fachbereich || '') === (fach || '') && z.art === art)
+    .sort((a, b) => (Number(a.ab) || 0) - (Number(b.ab) || 0));
+}
+/* Die Fachgruppen mit eigener Abweichung, alphabetisch. Der Standard steht nicht
+   darin: er ist kein Fachbereich, sondern die Grundlage. */
+function staffelFaecher(liste, jahr) {
+  return [...new Set(staffelnDesJahres(liste, jahr).map(z => z.fachbereich || '').filter(Boolean))]
+    .sort((a, b) => a.localeCompare(b, 'de', { numeric: true, sensitivity: 'base' }));
+}
+function staffelFachText(fach) { return fach ? fach : STAFFEL_STANDARD; }
+function staffelArtText(art) { const a = STAFFEL_ARTEN.find(x => x[0] === art); return a ? a[1] : art; }
+/* Eine Staffel als ein Satz, wie ihn die Uebersicht der offenen Aenderungen und
+   die Rueckfragen zeigen: „ab 3: 3 % · ab 6: 5 %". */
+function staffelStufenText(stufen, fach) {
+  if (!stufen.length) return fach ? 'nicht vorgesehen' : 'keine Stufen';
+  return stufen.map(z => 'ab ' + zahlText(z.ab) + ': ' + zahlText(z.prozent) + ' %').join(' · ');
+}
+function staffelAbText(w) { return w == null || w === '' ? '' : zahlText(w); }
+
 /* ── Änderungen erkennen ──────────────────────────────────────────────────── */
 function gleich(a, b) { return JSON.stringify(a) === JSON.stringify(b); }
 
@@ -1099,8 +1190,43 @@ function titelGeaendert(t) {
 }
 function offeneAenderungen() {
   if (!ARBEIT || !URSPRUNG) return false;
+  if (staffelnGeaendert()) return true;
   if (ARBEIT.length !== URSPRUNG.length) return true;
   return ARBEIT.some(titelGeaendert);
+}
+
+/* Die Staffeln werden als Menge verglichen, nicht Zeile fuer Zeile: welche
+   Kennung eine Stufe traegt, ist gleichgueltig - zwei Staffeln sind dieselbe,
+   wenn dieselben Schwellen dieselben Saetze ergeben. Wird eine Stufe entfernt
+   und eine gleichlautende neu angelegt, steht damit zu Recht „nichts offen". */
+function staffelNormal(liste) {
+  return (liste || []).map(z => [z.jahr, z.fachbereich || '', z.art,
+    staffelAbText(z.ab), staffelAbText(z.prozent)].join('|')).sort();
+}
+function staffelnGeaendert() { return !gleich(staffelNormal(URSPRUNG_STAFFEL), staffelNormal(ARBEIT_STAFFEL)); }
+
+/* Gezaehlt wird je Staffel, nicht je Stufe: eine geaenderte Malstaffel ist eine
+   Aenderung, auch wenn drei ihrer Stufen andere Werte tragen. Anders als bei den
+   Preisen ist die einzelne Stufe fuer sich genommen nichts - erst die Folge
+   ergibt die Staffel, und genau so steht sie in der Uebersicht. */
+function staffelJahre() {
+  return [...new Set(URSPRUNG_STAFFEL.map(z => z.jahr).concat(ARBEIT_STAFFEL.map(z => z.jahr)))];
+}
+function staffelAenderungen(jahr) {
+  const faecher = [''].concat([...new Set(
+    staffelFaecher(URSPRUNG_STAFFEL, jahr).concat(staffelFaecher(ARBEIT_STAFFEL, jahr)))]
+    .sort((a, b) => a.localeCompare(b, 'de', { numeric: true, sensitivity: 'base' })));
+  const liste = [];
+  faecher.forEach(fach => STAFFEL_ARTEN.forEach(([art]) => {
+    const alt = staffelStufen(URSPRUNG_STAFFEL, jahr, fach, art);
+    const neu = staffelStufen(ARBEIT_STAFFEL, jahr, fach, art);
+    const wortlaut = st => st.map(z => staffelAbText(z.ab) + '/' + staffelAbText(z.prozent)).join(' ');
+    if (wortlaut(alt) === wortlaut(neu)) return;
+    liste.push({ jahr: jahr, titelId: 'staffel', titel: 'Rabattstaffeln', bereich: 'Staffeln',
+      wo: staffelFachText(fach) + ' · ' + staffelArtText(art), name: 'Stufen',
+      alt: staffelStufenText(alt, fach), neu: staffelStufenText(neu, fach), staffel: true, staffelFach: fach });
+  }));
+  return liste;
 }
 
 /* Gezaehlt wird je Feld (seit 15.09.2026, auf Wunsch von Marcus; zuvor je Zeile):
@@ -1212,12 +1338,15 @@ function aenderungenVon(t) {
 function aenderungen() {
   if (!ARBEIT || !URSPRUNG) return [];
   const bleiben = new Set(ARBEIT.map(t => t.id));
-  const jahre = [...new Set(ARBEIT.map(t => t.jahr).concat(URSPRUNG.map(u => u.jahr)))].sort();
+  const jahre = [...new Set(ARBEIT.map(t => t.jahr).concat(URSPRUNG.map(u => u.jahr)).concat(staffelJahre()))].sort();
   let liste = [];
   jahre.forEach(j => {
     titelNachAnzeige(j).forEach(t => { liste = liste.concat(aenderungenVon(t)); });
     URSPRUNG.filter(u => u.jahr === j && !bleiben.has(u.id)).sort(NACH_NAMEN)
       .forEach(u => liste.push({ jahr: u.jahr, titelId: null, titel: u.name, bereich: 'Titel', wo: 'Titel', art: 'weg' }));
+    /* Die Staffeln am Ende ihres Jahrgangs: sie haengen an keinem Titel und
+       bekommen in der Uebersicht einen eigenen Block. */
+    liste = liste.concat(staffelAenderungen(j));
   });
   return liste;
 }
@@ -1278,11 +1407,16 @@ function uebersichtOeffnen() {
   const liste = uebersichtListe;
   if (!liste.length) return;
   const gruppeVon = x => x.jahr + TRENNER + x.titel + TRENNER + x.titelId;
-  const titelZahl = new Set(liste.map(gruppeVon)).size;
+  const titelZahl = new Set(liste.filter(x => !x.staffel).map(gruppeVon)).size;
+  const staffelZahl = new Set(liste.filter(x => x.staffel).map(x => x.jahr)).size;
   const jahre = new Set(liste.map(x => x.jahr)).size;
+  const wo = [];
+  if (titelZahl) wo.push(titelZahl === 1 ? '1 Titel' : titelZahl + ' Titeln');
+  if (staffelZahl) wo.push('den Rabattstaffeln');
   let html = '<h3>Offene Änderungen</h3><div class="erklaerung">' +
-    (liste.length === 1 ? '1 Änderung' : liste.length + ' Änderungen') + ' in ' +
-    (titelZahl === 1 ? '1 Titel' : titelZahl + ' Titeln') + ', noch nicht gespeichert. Ein Klick auf eine Zeile führt zur Stelle.</div><div class="ueb">';
+    (liste.length === 1 ? '1 Änderung' : liste.length + ' Änderungen') +
+    (wo.length ? ' in ' + wo.join(' und ') : '') +
+    ', noch nicht gespeichert. Ein Klick auf eine Zeile führt zur Stelle.</div><div class="ueb">';
   let gruppe = null;
   liste.forEach((x, i) => {
     const schluessel = gruppeVon(x);
@@ -1323,7 +1457,17 @@ function uebersichtSchliessen() {
 }
 function uebersichtSprung(i) {
   const x = uebersichtListe[i];
-  if (!x || !x.titelId || !titelVonId(x.titelId)) return;
+  if (!x) return;
+  /* Staffeln liegen in keiner Tabelle des Arbeitsbereichs. Der Sprung wechselt
+     deshalb den Jahrgang und oeffnet das Staffelfenster, statt eine Stelle
+     anzusteuern. */
+  if (x.staffel) {
+    uebersichtSchliessen();
+    if (x.jahr !== gewJahr) jahrWechseln(x.jahr);
+    staffelnOeffnen();
+    return;
+  }
+  if (!x.titelId || !titelVonId(x.titelId)) return;
   uebersichtSchliessen();
   if (suchText) {
     suchText = '';
@@ -1390,6 +1534,35 @@ function alleFehler() {
       hefte.add(a.heft);
       [['et', 'ET'], ['anzeigenschluss', 'Anzeigenschluss'], ['du_schluss', 'DU-Schluss'], ['eh_termin', 'EH-Termin']]
         .forEach(([feld, name]) => { if (!terminGueltig(a[feld])) fehler.push(wo + ': ' + name + ' muss TT.MM. sein'); });
+    });
+  });
+  staffelFehler().forEach(f => fehler.push(f));
+  return fehler;
+}
+
+/* Die Staffeln pruefen sich je Stufe. Die Schwelle ist eine ganze Zahl groesser
+   als null - „ab 0 Belegungen" waere kein Rabatt, sondern ein anderer Preis, und
+   eine halbe Belegung gibt es nicht. Der Satz liegt zwischen 0 und 100 Prozent.
+   Zwei Stufen mit derselben Schwelle sind kein Fehler der Datenbank, aber einer
+   der Pflege: welcher der beiden Saetze gilt, waere nicht zu sagen. */
+function staffelFehler() {
+  const fehler = [];
+  staffelJahre().forEach(jahr => {
+    [''].concat(staffelFaecher(ARBEIT_STAFFEL, jahr)).forEach(fach => {
+      STAFFEL_ARTEN.forEach(([art]) => {
+        const stufen = staffelStufen(ARBEIT_STAFFEL, jahr, fach, art);
+        const wo = jahr + ' · ' + staffelFachText(fach) + ' · ' + staffelArtText(art);
+        const schwellen = new Set();
+        stufen.forEach(z => {
+          const ab = zahlOderNull(z.ab), pct = zahlOderNull(z.prozent);
+          if (ab == null || isNaN(ab) || ab <= 0 || Math.round(ab) !== ab)
+            fehler.push(wo + ': „ab" muss eine ganze Zahl größer als 0 sein');
+          else if (schwellen.has(ab)) fehler.push(wo + ': die Stufe „ab ' + zahlText(ab) + '“ steht zweimal');
+          else schwellen.add(ab);
+          if (pct == null || isNaN(pct) || pct <= 0 || pct >= 100)
+            fehler.push(wo + ': der Satz muss zwischen 0 und 100 Prozent liegen');
+        });
+      });
     });
   });
   return fehler;
@@ -2130,6 +2303,8 @@ async function aenderungenVerwerfen() {
     '<p>Alle offenen Änderungen werden verworfen. Der zuletzt gespeicherte Stand wird wiederhergestellt.</p>',
     'Verwerfen')) return;
   ARBEIT = JSON.parse(JSON.stringify(URSPRUNG));
+  ARBEIT_STAFFEL = JSON.parse(JSON.stringify(URSPRUNG_STAFFEL));
+  staffelAngefangen = [];
   if (!titelVonId(gewTitel)) { const e = titelNachAnzeige()[0]; gewTitel = e ? e.id : null; }
   zeichnen();
   meldung('Änderungen verworfen.');
@@ -2200,6 +2375,7 @@ async function speichern() {
       n += await zeilenSchreiben('preis',  t, u, 'preis',  PREIS_FELDER);
       n += await zeilenSchreiben('termin', t, u, 'termin', TERMIN_FELDER);
     }
+    n += await staffelnSchreiben();
     await ladenAusDatenbank();
     if (!titelVonId(gewTitel)) { const e = titelNachAnzeige()[0]; gewTitel = e ? e.id : null; }
     zeichnen();
@@ -2273,6 +2449,28 @@ async function zeilenSchreiben(tabelle, t, u, feldname, felder) {
   if (anzulegen.length) {
     await schreiben(tabelle, 'POST', anzulegen, anzulegen.length);
     n += anzulegen.length;
+  }
+  return n;
+}
+
+/* Die Staffeln eines geaenderten Jahrgangs werden im Ganzen ersetzt, nicht Stufe
+   fuer Stufe abgeglichen. Eine Stufe traegt keine Kennung, an der etwas haengt:
+   sie ist eine Schwelle und ein Satz, und beides steht in derselben Zeile. Ein
+   zeilenweiser Abgleich waere mehr Mechanik ohne Gewinn.
+   Beim Loeschen ist „mindestens 0" noetig, weil der Jahrgang noch gar keine
+   Staffel gefuehrt haben kann. Dass das Konto schreiben darf, zeigt dann das
+   folgende Anlegen. */
+async function staffelnSchreiben() {
+  let n = 0;
+  for (const jahr of staffelJahre()) {
+    const offen = staffelAenderungen(jahr).length;
+    if (!offen) continue;
+    await schreiben('staffel?jahr=eq.' + encodeURIComponent(jahr), 'DELETE', undefined, 0);
+    const neu = staffelnDesJahres(ARBEIT_STAFFEL, jahr).map(z => ({
+      jahr: String(jahr), fachbereich: z.fachbereich || '', art: z.art,
+      ab: zahlOderNull(z.ab), prozent: zahlOderNull(z.prozent) }));
+    if (neu.length) await schreiben('staffel', 'POST', neu, neu.length);
+    n += offen;
   }
   return n;
 }
@@ -2376,6 +2574,42 @@ function eingabe(titel, erklaerung, beschriftung, vorgabe, jaText) {
     document.body.appendChild(platz);
     feld.focus();
     feld.select();
+  });
+}
+
+/* Auswahlfenster, gebaut wie eingabe() - nur steht an der Stelle des Textfelds
+   eine Liste zum Aufklappen. Zurueck kommt der gewaehlte Eintrag oder null. */
+function auswahl(titel, erklaerung, beschriftung, optionen, jaText) {
+  return new Promise(res => {
+    const platz = document.createElement('div');
+    platz.innerHTML =
+      '<div class="schleier" style="z-index:60"><div class="dialog" role="dialog" aria-modal="true">' +
+        '<h3></h3><div class="erklaerung"></div>' +
+        '<div class="dialog-zeile"><span></span>' +
+          '<select style="width:240px"></select></div>' +
+        '<div class="dialog-knoepfe">' +
+          '<button class="btn" data-w="nein">Abbrechen</button>' +
+          '<button class="btn btn-primär" data-w="ja"></button>' +
+        '</div>' +
+      '</div></div>';
+    platz.querySelector('h3').textContent = titel;
+    platz.querySelector('.erklaerung').textContent = erklaerung;
+    platz.querySelector('.dialog-zeile span').textContent = beschriftung;
+    const feld = platz.querySelector('select');
+    feld.innerHTML = (optionen || []).map(o => '<option value="' + esc(o) + '">' + esc(o) + '</option>').join('');
+    const bJa = platz.querySelector('[data-w="ja"]'), bNein = platz.querySelector('[data-w="nein"]');
+    bJa.textContent = jaText;
+    const zu = w => {
+      document.removeEventListener('keydown', escAuswahl, true);
+      platz.remove();
+      res(w);
+    };
+    function escAuswahl(e) { if (e.key === 'Escape') { e.stopPropagation(); zu(null); } }
+    bJa.onclick = () => zu(feld.value);
+    bNein.onclick = () => zu(null);
+    document.addEventListener('keydown', escAuswahl, true);
+    document.body.appendChild(platz);
+    feld.focus();
   });
 }
 
@@ -2964,7 +3198,9 @@ async function sicherungAnlegen(jahr, bezeichnung, still) {
     preise: (t.preis || []).map(p => nurFelder(p, PREIS_FELDER)),
     termine: (t.termin || []).map(a => nurFelder(a, TERMIN_FELDER))
   }));
-  await schreiben('sicherung', 'POST', { jahr: jahr, bezeichnung: bezeichnung || '', inhalt: { titel } });
+  const staffeln = staffelnDesJahres(ARBEIT_STAFFEL, jahr)
+    .map(z => ({ fachbereich: z.fachbereich || '', art: z.art, ab: z.ab, prozent: z.prozent }));
+  await schreiben('sicherung', 'POST', { jahr: jahr, bezeichnung: bezeichnung || '', inhalt: { titel, staffeln } });
   if (!still) meldung('Sicherungspunkt angelegt.');
 }
 
@@ -3016,7 +3252,7 @@ async function sicherungEntfernen(id) {
 async function sicherungZurueck(id, wann) {
   if (!await frage('Jahrgang zurücksetzen?',
     '<p>Der Jahrgang ' + esc(gewJahr) + ' wird auf den Stand vom ' + esc(wann) + ' zurückgesetzt.</p>' +
-    '<p>Titel, Preise und Termine dieses Jahrgangs werden ersetzt. Alles seither Geänderte geht verloren.</p>',
+    '<p>Titel, Preise, Termine und Rabattstaffeln dieses Jahrgangs werden ersetzt. Alles seither Geänderte geht verloren.</p>',
     'Zurücksetzen')) return;
   try {
     if (sitzung && sitzung.ablauf && sitzung.ablauf < Date.now() + 60000) await sitzungErneuern();
@@ -3038,6 +3274,14 @@ async function sicherungZurueck(id, wann) {
       }
       if (termine.length) await schreiben('termin', 'POST', termine, termine.length);
     }
+    /* Sicherungspunkte von vor dem 20.09.2026 führen keine Staffeln. Deren
+       Zurückspielen lässt die heutigen stehen, statt sie zu leeren: der
+       Schnappschuss sagt über sie nichts aus. */
+    if (Array.isArray(inhalt.staffeln)) {
+      await schreiben('staffel?jahr=eq.' + encodeURIComponent(gewJahr), 'DELETE', undefined, 0);
+      const stufen = inhalt.staffeln.map(z => Object.assign({ jahr: String(gewJahr) }, z));
+      if (stufen.length) await schreiben('staffel', 'POST', stufen, stufen.length);
+    }
     dialogSchliessen();
     await ladenAusDatenbank();
     const erste = titelNachAnzeige()[0];
@@ -3045,6 +3289,179 @@ async function sicherungZurueck(id, wann) {
     zeichnen();
     meldung('Jahrgang ' + gewJahr + ' auf den Stand vom ' + wann + ' zurückgesetzt.');
   } catch (fehler) { meldung('Nicht zurückgesetzt: ' + fehler.message, true); }
+}
+
+/* ── Rabattstaffeln pflegen ───────────────────────────────────────────────────
+   Das einzige Fenster, das am Jahrgang arbeitet statt am Titel. Es schreibt in
+   die Arbeitskopie wie die Tabellen des Arbeitsbereichs: was hier entsteht,
+   steht als offene Änderung im Kopf und geht erst mit „Speichern" hinaus.
+
+   Ein Block je Fachgruppe, darin die beiden Staffeln nebeneinander. Der
+   Standard gilt für jede Fachgruppe ohne eigenen Block; eine Fachgruppe mit
+   eigenem Block folgt nur diesem. Fehlt dort eine der beiden Staffeln, gibt es
+   sie für diese Gruppe nicht — PreisWerk zeigt sie dann als „für diese
+   Fachgruppe nicht vorgesehen" und rechnet ohne sie.
+
+   Ein angefangener Block ohne eine einzige Stufe steht nur im Fenster, nicht in
+   den Daten: eine Fachgruppe ohne Stufen ließe sich in der Tabelle nicht von
+   einer ohne Abweichung unterscheiden. Wird das Fenster geschlossen, ohne dass
+   eine Stufe darin steht, ist der Block wieder fort. */
+let staffelAngefangen = [];   // Fachgruppen mit offenem Block, aber noch ohne Stufe
+
+function staffelnOeffnen() {
+  staffelAngefangen = [];
+  staffelFensterZeichnen();
+}
+
+function staffelFensterZeichnen(fokusId) {
+  const faecher = [...new Set(staffelFaecher(ARBEIT_STAFFEL, gewJahr).concat(staffelAngefangen))]
+    .sort((a, b) => a.localeCompare(b, 'de', { numeric: true, sensitivity: 'base' }));
+  const leer = !staffelnDesJahres(ARBEIT_STAFFEL, gewJahr).length && !staffelAngefangen.length;
+  const vorbild = staffelVorbildJahr();
+  let html = '<h3>Rabattstaffeln ' + esc(gewJahr) + '</h3>' +
+    '<div class="erklaerung">Die Malstaffel zählt die Belegungen, die Mengenstaffel die ' +
+    'Seiten-Äquivalente; es gilt der höhere der beiden Sätze. Der Standard gilt für jede ' +
+    'Fachgruppe ohne eigene Abweichung.</div>' +
+    '<div class="staffel-koerper">' + staffelBlockHtml('');
+  faecher.forEach(f => { html += staffelBlockHtml(f); });
+  html += '</div>';
+  if (leer) html += '<div class="dialog-summe">Für ' + esc(gewJahr) + ' ist keine Staffel gepflegt. ' +
+    'PreisWerk rechnet dann mit den fest eingebauten Werten weiter' +
+    (vorbild ? '. Die Staffeln aus ' + esc(vorbild) + ' lassen sich übernehmen und dann anpassen.' : '.') + '</div>';
+  else html += '<div class="dialog-summe">Wirksam wird das erst mit „Speichern“; bis dahin holt „Verwerfen“ es zurück.</div>';
+  html += '<div class="dialog-knoepfe">' +
+    (leer && vorbild ? '<button class="btn" onclick="staffelUebernehmen(\'' + esc(vorbild) + '\')">Aus ' + esc(vorbild) + ' übernehmen</button>' : '') +
+    '<button class="btn" id="staffelAbwKnopf" onclick="staffelAbweichungHinzufuegen()">Abweichung hinzufügen …</button>' +
+    '<button class="btn btn-primär" onclick="staffelnSchliessen()">Schließen</button>' +
+    '</div>';
+  dialogZeigen(html);
+  document.querySelector('#dialogPlatz .dialog').classList.add('staffeln');
+  const knopf = document.getElementById('staffelAbwKnopf');
+  if (knopf && !staffelFreieFaecher().length) knopf.disabled = true;
+  if (fokusId) { const f = document.getElementById('staffel-' + fokusId + '-ab'); if (f) { f.focus(); f.scrollIntoView({ block: 'center' }); } }
+  knoepfeAuffrischen();
+}
+
+function staffelBlockHtml(fach) {
+  const stand = !fach;
+  let html = '<div class="staffel-kopf"><b>' + esc(staffelFachText(fach)) + '</b>' +
+    (stand ? '<span>gilt für alle Fachgruppen ohne eigene Abweichung</span>'
+           : '<button onclick="staffelAbweichungEntfernen(\'' + esc(fach) + '\')">Abweichung entfernen</button>') +
+    '</div><div class="staffel-paar">';
+  STAFFEL_ARTEN.forEach(([art, name, einheit]) => {
+    const stufen = staffelStufen(ARBEIT_STAFFEL, gewJahr, fach, art);
+    html += '<div class="staffel-art"><h4>' + esc(name) + ' (' + esc(einheit) + ')</h4>';
+    if (!stufen.length) html += '<div class="staffel-leer">' +
+      (stand ? 'keine Stufen' : 'für diese Fachgruppe nicht vorgesehen') + '</div>';
+    stufen.forEach(z => {
+      html += '<div class="staffel-stufe"><span>ab</span>' +
+        '<input id="staffel-' + esc(z.id) + '-ab" value="' + esc(staffelAbText(z.ab)) + '" ' +
+          'aria-label="Schwelle" oninput="staffelSetzen(\'' + esc(z.id) + '\',\'ab\',this.value)">' +
+        '<span>→</span>' +
+        '<input value="' + esc(staffelAbText(z.prozent)) + '" ' +
+          'aria-label="Satz in Prozent" oninput="staffelSetzen(\'' + esc(z.id) + '\',\'prozent\',this.value)">' +
+        '<span>%</span>' +
+        '<button class="weg" title="Stufe entfernen" aria-label="Stufe entfernen" ' +
+          'onclick="staffelStufeEntfernen(\'' + esc(z.id) + '\')">×</button></div>';
+    });
+    html += '<button class="staffel-mehr" onclick="staffelStufeAnlegen(\'' + esc(fach) + '\',\'' + art + '\')">+ Stufe</button></div>';
+  });
+  html += '</div>';
+  /* Ein leerer Standard neben gepflegten Abweichungen ist der eine Fall, der
+     still danebengeht: PreisWerk nimmt dann für alle übrigen Fachgruppen gar
+     keine Staffel mehr — nicht etwa die eingebauten Werte. */
+  if (stand && !staffelStufen(ARBEIT_STAFFEL, gewJahr, '', 'mal').length
+            && !staffelStufen(ARBEIT_STAFFEL, gewJahr, '', 'menge').length
+            && staffelFaecher(ARBEIT_STAFFEL, gewJahr).length)
+    html += '<div class="staffel-warnung">Ohne Stufen im Standard bekommt keine Fachgruppe ohne eigene ' +
+      'Abweichung einen Staffelrabatt.</div>';
+  return html;
+}
+
+function staffelnSchliessen() { staffelAngefangen = []; dialogSchliessen(); }
+
+/* Geschrieben wird der eingetippte Wortlaut, wenn er keine Zahl ergibt — wie bei
+   den Preisen. So zeigt die Prüfung ihn an, statt ihn stillschweigend zu
+   verschlucken. Neu gezeichnet wird nicht: das Feld hat den Fokus. */
+function staffelSetzen(id, feld, wert) {
+  const z = ARBEIT_STAFFEL.find(x => x.id === id);
+  if (!z) return;
+  const n = zahlOderNull(wert);
+  z[feld] = (n == null || isNaN(n)) ? (String(wert).trim() === '' ? null : String(wert)) : n;
+  knoepfeAuffrischen();
+}
+
+function staffelStufeAnlegen(fach, art) {
+  const id = neueKennung();
+  ARBEIT_STAFFEL.push({ id: id, jahr: gewJahr, fachbereich: fach || '', art: art, ab: null, prozent: null });
+  staffelAngefangen = staffelAngefangen.filter(f => f !== fach);
+  staffelFensterZeichnen(id);
+}
+
+/* Ohne Rückfrage: die Stufe steht sichtbar daneben, und „Verwerfen" holt sie
+   zurück, solange nicht gespeichert ist. Anders als ein Format oder eine
+   Ausgabe bringt sie nichts mit, was mit ihr verloren ginge. */
+function staffelStufeEntfernen(id) {
+  const z = ARBEIT_STAFFEL.find(x => x.id === id);
+  if (!z) return;
+  const fach = z.fachbereich || '';
+  ARBEIT_STAFFEL = ARBEIT_STAFFEL.filter(x => x.id !== id);
+  if (fach && !staffelnDesJahres(ARBEIT_STAFFEL, gewJahr).some(x => (x.fachbereich || '') === fach)
+           && !staffelAngefangen.includes(fach)) staffelAngefangen.push(fach);
+  staffelFensterZeichnen();
+}
+
+async function staffelAbweichungEntfernen(fach) {
+  const zahl = staffelnDesJahres(ARBEIT_STAFFEL, gewJahr).filter(z => (z.fachbereich || '') === fach).length;
+  if (zahl && !await frage('Abweichung entfernen?',
+    '<p>„' + esc(fach) + '“ folgt danach wieder dem Standard. ' +
+    (zahl === 1 ? 'Eine Stufe wird' : zahl + ' Stufen werden') + ' entfernt.</p>' + ERST_MIT_SPEICHERN,
+    'Entfernen')) return;
+  ARBEIT_STAFFEL = ARBEIT_STAFFEL.filter(z => !(z.jahr === gewJahr && (z.fachbereich || '') === fach));
+  staffelAngefangen = staffelAngefangen.filter(f => f !== fach);
+  staffelFensterZeichnen();
+}
+
+/* Zur Wahl stehen die Fachbereiche, die der Jahrgang tatsächlich führt und die
+   noch keinen eigenen Block haben. „Ohne Fachbereich" bleibt außen vor: PreisWerk
+   sucht die Abweichung über den Fachbereich des Titels, und ein leerer Name wäre
+   dort der Standard. */
+function staffelFreieFaecher() {
+  const da = new Set(staffelFaecher(ARBEIT_STAFFEL, gewJahr).concat(staffelAngefangen));
+  return [...new Set(titelDesJahres(gewJahr).map(t => String(t.fachbereich || '').trim()).filter(Boolean))]
+    .filter(f => !da.has(f))
+    .sort((a, b) => a.localeCompare(b, 'de', { numeric: true, sensitivity: 'base' }));
+}
+
+async function staffelAbweichungHinzufuegen() {
+  const frei = staffelFreieFaecher();
+  if (!frei.length) return;
+  const fach = await auswahl('Abweichung hinzufügen',
+    'Die Fachgruppe bekommt eigene Staffeln und folgt dem Standard danach nicht mehr. ' +
+    'Bleibt eine der beiden Staffeln leer, gibt es sie für diese Gruppe nicht.',
+    'Fachgruppe', frei, 'Hinzufügen');
+  if (!fach) return;
+  if (!staffelAngefangen.includes(fach)) staffelAngefangen.push(fach);
+  staffelFensterZeichnen();
+}
+
+/* Der Jahrgang, aus dem sich übernehmen lässt: der nächste davor mit Staffeln,
+   sonst der nächste danach. */
+function staffelVorbildJahr() {
+  const jahre = staffelJahre().filter(j => j !== gewJahr && staffelnDesJahres(ARBEIT_STAFFEL, j).length).sort();
+  const davor = jahre.filter(j => j < gewJahr);
+  return davor.length ? davor[davor.length - 1] : (jahre[0] || '');
+}
+
+async function staffelUebernehmen(jahr) {
+  const zeilen = staffelnDesJahres(ARBEIT_STAFFEL, jahr);
+  if (!zeilen.length) return;
+  if (!await frage('Staffeln übernehmen?',
+    '<p>Die Staffeln aus ' + esc(jahr) + ' werden für ' + esc(gewJahr) + ' übernommen und lassen sich ' +
+    'danach anpassen.</p>' + ERST_MIT_SPEICHERN, 'Übernehmen')) return;
+  zeilen.forEach(z => ARBEIT_STAFFEL.push({ id: neueKennung(), jahr: gewJahr,
+    fachbereich: z.fachbereich || '', art: z.art, ab: z.ab, prozent: z.prozent }));
+  staffelFensterZeichnen();
 }
 
 /* ── Excel: Aufbau der Mappe ──────────────────────────────────────────────────
@@ -3059,6 +3476,10 @@ const PREIS_BREITE = [10, 40, 10.29, 30, 34, 25.14, 16.57, 13.14, 10.86, 16, 12.
 const TERMIN_KOPF = ['Jahrgang', 'Titel', 'Heft', 'Monat', 'ET', 'AS', 'DU-Schluss',
   'EH-Termin', 'Themenschwerpunkte', 'Kongresse'];
 const TERMIN_BREITE = [10, 43.29, 6.86, 10.29, 10.14, 10.29, 13.14, 12.14, 122, 60.43];
+/* Das Blatt „Staffeln" führt eine Zeile je Stufe. Leerer Fachbereich heißt
+   Standard. Das Blatt darf fehlen — PreisWerk nimmt dann die eingebauten Werte. */
+const STAFFEL_KOPF = ['Jahrgang', 'Fachbereich', 'Art', 'ab', 'Prozent'];
+const STAFFEL_BREITE = [10, 30, 16, 10, 10];
 
 /* ══ BAUSTEIN excel-laden.js ══ Nicht hier ändern: gepflegt in Bausteine/excel-laden.js, eingesetzt mit „node Bausteine/einsetzen.mjs". */
 /* ── EXCEL-BIBLIOTHEK BEI BEDARF ──────────────────────────────────────────────
@@ -3119,6 +3540,10 @@ async function excelMappeBauen() {
       '   ' + PREIS_KOPF.join(' · '),
       'Blatt »Termine« – eine Zeile je Ausgabe:',
       '   ' + TERMIN_KOPF.join(' · '),
+      'Blatt »Staffeln« – eine Zeile je Rabattstufe:',
+      '   ' + STAFFEL_KOPF.join(' · '),
+      '   • Fachbereich leer = Standard, gilt für alle Fachgruppen ohne eigene Zeilen.',
+      '   • Art: »Malstaffel« (zählt Belegungen) oder »Mengenstaffel« (zählt Seiten-Äquivalente).',
       '',
       'Spaltenreihenfolge NICHT ändern – gelesen wird nach Position.'
     ].forEach(z => info.addRow([z]));
@@ -3136,6 +3561,11 @@ async function excelMappeBauen() {
        Umbruch zeigte Excel nur die erste. */
     [9, 10].forEach(i => { termine.getColumn(i).alignment = { wrapText: true, vertical: 'top' }; });
     termine.views = [{ state: 'frozen', ySplit: 1 }];
+
+    const staffeln = mappe.addWorksheet('Staffeln');
+    staffeln.addRow(STAFFEL_KOPF).font = { bold: true };
+    STAFFEL_BREITE.forEach((b, i) => { staffeln.getColumn(i + 1).width = b; });
+    staffeln.views = [{ state: 'frozen', ySplit: 1 }];
 
     let nP = 0, nT = 0;
     (ARBEIT || []).forEach(t => {
@@ -3155,16 +3585,32 @@ async function excelMappeBauen() {
         nT++;
       });
     });
+    /* Dieselbe Ordnung wie im Fenster: Jahrgang, Standard vor den Abweichungen,
+       darin Malstaffel vor Mengenstaffel und die Schwellen aufsteigend. */
+    let nS = 0;
+    [...new Set(ARBEIT_STAFFEL.map(z => z.jahr))].sort().forEach(jahr => {
+      [''].concat(staffelFaecher(ARBEIT_STAFFEL, jahr)).forEach(fach => {
+        STAFFEL_ARTEN.forEach(([art, name]) => {
+          staffelStufen(ARBEIT_STAFFEL, jahr, fach, art).forEach(z => {
+            staffeln.addRow([Number(jahr), fach || null, name,
+              zahlOderNull(z.ab), zahlOderNull(z.prozent)]);
+            nS++;
+          });
+        });
+      });
+    });
+
     preise.autoFilter = 'A1:L' + (nP + 1);
     termine.autoFilter = 'A1:J' + (nT + 1);
-    return { mappe: mappe, preise: nP, termine: nT };
+    staffeln.autoFilter = 'A1:E' + (nS + 1);
+    return { mappe: mappe, preise: nP, termine: nT, staffeln: nS };
   }
 }
 
 async function excelSichern() {
   try {
     meldung('Datei wird erzeugt …');
-    const { mappe, preise: nP, termine: nT } = await excelMappeBauen();
+    const { mappe, preise: nP, termine: nT, staffeln: nS } = await excelMappeBauen();
     const puffer = await mappe.xlsx.writeBuffer();
     const brocken = new Blob([puffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
     const heute = new Date(), z = n => String(n).padStart(2, '0');
@@ -3175,7 +3621,8 @@ async function excelSichern() {
     document.body.appendChild(a);
     a.click();
     setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 100);
-    meldung('Abzug gesichert — ' + nP + ' Preise, ' + nT + ' Termine.');
+    meldung('Abzug gesichert — ' + nP + ' Preise, ' + nT + ' Termine' +
+      (nS ? ', ' + nS + ' Staffelstufen' : '') + '.');
   } catch (fehler) {
     meldung('Nicht gesichert: ' + fehler.message, true);
   }
@@ -3285,8 +3732,40 @@ function abzugLesen(mappe, dateiname) {
       kongresse: zelleText(zeile.getCell(10)) });
   });
 
+  /* Das Blatt „Staffeln" ist freiwillig. Fehlt es, bleiben die Staffeln der
+     eingelesenen Jahrgänge unangetastet — anders als Preise und Termine, die
+     im Ganzen ersetzt werden. Eine Datei ohne dieses Blatt soll die gepflegten
+     Staffeln nicht stillschweigend wegnehmen. */
+  const bS = mappe.getWorksheet('Staffeln');
+  let staffeln = null;
+  if (bS) {
+    staffeln = {};
+    const gesehene = new Set();
+    bS.eachRow((zeile, nr) => {
+      if (nr === 1) return;
+      const jahr = zelleText(zeile.getCell(1));
+      const artText = zelleText(zeile.getCell(3)).toLowerCase();
+      if (!jahr && !artText) return;
+      const fach = zelleText(zeile.getCell(2));
+      const art = /^mal/.test(artText) ? 'mal' : /^menge/.test(artText) ? 'menge' : '';
+      const ab = zelleZahl(zeile.getCell(4)), pct = zelleZahl(zeile.getCell(5));
+      if (!jahr) { beanstandet.push('Staffeln, Zeile ' + nr + ': ohne Jahrgang'); return; }
+      if (!art) { beanstandet.push('Staffeln, Zeile ' + nr + ': Art muss „Malstaffel“ oder „Mengenstaffel“ sein'); return; }
+      if (ab == null || isNaN(ab) || ab <= 0 || Math.round(ab) !== ab) {
+        beanstandet.push('Staffeln, Zeile ' + nr + ': „ab“ muss eine ganze Zahl größer als 0 sein'); return;
+      }
+      if (pct == null || isNaN(pct) || pct <= 0 || pct >= 100) {
+        beanstandet.push('Staffeln, Zeile ' + nr + ': der Satz muss zwischen 0 und 100 Prozent liegen'); return;
+      }
+      const schl = jahr + '|' + fach + '|' + art + '|' + ab;
+      if (gesehene.has(schl)) { beanstandet.push('Staffeln, Zeile ' + nr + ': die Stufe „ab ' + ab + '“ steht zweimal'); return; }
+      gesehene.add(schl);
+      (staffeln[jahr] = staffeln[jahr] || []).push({ fachbereich: fach || '', art: art, ab: ab, prozent: pct });
+    });
+  }
+
   if (!Object.keys(jahre).length) throw new Error('In der Datei wurden keine Preiszeilen gefunden.');
-  return { art: 'abzug', dateiname, jahre, beanstandet, ohneTitel: [...new Set(ohneTitel)] };
+  return { art: 'abzug', dateiname, jahre, staffeln, beanstandet, ohneTitel: [...new Set(ohneTitel)] };
 }
 
 /* ── Excel: Ergaenzung ────────────────────────────────────────────────────────
@@ -3402,8 +3881,11 @@ function excelBerichtZeigen() {
     const aP = alt.reduce((s, t) => s + (t.preis || []).length, 0);
     const aT = alt.reduce((s, t) => s + (t.termin || []).length, 0);
     const pfeil = (a, b) => a === b ? String(b) : (a + ' → <b>' + b + '</b>');
+    const nS = st.staffeln ? (st.staffeln[j] || []).length : null;
+    const aS = staffelnDesJahres(ARBEIT_STAFFEL, j).length;
     zeilen += '<div class="dialog-zeile"><span>Jahrgang ' + esc(j) + '</span><span style="color:var(--text)">' +
-      pfeil(alt.length, neu.titel.length) + ' Titel · ' + pfeil(aP, nP) + ' Preise · ' + pfeil(aT, nT) + ' Termine</span></div>';
+      pfeil(alt.length, neu.titel.length) + ' Titel · ' + pfeil(aP, nP) + ' Preise · ' + pfeil(aT, nT) + ' Termine' +
+      (nS === null ? '' : ' · ' + pfeil(aS, nS) + ' Staffelstufen') + '</span></div>';
   });
   const unberuehrt = jahrgaenge().filter(j => jahre.indexOf(j) < 0);
   const schlimm = st.beanstandet.length > 0;
@@ -3413,6 +3895,7 @@ function excelBerichtZeigen() {
     '<div class="erklaerung">' + esc(st.dateiname) + '</div>' +
     zeilen +
     (unberuehrt.length ? '<div class="dialog-zeile"><span>Nicht in der Datei</span><span style="color:var(--grey-600)">Jahrgang ' + unberuehrt.map(esc).join(', ') + ' bleibt unangetastet</span></div>' : '') +
+    (st.staffeln === null ? '<div class="dialog-zeile"><span>Kein Blatt „Staffeln“</span><span style="color:var(--grey-600)">Die Rabattstaffeln bleiben unangetastet</span></div>' : '') +
     (st.ohneTitel.length ? '<div class="dialog-zeile"><span>Termine ohne Titel</span><span style="color:var(--orange-dark)">' + st.ohneTitel.slice(0, 3).map(esc).join(' · ') + (st.ohneTitel.length > 3 ? ' …' : '') + ' — übergangen</span></div>' : '') +
     '<div class="dialog-summe">' +
       (schlimm
@@ -3434,7 +3917,7 @@ async function excelUebernehmen() {
   try {
     if (sitzung && sitzung.ablauf && sitzung.ablauf < Date.now() + 60000) await sitzungErneuern();
     const jahre = Object.keys(st.jahre).sort();
-    let nP = 0, nT = 0;
+    let nP = 0, nT = 0, nS = 0;
     for (const jahr of jahre) {
       const vorhanden = (ARBEIT || []).some(t => t.jahr === jahr);
       if (vorhanden) await sicherungAnlegen(jahr, 'vor dem Einlesen von ' + st.dateiname, true);
@@ -3459,6 +3942,15 @@ async function excelUebernehmen() {
           nT += teil.length;
         }
       }
+      /* Nur wenn die Datei das Blatt „Staffeln" führt. Ein Jahrgang, der darin
+         nicht vorkommt, verliert seine Staffeln dann allerdings — die Datei gibt
+         den Stand vor, wie bei Preisen und Terminen auch. */
+      if (st.staffeln) {
+        await schreiben('staffel?jahr=eq.' + encodeURIComponent(jahr), 'DELETE', undefined, 0);
+        const stufen = (st.staffeln[jahr] || []).map(z => Object.assign({ jahr: String(jahr) }, z));
+        if (stufen.length) await schreiben('staffel', 'POST', stufen, stufen.length);
+        nS += stufen.length;
+      }
     }
     dialogSchliessen();
     excelStapel = null;
@@ -3466,7 +3958,8 @@ async function excelUebernehmen() {
     if (!titelVonId(gewTitel)) { const e = titelNachAnzeige()[0]; gewTitel = e ? e.id : null; }
     jahrAuswahlAufbauen();
     zeichnen();
-    meldung('Übernommen — ' + nP + ' Preise und ' + nT + ' Termine aus ' + st.dateiname + '.');
+    meldung('Übernommen — ' + nP + ' Preise, ' + nT + ' Termine' +
+      (st.staffeln ? ' und ' + nS + ' Staffelstufen' : '') + ' aus ' + st.dateiname + '.');
   } catch (fehler) {
     meldung('Nicht übernommen: ' + fehler.message + ' — der Sicherungspunkt steht.', true);
     if (knopf) { knopf.disabled = false; knopf.textContent = 'Übernehmen'; }
