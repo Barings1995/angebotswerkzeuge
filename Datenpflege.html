@@ -565,7 +565,9 @@ button, input, select, textarea { font-family: inherit; }
 
   /* ── Rückfragen und Dialoge ── */
   .schleier { position: fixed; inset: 0; background: rgba(10,25,50,.42); display: flex; align-items: center; justify-content: center; padding: 20px; z-index: 50; }
-  .dialog { background: var(--white); border-radius: var(--radius-xl); box-shadow: var(--shadow-lg); width: 100%; max-width: 460px; overflow: hidden; }
+  .dialog { background: var(--white); border-radius: var(--radius-xl); box-shadow: var(--shadow-lg); width: 100%; max-width: 460px; overflow: hidden auto; display: flex; flex-direction: column; max-height: 100%; }
+  .dialog > * { flex: none; }
+  .dialog > .dialog-liste { flex: 0 1 auto; min-height: 96px; }
   .dialog h3 { font-family: var(--font-title); font-size: 18px; color: var(--navy); padding: 16px 20px 3px; }
   .dialog .erklaerung { font-size: 12.5px; color: var(--grey-600); padding: 0 20px 12px; }
   .dialog-zeile { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 7px 20px; border-top: 1px solid #eef1f5; font-size: 13px; }
@@ -579,6 +581,14 @@ button, input, select, textarea { font-family: inherit; }
   .dialog-liste .eintrag { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 7px 20px; border-top: 1px solid #eef1f5; font-size: 13px; }
   .dialog-liste .eintrag b { font-weight: 600; }
   .dialog-liste .eintrag span { font-size: 11.5px; color: var(--grey-600); }
+  /* Die Umfangsliste in „Heftplanung anlegen“ und „Preise fortschreiben“: je Titel
+     eine anklickbare Zeile. Der Kopf bleibt beim Rollen stehen, sonst waere die
+     Zeile „alle Titel“ bei 19 Eintraegen schnell aus dem Bild. */
+  .dialog-liste label.eintrag { cursor: pointer; }
+  .dialog-liste label.eintrag:hover { background: #f7f9fc; }
+  .dialog-liste .eintrag input[type=checkbox] { margin: 0 7px 0 0; vertical-align: -1px; }
+  .dialog-liste .kopf { position: sticky; top: 0; z-index: 1; background: #f7f9fc; border-top: none; border-bottom: 1px solid var(--border); }
+  .dialog-liste label.kopf:hover { background: #eef4fa; }
 
   /* Übersicht der offenen Änderungen: je Titel ein Kopf, darunter eine Zeile je
      Änderung. Ein Klick führt zur Stelle, wie in der Trefferliste der Suche. */
@@ -2911,6 +2921,124 @@ async function jahrgangLoeschenAusfuehren() {
   }
 }
 
+/* ── Umfang einer Jahrgangsrunde ──────────────────────────────────────────────
+   „Heftplanung anlegen" und „Preise fortschreiben" liefen bis hierher ueber den
+   ganzen Jahrgang; beim Fortschreiben liess sich immerhin ein Fachbereich
+   waehlen. Fuer das Nachtragen reicht das nicht: 2028 steht heute mit 6 von 19
+   Titeln da, und die fehlenden 13 gehoeren angelegt, ohne die 6 anzuruehren.
+
+   Beide Fenster teilen sich deshalb dasselbe Feld. Der Praefix („pr"/„ja") haelt
+   die Kennungen auseinander - sonst waere es zweimal derselbe Baustein.
+
+   Die Auswahl merkt sich den NAMEN, nicht die Kennung: dieselbe Zeitschrift traegt
+   in jedem Jahrgang eine eigene Kennung, und eine Auswahl, die beim Umschalten der
+   Vorlage stillschweigend verfiele, waere eine Falle. Aus demselben Grund
+   vergleichen auch die beiden Fenster ueber den Namen, wenn sie fragen, was im
+   Zieljahrgang schon steht. */
+function umfangFeldHtml(p, ruf) {
+  return '<div class="dialog-zeile"><span>Umfang</span>' +
+      '<select id="' + p + 'Umfang" onchange="' + ruf + '">' +
+        '<option value="alle">alle Titel</option>' +
+        '<option value="fach">nach Fachbereich</option>' +
+        '<option value="titel">einzelne Titel</option>' +
+      '</select></div>' +
+    '<div class="dialog-zeile" id="' + p + 'FachZeile" style="display:none"><span>Fachbereich</span>' +
+      '<select id="' + p + 'Fach" onchange="' + ruf + '"></select></div>' +
+    '<div class="dialog-liste" id="' + p + 'Liste" style="display:none"></div>';
+}
+
+/* Die reine Mengenlehre, ohne Fenster: aus Art, Fachbereich und angekreuzten Namen
+   wird die Titelmenge. Bewusst getrennt von der Anzeige, damit sie fuer sich
+   nachrechenbar bleibt. */
+function umfangTitel(art, quellen, fach, namen) {
+  if (art === 'fach')  return quellen.filter(t => String(t.fachbereich || '').trim() === fach);
+  if (art === 'titel') return quellen.filter(t => namen.indexOf(String(t.name || '').trim()) >= 0);
+  return quellen.slice();
+}
+
+/* Was im Zieljahrgang noch fehlt - und was dort schon steht und deshalb unberuehrt
+   bleibt. Die zweite Zahl ist keine Nebensache: sie ist der Beleg dafuer, dass
+   „anlegen" nichts ersetzt. */
+function umfangFehlende(quellen, imZiel) {
+  const da = new Set(imZiel.map(t => String(t.name || '').trim()));
+  const fehlende = quellen.filter(t => !da.has(String(t.name || '').trim()));
+  return { fehlende: fehlende, uebersprungen: quellen.length - fehlende.length };
+}
+
+/* Fachbereichsliste und Titelliste haengen am Vorlagejahrgang und werden bei dessen
+   Wechsel neu aufgebaut. Neu gezeichnet wird nur, wenn sich der Bestand wirklich
+   geaendert hat - sonst verloere ein Kaestchen bei jedem Tastendruck im Feld
+   daneben den Fokus. */
+function umfangZeichnen(p, quellen, ruf) {
+  const art  = document.getElementById(p + 'Umfang').value;
+  const fach = document.getElementById(p + 'Fach');
+  const liste = document.getElementById(p + 'Liste');
+  document.getElementById(p + 'FachZeile').style.display = art === 'fach'  ? '' : 'none';
+  liste.style.display                                    = art === 'titel' ? '' : 'none';
+
+  const faecher = [...new Set(quellen.map(t => String(t.fachbereich || '').trim()).filter(Boolean))]
+    .sort((a, b) => a.localeCompare(b, 'de', { numeric: true, sensitivity: 'base' }));
+  if (fach.dataset.stand !== faecher.join('\u0000')) {
+    const vorher = fach.value;
+    fach.innerHTML = faecher.length
+      ? faecher.map(f => '<option value="' + esc(f) + '">' + esc(f) + '</option>').join('')
+      : '<option value="">kein Fachbereich gepflegt</option>';
+    if (faecher.indexOf(vorher) >= 0) fach.value = vorher;
+    fach.dataset.stand = faecher.join('\u0000');
+  }
+
+  const namen = quellen.map(t => String(t.name || '').trim());
+  if (liste.dataset.stand !== namen.join('\u0000')) {
+    const an = new Set(umfangNamen(p));
+    liste.innerHTML =
+      '<label class="eintrag kopf"><b><input type="checkbox" id="' + p + 'Alle" ' +
+        'onchange="umfangAlleSetzen(\'' + p + '\', this.checked); ' + ruf + '">alle Titel</b>' +
+        '<span id="' + p + 'Zahl"></span></label>' +
+      quellen.map(t => '<label class="eintrag"><b><input type="checkbox" class="u-titel" value="' +
+        esc(String(t.name || '').trim()) + '"' + (an.has(String(t.name || '').trim()) ? ' checked' : '') +
+        ' onchange="' + ruf + '">' + esc(t.name) + '</b>' +
+        '<span>' + esc(String(t.fachbereich || '').trim() || 'ohne Fachbereich') + '</span></label>').join('');
+    liste.dataset.stand = namen.join('\u0000');
+  }
+
+  const gewaehlt = umfangNamen(p).length;
+  const zahl = document.getElementById(p + 'Zahl');
+  if (zahl) zahl.textContent = gewaehlt + ' von ' + quellen.length + ' gewählt';
+  const alle = document.getElementById(p + 'Alle');
+  if (alle) { alle.checked = gewaehlt > 0 && gewaehlt === quellen.length; }
+}
+
+/* Einzahl und Mehrzahl auseinanderhalten. Ohne sie stand im Fenster „1 Ausgaben"
+   und „Alle 1 gewaehlten Titel" - beides faellt sofort auf. */
+function mehrzahl(n, ein, viele) { return n + ' ' + (n === 1 ? ein : viele); }
+
+function umfangNamen(p) {
+  const liste = document.getElementById(p + 'Liste');
+  return liste ? [...liste.querySelectorAll('.u-titel:checked')].map(e => e.value) : [];
+}
+
+function umfangAlleSetzen(p, an) {
+  document.getElementById(p + 'Liste').querySelectorAll('.u-titel').forEach(e => { e.checked = an; });
+}
+
+/* Was die Vorschau-Funktionen beider Fenster aufrufen: Felder lesen, Mengenlehre
+   anwenden. */
+function umfangAuswahl(p, quellen) {
+  const art  = document.getElementById(p + 'Umfang');
+  if (!art) return quellen.slice();
+  const fach = document.getElementById(p + 'Fach');
+  return umfangTitel(art.value, quellen, fach ? fach.value : '', umfangNamen(p));
+}
+
+/* Ein Satz fuer den Zusammenzug, damit beide Fenster den Umfang gleich benennen. */
+function umfangWort(p, quellen, alle) {
+  const art = document.getElementById(p + 'Umfang');
+  if (!art || art.value === 'alle') return alle.length === 1 ? 'der einzige Titel' : 'alle ' + alle.length + ' Titel';
+  if (art.value === 'fach') return 'Fachbereich ' + esc(document.getElementById(p + 'Fach').value) +
+    ' (' + quellen.length + ' von ' + mehrzahl(alle.length, 'Titel', 'Titeln') + ')';
+  return quellen.length + ' von ' + mehrzahl(alle.length, 'Titel', 'Titeln');
+}
+
 /* ── Preise fortschreiben ─────────────────────────────────────────────────────
    Der Kraftakt des Jahres: ein Jahrgang bekommt neue Preise. Sie werden selten
    einzeln erfunden, sondern aus dem Vorjahr fortgeschrieben - 2026 auf 2027
@@ -2933,7 +3061,8 @@ function preisrundeOeffnen() {
     '<h3>Preise aus einem Jahrgang fortschreiben</h3>' +
     '<div class="erklaerung">Die Preise des Vorlagejahrgangs werden übernommen und angepasst. ' +
     'Nachbessern lässt sich anschließend jede Zeile. Sofern der Zieljahrgang noch nicht besteht, ' +
-    'wird dieser mit angelegt; Hefte und Termine bleiben dabei leer.</div>' +
+    'wird dieser mit angelegt; Hefte und Termine bleiben dabei leer. Über den Umfang lässt sich ' +
+    'die Runde auf einen Fachbereich oder auf einzelne Titel beschränken.</div>' +
     '<div class="dialog-zeile"><span>Vorlage</span><select id="prVorlage" onchange="preisrundeRechnen()">' +
       jahre.map(j => '<option' + (j === vorgabe ? ' selected' : '') + '>' + j + '</option>').join('') +
     '</select></div>' +
@@ -2945,10 +3074,7 @@ function preisrundeOeffnen() {
       '<option value="1">auf volle 1 €</option>' +
       '<option value="0">nicht runden</option>' +
     '</select></div>' +
-    '<div class="dialog-zeile"><span>Umfang</span><select id="prFach" onchange="preisrundeRechnen()">' +
-      '<option value="">alle Fachbereiche</option>' +
-      [...new Set((ARBEIT || []).map(t => t.fachbereich).filter(Boolean))].map(f => '<option value="' + esc(f) + '">' + esc(f) + '</option>').join('') +
-    '</select></div>' +
+    umfangFeldHtml('pr', 'preisrundeRechnen()') +
     '<div class="dialog-summe" id="prSumme"></div>' +
     '<div class="dialog-knoepfe">' +
       '<button class="btn" onclick="dialogSchliessen()">Abbrechen</button>' +
@@ -2978,17 +3104,19 @@ function preisrundeVorschau() {
   const ziel    = String(document.getElementById('prZiel').value || '').trim();
   const prozent = zahlOderNull(document.getElementById('prProzent').value);
   const stufe   = Number(document.getElementById('prRundung').value);
-  const fach    = document.getElementById('prFach').value;
-  const quellen = (ARBEIT || []).filter(t => t.jahr === vorlage && (!fach || t.fachbereich === fach));
+  const alle    = (ARBEIT || []).filter(t => t.jahr === vorlage);
+  const quellen = umfangAuswahl('pr', alle);
   let mitPreis = 0, ohnePreis = 0;
   quellen.forEach(t => (t.preis || []).forEach(p => {
     const w = zahlOderNull(p.preis);
     if (w == null || isNaN(w) || w === 0) ohnePreis++; else mitPreis++;
   }));
-  return { vorlage, ziel, prozent, stufe, fach, quellen, mitPreis, ohnePreis };
+  return { vorlage, ziel, prozent, stufe, alle, quellen, mitPreis, ohnePreis };
 }
 
 function preisrundeRechnen() {
+  const vorlage = document.getElementById('prVorlage').value;
+  umfangZeichnen('pr', (ARBEIT || []).filter(t => t.jahr === vorlage), 'preisrundeRechnen()');
   const v = preisrundeVorschau();
   const kasten = document.getElementById('prSumme');
   const knopf  = document.getElementById('prKnopf');
@@ -2996,14 +3124,27 @@ function preisrundeRechnen() {
   let text = '', gesperrt = false;
   if (!/^\d{4}$/.test(v.ziel)) { text = 'Der Zieljahrgang muss eine vierstellige Jahreszahl sein.'; gesperrt = true; }
   else if (v.prozent == null || isNaN(v.prozent)) { text = 'Die Anpassung muss eine Zahl sein.'; gesperrt = true; }
-  else if (!v.quellen.length) { text = 'Der Vorlagejahrgang enthält keine Titel dieses Umfangs.'; gesperrt = true; }
+  else if (!v.alle.length) { text = 'Der Vorlagejahrgang enthält keine Titel.'; gesperrt = true; }
+  else if (!v.quellen.length) { text = 'Im gewählten Umfang steht kein Titel.'; gesperrt = true; }
   else {
-    const vorhanden = (ARBEIT || []).some(t => t.jahr === v.ziel && (!v.fach || t.fachbereich === v.fach) && (t.preis || []).length);
+    /* Gefragt wird allein nach den Titeln des Umfangs. Sonst warnte das Fenster auch
+       dann vor dem Ersetzen, wenn die vorhandenen Preiszeilen zu einem ganz anderen
+       Fachbereich gehoeren, den diese Runde gar nicht anruehrt. */
+    const namen = new Set(v.quellen.map(t => String(t.name || '').trim()));
+    const schon = (ARBEIT || []).filter(t => t.jahr === v.ziel &&
+      namen.has(String(t.name || '').trim()) && (t.preis || []).length).length;
     const bsp = beispielPreis(v);
-    text = '<b>' + v.mitPreis + ' Preise</b> werden angelegt · ' + v.quellen.length + ' Titel · ' +
-           v.ohnePreis + ' Zeilen ohne Preis bleiben leer';
+    text = '<b>' + mehrzahl(v.mitPreis, 'Preis', 'Preise') + '</b> ' +
+           (v.mitPreis === 1 ? 'wird' : 'werden') + ' angelegt · ' + umfangWort('pr', v.quellen, v.alle) + ' · ' +
+           mehrzahl(v.ohnePreis, 'Zeile', 'Zeilen') + ' ohne Preis ' +
+           (v.ohnePreis === 1 ? 'bleibt' : 'bleiben') + ' leer';
     if (bsp) text += '<br>Beispiel: ' + esc(bsp.was) + ' ' + preisText(bsp.alt) + ' € → <b>' + preisText(bsp.neu) + ' €</b>';
-    if (vorhanden) text += '<br><b>Achtung:</b> Der Jahrgang ' + esc(v.ziel) + ' führt bereits Preiszeilen — sie werden ersetzt, auch die von Hand gepflegten. Vorher entsteht ohne Zutun ein Sicherungspunkt.';
+    if (schon) text += '<br><b>Achtung:</b> ' + (schon === v.quellen.length
+        ? (schon === 1 ? 'Der gewählte Titel führt' : 'Alle ' + schon + ' gewählten Titel führen')
+        : '<b>' + schon + ' von ' + v.quellen.length + '</b> gewählten Titeln ' +
+          (schon === 1 ? 'führt' : 'führen')) +
+      ' im Jahrgang ' + esc(v.ziel) + ' bereits Preiszeilen — sie ' + (schon === 1 ? 'wird' : 'werden') +
+      ' ersetzt, auch die von Hand gepflegten. Vorher entsteht ohne Zutun ein Sicherungspunkt.';
   }
   kasten.innerHTML = text;
   knopf.disabled = gesperrt;
@@ -3080,14 +3221,16 @@ async function preisrundeAusfuehren() {
     const erste = titelNachAnzeige()[0];
     gewTitel = erste ? erste.id : null;
     reiterWechseln('preise');
-    meldung('Jahrgang ' + v.ziel + ' angelegt — ' + v.mitPreis + ' Preise fortgeschrieben.');
+    meldung('Jahrgang ' + v.ziel + (zielVorhanden ? ' fortgeschrieben' : ' angelegt') +
+      ' — ' + mehrzahl(v.mitPreis, 'Preis', 'Preise') + ' in ' +
+      mehrzahl(v.quellen.length, 'Titel', 'Titeln') + '.');
   } catch (fehler) {
     meldung('Nicht fortgeschrieben: ' + fehler.message, true);
     knopf.disabled = false; knopf.textContent = 'Anlegen und ansehen';
   }
 }
 
-/* ── Heftplanung fuer einen neuen Jahrgang ───────────────────────────────────────────────────
+/* ── Heftplanung anlegen ──────────────────────────────────────────────────────
    Der Weg hinein, wenn die Heftplanung vor der Preisliste steht — und das ist
    der Regelfall. Bis hierher gab es ihn nicht: Jahrgaenge entstanden allein
    nebenbei, beim Fortschreiben der Preise oder beim Einlesen einer Excel-Datei.
@@ -3103,34 +3246,46 @@ async function preisrundeAusfuehren() {
    angelegt wird. Preiszeilen entstehen keine; die kommen spaeter ueber
    „Preise fortschreiben".
 
-   Ein bestehender Jahrgang wird nicht angetastet — anlegen heisst anlegen. Zum
-   Ersetzen gibt es das Fortschreiben und den Excel-Eingang, beide mit
-   Sicherungspunkt. */
+   Seit dem 20.09.2026 laeuft der Vorgang auch in einen BESTEHENDEN Jahrgang: 2028
+   stand mit 6 von 19 Titeln da, und die fehlenden 13 liessen sich nicht nachziehen.
+   Der Grundsatz bleibt trotzdem stehen, er heisst nur genauer: angelegt wird, was
+   fehlt; angetastet wird nichts. Ein Titel, der im Zieljahrgang schon steht, wird
+   uebersprungen - mitsamt seinen Ausgaben und Preisen. Deshalb braucht dieser
+   Vorgang als einziger Kraftakt auch keinen Sicherungspunkt: er kann nichts
+   ueberschreiben. Zum Ersetzen gibt es weiterhin das Fortschreiben und den
+   Excel-Eingang, beide mit Sicherungspunkt.
+
+   Der Umfang (alle Titel, ein Fachbereich, einzelne Titel) kommt aus dem
+   gemeinsamen Baustein weiter oben, siehe umfangFeldHtml. */
 function jahrgangAnlegenOeffnen() {
   const jahre = jahrgaenge();
   /* Vorlage ist der juengste Jahrgang, der ALLE Titel fuehrt - nicht schlicht der
      juengste. 2028 steht heute als Geruest mit 6 der 19 Titel da; als Vorlage
-     brachte es einen neuen Jahrgang mit 13 fehlenden Titeln hervor, die sich
-     einzeln nicht nachtragen liessen. Dieselbe Falle wie beim Fortschreiben, wo
+     brachte es einen neuen Jahrgang mit 13 fehlenden Titeln hervor. Nachtragen
+     laesst sich das inzwischen, aber die Vorgabe soll den haeufigen Fall treffen
+     und nicht den Reparaturfall. Dieselbe Ueberlegung wie beim Fortschreiben, wo
      die Vorgabe aus demselben Grund am Vorhandensein von Preisen haengt. */
   const zahl = j => (ARBEIT || []).filter(t => t.jahr === j).length;
   const meisten = jahre.reduce((a, j) => Math.max(a, zahl(j)), 0);
   const voll = jahre.filter(j => zahl(j) === meisten);
   const vorlage = voll.length ? voll[voll.length - 1] : (jahre[jahre.length - 1] || '');
-  /* Vorgeschlagen wird das naechste Jahr, das es noch nicht gibt. Schlicht
-     „Vorlage + 1" oeffnete den Dialog heute gesperrt: 2028 besteht bereits. */
+  /* Vorgeschlagen wird das naechste Jahr, das es noch nicht gibt - der haeufige
+     Fall ist der Jahreswechsel. Ein bestehendes Jahr von Hand einzutippen ist
+     seit dem Nachtragen erlaubt und sperrt nicht mehr. */
   let ziel = vorlage ? Number(vorlage) + 1 : '';
   while (ziel && jahre.indexOf(String(ziel)) >= 0) ziel++;
   dialogZeigen(
-    '<h3>Heftplanung für einen neuen Jahrgang</h3>' +
+    '<h3>Heftplanung anlegen</h3>' +
     '<div class="erklaerung">Die Titel des Vorlagejahrgangs werden übernommen, dazu deren Ausgaben mit Heft und Monat. ' +
     'Termine, Themen und Kongresse bleiben leer. Preiszeilen werden dabei nicht angelegt; ' +
-    'diese entstehen über „Preise fortschreiben“.</div>' +
+    'diese entstehen über „Preise fortschreiben“. Besteht der Zieljahrgang bereits, wird nur ' +
+    'angelegt, was darin fehlt — vorhandene Titel bleiben unberührt.</div>' +
     '<div class="dialog-zeile"><span>Vorlage</span><select id="jaVorlage" onchange="jahrgangAnlegenRechnen()">' +
       jahre.map(j => '<option' + (j === vorlage ? ' selected' : '') + '>' + j + '</option>').join('') +
     '</select></div>' +
-    '<div class="dialog-zeile"><span>Neuer Jahrgang</span><input id="jaZiel" class="kurz" value="' +
+    '<div class="dialog-zeile"><span>Zieljahrgang</span><input id="jaZiel" class="kurz" value="' +
       ziel + '" oninput="jahrgangAnlegenRechnen()"></div>' +
+    umfangFeldHtml('ja', 'jahrgangAnlegenRechnen()') +
     '<div class="dialog-summe" id="jaSumme"></div>' +
     '<div class="dialog-knoepfe">' +
       '<button class="btn" onclick="dialogSchliessen()">Abbrechen</button>' +
@@ -3142,28 +3297,50 @@ function jahrgangAnlegenOeffnen() {
 function jahrgangAnlegenVorschau() {
   const vorlage = document.getElementById('jaVorlage').value;
   const ziel    = String(document.getElementById('jaZiel').value || '').trim();
-  const quellen = (ARBEIT || []).filter(t => t.jahr === vorlage);
+  const alle    = (ARBEIT || []).filter(t => t.jahr === vorlage);
+  const quellen = umfangAuswahl('ja', alle);
+  const imZiel  = (ARBEIT || []).filter(t => t.jahr === ziel);
+  const { fehlende, uebersprungen } = umfangFehlende(quellen, imZiel);
   let ausgaben = 0;
-  quellen.forEach(t => { ausgaben += (t.termin || []).length; });
-  return { vorlage, ziel, quellen, ausgaben };
+  fehlende.forEach(t => { ausgaben += (t.termin || []).length; });
+  return { vorlage, ziel, alle, quellen, fehlende, uebersprungen,
+           zielBesteht: imZiel.length > 0, ausgaben };
 }
 
 function jahrgangAnlegenRechnen() {
+  const vorlage = document.getElementById('jaVorlage').value;
+  umfangZeichnen('ja', (ARBEIT || []).filter(t => t.jahr === vorlage), 'jahrgangAnlegenRechnen()');
   const v = jahrgangAnlegenVorschau();
   const kasten = document.getElementById('jaSumme');
   const knopf  = document.getElementById('jaKnopf');
   let text, gesperrt = false;
   if (!/^\d{4}$/.test(v.ziel)) {
     text = 'Der Jahrgang muss eine vierstellige Jahreszahl sein.'; gesperrt = true;
-  } else if ((ARBEIT || []).some(t => t.jahr === v.ziel)) {
-    text = 'Der Jahrgang ' + esc(v.ziel) + ' besteht bereits. Anlegen legt an — ersetzt wird über ' +
-           '„Preise fortschreiben“ oder den Excel-Eingang, beide mit Sicherungspunkt.'; gesperrt = true;
-  } else if (!v.quellen.length) {
+  } else if (v.ziel === v.vorlage) {
+    text = 'Vorlage und Zieljahrgang sind derselbe.'; gesperrt = true;
+  } else if (!v.alle.length) {
     text = 'Der Vorlagejahrgang enthält keine Titel.'; gesperrt = true;
+  } else if (!v.quellen.length) {
+    text = 'Im gewählten Umfang steht kein Titel.'; gesperrt = true;
+  } else if (!v.fehlende.length) {
+    /* Kein Fehler, sondern der Normalfall eines zweiten Durchlaufs: es ist schon
+       alles da. Gesperrt wird trotzdem, weil sonst ein Knopf bereitstuende, der
+       nichts tut. */
+    text = (v.quellen.length === 1 ? 'Der gewählte Titel steht' : 'Alle ' + v.quellen.length + ' gewählten Titel stehen') +
+           ' im Jahrgang ' + esc(v.ziel) + ' bereits. Angelegt wird nur, was fehlt.'; gesperrt = true;
   } else {
     /* Was leer bleibt, steht bereits in der Erklaerung ueber den Feldern; der
-       Kasten traegt allein die Zahlen. */
-    text = '<b>' + v.quellen.length + ' Titel</b> und <b>' + v.ausgaben + ' Ausgaben</b> werden angelegt.';
+       Kasten traegt allein die Zahlen - und beim Nachtragen die Gegenzahl dessen,
+       was unberuehrt bleibt. */
+    text = '<b>' + mehrzahl(v.fehlende.length, 'Titel', 'Titel') + '</b> und <b>' +
+           mehrzahl(v.ausgaben, 'Ausgabe', 'Ausgaben') + '</b> ' +
+           (v.fehlende.length === 1 && v.ausgaben === 1 ? 'wird' : 'werden') + ' angelegt · ' +
+           umfangWort('ja', v.quellen, v.alle);
+    if (v.uebersprungen) text += '<br><b>' + mehrzahl(v.uebersprungen, 'Titel', 'Titel') + '</b> ' +
+      (v.uebersprungen === 1 ? 'steht' : 'stehen') + ' im Jahrgang ' + esc(v.ziel) + ' bereits und ' +
+      (v.uebersprungen === 1 ? 'bleibt' : 'bleiben') + ' unberührt — mitsamt Ausgaben und Preisen.';
+    else if (v.zielBesteht) text += '<br>Der Jahrgang ' + esc(v.ziel) +
+      ' besteht bereits; angelegt wird nur, was darin fehlt.';
   }
   kasten.innerHTML = text;
   knopf.disabled = gesperrt;
@@ -3176,9 +3353,9 @@ async function jahrgangAnlegenAusfuehren() {
   knopf.disabled = true; knopf.textContent = 'Wird angelegt …';
   try {
     if (sitzung && sitzung.ablauf && sitzung.ablauf < Date.now() + 60000) await sitzungErneuern();
-    await schreiben('jahrgang', 'POST', { jahr: v.ziel });
+    if (!v.zielBesteht) await schreiben('jahrgang', 'POST', { jahr: v.ziel });
     let nA = 0;
-    for (const q of v.quellen) {
+    for (const q of v.fehlende) {
       const angelegt = await schreiben('titel', 'POST',
         { jahr: v.ziel, reihenfolge: q.reihenfolge, name: q.name, auflage: q.auflage, fachbereich: q.fachbereich });
       const tid = angelegt[0].id;
@@ -3200,7 +3377,9 @@ async function jahrgangAnlegenAusfuehren() {
     const erste = titelNachAnzeige()[0];
     gewTitel = erste ? erste.id : null;
     reiterWechseln('termine');
-    meldung('Jahrgang ' + v.ziel + ' angelegt — ' + v.quellen.length + ' Titel, ' + nA + ' Ausgaben.');
+    meldung('Jahrgang ' + v.ziel + (v.zielBesteht ? ' ergänzt — ' : ' angelegt — ') +
+      mehrzahl(v.fehlende.length, 'Titel', 'Titel') + ', ' + mehrzahl(nA, 'Ausgabe', 'Ausgaben') +
+      (v.uebersprungen ? '; ' + v.uebersprungen + ' bereits vorhanden und unberührt.' : '.'));
   } catch (fehler) {
     meldung('Nicht angelegt: ' + fehler.message, true);
     knopf.disabled = false; knopf.textContent = 'Anlegen und ansehen';
