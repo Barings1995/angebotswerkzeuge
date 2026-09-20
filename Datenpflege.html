@@ -2987,14 +2987,15 @@ function umfangZeichnen(p, quellen, ruf) {
     fach.dataset.stand = faecher.join('\u0000');
   }
 
-  const namen = quellen.map(t => String(t.name || '').trim());
+  const gezeigt = quellen.slice().sort(NACH_NAMEN);
+  const namen = gezeigt.map(t => String(t.name || '').trim());
   if (liste.dataset.stand !== namen.join('\u0000')) {
     const an = new Set(umfangNamen(p));
     liste.innerHTML =
       '<label class="eintrag kopf"><b><input type="checkbox" id="' + p + 'Alle" ' +
         'onchange="umfangAlleSetzen(\'' + p + '\', this.checked); ' + ruf + '">alle Titel</b>' +
         '<span id="' + p + 'Zahl"></span></label>' +
-      quellen.map(t => '<label class="eintrag"><b><input type="checkbox" class="u-titel" value="' +
+      gezeigt.map(t => '<label class="eintrag"><b><input type="checkbox" class="u-titel" value="' +
         esc(String(t.name || '').trim()) + '"' + (an.has(String(t.name || '').trim()) ? ' checked' : '') +
         ' onchange="' + ruf + '">' + esc(t.name) + '</b>' +
         '<span>' + esc(String(t.fachbereich || '').trim() || 'ohne Fachbereich') + '</span></label>').join('');
