@@ -821,6 +821,12 @@ button, input, select, textarea { font-family: inherit; }
 /* Der Name traegt noch „preispflege". Er bleibt so: Er steht im Zwischenspeicher
    des Browsers, und ein neuer Name wuerde die laufende Anmeldung wegwerfen. */
 const SITZUNG_SCHLUESSEL = 'preispflege_sitzung_v1';
+/* Der zuletzt gerechnete Prozentsatz des Fortschreibens. Er liegt im
+   Zwischenspeicher des Browsers, nicht in der Datenbank: es ist eine Bequemlichkeit
+   am Arbeitsplatz, keine gepflegte Angabe. Gemerkt wird erst beim Ausfuehren, nicht
+   schon beim Tippen - sonst uebernaehme sich das Fenster ein Vertippen, das nie
+   gerechnet wurde. */
+const PROZENT_SCHLUESSEL = 'preispflege_prozent_v1';
 let sitzung = null;          // { zugang, erneuerung, ablauf, benutzer }
 let URSPRUNG = null;         // Stand, wie er aus der Datenbank kam
 let ARBEIT   = null;         // Arbeitskopie
@@ -956,6 +962,16 @@ async function sitzungErneuern() {
     sitzungMerken();
     return true;
   } catch (e) { sitzungVergessen(); return false; }
+}
+
+function prozentGemerkt() {
+  try {
+    const w = localStorage.getItem(PROZENT_SCHLUESSEL);
+    return (w && zahlOderNull(w) != null && !isNaN(zahlOderNull(w))) ? w : null;
+  } catch (e) { return null; }
+}
+function prozentMerken(wert) {
+  try { localStorage.setItem(PROZENT_SCHLUESSEL, String(wert)); } catch (e) {}
 }
 
 async function abmelden() {
@@ -2683,7 +2699,8 @@ function titelAnlegenOeffnen() {
     '<div class="dialog-zeile" id="taFachNeuZeile" style="display:none"><span>Name des Fachbereichs</span>' +
       '<input id="taFachNeu" style="width:240px" oninput="titelAnlegenRechnen()"></div>' +
     '<div class="dialog-zeile"><span>Auflage</span>' +
-      '<input id="taAuflage" class="kurz" value="0" oninput="titelAnlegenRechnen()"></div>' +
+      '<input id="taAuflage" class="kurz" value="0" oninput="titelAnlegenRechnen()" ' +
+      'onblur="this.value = ganzText(this.value) || \'0\'"></div>' +
     '<div class="dialog-zeile"><span>Formate übernehmen von</span><select id="taVorbild" onchange="titelAnlegenRechnen()">' +
       '<option value="">(ohne Vorbild)</option>' +
       titel.map(t => '<option value="' + t.id + '"' + (t.id === gewTitel ? ' selected' : '') + '>' + esc(t.name) + '</option>').join('') +
@@ -3068,7 +3085,8 @@ function preisrundeOeffnen() {
       jahre.map(j => '<option' + (j === vorgabe ? ' selected' : '') + '>' + j + '</option>').join('') +
     '</select></div>' +
     '<div class="dialog-zeile"><span>Zieljahrgang</span><input id="prZiel" class="kurz" value="' + (Number(vorgabe) + 1) + '" oninput="preisrundeRechnen()"></div>' +
-    '<div class="dialog-zeile"><span>Anpassung</span><span><input id="prProzent" class="kurz" value="3,0" oninput="preisrundeRechnen()"> %</span></div>' +
+    '<div class="dialog-zeile"><span>Anpassung</span><span><input id="prProzent" class="kurz" value="' +
+      esc(prozentGemerkt() || '3,0') + '" oninput="preisrundeRechnen()"> %</span></div>' +
     '<div class="dialog-zeile"><span>Rundung</span><select id="prRundung" onchange="preisrundeRechnen()">' +
       '<option value="10">auf volle 10 €</option>' +
       '<option value="5" selected>auf volle 5 €</option>' +
@@ -3215,6 +3233,7 @@ async function preisrundeAusfuehren() {
         await schreiben('preis', 'POST', teil, teil.length);
       }
     }
+    prozentMerken(zahlText(v.prozent));
     dialogSchliessen();
     await ladenAusDatenbank();
     gewJahr = v.ziel;
