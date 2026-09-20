@@ -508,6 +508,11 @@ let isCustomData = false;
 let loadedFileName = '';
 const CACHE_KEY = 'preiswerk_dataset_v1';
 let datenStand = '';    // Stand der Preisliste als fertiger Textzusatz, siehe standAusMappe()
+/* Rabattstaffeln je Jahrgang: { jahr: { standard:{mal,menge}, fach:{ Name:{mal,menge} } } }.
+   Kennt die Preisliste keine Staffeln, bleibt der Jahrgang hier leer und es gelten die
+   heutigen Werte (STAFFEL_HEUTE). */
+let STAFFELN_ALLE = {};
+let staffelnJahr = null;   // Staffeln des gewaehlten Jahrgangs, null = heutige Werte
 const CACHE_KEY_OLD = 'mediaquote_dataset_v1'; // einmalige Übernahme der unter dem alten Namen gemerkten Daten
 
 // ─── EXCEL-IMPORT ────────────────────────────────────────
@@ -550,6 +555,51 @@ function cellNum(cell){
   const n=Number(s);return isNaN(n)?0:n;
 }
 function truthy(s){return /^(ja|j|x|yes|y|true|1|wahr)$/i.test(String(s).trim());}
+
+/* Rabattstaffeln aus einzelnen Zeilen { jahr, fach, art, ab, prozent } aufbauen -
+   so kommen sie aus der Datenbank wie aus dem Excel-Blatt „Staffeln".
+   Ohne Fachbereich ist die Zeile der Standard des Jahrgangs; mit Fachbereich eine
+   Abweichung, die nur fuer diese Fachgruppe gilt. Eine Abweichung, die nur Mal-Zeilen
+   fuehrt, hat damit ausdruecklich keine Mengenstaffel - und umgekehrt.
+   Prozent wird in ganzen Prozent erwartet (3 = 3 %), wie in der Pflege eingetragen. */
+function staffelnAusZeilen(zeilen){
+  const A={};
+  (zeilen||[]).forEach(z=>{
+    const jahr=String(z.jahr||'').trim();
+    const art=/^m(al|alstaffel)$/i.test(String(z.art||'').trim())?'mal'
+             :/^m(enge|engenstaffel)$/i.test(String(z.art||'').trim())?'menge':'';
+    const ab=Number(z.ab), pct=Number(z.prozent);
+    if(!jahr||!art||!isFinite(ab)||ab<=0||!isFinite(pct))return;
+    if(!A[jahr])A[jahr]={standard:{mal:[],menge:[]},fach:{}};
+    const fach=String(z.fach||'').trim();
+    let ziel=A[jahr].standard;
+    if(fach){
+      if(!A[jahr].fach[fach])A[jahr].fach[fach]={mal:[],menge:[]};
+      ziel=A[jahr].fach[fach];
+    }
+    ziel[art].push([ab,pct/100]);
+  });
+  /* Aufsteigend, damit die Stufenanzeige der Reihe nach laeuft. Welcher Satz gilt,
+     haengt nicht daran (siehe satzAus) - die Pflege darf also in jeder Reihenfolge
+     eintragen. */
+  Object.values(A).forEach(j=>[j.standard,...Object.values(j.fach)]
+    .forEach(st=>{st.mal.sort((a,b)=>a[0]-b[0]);st.menge.sort((a,b)=>a[0]-b[0]);}));
+  return A;
+}
+
+/* Blatt „Staffeln": Jahrgang · Fachbereich · Art · ab · Prozent. Das Blatt ist freiwillig;
+   fehlt es, gelten die heutigen Werte. */
+function parseStaffelnAusMappe(wb){
+  const ws=wb.getWorksheet('Staffeln');
+  if(!ws)return {};
+  const zeilen=[];
+  ws.eachRow((row,rn)=>{
+    if(rn===1)return; // Kopfzeile
+    zeilen.push({jahr:cellStr(row.getCell(1)),fach:cellStr(row.getCell(2)),
+                 art:cellStr(row.getCell(3)),ab:cellNum(row.getCell(4)),prozent:cellNum(row.getCell(5))});
+  });
+  return staffelnAusZeilen(zeilen);
+}
 
 // Excel-Arbeitsmappe (Blatt „Preise“) -> { jahr: { titel: {fach, categories:{kat:{fmt:{base,s4c,rabatt,ae,eq}}}} } }
 function parseWorkbookToDataset(wb){
@@ -606,6 +656,7 @@ async function onDataFileChosen(ev){
     await wb.xlsx.load(await file.arrayBuffer());
     const ds=parseWorkbookToDataset(wb);
     datenStand=standAusMappe(wb);
+    STAFFELN_ALLE=parseStaffelnAusMappe(wb);
     DATASET=ds;isCustomData=true;loadedFileName=file.name;
     const ys=years();currentYear=ys.includes('2026')?'2026':ys[0];
     applyYear(currentYear);   // speichert selbst per saveCache()
@@ -628,7 +679,7 @@ function saveCache(){
   /* Der Stand wandert mit in den Zwischenspeicher: sonst stünde nach einem Neustart der
      Seite eine Preisliste ohne Datum da, solange die Datei noch nicht wieder von der
      Adresse geholt ist - und ohne Netz bliebe das Datum ganz weg. */
-  try{localStorage.setItem(CACHE_KEY,JSON.stringify({ds:DATASET,year:currentYear,file:loadedFileName,stand:datenStand}));}catch(e){}
+  try{localStorage.setItem(CACHE_KEY,JSON.stringify({ds:DATASET,year:currentYear,file:loadedFileName,stand:datenStand,staffeln:STAFFELN_ALLE}));}catch(e){}
 }
 function loadCache(){
   try{
@@ -641,6 +692,7 @@ function loadCache(){
     const o=JSON.parse(raw);
     if(o&&o.ds&&Object.keys(o.ds).length){
       DATASET=o.ds;isCustomData=true;loadedFileName=o.file||'';datenStand=o.stand||'';
+      STAFFELN_ALLE=(o.staffeln&&typeof o.staffeln==='object')?o.staffeln:{};
       currentYear=(o.year&&o.ds[o.year])?o.year:Object.keys(o.ds).sort()[0];
     }
   }catch(e){}
@@ -667,6 +719,7 @@ function applyYear(year){
   }else{
     currentYear='';DATA={};
   }
+  staffelnJahr=(currentYear&&STAFFELN_ALLE[currentYear])?STAFFELN_ALLE[currentYear]:null;
   saveCache();
   syncDataUI();
   initDropdowns();
@@ -678,6 +731,9 @@ function applyYear(year){
 
 // ─── HELPERS ──────────────────────────────────────────────────────────────────
 const euro = n => n.toLocaleString('de-DE', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' €';
+/* Schwellen und Seiten-Äquivalente: ganze Zahlen ohne Komma, gebrochene mit hoechstens
+   zwei Stellen - „3" und „4,5" statt „3,00". */
+const zahl = n => Number(n).toLocaleString('de-DE', { maximumFractionDigits: 2 });
 
 /* ══ RECHNUNG ══════════════════════════════════════════════════════════════════
    Staffel, Rabatt und AE ohne Zugriff auf die Seite: render() liest die Schalter
@@ -687,8 +743,35 @@ const euro = n => n.toLocaleString('de-DE', { minimumFractionDigits: 2, maximumF
    kein window, keine Daten der Seite - nur, was als Wert hereinkommt.
    Eine Position it ist {journal, fn, base, s4c, use4c, rabatt, ae, eq, count}. */
 const round2 = n => Math.round((n + Number.EPSILON) * 100) / 100;
-function getMalRabatt(n)   { return n>=18?.15 : n>=12?.10 : n>=6?.05 : n>=3?.03 : 0; }
-function getMengeRabatt(n) { return n>=18?.20 : n>=12?.15 : n>=6?.10 : n>=3?.05 : 0; }
+/* Eine Staffel ist eine Liste von Stufen [ab, Satz]: „ab 6 Belegungen 5 %". Gilt eine
+   Stufe, gilt der hoechste Satz, dessen Schwelle erreicht ist - die Reihenfolge der
+   Zeilen spielt damit keine Rolle, auch nicht in der Pflege.
+   Eine leere Liste heisst: diese Staffel gibt es fuer die Gruppe nicht. Das ist etwas
+   anderes als „Schwelle noch nicht erreicht" und muss unterscheidbar bleiben, siehe
+   staffelGruppenRechnen.
+   STAFFEL_HEUTE ist der Rueckfall: solange in der Preisliste keine Staffeln gepflegt
+   sind, rechnet PreisWerk damit weiter, also genau wie bisher. */
+const STAFFEL_HEUTE = {
+  mal:   [[3, .03], [6, .05], [12, .10], [18, .15]],
+  menge: [[3, .05], [6, .10], [12, .15], [18, .20]],
+};
+function satzAus(stufen, n) {
+  let satz = 0;
+  (stufen || []).forEach(st => { if (n >= st[0] && st[1] > satz) satz = st[1]; });
+  return satz;
+}
+function getMalRabatt(n)   { return satzAus(STAFFEL_HEUTE.mal, n); }
+function getMengeRabatt(n) { return satzAus(STAFFEL_HEUTE.menge, n); }
+/* Welche Staffel fuer eine Fachgruppe gilt: ihre eigene, sonst die des Jahrgangs.
+   Gepflegt wird deshalb nur einmal, und nur dort abgewichen, wo es noetig ist.
+   Das Gemeinschaftsangebot wirft alle Fachbereiche in einen Topf; seine Gruppe heisst
+   GEMEIN_FACH und steht in keiner Abweichung, faellt also auf den Standard - so
+   entschieden am 20.09.2026, weil die guenstigste der beteiligten Gruppen am Angebot
+   nicht mehr abzulesen waere. */
+function staffelFuer(staffeln, fach) {
+  if (!staffeln || !staffeln.standard) return STAFFEL_HEUTE;
+  return (staffeln.fach && staffeln.fach[fach]) || staffeln.standard;
+}
 /* Seiten-Äquivalent eines Formats. Vorrang hat der Wert, der in der Preisliste in der
    Spalte „Seiten-Äquivalent“ hinterlegt ist; bleibt die Zelle leer, wird er aus dem
    Formatnamen abgeleitet. So muss nur dort etwas eingetragen werden, wo der abgeleitete
@@ -718,7 +801,7 @@ const GEMEIN_FACH = 'Alle Fachbereiche gemeinsam';
    Gruppen ist die des Pakets, damit Leiste und Tabelle gleich sortiert sind.
    gemein: Gemeinschaftsangebot, alle Positionen in einem Topf (siehe gemeinsameStaffel).
    fachVon: ordnet einem Titel seinen Fachbereich zu. */
-function staffelGruppenRechnen(items, gemein, fachVon) {
+function staffelGruppenRechnen(items, gemein, fachVon, staffeln) {
   const g = new Map();
   items.forEach(it => {
     const k = gemein ? GEMEIN_FACH : fachVon(it.journal);
@@ -727,12 +810,19 @@ function staffelGruppenRechnen(items, gemein, fachVon) {
     e.items.push(it);
     if (it.rabatt) { e.totalMal += it.count; e.totalMenge += it.count * pageEquiv(it); }
   });
+  /* malPct/mengePct sind 0, wenn es die Staffel gibt und die Schwelle noch nicht
+     erreicht ist, und null, wenn es sie fuer die Gruppe gar nicht gibt. Die Leiste
+     blendet eine Staffel, die es nicht gibt, aus, statt „0 %" zu zeigen. */
   return [...g.values()].map(e => {
     e.totalMenge = round2(e.totalMenge);
-    e.malPct     = getMalRabatt(e.totalMal);
-    e.mengePct   = getMengeRabatt(e.totalMenge);
-    e.applied    = Math.max(e.malPct, e.mengePct);
-    e.whichLabel = e.mengePct > e.malPct ? 'Mengenstaffel' : e.malPct > 0 ? 'Malstaffel' : null;
+    const st     = staffelFuer(staffeln, e.fach);
+    e.malStufen   = st.mal   || [];
+    e.mengeStufen = st.menge || [];
+    e.malPct     = e.malStufen.length   ? satzAus(e.malStufen,   e.totalMal)   : null;
+    e.mengePct   = e.mengeStufen.length ? satzAus(e.mengeStufen, e.totalMenge) : null;
+    const mal    = e.malPct   || 0, menge = e.mengePct || 0;
+    e.applied    = Math.max(mal, menge);
+    e.whichLabel = menge > mal ? 'Mengenstaffel' : mal > 0 ? 'Malstaffel' : null;
     return e;
   });
 }
@@ -753,8 +843,8 @@ function zeileRechnen(it, satz, useAE) {
 }
 /* Das ganze Paket: Gruppen mit ihren Zeilen (g.zeilen parallel zu g.items) und die
    Summen, aufaddiert in der Reihenfolge der Tabelle. */
-function paketRechnen(items, gemein, fachVon, useAE) {
-  const gruppen = staffelGruppenRechnen(items, gemein, fachVon);
+function paketRechnen(items, gemein, fachVon, useAE, staffeln) {
+  const gruppen = staffelGruppenRechnen(items, gemein, fachVon, staffeln);
   const summe = { list: 0, rabatt: 0, after: 0, ae: 0, net: 0 };
   gruppen.forEach(g => {
     g.zeilen = g.items.map(it => {
@@ -990,7 +1080,7 @@ function render() {
 
   // Staffel: je Fachgruppe getrennt, gezählt werden nur rabattfähige Positionen
   const gemein  = gemeinsameStaffel();
-  const paket   = paketRechnen(items, gemein, fachVon, useAE);
+  const paket   = paketRechnen(items, gemein, fachVon, useAE, staffelnJahr);
   const gruppen = paket.gruppen;
   /* Überschrift immer dann, wenn sie etwas erklärt: bei mehreren Gruppen ohnehin - und
      beim Gemeinschaftsangebot auch dann, wenn der eine Topf mehrere Fachbereiche
@@ -1004,8 +1094,8 @@ function render() {
     wrap.style.display = '';
     wrap.innerHTML = gruppen.map((g, i) => staffelBarHtml(g, mehrere, i)).join('');
     gruppen.forEach((g, i) => {
-      renderProgress('sMalProgress-' + i,   g.totalMal,   [[3,'3 %'],[6,'5 %'],[12,'10 %'],[18,'15 %']]);
-      renderProgress('sMengeProgress-' + i, g.totalMenge, [[3,'5 %'],[6,'10 %'],[12,'15 %'],[18,'20 %']]);
+      renderProgress('sMalProgress-' + i,   g.totalMal,   g.malStufen);
+      renderProgress('sMengeProgress-' + i, g.totalMenge, g.mengeStufen);
     });
   } else {
     wrap.style.display = 'none';
@@ -1120,35 +1210,36 @@ function setStaffelHinweis(gemein) {
 
 /* Eine Staffel-Leiste je Fachgruppe. Die Überschrift steht nur da, wo das Paket mehr als
    eine Fachgruppe enthält - sonst sieht die Anzeige aus wie bisher. */
+/* Eine Staffel, die es fuer die Fachgruppe nicht gibt (malPct/mengePct sind dann null),
+   wird samt ihrem Zaehler ausgeblendet statt mit „0 %" gezeigt: sonst stuende in der
+   Leiste eine Regel, die fuer diese Gruppe gar nicht gilt. Gibt es beide nicht, bleibt
+   nur das Feld rechts und sagt das ausdruecklich. */
 function staffelBarHtml(g, mitUeberschrift, i) {
+  const hatMal   = g.malPct   !== null;
+  const hatMenge = g.mengePct !== null;
   const malWins   = g.whichLabel === 'Malstaffel';
   const mengeWins = g.whichLabel === 'Mengenstaffel';
-  const malNote   = g.malPct   > 0 ? (malWins   ? '✓ wird angewendet' : '') : g.totalMal   < 3 ? 'ab 3 Schaltungen' : '';
-  const mengeNote = g.mengePct > 0 ? (mengeWins ? '✓ wird angewendet' : '') : g.totalMenge < 3 ? 'ab 3 Seiten' : '';
-  const appNote   = g.whichLabel ? '(' + g.whichLabel + ')' : 'Normal-/Vorzugs-/Festplatz. buchen';
+  const abMal   = hatMal   && g.malStufen.length   ? g.malStufen[0][0]   : 0;
+  const abMenge = hatMenge && g.mengeStufen.length ? g.mengeStufen[0][0] : 0;
+  const malNote   = g.malPct   > 0 ? (malWins   ? '✓ wird angewendet' : '') : g.totalMal   < abMal   ? 'ab ' + zahl(abMal) + ' Schaltungen' : '';
+  const mengeNote = g.mengePct > 0 ? (mengeWins ? '✓ wird angewendet' : '') : g.totalMenge < abMenge ? 'ab ' + zahl(abMenge) + ' Seiten' : '';
+  const appNote   = g.whichLabel ? '(' + g.whichLabel + ')'
+                  : (!hatMal && !hatMenge) ? 'für diese Fachgruppe nicht vorgesehen'
+                  : 'Normal-/Vorzugs-/Festplatz. buchen';
+  const feld = (label, wert, unten) => `<div class="staffel-item">
+        <div class="s-label">${label}</div>
+        <div class="s-val">${wert}</div>
+        ${unten}
+      </div>`;
   return `<div class="staffel-group">
     ${mitUeberschrift ? `<div class="staffel-fach">${esc(g.fach)}</div>` : ''}
     <div class="staffel-bar">
-      <div class="staffel-item">
-        <div class="s-label">Rabattfähige Schaltungen</div>
-        <div class="s-val">${g.totalMal}</div>
-        <div class="staffel-progress" id="sMalProgress-${i}"></div>
-      </div>
-      <div class="staffel-item">
-        <div class="s-label">Seiten-Äquivalente</div>
-        <div class="s-val">${g.totalMenge.toLocaleString('de-DE', { maximumFractionDigits: 2 })}</div>
-        <div class="staffel-progress" id="sMengeProgress-${i}"></div>
-      </div>
-      <div class="staffel-item">
-        <div class="s-label">Malstaffel</div>
-        <div class="s-val">${g.malPct > 0 ? Math.round(g.malPct*100) + ' %' : '–'}</div>
-        <div class="s-note${malWins ? ' active' : ''}">${malNote}</div>
-      </div>
-      <div class="staffel-item">
-        <div class="s-label">Mengenstaffel</div>
-        <div class="s-val">${g.mengePct > 0 ? Math.round(g.mengePct*100) + ' %' : '–'}</div>
-        <div class="s-note${mengeWins ? ' active' : ''}">${mengeNote}</div>
-      </div>
+      ${hatMal ? feld('Rabattfähige Schaltungen', g.totalMal, `<div class="staffel-progress" id="sMalProgress-${i}"></div>`) : ''}
+      ${hatMenge ? feld('Seiten-Äquivalente', zahl(g.totalMenge), `<div class="staffel-progress" id="sMengeProgress-${i}"></div>`) : ''}
+      ${hatMal ? feld('Malstaffel', g.malPct > 0 ? Math.round(g.malPct*100) + ' %' : '–',
+        `<div class="s-note${malWins ? ' active' : ''}">${malNote}</div>`) : ''}
+      ${hatMenge ? feld('Mengenstaffel', g.mengePct > 0 ? Math.round(g.mengePct*100) + ' %' : '–',
+        `<div class="s-note${mengeWins ? ' active' : ''}">${mengeNote}</div>`) : ''}
       <div class="staffel-item highlight">
         <div class="s-label">Angewendeter Rabatt</div>
         <div class="s-val">${g.applied > 0 ? Math.round(g.applied*100) + ' %' : 'kein Rabatt'}</div>
@@ -1158,14 +1249,18 @@ function staffelBarHtml(g, mitUeberschrift, i) {
   </div>`;
 }
 
-function renderProgress(elId, val, steps) {
+/* Die Stufen stehen in der Preisliste, nicht im Werkzeug: die Leiste beschriftet sich
+   aus den Werten der Staffel. Gibt es die Staffel fuer die Gruppe nicht, fehlt auch das
+   Feld dazu - dann ist nichts zu zeichnen. */
+function renderProgress(elId, val, stufen) {
   const el = document.getElementById(elId);
+  if (!el) return;
   el.innerHTML = '';
-  steps.forEach(([t, label], i) => {
+  (stufen || []).forEach(([ab, pct], i) => {
     const s = document.createElement('span');
-    const prevT = i > 0 ? steps[i - 1][0] : 0;
-    s.className = 's-step' + (val >= t ? ' done' : val >= prevT && val < t ? ' current' : '');
-    s.textContent = t + '× ' + label;
+    const vorher = i > 0 ? stufen[i - 1][0] : 0;
+    s.className = 's-step' + (val >= ab ? ' done' : val >= vorher && val < ab ? ' current' : '');
+    s.textContent = zahl(ab) + '× ' + Math.round(pct * 100) + ' %';
     el.appendChild(s);
   });
 }
@@ -1340,14 +1435,19 @@ async function ladePreislisteAusDatenbank(){
   const st=document.getElementById('dataStatus');
   if(st&&!isCustomData)st.textContent='Preisliste wird geladen …';
   try{
-    const [titel,stand]=await Promise.all([
+    const [titel,stand,staffel]=await Promise.all([
       dbHolen('titel?select='+encodeURIComponent(DB_FELDER)+
               '&order=jahr.asc,reihenfolge.asc&preis.order=reihenfolge.asc&limit=500'),
-      dbHolen('stand?select=geaendert_am').catch(()=>[])
+      dbHolen('stand?select=geaendert_am').catch(()=>[]),
+      /* Die Staffeln stehen in einer eigenen Tabelle. Fehlt sie oder ist sie leer, gelten
+         die heutigen Werte - das Laden der Preisliste darf daran nicht scheitern. */
+      dbHolen('staffel?select=jahr,fachbereich,art,ab,prozent&limit=500').catch(()=>[])
     ]);
     const ds=datenbankZuDataset(titel);
     if(!ds||!Object.keys(ds).length)throw new Error('Keine Jahrgänge in der Datenbank.');
     datenStand=standAusDatenbank(stand);
+    STAFFELN_ALLE=staffelnAusZeilen((staffel||[]).map(z=>(
+      {jahr:z.jahr,fach:z.fachbereich,art:z.art,ab:z.ab,prozent:z.prozent})));
     DATASET=ds;isCustomData=true;loadedFileName='Preisliste';
     const ys=years();
     if(!currentYear||!DATASET[currentYear])currentYear=ys.includes('2026')?'2026':ys[0];
@@ -1376,6 +1476,7 @@ async function ladePreislisteVonServer(){
     const ds=parseWorkbookToDataset(wb);
     if(!ds||!Object.keys(ds).length)throw new Error('Keine Jahrgänge in der Datei.');
     datenStand=standAusMappe(wb);
+    STAFFELN_ALLE=parseStaffelnAusMappe(wb);
     DATASET=ds;isCustomData=true;loadedFileName=DATEN_DATEI;
     /* Der gemerkte Jahrgang bleibt stehen, solange die Preisliste ihn kennt; sonst gilt
        dieselbe Vorgabe wie beim Laden von Hand. */
