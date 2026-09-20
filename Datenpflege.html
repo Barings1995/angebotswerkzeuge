@@ -238,17 +238,17 @@ button, input, select, textarea { font-family: inherit; }
      auf. Ungedrueckt liegt der Schatten ausserhalb und wird vom overflow:hidden
      der Gruppe verdeckt. Geloest wie in der Jahresvorschau (.mode-btn.active). */
   .reiter button.an { background: var(--navy); color: #fff; box-shadow: 0 -1px 0 var(--navy); }
-  /* Die Leiste traegt viererlei: den Austausch mit der Excel-Datei, das Aufbauen
+  /* Die Leiste traegt fuenferlei: den Austausch mit der Excel-Datei, das Aufbauen
      eines neuen Jahrgangs (Hefte und Preise — die zwei Haelften desselben
      Vorgangs), Eingriffe am bestehenden Jahrgang (einen Stand zurueckholen oder
-     ihn ganz entfernen) und die offenen Aenderungen. Jede Gruppe steht auf einer eigenen
-     weissen Kachel. Der feine Strich zwischen den Gruppen genuegte nicht: 1 px
-     Randfarbe auf dem blaugrauen Grund der Leiste ging neben acht weissen
-     Knopfrandern unter. Jetzt traegt die Flaeche die Gruppierung, und die
-     Knoepfe darin kommen ohne eigenen Rand aus — statt acht Kaesten stehen
-     drei Felder in der Leiste.
+     ihn ganz entfernen), die Rabattstaffeln und die offenen Aenderungen. Jede
+     Gruppe steht auf einer eigenen weissen Kachel. Der feine Strich zwischen den
+     Gruppen genuegte nicht: 1 px Randfarbe auf dem blaugrauen Grund der Leiste
+     ging neben neun weissen Knopfrandern unter. Jetzt traegt die Flaeche die
+     Gruppierung, und die Knoepfe darin kommen ohne eigenen Rand aus — statt
+     neun Kaesten stehen fuenf Felder in der Leiste.
 
-     Die drei Gruppen stehen zusammen in .aktionen. Damit bricht die Leiste bei
+     Die fuenf Gruppen stehen zusammen in .aktionen. Damit bricht die Leiste bei
      schmalem Fenster zwischen den Gruppen um und nicht mehr mitten in einer.
 
      Die zwei Punkte Luft unten samt gleich grossem negativem Aussenabstand
@@ -722,11 +722,30 @@ button, input, select, textarea { font-family: inherit; }
       <span class="stand-hinweis" id="standHinweis"></span>
       <button type="button" class="offen-hinweis" id="offenHinweis" onclick="uebersichtOeffnen()" title="Übersicht der offenen Änderungen öffnen"></button>
       <div class="aktionen">
-        <!-- Eigene Gruppe, bewusst nicht bei „Heftplanung anlegen" und „Preise
-             fortschreiben": die beiden sind Jahreswechsel-Kraftakte, die sofort
-             in die Datenbank schreiben und einen Jahrgang erst erzeugen. Die
-             Staffelpflege ändert den offenen Jahrgang über die Arbeitskopie,
-             wie ein Preis oder ein Termin. So entschieden am 20.09.2026. -->
+        <!-- Maßstab für die Leiste: was am Jahrgang hängt UND für alle Titel
+             gilt. Acht der neun Knöpfe erfüllen das; die Rabattstaffeln sind die
+             eine Ausnahme, und zwar wissentlich. Ihr Standard gilt zwar für
+             alle, eine Abweichung aber nur für eine Fachgruppe.
+
+             In die Titelliste gehören sie deshalb trotzdem nicht: der Rabatt
+             zählt titelübergreifend innerhalb einer Fachgruppe zusammen (siehe
+             staffelGruppenRechnen in PreisWerk), also kann ein einzelner Titel
+             gar keine eigene Staffel haben — zwei Titel derselben Gruppe mit
+             verschiedenen Sätzen ließen den gemeinsamen Topf unentscheidbar.
+             Die Ebene, an der die Staffel hängt, ist die Fachgruppe, und die
+             kommt in dieser Maske als Gegenstand nicht vor. Der Platz hier ist
+             also eine benannte Notlösung, keine saubere Einordnung.
+
+             Innerhalb der Leiste eine eigene Gruppe, bewusst nicht bei
+             „Heftplanung anlegen“ und „Preise fortschreiben“: die beiden sind
+             Jahreswechsel-Kraftakte, die sofort in die Datenbank schreiben und
+             einen Jahrgang erst erzeugen. Die Staffelpflege ändert den offenen
+             Jahrgang über die Arbeitskopie, wie ein Preis oder ein Termin.
+
+             Das kippt, sobald Fachgruppen regelmäßig einzeln gepflegt werden:
+             dann braucht die Maske eine eigene Fachbereichsebene, etwa die
+             Titelliste nach Fachgruppe gruppiert, mit der Staffel an der
+             Gruppenüberschrift. So entschieden am 20.09.2026. -->
         <div class="gruppe">
           <button class="btn" onclick="staffelnOeffnen()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="4" y1="20" x2="4" y2="14"/><line x1="10" y1="20" x2="10" y2="10"/><line x1="16" y1="20" x2="16" y2="6"/><line x1="22" y1="20" x2="22" y2="4"/></svg>Rabattstaffeln …</button>
         </div>
@@ -3206,7 +3225,7 @@ async function sicherungAnlegen(jahr, bezeichnung, still) {
 
 async function sicherungenOeffnen() {
   dialogZeigen('<h3>Sicherungspunkte</h3><div class="erklaerung">Schnappschüsse des Jahrgangs ' + esc(gewJahr) +
-    '. Beim Zurückspielen werden Titel, Preise und Termine dieses Jahrgangs ersetzt.</div>' +
+    '. Beim Zurückspielen werden Titel, Preise, Termine und Rabattstaffeln dieses Jahrgangs ersetzt.</div>' +
     '<div class="dialog-liste" id="sichListe"><div class="dialog-zeile"><span>wird geladen …</span></div></div>' +
     '<div class="dialog-knoepfe">' +
       '<button class="btn" onclick="dialogSchliessen()">Schließen</button>' +
