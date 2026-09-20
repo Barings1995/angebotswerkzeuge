@@ -236,6 +236,8 @@ button, input, select, textarea { font-family: inherit; }
      Bei nur einer Gruppe entfällt die Überschrift und es sieht aus wie zuvor. */
   .staffel-group { margin-bottom: 20px; }
   .staffel-group .staffel-bar { margin-bottom: 0; }
+  .staffel-fehlt { display: flex; gap: 8px; align-items: flex-start; border: 1.5px solid var(--red); border-radius: var(--radius-lg); padding: 10px 14px; margin-bottom: 12px; font-size: 13px; line-height: 1.45; color: var(--red); }
+  .staffel-fehlt strong { font-weight: 700; }
   .staffel-fach { font-size: 11px; font-weight: 700; color: var(--navy); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 6px; }
 
   /* Progress steps */
@@ -749,19 +751,17 @@ const round2 = n => Math.round((n + Number.EPSILON) * 100) / 100;
    Eine leere Liste heisst: diese Staffel gibt es fuer die Gruppe nicht. Das ist etwas
    anderes als „Schwelle noch nicht erreicht" und muss unterscheidbar bleiben, siehe
    staffelGruppenRechnen.
-   STAFFEL_HEUTE ist der Rueckfall: solange in der Preisliste keine Staffeln gepflegt
-   sind, rechnet PreisWerk damit weiter, also genau wie bisher. */
-const STAFFEL_HEUTE = {
-  mal:   [[3, .03], [6, .05], [12, .10], [18, .15]],
-  menge: [[3, .05], [6, .10], [12, .15], [18, .20]],
-};
+   Feste Staffelwerte gibt es im Werkzeug nicht mehr (bis 20.09.2026: STAFFEL_HEUTE mit
+   3/6/12/18). Die Preisliste ist die einzige Quelle. Fehlt sie, wird ohne Staffelrabatt
+   gerechnet und das ausdruecklich angezeigt - siehe ohneStaffeln in
+   staffelGruppenRechnen. Ein stiller Rueckfall auf Werte, die im Werkzeug stehen, waere
+   sonst von gepflegten Werten nicht zu unterscheiden. */
+const STAFFEL_LEER = { mal: [], menge: [] };
 function satzAus(stufen, n) {
   let satz = 0;
   (stufen || []).forEach(st => { if (n >= st[0] && st[1] > satz) satz = st[1]; });
   return satz;
 }
-function getMalRabatt(n)   { return satzAus(STAFFEL_HEUTE.mal, n); }
-function getMengeRabatt(n) { return satzAus(STAFFEL_HEUTE.menge, n); }
 /* Welche Staffel fuer eine Fachgruppe gilt: ihre eigene, sonst die des Jahrgangs.
    Gepflegt wird deshalb nur einmal, und nur dort abgewichen, wo es noetig ist.
    Das Gemeinschaftsangebot wirft alle Fachbereiche in einen Topf; seine Gruppe heisst
@@ -769,7 +769,7 @@ function getMengeRabatt(n) { return satzAus(STAFFEL_HEUTE.menge, n); }
    entschieden am 20.09.2026, weil die guenstigste der beteiligten Gruppen am Angebot
    nicht mehr abzulesen waere. */
 function staffelFuer(staffeln, fach) {
-  if (!staffeln || !staffeln.standard) return STAFFEL_HEUTE;
+  if (!staffeln || !staffeln.standard) return STAFFEL_LEER;
   return (staffeln.fach && staffeln.fach[fach]) || staffeln.standard;
 }
 /* Seiten-Äquivalent eines Formats. Vorrang hat der Wert, der in der Preisliste in der
@@ -813,8 +813,10 @@ function staffelGruppenRechnen(items, gemein, fachVon, staffeln) {
   /* malPct/mengePct sind 0, wenn es die Staffel gibt und die Schwelle noch nicht
      erreicht ist, und null, wenn es sie fuer die Gruppe gar nicht gibt. Die Leiste
      blendet eine Staffel, die es nicht gibt, aus, statt „0 %" zu zeigen. */
+  const ohneStaffeln = !staffeln || !staffeln.standard;
   return [...g.values()].map(e => {
     e.totalMenge = round2(e.totalMenge);
+    e.ohneStaffeln = ohneStaffeln;
     const st     = staffelFuer(staffeln, e.fach);
     e.malStufen   = st.mal   || [];
     e.mengeStufen = st.menge || [];
@@ -1092,7 +1094,9 @@ function render() {
   const wrap = document.getElementById('staffelWrap');
   if (items.length > 0) {
     wrap.style.display = '';
-    wrap.innerHTML = gruppen.map((g, i) => staffelBarHtml(g, mehrere, i)).join('');
+    const fehlt = gruppen.length && gruppen[0].ohneStaffeln;
+    wrap.innerHTML = (fehlt ? staffelFehltHtml() : '') +
+      gruppen.map((g, i) => staffelBarHtml(g, mehrere, i)).join('');
     gruppen.forEach((g, i) => {
       renderProgress('sMalProgress-' + i,   g.totalMal,   g.malStufen);
       renderProgress('sMengeProgress-' + i, g.totalMenge, g.mengeStufen);
@@ -1158,7 +1162,11 @@ function render() {
   });
 
   const aeHeader = useAE ? '<th class="r">AE 10 %</th>' : '';
-  const aeSub    = useAE ? `<td class="r" style="color:var(--orange-dark);">–${euro(sumAE)}</td>` : '';
+  // Ein Abzug von null wird als Platzhalter gezeigt, nicht als „–0,00 €".
+  const abzug = (betrag, farbe) => betrag > 0
+    ? `<td class="r" style="color:${farbe};">–${euro(betrag)}</td>`
+    : '<td class="r" style="color:var(--grey-500);">–</td>';
+  const aeSub    = useAE ? abzug(sumAE, 'var(--orange-dark)') : '';
 
   document.getElementById('basketContent').innerHTML = `
     <div class="tbl-wrap">
@@ -1176,7 +1184,7 @@ function render() {
           <tr class="sub-row">
             <td colspan="3">Zwischensumme</td>
             <td class="r">${euro(sumList)}</td>
-            <td class="r" style="color:var(--blue);">–${euro(sumRabatt)}</td>
+            ${abzug(sumRabatt, 'var(--blue)')}
             <td class="r">${euro(sumAfter)}</td>
             ${aeSub}
             <td class="r bold">${euro(sumNet)}</td>
@@ -1208,6 +1216,16 @@ function setStaffelHinweis(gemein) {
     : 'titelübergreifend, aber nur innerhalb eines Fachbereichs';
 }
 
+/* Sind fuer den Jahrgang ueberhaupt keine Staffeln gepflegt, wird ohne Staffelrabatt
+   gerechnet. Das steht hier ausdruecklich, weil es sonst nur daran zu erkennen waere,
+   dass die Stufenfelder fehlen - im Kundengespraech zu wenig. */
+function staffelFehltHtml() {
+  return '<div class="staffel-fehlt"><span>⚠</span><span><strong>Keine Rabattstaffeln in der Preisliste' +
+    (currentYear ? ' für ' + esc(currentYear) : '') + '.</strong> ' +
+    'Das Paket wird ohne Staffelrabatt gerechnet. Die Staffeln werden in der Datenpflege gepflegt.' +
+    '</span></div>';
+}
+
 /* Eine Staffel-Leiste je Fachgruppe. Die Überschrift steht nur da, wo das Paket mehr als
    eine Fachgruppe enthält - sonst sieht die Anzeige aus wie bisher. */
 /* Eine Staffel, die es fuer die Fachgruppe nicht gibt (malPct/mengePct sind dann null),
@@ -1224,7 +1242,8 @@ function staffelBarHtml(g, mitUeberschrift, i) {
   const malNote   = g.malPct   > 0 ? (malWins   ? '✓ wird angewendet' : '') : g.totalMal   < abMal   ? 'ab ' + zahl(abMal) + ' Schaltungen' : '';
   const mengeNote = g.mengePct > 0 ? (mengeWins ? '✓ wird angewendet' : '') : g.totalMenge < abMenge ? 'ab ' + zahl(abMenge) + ' Seiten' : '';
   const appNote   = g.whichLabel ? '(' + g.whichLabel + ')'
-                  : (!hatMal && !hatMenge) ? 'für diese Fachgruppe nicht vorgesehen'
+                  : (!hatMal && !hatMenge) ? (g.ohneStaffeln ? 'keine Staffeln in der Preisliste'
+                                                             : 'für diese Fachgruppe nicht vorgesehen')
                   : 'Normal-/Vorzugs-/Festplatz. buchen';
   const feld = (label, wert, unten) => `<div class="staffel-item">
         <div class="s-label">${label}</div>
