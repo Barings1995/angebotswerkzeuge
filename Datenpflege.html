@@ -1162,6 +1162,21 @@ function zahlText(wert) {
   if (wert == null) return '';
   return String(wert).replace('.', ',');
 }
+
+/* Seiten-Aequivalente mit mindestens zwei Nachkommastellen: aus 1 wird „1,00", aus
+   0,5 wird „0,50". So fluchten die Werte in der rechtsbuendigen Spalte, wie die
+   Preise es nebenan tun.
+   Mehr Stellen bleiben aber stehen, statt gerundet zu werden: ein Achtel einer Seite
+   ist 0,125, und das Feld wird auch zurueckgelesen — „0,13" waere beim naechsten
+   Bestaetigen als neuer Wert gespeichert worden.
+   Eine unbrauchbare Eingabe bleibt unveraendert, damit die Pruefung sie zeigt. */
+function aequivalentText(wert) {
+  if (wert == null || wert === '') return '';
+  const n = zahlOderNull(wert);
+  if (n == null || isNaN(n)) return String(wert);
+  const stellen = Math.min(20, Math.max(2, (String(n).split('.')[1] || '').length));
+  return n.toLocaleString('de-DE', { minimumFractionDigits: 2, maximumFractionDigits: stellen });
+}
 /* Termine: „22.01." oder mit eigener Jahreszahl „04.12.25" / „22.12.2026".
    Leer ist zulaessig — nicht jede Ausgabe fuehrt jeden Termin. */
 const TERMIN_MUSTER = /^(\d{1,2})\.(\d{1,2})\.(\d{2}|\d{4})?$/;
@@ -1311,7 +1326,7 @@ function preisWert(f, w) {
   if (f === 'preis' || f === 'zuschlag_4c') return preisText(w) || 'leer';
   if (f === 'rabattfaehig' || f === 'ae_faehig') return w ? 'ja' : 'nein';
   if (f === 'termin_art') return w || '—';
-  if (f === 'seiten_aequivalent') return zahlText(w) || 'auto';
+  if (f === 'seiten_aequivalent') return aequivalentText(w) || 'auto';
   return leerText(w);
 }
 function terminWert(f, w) {
@@ -2098,7 +2113,7 @@ function preiseZeichnen(t, karte) {
         aendZelle(karte, st('termin_art'), '', '<select onchange="preisSetzen(\'' + p.id + '\',\'termin_art\',this.value)">' +
           ['', 'DU', 'EH'].map(w => '<option value="' + w + '"' + ((p.termin_art || '') === w ? ' selected' : '') + '>' + (w || '—') + '</option>').join('') +
         '</select>') +
-        aendZelle(karte, st('seiten_aequivalent'), 'r', '<input class="zahl" placeholder="auto" value="' + esc(zahlText(p.seiten_aequivalent)) + '" onchange="preisSetzen(\'' + p.id + '\',\'seiten_aequivalent\',this.value)">') +
+        aendZelle(karte, st('seiten_aequivalent'), 'r', '<input class="zahl" placeholder="auto" value="' + esc(aequivalentText(p.seiten_aequivalent)) + '" onchange="preisSetzen(\'' + p.id + '\',\'seiten_aequivalent\',this.value)">') +
         '<td class="tat">' +
           schubKnopf(i, nr, -1, nr === 0) + schubKnopf(i, nr, 1, nr === g.zeilen.length - 1) +
           '<button class="zeilen-x" title="Format entfernen" onclick="preisEntfernen(\'' + p.id + '\')"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>' +
