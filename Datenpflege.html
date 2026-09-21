@@ -2362,9 +2362,15 @@ function terminZeileLeer(a) {
     .every(f => leerFeld(a[f]));
 }
 /* Zwei Saetze statt Gedankenstrich: ein Strich kann beim Umbruch an den
-   Zeilenanfang rutschen und steht dort wie ein Listenpunkt. (16.09.2026) */
+   Zeilenanfang rutschen und steht dort wie ein Listenpunkt. (16.09.2026) 
+   Der Hinweis auf das Speichern lautet seit dem 22.09.2026 „Die Aenderung wird
+   erst mit ‚Speichern‘ wirksam. Bis dahin nimmt ‚Verwerfen‘ sie zurueck.“ — vorher
+   stand die Umkehrung „Wirksam wird das erst …“ mit Semikolon und einem
+   unbestimmten „es“ dort. Die laengere Fassung („Mit ‚Verwerfen‘ laesst sich das
+   bis dahin zuruecknehmen“) lag Marcus vor; er bleibt bei der knappen. Nicht
+   erneut vorschlagen. */
 const NICHT_GESPEICHERT = '<p>Die Zeile wurde noch nicht gespeichert. Die Eingaben sind damit endg\u00fcltig weg; „Verwerfen“ holt sie nicht zur\u00fcck.</p>';
-const ERST_MIT_SPEICHERN = '<p>Wirksam wird das erst mit „Speichern“; bis dahin holt „Verwerfen“ es zur\u00fcck.</p>';
+const ERST_MIT_SPEICHERN = '<p>Die Änderung wird erst mit „Speichern“ wirksam. Bis dahin nimmt „Verwerfen“ sie zur\u00fcck.</p>';
 
 /* ── Ändern ───────────────────────────────────────────────────────────────── */
 function stammSetzen(feld, wert) {
@@ -2476,7 +2482,7 @@ async function kategorieEntfernen(i) {
     ' aus der Preisliste genommen.</p>' +
     (alleNeu
       ? '<p>' + (n === 1 ? 'Die Zeile wurde' : 'Die Zeilen wurden') + ' noch nicht gespeichert. Die Eingaben sind damit endg\u00fcltig weg; „Verwerfen“ holt sie nicht zur\u00fcck.</p>'
-      : '<p>Wirksam wird das erst mit „Speichern“; bis dahin holt „Verwerfen“ sie zur\u00fcck.</p>'),
+      : '<p>Die Änderung wird erst mit „Speichern“ wirksam. Bis dahin holt „Verwerfen“ die Zeilen zur\u00fcck.</p>'),
     'Entfernen')) return;
   const weg = new Set(g.zeilen.map(p => p.id));
   t.preis = t.preis.filter(p => !weg.has(p.id));
@@ -2838,7 +2844,7 @@ function titelAnlegenOeffnen() {
   const vorFach = (gew && gew.fachbereich) || '';
   dialogZeigen('<h3>Titel anlegen</h3>' +
     '<div class="erklaerung">Der Titel entsteht im Jahrgang ' + esc(gewJahr) +
-      '. Wirksam wird er erst mit „Speichern“.</div>' +
+      '. Angelegt wird er erst mit „Speichern“.</div>' +
     '<div class="dialog-zeile"><span>Titel</span>' +
       '<input id="taName" style="width:240px" oninput="titelAnlegenRechnen()"></div>' +
     '<div class="dialog-zeile"><span>Fachbereich</span><select id="taFach" onchange="titelAnlegenRechnen()">' +
@@ -2898,7 +2904,7 @@ function titelAnlegenRechnen() {
       (v.formate
         ? '<b>' + v.formate + ' Formate</b> kommen ohne Preise von „' + esc(v.vorbild.name) + '“ mit'
         : 'Formate entstehen keine') +
-      '; Ausgaben entstehen keine.<br>Wirksam wird das erst mit „Speichern“.';
+      '; Ausgaben entstehen keine.<br>Angelegt wird der Titel erst mit „Speichern“.';
   }
   kasten.innerHTML = text;
   knopf.disabled = gesperrt;
@@ -2973,7 +2979,7 @@ function titelLoeschenOeffnen() {
         : 'In keinem anderen Jahrgang steht dieser Titel.') +
       (letzter ? '<br>Es ist der <b>letzte Titel des Jahrgangs ' + esc(t.jahr) +
         '</b> — mit ihm verschwindet der Jahrgang aus der Auswahl.' : '') +
-      '<br>Wirksam wird das erst mit „Speichern“; bis dahin holt „Verwerfen“ den Titel zurück.' +
+      '<br>Die Löschung wird erst mit „Speichern“ wirksam. Bis dahin holt „Verwerfen“ den Titel zurück.' +
     '</div>' +
     '<div class="dialog-knoepfe">' +
       '<button class="btn" onclick="dialogSchliessen()">Abbrechen</button>' +
@@ -3694,7 +3700,7 @@ function staffelFensterZeichnen(fokusId) {
   if (leer) html += '<div class="dialog-summe">Für ' + esc(gewJahr) + ' ist keine Staffel gepflegt. ' +
     'PreisWerk rechnet dann mit den fest eingebauten Werten weiter' +
     (vorbild ? '. Die Staffeln aus ' + esc(vorbild) + ' lassen sich übernehmen und dann anpassen.' : '.') + '</div>';
-  else html += '<div class="dialog-summe">Wirksam wird das erst mit „Speichern“; bis dahin holt „Verwerfen“ es zurück.</div>';
+  else html += '<div class="dialog-summe">Die Änderung wird erst mit „Speichern“ wirksam. Bis dahin nimmt „Verwerfen“ sie zurück.</div>';
   html += '<div class="dialog-knoepfe">' +
     (leer && vorbild ? '<button class="btn" onclick="staffelUebernehmen(\'' + esc(vorbild) + '\')">Aus ' + esc(vorbild) + ' übernehmen</button>' : '') +
     '<button class="btn" id="staffelAbwKnopf" onclick="staffelAbweichungHinzufuegen()">Abweichung hinzufügen …</button>' +
