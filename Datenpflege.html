@@ -1568,47 +1568,75 @@ function knoepfeAuffrischen() {
   const kasten = document.getElementById('pruefKasten');
   kasten.classList.toggle('an', fehler.length > 0);
   if (fehler.length) {
+    /* Gleichlautende Beanstandungen einmal zeigen. Eine achtfach angelegte Zeile ist
+       ein Fall, auch wenn sie sieben Handgriffe kostet - die Zahl zaehlt weiterhin die
+       Handgriffe, der Wortlaut nennt die Anzahl. Sonst verdraengten drei gleiche Saetze
+       alles andere aus dem Kasten. */
+    const knapp = [...new Set(fehler)];
     document.getElementById('pruefText').textContent =
-      fehler.length === 1 ? fehler[0] : (fehler.length + ' Angaben stimmen noch nicht: ' + fehler.slice(0, 3).join(' · ') + (fehler.length > 3 ? ' …' : ''));
+      fehler.length === 1 ? fehler[0] : (fehler.length + ' Angaben stimmen noch nicht: ' + knapp.slice(0, 3).join(' · ') + (knapp.length > 3 ? ' …' : ''));
   }
 }
 
 /* ── Prüfung ──────────────────────────────────────────────────────────────── */
+/* „zweimal" liest sich besser als „2-mal", darueber hinaus ist die Ziffer noetig. */
+function malText(n) { return n === 2 ? 'zweimal' : n + '-mal'; }
+
+/* Eine Dublette wird gezaehlt, nicht je Zeile gemeldet. Jede ueberzaehlige Zeile ist
+   ein eigener Handgriff, deshalb steht sie auch einzeln in der Liste und die Zahl der
+   Beanstandungen bleibt, was sie war. Alle tragen aber denselben Wortlaut samt voller
+   Anzahl, sodass die Anzeige sie zu einer Zeile buendeln kann. */
+function dublettenMelden(zaehler, satz, fehler) {
+  zaehler.forEach(d => {
+    if (d.n < 2) return;
+    const text = satz(d);
+    for (let i = 1; i < d.n; i++) fehler.push(text);
+  });
+}
+function mitzaehlen(zaehler, schluessel, wo) {
+  const d = zaehler.get(schluessel);
+  if (d) { d.n++; return false; }
+  zaehler.set(schluessel, { n: 1, wo: wo });
+  return true;
+}
+
 function alleFehler() {
   const fehler = [];
+  /* Doppelte Titelnamen sind der schwerste Fall und stehen deshalb vorn, auch wenn sie
+     erst nach dem Durchlauf feststehen. */
+  const kopf = [];
   /* Namen je Jahrgang, genau so verglichen wie „unique (jahr, name)" es tut - die
      Pruefung soll nichts sperren, was die Datenbank annaehme. */
   const namenJeJahr = {};
   (ARBEIT || []).forEach(t => {
     const name = String(t.name || '').trim();
-    const menge = namenJeJahr[t.jahr] = namenJeJahr[t.jahr] || new Set();
+    const zaehler = namenJeJahr[t.jahr] = namenJeJahr[t.jahr] || new Map();
     if (!name) fehler.push('Jahrgang ' + t.jahr + ': ein Titel ohne Namen');
-    else if (menge.has(name)) fehler.push('Der Titel „' + name + '“ steht zweimal im Jahrgang ' + t.jahr + '.');
-    else menge.add(name);
-    const gesehen = new Set();
+    else mitzaehlen(zaehler, name, name);
+    const gesehen = new Map();
     (t.preis || []).forEach(p => {
       const wo = t.name + ' · ' + (p.format || '(ohne Format)');
       if (!String(p.format || '').trim()) fehler.push(t.name + ': ein Format ohne Namen');
-      const schl = (p.kategorie || '') + '|' + (p.format || '');
-      if (gesehen.has(schl)) fehler.push(wo + ': steht zweimal in derselben Kategorie');
-      gesehen.add(schl);
+      mitzaehlen(gesehen, JSON.stringify([p.kategorie || '', p.format || '']), wo);
       if (isNaN(preisOderNull(p.preis)))       fehler.push(wo + ': Preis ist keine Zahl mit höchstens zwei Nachkommastellen');
       if (isNaN(preisOderNull(p.zuschlag_4c))) fehler.push(wo + ': 4c-Zuschlag ist keine Zahl mit höchstens zwei Nachkommastellen');
       const eq = zahlOderNull(p.seiten_aequivalent);
       if (isNaN(eq) || (eq != null && eq <= 0)) fehler.push(wo + ': Seiten-Äquivalent muss größer als 0 sein');
     });
-    const hefte = new Set();
+    dublettenMelden(gesehen, d => d.wo + ': steht ' + malText(d.n) + ' in derselben Kategorie', fehler);
+    const hefte = new Map();
     (t.termin || []).forEach(a => {
       const wo = t.name + ' · ' + (heftText(a.heft) || 'Ausgabe ohne Heft');
       if (!String(a.heft || '').trim()) fehler.push(t.name + ': eine Ausgabe ohne Heftangabe');
-      if (hefte.has(a.heft)) fehler.push(wo + ': steht zweimal');
-      hefte.add(a.heft);
+      mitzaehlen(hefte, String(a.heft || ''), wo);
       [['et', 'ET'], ['anzeigenschluss', 'Anzeigenschluss'], ['du_schluss', 'DU-Schluss'], ['eh_termin', 'EH-Termin']]
         .forEach(([feld, name]) => { if (!terminGueltig(a[feld])) fehler.push(wo + ': ' + name + ' muss TT.MM. sein'); });
     });
+    dublettenMelden(hefte, d => d.wo + ': steht ' + malText(d.n), fehler);
   });
-  staffelFehler().forEach(f => fehler.push(f));
-  return fehler;
+  Object.keys(namenJeJahr).forEach(jahr => dublettenMelden(namenJeJahr[jahr],
+    d => 'Der Titel „' + d.wo + '“ steht ' + malText(d.n) + ' im Jahrgang ' + jahr + '.', kopf));
+  return kopf.concat(fehler, staffelFehler());
 }
 
 /* Die Staffeln pruefen sich je Stufe. Die Schwelle ist eine ganze Zahl groesser
