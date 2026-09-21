@@ -495,6 +495,33 @@ button, input, select, textarea { font-family: inherit; }
   td input:focus, td select:focus { outline: none; border-color: var(--navy); background: var(--white); box-shadow: 0 0 0 2px rgba(0,40,90,.08); }
   td input.zahl { text-align: right; }
   td input.fehler, td select.fehler { border-color: var(--red); background: var(--red-bg); }
+  /* Senkrechte Striche zwischen allen Spalten, in beiden Tabellen. Anlass waren
+     „rabatt“, „AE“ und „Termin“: dort steht ein kurzes Wort in einer neun
+     Prozent breiten Spalte, daneben leerer Grund, und das Feld selbst bleibt
+     bis zum Überfahren rahmenlos — es war nicht zu sehen, wo man klicken muss.
+     Zuerst trugen deshalb nur diese Spalten und die beiden dahinter einen
+     Strich, vorn blieb die Tabelle offen. Das Raster gilt jetzt durchgehend:
+     eine Tabelle, die ihre Spalten an einer Stelle zeigt und an der anderen
+     nicht, erklärt den Unterschied nicht, den sie behauptet. (21.09.2026)
+     Der Ton liegt bewusst zwischen der Zeilenlinie von vorher (#eef1f5 — im
+     Zusammenhang der Karte, neben Titelliste und Knopfleiste, nicht mehr
+     wahrnehmbar) und dem Feldrahmen (--border — der die Tabelle hart macht).
+     Gesehen an einer Vorschau mit den echten Preisen und Terminen 2026, nicht
+     geschätzt.
+     Zeilen, die nur aus einer Zelle bestehen („+ Format“, „+ Ausgabe“, die
+     Leermeldung), bleiben ohne Strich — td + td greift dort nicht. */
+  .preis-tab td + td, .preis-tab th + th,
+  .termin-tab td + td, .termin-tab th + th { border-left: 1px solid #e3e8f1; }
+  /* Der Strich zwischen den Zeilen trägt denselben Ton wie die senkrechten:
+     zwei fast gleiche Grautöne im selben Raster wären ein Unterschied ohne
+     Bedeutung, und #eef1f5 trug im Zusammenhang der Karte ohnehin nicht mehr.
+     Die Zeilenführung hing damit allein am Hover — der hilft nur dort, wo der
+     Zeiger gerade steht, nicht beim Lesen einer Zeile über acht Spalten.
+     Gilt für beide Reiter, nicht für die Tabellen in den Fenstern: dort ist
+     jede Tabelle ihr eigener Zusammenhang und wurde nicht mitbetrachtet.
+     Die Kopfzeile bleibt kräftiger (--border) — sie steht über den Zeilen und
+     soll nicht mit ihnen auf eine Stufe rutschen. (21.09.2026) */
+  .preis-tab td, .termin-tab td { border-bottom-color: #e3e8f1; }
   /* Verschieben statt Sortieren: die Reihenfolge der Formate ist kein
      Anzeigeformat, sondern gepflegter Inhalt — sie bestimmt, in welcher Folge
      die Formate im MediaSheet-Preisblatt, in MediaQuote, OpenSlots und PreisWerk
@@ -2096,7 +2123,7 @@ function preiseZeichnen(t, karte) {
       '<span class="kat-schub">' + katSchubKnopf(i, -1, i === 0) + katSchubKnopf(i, 1, i === nachKat.length - 1) + '</span>' +
       '<button class="kat-tat kat-weg" title="Diese Kategorie mit allen ihren Formaten entfernen" onclick="kategorieEntfernen(' + i + ')">Entfernen</button>' +
       '</div>';
-    html += '<table><colgroup><col style="width:34%"><col style="width:13%"><col style="width:13%"><col style="width:9%"><col style="width:9%"><col style="width:9%"><col style="width:10%"><col style="width:84px"></colgroup>' +
+    html += '<table class="preis-tab"><colgroup><col style="width:34%"><col style="width:13%"><col style="width:13%"><col style="width:9%"><col style="width:9%"><col style="width:9%"><col style="width:10%"><col style="width:84px"></colgroup>' +
       '<tr><th>Format</th><th class="r">Preis €</th><th class="r">4c-Zuschlag €</th><th>rabatt</th><th>AE</th><th>Termin</th><th class="r">Seiten-Äqu.</th><th></th></tr>';
     g.zeilen.forEach((p, nr) => {
       /* Jedes geaenderte Feld wird markiert, eine neu angelegte Zeile als Ganzes
