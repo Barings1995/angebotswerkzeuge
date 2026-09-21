@@ -536,6 +536,23 @@ button, input, select, textarea { font-family: inherit; }
   .zeilen-schub:active { transform: translateY(1px); }
   .zeilen-schub[disabled] { color: var(--border); cursor: default; background: none; transform: none; }
   td.tat { white-space: nowrap; text-align: right; }
+  /* Die Knoepfe am Zeilenende (Pfeile und X) sind Inline-Kaesten und hingen
+     an der Schriftlinie der Zelle: die Pfeile sassen 1,75 px zu tief, das X
+     1,75 px zu hoch — dreieinhalb Pixel auseinander, sichtbar als leichtes
+     Kippen neben den Eingabefeldern. line-height:0 nimmt der Zelle die
+     Schriftlinie, vertical-align:middle setzt jeden Knopf auf die Mitte der
+     Zeile. Nachgemessen an einer Vorschau mit den echten Terminen 2026:
+     Abweichung 0,00 px statt 1,75 px. (21.09.2026)
+     In der Termintabelle stehen die Zellen sonst oben (vertical-align:top,
+     wegen der mehrzeiligen Themen und Kongresse). Die X-Spalte macht das
+     bewusst nicht mit: sie traegt keinen Text, der oben beginnen muesste,
+     und das X gehoert zur ganzen Zeile, nicht zu deren erster Zeile.
+     Die Gegenfassung (X oben, buendig mit der Mitte der Datumsfelder) lag Marcus am
+     21.09.2026 als Bild vor; er hat sich fuer die Zeilenmitte entschieden, auch fuer
+     lange Zeilen mit vielen Kongressen. Nicht erneut vorschlagen. */
+  td.tat { line-height: 0; }
+  td.tat > * { vertical-align: middle; }
+  .termin-tab td.tat { vertical-align: middle; text-align: center; }
   .zeilen-x { border: none; background: none; color: var(--grey-500); cursor: pointer; display: inline-flex; align-items: center; font-size: 15px; line-height: 1; padding: 2px 5px; border-radius: var(--radius-sm); }
   .zeilen-x:hover { color: var(--red); background: var(--red-bg); }
   .fehlertext { color: var(--red); font-size: 11.5px; padding: 1px 6px 5px; }
@@ -2247,7 +2264,7 @@ function termineZeichnen(t, karte) {
       feldZelle('du_schluss', f('du_schluss')) + feldZelle('eh_termin', f('eh_termin')) +
       aendZelle(karte, st('themen'), '', mehrzeilig(a.id, 'themen', a.themen)) +
       aendZelle(karte, st('kongresse'), '', mehrzeilig(a.id, 'kongresse', a.kongresse)) +
-      '<td><button class="zeilen-x" title="Ausgabe entfernen" onclick="terminEntfernen(\'' + a.id + '\')"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button></td>' +
+      '<td class="tat"><button class="zeilen-x" title="Ausgabe entfernen" onclick="terminEntfernen(\'' + a.id + '\')"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button></td>' +
     '</tr>';
   });
   html += '</table></div>';
