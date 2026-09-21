@@ -577,6 +577,11 @@ button, input, select, textarea { font-family: inherit; }
   .dialog-zeile > span { color: var(--grey-600); }
   .dialog-zeile input, .dialog-zeile select { padding: 4px 8px; border: 1px solid var(--border); border-radius: var(--radius-sm); font-size: 13px; font-family: var(--font-body); color: var(--text); background: var(--white); }
   .dialog-zeile input:focus, .dialog-zeile select:focus { outline: none; border-color: var(--navy); box-shadow: 0 0 0 2px rgba(0,40,90,.08); }
+  /* Ein select macht sich so breit wie sein laengster Eintrag. Bei den Titelnamen
+     sprengt das die 460 px des Fensters, und .dialog schneidet rechts ab. Dieselben
+     240 px wie bei den Textfeldern, der Rest als Auslassungspunkte - aufgeklappt
+     steht der ganze Name ohnehin da. */
+  .dialog-zeile select { max-width: 240px; text-overflow: ellipsis; }
   .dialog-zeile input.kurz { width: 84px; text-align: right; }
   .dialog-summe { background: #eef4fa; border-top: 1px solid var(--border); padding: 9px 20px; font-size: 12.5px; color: var(--navy); }
   .dialog-knoepfe { display: flex; justify-content: flex-end; gap: 8px; padding: 12px 20px; border-top: 1px solid var(--border); }
@@ -2755,8 +2760,8 @@ function titelAnlegenOeffnen() {
     '<div class="dialog-zeile" id="taFachNeuZeile" style="display:none"><span>Name des Fachbereichs</span>' +
       '<input id="taFachNeu" style="width:240px" oninput="titelAnlegenRechnen()"></div>' +
     '<div class="dialog-zeile"><span>Auflage</span>' +
-      '<input id="taAuflage" class="kurz" value="0" oninput="titelAnlegenRechnen()" ' +
-      'onblur="this.value = ganzText(this.value) || \'0\'"></div>' +
+      '<input id="taAuflage" class="kurz" oninput="titelAnlegenRechnen()" ' +
+      'onblur="this.value = ganzText(this.value)"></div>' +
     '<div class="dialog-zeile"><span>Formate übernehmen von</span><select id="taVorbild" onchange="titelAnlegenRechnen()">' +
       '<option value="">(ohne Vorbild)</option>' +
       titel.map(t => '<option value="' + t.id + '"' + (t.id === gewTitel ? ' selected' : '') + '>' + esc(t.name) + '</option>').join('') +
