@@ -602,6 +602,10 @@ td.fmt{width:44%}
 .dlg-btn.sekundaer:hover { border-color: #00285a; }
 .dlg-btn.gefahr { background: var(--dlg-gefahr); border-color: var(--dlg-gefahr); color: #fff; }
 .dlg-btn.gefahr:hover { background: var(--dlg-gefahr-dunkel); border-color: var(--dlg-gefahr-dunkel); }
+/* Der Knopf sinkt beim Drücken um 1 px ab und federt beim Loslassen zurück —
+   dieselbe Geste wie bei den Knöpfen der Werkzeuge selbst. Sie ging verloren, als
+   die Fenster in diesen Baustein wanderten. */
+.dlg-btn:active { transform: translateY(1px); }
 /* Ein offenes Fenster darf nie im Ausdruck oder im PDF landen. */
 @media print { .dlg-back { display: none !important; } }
 /* ══ ENDE BAUSTEIN fenster.css ══ */
