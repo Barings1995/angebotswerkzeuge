@@ -510,30 +510,42 @@ button, input, select, textarea { font-family: inherit; }
      geschätzt.
      Zeilen, die nur aus einer Zelle bestehen („+ Format“, „+ Ausgabe“, die
      Leermeldung), bleiben ohne Strich — td + td greift dort nicht.
-     Die Kopfzeile bleibt ohne senkrechte Striche (22.09.2026). Anlass war, dass
-     sie dort kaum zu sehen waren: derselbe Ton hebt sich auf Weiß um den Faktor
-     1,23 vom Grund ab, auf dem grauen Kopf (--surface-hover) nur um 1,14 —
-     gemessen an einer Vorschau mit den echten Daten 2026, nicht geschätzt.
-     Kräftiger (--border, Faktor 1,28) lag Marcus als Bild vor, ebenso die volle
-     Tabelle und das ganze Werkzeug ohne Striche im Kopf. Er hat sich für den
-     Kopf ohne Striche entschieden: zwei Tabellen untereinander, jede mit eigener
-     Kopfzeile — ohne Raster liest sich der Kopf als Zwischenüberschrift und
-     gliedert die Karte, statt sie dichter zu machen. Die Spaltengrenze zeigen
-     die Zeilen darunter. Mein Einwand zu den Terminen (schmale Datumsspalten,
-     nächste Linie durch hohe Kongressblöcke weit entfernt) lag ihm vor; er will
-     es einheitlich in beiden Tabellen. Nicht erneut vorschlagen. */
-  .preis-tab td + td,
-  .termin-tab td + td { border-left: 1px solid #e3e8f1; }
-  /* Der Strich zwischen den Zeilen trägt denselben Ton wie die senkrechten:
-     zwei fast gleiche Grautöne im selben Raster wären ein Unterschied ohne
+     Der Ton ist seit dem 22.09.2026 --border, einheitlich fuer alle Linien
+     beider Tabellen: senkrecht wie waagerecht, Kopfzeile eingeschlossen. Damit
+     traegt die Tabelle denselben Strich wie die Linie unter ihrem Kopf, und die
+     Spalten laufen ueber die volle Hoehe durch — bei den Terminen wichtig, wo
+     ein Kongressblock sieben Zeilen hoch sein kann und die naechste waagerechte
+     Linie weit entfernt ist.
+     Wie es dahin kam: Marcus fiel auf, dass die senkrechten Striche in der
+     Kopfzeile kaum zu sehen waren — derselbe Ton hebt sich auf Weiss um den
+     Faktor 1,23 vom Grund ab, auf dem grauen Kopf (--surface-hover) nur um
+     1,14. Ihm lagen als Bild vor: kraeftiger nur im Kopf (1,28), eine Spur
+     kraeftiger (#c8d0e0), der Kopf ganz ohne Striche (erst als Ausschnitt, dann
+     die volle Tabelle, dann das ganze Werkzeug in beiden Reitern) und zuletzt
+     diese Fassung. Der Kopf ohne Striche war zwischendurch veroeffentlicht
+     (Commit 4c0037f); Marcus hat sich danach fuer das durchgehende --border
+     entschieden. Nicht erneut umstellen.
+     Mein Einwand dagegen („--border ist derselbe Ton wie der Rahmen der
+     Eingabefelder, das Feld verliert seine Kante") war so nicht richtig: die
+     Felder sind im Ruhezustand rahmenlos (border: 1px solid transparent, s. o.)
+     und bekommen erst beim Ueberfahren eine Kante in --border. Der Gleichklang
+     betrifft also nur das eine Feld unter dem Zeiger, und dort trennt schon die
+     weisse Fuellung. Der Mittelweg (Feldrahmen beim Ueberfahren auf #b9c2d6)
+     lag Marcus am 22.09.2026 als Bild vor; er bleibt beim Gleichklang.
+     Nicht erneut vorschlagen.
+     Alle Werte an einer Vorschau mit den echten Preisen und Terminen 2026
+     gemessen, nicht geschaetzt: Kopf 1,28, Zeilen 1,39, Strichbreite 1 px. */
+  .preis-tab td + td, .preis-tab th + th,
+  .termin-tab td + td, .termin-tab th + th { border-left: 1px solid var(--border); }
+  /* Der Strich zwischen den Zeilen traegt denselben Ton wie die senkrechten:
+     zwei fast gleiche Grautoene im selben Raster waeren ein Unterschied ohne
      Bedeutung, und #eef1f5 trug im Zusammenhang der Karte ohnehin nicht mehr.
-     Die Zeilenführung hing damit allein am Hover — der hilft nur dort, wo der
-     Zeiger gerade steht, nicht beim Lesen einer Zeile über acht Spalten.
-     Gilt für beide Reiter, nicht für die Tabellen in den Fenstern: dort ist
+     Die Zeilenfuehrung hing damit allein am Hover — der hilft nur dort, wo der
+     Zeiger gerade steht, nicht beim Lesen einer Zeile ueber acht Spalten.
+     Gilt fuer beide Reiter, nicht fuer die Tabellen in den Fenstern: dort ist
      jede Tabelle ihr eigener Zusammenhang und wurde nicht mitbetrachtet.
-     Die Kopfzeile bleibt kräftiger (--border) — sie steht über den Zeilen und
-     soll nicht mit ihnen auf eine Stufe rutschen. (21.09.2026) */
-  .preis-tab td, .termin-tab td { border-bottom-color: #e3e8f1; }
+     (21.09.2026, Ton am 22.09.2026 auf --border angehoben) */
+  .preis-tab td, .termin-tab td { border-bottom-color: var(--border); }
   /* Verschieben statt Sortieren: die Reihenfolge der Formate ist kein
      Anzeigeformat, sondern gepflegter Inhalt — sie bestimmt, in welcher Folge
      die Formate im MediaSheet-Preisblatt, in MediaQuote, OpenSlots und PreisWerk
