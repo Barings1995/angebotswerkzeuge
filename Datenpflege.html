@@ -509,9 +509,21 @@ button, input, select, textarea { font-family: inherit; }
      Gesehen an einer Vorschau mit den echten Preisen und Terminen 2026, nicht
      geschätzt.
      Zeilen, die nur aus einer Zelle bestehen („+ Format“, „+ Ausgabe“, die
-     Leermeldung), bleiben ohne Strich — td + td greift dort nicht. */
-  .preis-tab td + td, .preis-tab th + th,
-  .termin-tab td + td, .termin-tab th + th { border-left: 1px solid #e3e8f1; }
+     Leermeldung), bleiben ohne Strich — td + td greift dort nicht.
+     Die Kopfzeile bleibt ohne senkrechte Striche (22.09.2026). Anlass war, dass
+     sie dort kaum zu sehen waren: derselbe Ton hebt sich auf Weiß um den Faktor
+     1,23 vom Grund ab, auf dem grauen Kopf (--surface-hover) nur um 1,14 —
+     gemessen an einer Vorschau mit den echten Daten 2026, nicht geschätzt.
+     Kräftiger (--border, Faktor 1,28) lag Marcus als Bild vor, ebenso die volle
+     Tabelle und das ganze Werkzeug ohne Striche im Kopf. Er hat sich für den
+     Kopf ohne Striche entschieden: zwei Tabellen untereinander, jede mit eigener
+     Kopfzeile — ohne Raster liest sich der Kopf als Zwischenüberschrift und
+     gliedert die Karte, statt sie dichter zu machen. Die Spaltengrenze zeigen
+     die Zeilen darunter. Mein Einwand zu den Terminen (schmale Datumsspalten,
+     nächste Linie durch hohe Kongressblöcke weit entfernt) lag ihm vor; er will
+     es einheitlich in beiden Tabellen. Nicht erneut vorschlagen. */
+  .preis-tab td + td,
+  .termin-tab td + td { border-left: 1px solid #e3e8f1; }
   /* Der Strich zwischen den Zeilen trägt denselben Ton wie die senkrechten:
      zwei fast gleiche Grautöne im selben Raster wären ein Unterschied ohne
      Bedeutung, und #eef1f5 trug im Zusammenhang der Karte ohnehin nicht mehr.
