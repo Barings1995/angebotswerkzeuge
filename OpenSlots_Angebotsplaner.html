@@ -298,8 +298,10 @@ button, input, select, textarea { font-family: inherit; }
 .data-btn.ang-btn.done,
 .data-btn.ang-btn.done:hover { background: var(--sm-green-l); border-color: var(--sm-green); color: var(--sm-green); }
 /* Mittig, weil die Knoepfe ihre Breite halten (siehe knopfbreitenReservieren()):
-   Der kuerzere Text stuende sonst links, mit Luft an der rechten Kante. Gilt auch
-   fuer die beiden Kopierknoepfe, die dieselbe Quittung nutzen. */
+   Der kuerzere Text stuende sonst links, mit Luft an der rechten Kante. Die Knoepfe
+   der Datenleiste brauchen das nur waehrend der Quittung - ihre Breite wird erst beim
+   Klicken festgehalten, im Ruhezustand haben sie keine ueberschuessige Breite. Die
+   beiden Kopierknoepfe sind dagegen dauerhaft zentriert (siehe .copy-btn). */
 .data-btn.done, .copy-btn.done { justify-content: center; }
 /* Hinweis auf die geöffnete Angebotsdatei. Er nennt auch den Speicherzeitpunkt,
    weil ein älteres Angebot die Preise von damals enthält und nicht die heutigen. */
@@ -990,6 +992,13 @@ tr.pl-row.alt td:not(.pl-cell) {
 .copy-btn {
   display: inline-flex;
   align-items: center;
+  /* Mittig, und zwar in jedem Zustand: Seit dem 22.09.2026 halten die beiden Knoepfe ihre
+     Breite fest (knopfbreitenReservieren()), damit die Quittung nicht springt. „Nur Text"
+     ist dadurch 85 px breit, obwohl die Beschriftung nur rund 70 px braucht - ohne diese
+     Zeile stuende sie linksbuendig, mit sichtbarer Luft an der rechten Kante. Bis hierher
+     war nur der Quittungszustand zentriert (.copy-btn.done), der Ruhezustand nicht.
+     (23.09.2026) */
+  justify-content: center;
   gap: 6px;
   padding: 5px 12px;
   border-radius: var(--radius-md);
@@ -2301,7 +2310,7 @@ async function applyAngebot(data){
   angebotSavedAt=data.savedAt||'';
   collapsedCats=buildCollapsed();
   buildTabs();
-  setJ(0);                    // zeichnet Matrix + Vorschau und sichert den Stand
+  setJ(ersterTitelNachAnzeige());   // zeichnet Matrix + Vorschau und sichert den Stand
   syncDataUI();
   await meldeVerluste(r.bericht,'Nicht alles übernommen');
   return true;
@@ -2385,6 +2394,18 @@ function fachbereiche(){
   if(m.has(FB_OHNE))ls.push(FB_OHNE);
   return ls.map(l=>({l,idx:m.get(l)}));
 }
+/* Welcher Titel gilt, wenn keiner gewaehlt ist: der oberste der sichtbaren Liste.
+   J ist alphabetisch sortiert (sortedYear()), die Spalte zeigt aber nach Fachbereichen
+   gruppiert - J[0] stand deshalb mitten in der Liste, nicht oben. Bis zum 23.09.2026 war
+   J[0] der Standard und traf zufaellig „Ärzte Zeitung ONKOLOGIE UND HÄMATOLOGIE", weil
+   dieser Titel alphabetisch vorn liegt; ein neuer oder umbenannter Titel haette das
+   stillschweigend verschoben. Ohne Fachbereiche (fachbereiche() gibt dann nichts zurueck)
+   ist die Spalte die J-Reihenfolge selbst, dort bleibt es bei 0. Die Datenpflege haelt es
+   seit jeher so („der oberste der Liste"), MediaSheet seit demselben Tag. */
+function ersterTitelNachAnzeige(){
+  const g=fachbereiche();
+  return g.length?g[0].idx[0]:0;
+}
 function tabHtml(ji,gi){
   const g=(gi==null)?'':` data-fb="${gi}"`;
   return `<button class="tab${ji===cJ?' on':''}" data-ji="${ji}"${g} onclick="setJ(${ji})">${esc(J[ji].n)}</button>`;
@@ -2467,7 +2488,7 @@ function applyYear(year,ohneStand){
   ST=J.map(()=>({issues:[],nid:1}));
   heftMemLeeren();
   kgPick=null;                    /* gilt nur für seinen Jahrgang; restoreState() setzt ihn ggf. neu */
-  cJ=0;
+  cJ=ersterTitelNachAnzeige();
   if(!ohneStand)restoreState();
   collapsedCats=buildCollapsed();
   buildTabs();
@@ -3075,7 +3096,7 @@ async function resetAll(){
      Die Datei selbst bleibt unangetastet. */
   clearAngebotDatei();
   collapsedCats=buildCollapsed();
-  setJ(0);
+  setJ(ersterTitelNachAnzeige());
   /* Standen die Zahlen aus einer geöffneten Angebotsdatei, gilt nach dem Zurücksetzen
      wieder die aktuelle Preisliste – erst die Datenbank, dann die Datei daneben. Ist
      keine von beiden erreichbar, bleiben die Zahlen aus dem Angebot stehen und die

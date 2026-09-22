@@ -1758,7 +1758,7 @@ function auswahlAufbauen(){
   }
   wJ.innerHTML = jahre.map(j => '<option' + (j === GEWAEHLT.jahr ? ' selected' : '') + '>' + esc(j) + '</option>').join('');
   const titel = titelListe(GEWAEHLT.jahr);
-  if(!GEWAEHLT.titel || titel.indexOf(GEWAEHLT.titel) < 0) GEWAEHLT.titel = titel[0] || '';
+  if(!GEWAEHLT.titel || titel.indexOf(GEWAEHLT.titel) < 0) GEWAEHLT.titel = ersterTitelNachAnzeige(GEWAEHLT.jahr) || titel[0] || '';
   wT.innerHTML = titel.map(t => '<option' + (t === GEWAEHLT.titel ? ' selected' : '') + '>' + esc(t) + '</option>').join('');
   titelleisteAufbauen();
 }
@@ -1766,17 +1766,33 @@ function auswahlAufbauen(){
 /* ── Titelleiste ─────────────────────────────────────────────────────────── */
 let TL_ZU = null;   /* zugeklappte Fachbereiche, nach Name — ueberdauert den Jahrgangswechsel */
 
-function titelleisteAufbauen(){
-  const B = BESTAND[GEWAEHLT.jahr] || {}, gruppen = [], stelle = {};
+/* Die Titel eines Jahrgangs in der Reihenfolge, in der die Titelleiste sie zeigt:
+   Fachgruppen und Titel alphabetisch, Titel ohne Fachbereich am Ende. Steht an einer
+   Stelle, weil zwei Stellen sie brauchen - die Leiste selbst und die Vorauswahl. */
+function titelGruppen(jahr){
+  const B = BESTAND[jahr] || {}, gruppen = [], stelle = {};
   Object.keys(B).forEach(t => {
     const f = String(B[t].fach || '').trim();
     if(!(f in stelle)){ stelle[f] = gruppen.length; gruppen.push({ f, titel:[] }); }
     gruppen[stelle[f]].titel.push(t);
   });
-  /* Fachgruppen und Titel alphabetisch; Titel ohne Fachbereich bleiben am Ende. */
   const abc = (x, y) => x.localeCompare(y, 'de', { numeric:true, sensitivity:'base' });
   gruppen.sort((x, y) => (x.f === '') - (y.f === '') || abc(x.f, y.f));
   gruppen.forEach(g => g.titel.sort(abc));
+  return gruppen;
+}
+/* Welcher Titel gilt, wenn keiner gewaehlt ist: der oberste der Liste. Bis zum
+   23.09.2026 war es der erste Titel in der Reihenfolge der Datenbank - er stand
+   irgendwo mitten in der Leiste und traf zufaellig „Die Onkologie". OpenSlots wurde
+   am selben Tag umgestellt, die Datenpflege haelt es seit jeher so. */
+function ersterTitelNachAnzeige(jahr){
+  const g = titelGruppen(jahr);
+  return (g[0] && g[0].titel[0]) || '';
+}
+
+function titelleisteAufbauen(){
+  const B = BESTAND[GEWAEHLT.jahr] || {};
+  const gruppen = titelGruppen(GEWAEHLT.jahr);
   /* Ohne Fachbereiche (etwa aus einer Excel-Mappe) eine schlichte Liste */
   const mitKopf = gruppen.length > 1 || (gruppen.length === 1 && gruppen[0].f !== '');
   if(TL_ZU === null) TL_ZU = new Set(gruppen.map(g => g.f));
