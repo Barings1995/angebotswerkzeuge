@@ -294,9 +294,24 @@ select:disabled{opacity:.5; cursor:not-allowed}
 .leiste-ende .data-status, .leiste button{white-space:nowrap}
 .leiste-ende > .zeilenanfang{transform:none}
 .bar-grp{display:inline-flex; align-items:center; gap:8px; padding-left:10px; position:relative}
+/* Am 23.09.2026 nachgezogen, wortgleich zu MediaQuote (.bar-grp::before) und
+   OpenSlots (.ang-wrap::before) - dort steht die ausfuehrliche Begruendung:
+   1. Ton und Hoehe. Vorher var(--border) und 16 px; jetzt #aeb8cc und 24 px,
+      damit der Strich die Hoehe der Knoepfe aufnimmt und die Leiste sichtbar
+      gliedert, aber in der hellen Familie der Feldrahmen bleibt.
+   2. Breite 2 px, auf die Haelfte gestaucht - zusammen also weiterhin 1 px.
+      Ein glatt gesetzter 1-px-Strich wird beim Zeichnen je nach Zoomstufe mal
+      auf einen, mal auf zwei Bildpunkte gerundet; gemessen sprang dieser Strich
+      zwischen 2 und 3 Bildpunkten (100 % / 125 % / 175 %). Der gestauchte Strich
+      wird stattdessen weich gezeichnet und faellt ueberall gleich aus.
+   Diese Leiste hat nur einen Trenner - vor „Drucken / PDF". Ein Unterschied
+   zwischen zwei Strichen kann hier also nie auffallen; nachgezogen wurde es,
+   damit die drei Werkzeuge mit Trennstrich gleich aussehen. Nicht auf glatte
+   1 px zurueckstellen. */
 .bar-grp::before{
-  content:""; position:absolute; left:0; top:50%; margin-top:-8px;
-  width:1px; height:16px; background:var(--border);
+  content:""; position:absolute; left:0; top:50%; margin-top:-12px;
+  width:2px; transform:scaleX(.5); transform-origin:left center;
+  height:24px; background:#aeb8cc;
 }
 /* Statuszeile Zeichen fuer Zeichen wie .data-status in OpenSlots, MediaQuote
    und PreisWerk: grau, solange nichts geladen ist, danach Navy und halbfett. */
