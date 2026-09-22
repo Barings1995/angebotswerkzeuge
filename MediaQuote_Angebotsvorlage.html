@@ -858,7 +858,7 @@ button, input, select, textarea { font-family: inherit; }
   }
   /* Gruppen in der Leiste bekommen einen Trennstrich davor - dieselbe Form wie
      .ang-wrap im OpenSlots-Angebotsplaner. Der Strich ist bewusst kuerzer als
-     die Gruppe hoch ist: 24 px mittig, nicht ueber die volle Hoehe. */
+     die Gruppe hoch ist: 16 px mittig, nicht ueber die volle Hoehe. */
   .bar-grp {
     display: inline-flex;
     align-items: center;
@@ -866,13 +866,14 @@ button, input, select, textarea { font-family: inherit; }
     padding-left: 10px;
     position: relative;
   }
-  /* Am 23.09.2026 in zwei Punkten geaendert - beide gelten genauso fuer
+  /* Am 23.09.2026 geaendert - beide Punkte gelten genauso fuer
      .ang-wrap::before im OpenSlots-Angebotsplaner:
-     1. Ton und Hoehe. Vorher #d6dbe8 und 16 px; der Strich lief damit fast nur
-        mit, und die Gliederung der Leiste leistete allein der Abstand zwischen
-        den Gruppen. Jetzt #aeb8cc und 24 px: der Strich nimmt die Hoehe der
-        Knoepfe auf und trennt sichtbar, bleibt aber in der hellen Familie der
-        Feldrahmen.
+     1. Ton. Vorher #d6dbe8; der Strich lief damit fast nur mit, und die
+        Gliederung der Leiste leistete allein der Abstand zwischen den Gruppen.
+        Jetzt #aeb8cc: der Strich trennt sichtbar, bleibt aber in der hellen
+        Familie der Feldrahmen. Die Hoehe ging am selben Tag ueber 24 und 20 px
+        wieder zurueck auf die urspruenglichen 16 px - laenger wirkte der Strich
+        in der Leiste zu dominant.
      2. Breite 2 px, auf die Haelfte gestaucht - zusammen also weiterhin 1 px.
         Ein glatt gesetzter 1-px-Strich steht an einer krummen Stelle (gemessen
         277,18 / 570,04 / 862,55 / 940,34 / 1077,85 px) und wird beim Zeichnen
@@ -887,11 +888,11 @@ button, input, select, textarea { font-family: inherit; }
     position: absolute;
     left: 0;
     top: 50%;
-    margin-top: -12px;
+    margin-top: -8px;
     width: 2px;
     transform: scaleX(.5);
     transform-origin: left center;
-    height: 24px;
+    height: 16px;
     background: #aeb8cc;
   }
   /* Wort und Auswahlfeld des Jahrgangs, zeichengleich mit .data-yr dort. */

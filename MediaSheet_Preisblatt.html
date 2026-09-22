@@ -296,7 +296,7 @@ select:disabled{opacity:.5; cursor:not-allowed}
 .bar-grp{display:inline-flex; align-items:center; gap:8px; padding-left:10px; position:relative}
 /* Am 23.09.2026 nachgezogen, wortgleich zu MediaQuote (.bar-grp::before) und
    OpenSlots (.ang-wrap::before) - dort steht die ausfuehrliche Begruendung:
-   1. Ton und Hoehe. Vorher var(--border) und 16 px; jetzt #aeb8cc und 24 px,
+   1. Ton. Vorher var(--border); jetzt #aeb8cc, die Hoehe blieb bei 16 px,
       damit der Strich die Hoehe der Knoepfe aufnimmt und die Leiste sichtbar
       gliedert, aber in der hellen Familie der Feldrahmen bleibt.
    2. Breite 2 px, auf die Haelfte gestaucht - zusammen also weiterhin 1 px.
@@ -307,11 +307,13 @@ select:disabled{opacity:.5; cursor:not-allowed}
    Diese Leiste hat nur einen Trenner - vor „Drucken / PDF". Ein Unterschied
    zwischen zwei Strichen kann hier also nie auffallen; nachgezogen wurde es,
    damit die drei Werkzeuge mit Trennstrich gleich aussehen. Nicht auf glatte
-   1 px zurueckstellen. */
+   1 px zurueckstellen.
+   Am 23.09.2026 ging die Hoehe denselben Tag ueber 24 und 20 px wieder zurueck
+   auf die urspruenglichen 16 px, wortgleich zu MediaQuote und OpenSlots. */
 .bar-grp::before{
-  content:""; position:absolute; left:0; top:50%; margin-top:-12px;
+  content:""; position:absolute; left:0; top:50%; margin-top:-8px;
   width:2px; transform:scaleX(.5); transform-origin:left center;
-  height:24px; background:#aeb8cc;
+  height:16px; background:#aeb8cc;
 }
 /* Statuszeile Zeichen fuer Zeichen wie .data-status in OpenSlots, MediaQuote
    und PreisWerk: grau, solange nichts geladen ist, danach Navy und halbfett. */

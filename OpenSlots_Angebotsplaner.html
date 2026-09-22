@@ -275,13 +275,13 @@ button, input, select, textarea { font-family: inherit; }
   padding-left: 10px;
   position: relative;
 }
-/* Der Trennstrich ist bewusst kuerzer als die Gruppe hoch ist: 24 px mittig,
+/* Der Trennstrich ist bewusst kuerzer als die Gruppe hoch ist: 16 px mittig,
    nicht eine Kante ueber die volle Hoehe. `.bar-grp` traegt denselben Strich
    und heisst wie in MediaQuote; hier steht „Alles zuruecksetzen" darin.
-   Am 23.09.2026 in zwei Punkten geaendert - wortgleich in MediaQuote:
-   1. Ton und Hoehe. Vorher var(--sm-border) und 16 px; der Strich lief damit
-      fast nur mit. Jetzt #aeb8cc und 24 px: er nimmt die Hoehe der Knoepfe auf
-      und trennt sichtbar, bleibt aber in der hellen Familie der Feldrahmen.
+   Am 23.09.2026 geaendert - wortgleich in MediaQuote:
+   1. Ton. Vorher var(--sm-border); der Strich lief damit fast nur mit. Jetzt
+      #aeb8cc: er trennt sichtbar, bleibt aber in der hellen Familie der
+      Feldrahmen.
    2. Breite 2 px, auf die Haelfte gestaucht - zusammen also weiterhin 1 px.
       Ein glatt gesetzter 1-px-Strich steht an einer krummen Stelle und wird
       beim Zeichnen je nach Zoomstufe mal auf einen, mal auf zwei Bildpunkte
@@ -289,17 +289,20 @@ button, input, select, textarea { font-family: inherit; }
       derselben Leiste nebeneinander. Der gestauchte Strich wird stattdessen
       weich gezeichnet und faellt bei jeder Zoomstufe ueberall gleich aus.
       Nicht auf glatte 1 px zurueckstellen - dann kommt das ungleiche Runden
-      zurueck, und im dunkleren Ton faellt es staerker auf als zuvor. */
+      zurueck, und im dunkleren Ton faellt es staerker auf als zuvor.
+   3. Am 23.09.2026 ging die Hoehe denselben Tag ueber 24 und 20 px wieder
+      zurueck auf die urspruenglichen 16 px, wortgleich zu MediaQuote und
+      MediaSheet - laenger wirkte der Strich zu dominant. */
 .ang-wrap::before, .bar-grp::before {
   content: "";
   position: absolute;
   left: 0;
   top: 50%;
-  margin-top: -12px;
+  margin-top: -8px;
   width: 2px;
   transform: scaleX(.5);
   transform-origin: left center;
-  height: 24px;
+  height: 16px;
   background: #aeb8cc;
 }
 .data-btn.ang-btn { background: var(--sm-white); border-color: var(--sm-border); color: var(--sm-navy); }
