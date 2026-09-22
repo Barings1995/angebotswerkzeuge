@@ -856,10 +856,9 @@ button, input, select, textarea { font-family: inherit; }
     padding: 7px 12px;
     box-shadow: 0 1px 3px rgba(0,40,90,.08);
   }
-  /* Gruppen in der Leiste bekommen einen feinen Trennstrich davor - dieselbe
-     Form wie .ang-wrap im OpenSlots-Angebotsplaner. Der Strich ist bewusst
-     kuerzer als die Gruppe hoch ist: 16 px mittig, nicht ueber die volle
-     Hoehe. */
+  /* Gruppen in der Leiste bekommen einen Trennstrich davor - dieselbe Form wie
+     .ang-wrap im OpenSlots-Angebotsplaner. Der Strich ist bewusst kuerzer als
+     die Gruppe hoch ist: 24 px mittig, nicht ueber die volle Hoehe. */
   .bar-grp {
     display: inline-flex;
     align-items: center;
@@ -867,15 +866,33 @@ button, input, select, textarea { font-family: inherit; }
     padding-left: 10px;
     position: relative;
   }
+  /* Am 23.09.2026 in zwei Punkten geaendert - beide gelten genauso fuer
+     .ang-wrap::before im OpenSlots-Angebotsplaner:
+     1. Ton und Hoehe. Vorher #d6dbe8 und 16 px; der Strich lief damit fast nur
+        mit, und die Gliederung der Leiste leistete allein der Abstand zwischen
+        den Gruppen. Jetzt #aeb8cc und 24 px: der Strich nimmt die Hoehe der
+        Knoepfe auf und trennt sichtbar, bleibt aber in der hellen Familie der
+        Feldrahmen.
+     2. Breite 2 px, auf die Haelfte gestaucht - zusammen also weiterhin 1 px.
+        Ein glatt gesetzter 1-px-Strich steht an einer krummen Stelle (gemessen
+        277,18 / 570,04 / 862,55 / 940,34 / 1077,85 px) und wird beim Zeichnen
+        je nach Zoomstufe mal auf einen, mal auf zwei Bildpunkte gerundet: bei
+        125 % standen 3 gegen 2 Bildpunkte in derselben Leiste nebeneinander,
+        bei 110 % und 175 % ebenso. Der gestauchte Strich wird stattdessen
+        weich gezeichnet und faellt dadurch bei jeder Zoomstufe ueberall gleich
+        aus. Nicht auf glatte 1 px zurueckstellen - dann kommt das ungleiche
+        Runden zurueck, und im dunkleren Ton faellt es staerker auf als zuvor. */
   .bar-grp::before {
     content: "";
     position: absolute;
     left: 0;
     top: 50%;
-    margin-top: -8px;
-    width: 1px;
-    height: 16px;
-    background: var(--dlg-border);
+    margin-top: -12px;
+    width: 2px;
+    transform: scaleX(.5);
+    transform-origin: left center;
+    height: 24px;
+    background: #aeb8cc;
   }
   /* Wort und Auswahlfeld des Jahrgangs, zeichengleich mit .data-yr dort. */
   .data-yr {
