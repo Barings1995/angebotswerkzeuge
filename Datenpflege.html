@@ -396,18 +396,57 @@ button, input, select, textarea { font-family: inherit; }
      bewusst kein Abstand: die Linie oben trennt schon, ein Abstand daneben
      trennte ein zweites Mal und hinterliesse einen weissen Streifen zwischen
      dem letzten Titel einer Gruppe und der naechsten. (16.09.2026) */
-  .fach-kopf { font-size: 10.5px; font-weight: 700; color: var(--navy); text-transform: uppercase; letter-spacing: .1em;
+  .fach-kopf { display: flex; align-items: center; gap: 6px;
+    font-size: 10.5px; font-weight: 700; color: var(--navy); text-transform: uppercase; letter-spacing: .1em;
     padding: 6px 14px; background: var(--surface);
     border-top: 1px solid var(--border); border-bottom: 1px solid var(--border); }
   .titelliste > .fach-kopf:first-child { margin-top: -6px; border-top: none; }
+  /* ── Auf- und Zuklappen ──
+     Die Liste rollt: 21 Titel brauchen 856 px, sichtbar sind 533 px. Wer an
+     einem Bereich arbeitet, legt die uebrigen weg. Anders als in OpenSlots
+     starten hier alle Baender offen - dort ist die Liste ein Filter, hier die
+     Arbeitsflaeche, und ein Werkzeug, das zugeklappt aufmacht, verbirgt beim
+     Start seinen eigenen Inhalt. Die Suche muss das Klappen nicht
+     uebersteuern: sie ruehrt diese Liste nicht an, ihre Treffer stehen rechts.
+     Das Dreieck folgt der Familienregel aus der Jahresvorschau (vgl. .fb-toggle
+     in OpenSlots): Arial - die Schrift des Werkzeugs fuehrt kein Dreieck -,
+     8 px, Farbe vom Band geerbt, zugeklappt eine Vierteldrehung nach links.
+     Beim Ueberfahren dunkelt die Flaeche einen Hauch nach - dieselbe Sprache
+     wie bei jeder Titelzeile darunter, nur nach dunkel statt nach hell, weil
+     das Band schon grau ist: --surface-hover waere heller als das Band selbst
+     und saehe aus wie ein Loch. Der Schleier ist Marineblau mit 5 Prozent,
+     als Verlauf ueber die Flaeche gelegt, damit kein zweiter Grauwert neben
+     die Farbtabelle tritt; das Band steht damit bei 1,10 gegen seine Nachbarn,
+     so leise wie eine ueberfahrene Zeile (1,08). Zwei marineblaue Linien
+     (12,43) und graue Linien (2,17) standen daneben zur Wahl und waren zu
+     laut: bei sechs Baendern wandert der Sprung mit der Maus die ganze Liste
+     hinauf und hinunter. Nur die untere Linie zu faerben, wie unter .tabgrp in
+     OpenSlots, laesst das Band nach unten wegkippen - dort traegt es nur einen
+     Strich, hier zwei. (22.09.2026) */
+  .fach-kopf.klappbar { cursor: pointer; user-select: none; }
+  .fach-kopf.klappbar:hover { background-image: linear-gradient(rgba(0, 40, 90, .05), rgba(0, 40, 90, .05)); }
+  .fach-pfeil { flex: none; display: inline-block; font-family: Arial, Helvetica, sans-serif;
+    font-size: 8px; transition: transform .18s; }
+  .fach-kopf.zu .fach-pfeil { transform: rotate(-90deg); }
+  .fach-name { flex: 1 1 auto; min-width: 0; }
+  /* Was ein zugeklapptes Band traegt: dieselben beiden Signale wie seine Zeilen,
+     zusammengezaehlt - die offenen Preise und die offenen Aenderungen. Ohne die
+     offene Zahl klappt man blind auf und wieder zu; die Aenderungsmarke allein
+     sagt nur, dass dort etwas angefasst wurde, nicht, dass dort noch Arbeit
+     liegt. Am offenen Band steht beides nicht: dort tragen es die Zeilen
+     selbst. (22.09.2026) */
+  .fach-kopf .offen { font-size: 10px; color: var(--orange-dark); font-weight: 700; flex: none; letter-spacing: .04em; }
+  .fach-kopf .zahl { font-size: 10px; color: var(--grey-500); font-weight: 700; flex: none; letter-spacing: .04em; }
+  .fach-kopf .aend-zahl { font-size: 10px; line-height: 15px; letter-spacing: 0; vertical-align: 0; }
   .titel-zeile { display: flex; justify-content: space-between; align-items: center; gap: 8px; padding: 5px 14px; font-size: 13px; cursor: pointer; border-left: 3px solid transparent; }
   .titel-zeile:hover { background: var(--surface-hover); }
+  .titel-zeile.weg { display: none; }
   .titel-zeile.an { background: var(--blue-light); font-weight: 600; border-left-color: var(--navy); }
   .titel-zeile .zahl { font-size: 11px; color: var(--grey-500); flex: none; }
   .titel-zeile .offen { font-size: 11px; color: var(--orange-dark); font-weight: 600; flex: none; }
   .titel-zeile .geaendert { color: var(--orange); font-weight: 700; flex: none; }
   /* Zahl der offenen Änderungen je Titel; bei einem neu angelegten Titel „neu". */
-  .titel-zeile .aend-zahl { display: inline-block; font-size: 10.5px; font-weight: 700; color: #fff; background: var(--orange); border-radius: 9px; padding: 0 6px; margin-left: 5px; line-height: 16px; vertical-align: 1px; }
+  .titel-zeile .aend-zahl, .fach-kopf .aend-zahl { display: inline-block; font-size: 10.5px; font-weight: 700; color: #fff; background: var(--orange); border-radius: 9px; padding: 0 6px; margin-left: 5px; line-height: 16px; vertical-align: 1px; }
 
   /* ── Trefferliste ── */
   /* Die Treffer stehen im rechten Feld, an der Stelle des Titels: die Suche
@@ -920,6 +959,8 @@ let reiter   = 'preise';
 let standText = '';
 let suchText = '';           // was im Suchfeld steht, getrimmt
 let suchAlleJahre = false;   // false: nur der gewaehlte Jahrgang
+let fachZu = new Set();      // Namen der zugeklappten Fachbereiche; leer = alle offen
+let fachNamen = [];          // Reihenfolge der Baender, wie zuletzt gezeichnet
 
 /* ── Schnittstelle ────────────────────────────────────────────────────────── */
 function dbErreichbar() {
@@ -2066,22 +2107,99 @@ function zeichnen() {
   fokusZurueck(fokus);
 }
 
+/* Das Band eines Bereichs auf- oder zuklappen. Gezaehlt wird nach Namen, nicht
+   nach Platz in der Liste: ein Titel, der den Fachbereich wechselt, verschiebt
+   sonst die Zustaende der Baender unter ihm. An der Tafel rechts aendert sich
+   dabei nichts.
+   Geklappt wird nicht durch neues Zeichnen, sondern am Band umgelegt -
+   so wie filterTabs in OpenSlots und titelFiltern in MediaSheet. Der Grund ist
+   die Drehung des Dreiecks: ein neu gezeichnetes Zeichen kaeme schon gedreht zur
+   Welt, der Uebergang liefe nie, und die Regel darueber waere toter Text. Nur
+   ein Zeichen, das stehen bleibt, kann sich drehen. (22.09.2026) */
+function fachKlappen(i) {
+  const fach = fachNamen[i];
+  if (fach == null) return;
+  if (fachZu.has(fach)) fachZu.delete(fach); else fachZu.add(fach);
+  const band = document.querySelectorAll('#titelListe .fach-kopf')[i];
+  if (band) fachBandAuffrischen(band, fach); else titellisteZeichnen();
+}
+
+/* Band und seine Zeilen auf den Klappzustand bringen: Dreieck drehen, den Stand
+   am zugeklappten Band setzen oder wegnehmen, Zeilen weglegen oder zeigen. */
+function fachBandAuffrischen(band, fach) {
+  const zu = fachZu.has(fach);
+  band.classList.toggle('zu', zu);
+  band.title = zu ? 'Fachbereich aufklappen' : 'Fachbereich zuklappen';
+  const name = band.querySelector('.fach-name');
+  while (name.nextElementSibling) name.nextElementSibling.remove();
+  if (zu) name.insertAdjacentHTML('afterend', fachStand(fach));
+  let e = band.nextElementSibling;
+  while (e && !e.classList.contains('fach-kopf')) {
+    /* Der gewaehlte Titel bleibt auch in einem zugeklappten Band stehen - sonst
+       wuesste man nicht mehr, woran man arbeitet. Ebenso in OpenSlots. */
+    e.classList.toggle('weg', zu && !e.classList.contains('an'));
+    e = e.nextElementSibling;
+  }
+}
+
+/* Was am zugeklappten Band steht: dieselben beiden Signale wie in seinen Zeilen,
+   zusammengezaehlt - im Reiter Preise die offenen Preise, sonst die Zahl der
+   Formate bzw. der Ausgaben, dazu die Aenderungsmarke. */
+function fachStand(fach) {
+  const zeilen = titelSortiert().filter(t => (t.fachbereich || FACH_OHNE) === fach);
+  let stand;
+  if (reiter === 'preise') {
+    const ohnePreis = zeilen.reduce((sum, t) =>
+      sum + (t.preis || []).filter(x => x.preis == null || Number(x.preis) === 0).length, 0);
+    stand = ohnePreis
+      ? '<span class="offen">' + ohnePreis + ' offen</span>'
+      : '<span class="zahl">' + zeilen.reduce((sum, t) => sum + (t.preis || []).length, 0) + '</span>';
+  } else {
+    stand = '<span class="zahl">' + zeilen.reduce((sum, t) => sum + (t.termin || []).length, 0) + '</span>';
+  }
+  return stand + fachMarke(zeilen);
+}
+
+/* Die Aenderungsmarke eines ganzen Bandes: die offenen Aenderungen seiner Titel,
+   zusammengezaehlt. Ein neu angelegter Titel zaehlt als eine - in ihm ist jede
+   Zeile neu, eine Zahl sagte dort nichts. */
+function fachMarke(liste) {
+  let n = 0;
+  liste.forEach(t => {
+    if (!titelGeaendert(t)) return;
+    n += ursprungTitel(t.id) ? (aenderungenVon(t).length || 1) : 1;
+  });
+  if (!n) return '';
+  return ' <span class="aend-zahl" title="' + (n === 1 ? '1 offene Änderung' : n + ' offene Änderungen') +
+         ' in diesem Fachbereich">' + n + '</span>';
+}
+
 function titellisteZeichnen() {
   const liste = document.getElementById('titelListe');
   const merkeRollen = liste.scrollTop;
   const titel = titelSortiert();
   const nachFach = {};
   titel.forEach(t => { const f = t.fachbereich || FACH_OHNE; (nachFach[f] = nachFach[f] || []).push(t); });
+  fachNamen = fachbereicheSortiert(titel);
   let html = '';
-  fachbereicheSortiert(titel).forEach(fach => {
-    html += '<div class="fach-kopf">' + esc(fach) + '</div>';
+  fachNamen.forEach((fach, i) => {
+    const zu = fachZu.has(fach);
+    html += '<div class="fach-kopf klappbar' + (zu ? ' zu' : '') + '" onclick="fachKlappen(' + i + ')" ' +
+            'title="' + (zu ? 'Fachbereich aufklappen' : 'Fachbereich zuklappen') + '">' +
+            '<span class="fach-pfeil">&#9660;</span>' +
+            '<span class="fach-name">' + esc(fach) + '</span>' + (zu ? fachStand(fach) : '') + '</div>';
     nachFach[fach].forEach(t => {
+      const gewaehlt = t.id === gewTitel;
       const ohnePreis = (t.preis || []).filter(p => p.preis == null || Number(p.preis) === 0).length;
       const zusatz = reiter === 'preise'
         ? (ohnePreis ? '<span class="offen">' + ohnePreis + ' offen</span>'
                      : '<span class="zahl">' + (t.preis || []).length + '</span>')
         : '<span class="zahl">' + (t.termin || []).length + '</span>';
-      html += '<div class="titel-zeile' + (t.id === gewTitel ? ' an' : '') + '" onclick="titelWaehlen(\'' + t.id + '\')">' +
+      /* Alle Zeilen stehen im Text, die zugeklappten liegen nur weg. So entscheidet
+         eine Stelle ueber die Sichtbarkeit, und fachKlappen kommt ohne neues
+         Zeichnen aus. */
+      html += '<div class="titel-zeile' + (gewaehlt ? ' an' : '') + (zu && !gewaehlt ? ' weg' : '') +
+              '" onclick="titelWaehlen(\'' + t.id + '\')">' +
               '<span>' + esc(t.name) + titelMarke(t) + '</span>' + zusatz + '</div>';
     });
   });
