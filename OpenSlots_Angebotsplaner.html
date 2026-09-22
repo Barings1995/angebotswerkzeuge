@@ -297,9 +297,9 @@ button, input, select, textarea { font-family: inherit; }
    :hover gesetzt, damit die Quittung unter dem Mauszeiger nicht sofort navy wird. */
 .data-btn.ang-btn.done,
 .data-btn.ang-btn.done:hover { background: var(--sm-green-l); border-color: var(--sm-green); color: var(--sm-green); }
-/* Mittig, weil die Knoepfe waehrend der Quittung ihre Breite halten (siehe
-   flash()): Der kuerzere Text stuende sonst links, mit Luft an der rechten
-   Kante. Gilt auch fuer die beiden Kopierknoepfe, die dieselbe Funktion nutzen. */
+/* Mittig, weil die Knoepfe ihre Breite halten (siehe knopfbreitenReservieren()):
+   Der kuerzere Text stuende sonst links, mit Luft an der rechten Kante. Gilt auch
+   fuer die beiden Kopierknoepfe, die dieselbe Quittung nutzen. */
 .data-btn.done, .copy-btn.done { justify-content: center; }
 /* Hinweis auf die geöffnete Angebotsdatei. Er nennt auch den Speicherzeitpunkt,
    weil ein älteres Angebot die Preise von damals enthält und nicht die heutigen. */
@@ -980,14 +980,21 @@ tr.pl-row.alt td:not(.pl-cell) {
   border-radius: 2px;
 }
 .btn-row { display: flex; gap: 7px; }
+/* Zeichengleich mit .data-btn: Polster 5/12, Kante 1,5 px, Radius 6 px, 12 px
+   halbfett, Symbol 13 px - daraus ergeben sich 30,5 px Hoehe. Bis zum 22.09.2026
+   trugen die beiden Kopierknoepfe 11,5 px Schrift und waren dadurch 29,5 px hoch,
+   einen Punkt niedriger als alle uebrigen Knoepfe der vier Werkzeuge. Ein Grund
+   dafuer war nicht verzeichnet; sie stehen allein in ihrem Fenster, weshalb es nie
+   auffiel. Die Farben bleiben ihre eigenen: orange gefuellt der Hauptweg, weiss mit
+   grauer Kante der Nebenweg. */
 .copy-btn {
   display: inline-flex;
   align-items: center;
-  gap: 5px;
-  padding: 5px 13px;
+  gap: 6px;
+  padding: 5px 12px;
   border-radius: var(--radius-md);
   font-family: 'Source Sans 3', sans-serif;
-  font-size: 11.5px;
+  font-size: 12px;
   font-weight: 600;
   cursor: pointer;
   transition: all .15s;
@@ -1011,7 +1018,15 @@ tr.pl-row.alt td:not(.pl-cell) {
   border-color: #d4700f;
   color: #fff;
 }
-.copy-btn.done {
+/* Auch fuer :hover gesetzt, damit die Quittung unter dem Mauszeiger nicht orange
+   bleibt. „Als Tabelle kopieren" zeigte sie sonst erst, wenn man den Zeiger
+   wegzog: seine Ueberfahrregel (.copy-btn.primary:hover) nennt zwei Merkmale und
+   schlug damit die Quittung mit ihrem einen. Beim weissen „Nur Text" sind beide
+   gleich stark, dort gewann die Quittung schon vorher, weil sie spaeter steht.
+   Dieselbe Absicherung tragen .data-btn.ang-btn.done hier und .btn-angebot.done in
+   MediaQuote; am aelteren Kopierknopf war sie nie nachgezogen worden. (22.09.2026) */
+.copy-btn.done,
+.copy-btn.done:hover {
   border-color: var(--sm-green);
   color: var(--sm-green);
   background: var(--sm-green-l);
@@ -1296,7 +1311,7 @@ Bitte reservieren Sie nur budget- und planungsrelevante Platzierungen.</textarea
     <div class="prev-hdr">
       <span class="prev-lbl">Vorschau &amp; Kopiervorlage</span>
       <div class="btn-row">
-        <button class="copy-btn primary" id="cb-html" onclick="cpHtml()" title="Als formatierte Tabelle kopieren (f&uuml;r Outlook)"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>Als Tabelle kopieren</button>
+        <button class="copy-btn primary" id="cb-html" onclick="cpHtml()" title="Als formatierte Tabelle kopieren (f&uuml;r Outlook)"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>Als Tabelle kopieren</button>
         <button class="copy-btn" id="cb-txt" onclick="cpTxt()" title="Als einfachen Text kopieren">Nur Text</button>
       </div>
     </div>
@@ -3100,21 +3115,34 @@ async function cpHtml(){
   const html=buildHtml(),txt=buildTxt();
   try{
     await navigator.clipboard.write([new ClipboardItem({'text/html':new Blob([html],{type:'text/html'}),'text/plain':new Blob([txt],{type:'text/plain'})})]);
-    flash('cb-html','<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"/></svg>Kopiert');
-  }catch(e){await navigator.clipboard.writeText(txt);flash('cb-html','<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"/></svg>Kopiert (Text)');}
+    flash('cb-html','<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"/></svg>Kopiert');
+  }catch(e){await navigator.clipboard.writeText(txt);flash('cb-html','<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"/></svg>Kopiert (Text)');}
 }
 
-async function cpTxt(){await navigator.clipboard.writeText(buildTxt());flash('cb-txt','<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"/></svg>Kopiert');}
+async function cpTxt(){await navigator.clipboard.writeText(buildTxt());flash('cb-txt','<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"/></svg>Kopiert');}
 
 /* Die Breite wird festgehalten, bevor die Beschriftung wechselt: Die Quittung ist
    kuerzer als der Ruhetext (bei „Angebot speichern" rund 40 px), ohne die Sperre
    rueckte alles rechts vom Knopf zweimal nach. Gemessen statt fest eingetragen,
    weil die Breite an Schrift und Zoomstufe haengt; box-sizing ist border-box. */
+/* Je Knopf eine Uhr - die drei quittierenden Knoepfe laufen unabhaengig voneinander. */
+const flashUhren={};
 function flash(id,msg){
-  const b=document.getElementById(id),orig=b.innerHTML;
-  b.style.minWidth=b.getBoundingClientRect().width+'px';
+  const b=document.getElementById(id);
+  /* Laeuft fuer diesen Knopf schon eine Quittung, wird sie zuerst zurueckgenommen: Uhr
+     stoppen und die gesicherte Beschriftung wiederherstellen. Ohne das nahm der zweite
+     Klick die bereits sichtbare Quittung als Beschriftung - der Knopf blieb dann dauerhaft
+     auf „Kopiert" stehen -, und die Uhr des ersten Klicks setzte ihn zu frueh zurueck.
+     MediaQuote loest das seit dem 07.09.2026 genauso (dataset.orig + flashTimer);
+     hier war es nie nachgezogen worden. (22.09.2026) */
+  if(flashUhren[id]){ clearTimeout(flashUhren[id]); b.innerHTML=b.dataset.orig||b.innerHTML; }
+  b.dataset.orig=b.innerHTML;
+  /* Rueckfall: Hat knopfbreitenReservieren() diesen Knopf nicht erwischt - etwa weil die
+     Datenleiste ihn nach dem Messen neu aufgebaut hat -, wird wenigstens die Breite von
+     jetzt festgehalten. Der Knopf kann dann noch wachsen, aber nicht mehr schrumpfen. */
+  if(!b.style.minWidth) b.style.minWidth=b.getBoundingClientRect().width+'px';
   b.classList.add('done');b.innerHTML=msg;
-  setTimeout(()=>{b.classList.remove('done');b.innerHTML=orig;b.style.minWidth='';},2000);
+  flashUhren[id]=setTimeout(()=>{b.classList.remove('done');b.innerHTML=b.dataset.orig;delete flashUhren[id];},2000);
 }
 
 /* ===== HOVER-FADENKREUZ: Zeile + Spalte in der Belegungsmatrix hervorheben ===== */
@@ -3191,6 +3219,29 @@ ladePreislisteAusDatenbank().then(ok=>{ if(!ok) ladePreislisteVonServer(); });
   new MutationObserver(pruefen).observe(leiste,
     { subtree:true, childList:true, characterData:true, attributes:true, attributeFilter:['style'] });
   pruefen();
+})();
+/* Die Quittungen sind laenger oder kuerzer als die Beschriftung darunter: „Kopiert" ist
+   breiter als „Nur Text", aber schmaler als „Als Tabelle kopieren". Frueher hielt flash()
+   nur die Breite von vorher fest - eine Mindestbreite, kein Maximum -, weshalb „Nur Text"
+   beim Quittieren um 13,5 px aufsprang und die Knopfzeile kurz zuckte. Deshalb wird die
+   Breite jetzt einmal beim Laden festgelegt: gemessen wird die Beschriftung und jede
+   Quittung, die der Knopf zeigen kann, reserviert wird die groesste. Der Text steht in
+   dieser Breite mittig (.data-btn.done, .copy-btn.done). Gemessen wird erst, wenn die
+   Schrift geladen ist - vorher misst man die Ersatzschrift und damit die falsche Breite.
+   (22.09.2026) */
+(function knopfbreitenReservieren(){
+  const haken='<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"/></svg>';
+  const faelle=[['angSaveBtn',['Gespeichert']],['cb-html',['Kopiert','Kopiert (Text)']],['cb-txt',['Kopiert']]];
+  const messen=()=>faelle.forEach(([id,texte])=>{
+    const b=document.getElementById(id);
+    if(!b||!b.getClientRects().length) return;
+    const orig=b.innerHTML;
+    let breit=b.getBoundingClientRect().width;
+    texte.forEach(t=>{ b.innerHTML=haken+t; breit=Math.max(breit,b.getBoundingClientRect().width); });
+    b.innerHTML=orig;
+    b.style.minWidth=Math.ceil(breit)+'px';
+  });
+  if(document.fonts&&document.fonts.ready) document.fonts.ready.then(messen); else messen();
 })();
 </script>
 </body>

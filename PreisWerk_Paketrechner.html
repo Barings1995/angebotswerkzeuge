@@ -210,7 +210,18 @@ button, input, select, textarea { font-family: inherit; }
   input:checked + .slider { background: var(--navy); }
   input:checked + .slider:before { transform: translateX(16px); }
 
-  .btn-add { flex-shrink: 0; display: inline-flex; align-items: center; justify-content: center; gap: 6px; height: 30px; padding: 0 15px; background: var(--navy); color: var(--white); border: none; border-radius: var(--radius-md); font-size: 13px; font-weight: 700; cursor: pointer; transition: background .15s; white-space: nowrap; align-self: flex-end; }
+  /* Gebaut wie .btn-data und .btn-clear: die Hoehe entsteht aus Polsterung, Kante und
+     Zeilenhoehe, nicht aus einer festen Angabe. Der 1,5-px-Rand gehoert zu dieser
+     Bauweise - ohne ihn faellt der Knopf 3 px niedriger aus als die Geschwister. Er ist
+     durchsichtig gesetzt wie bei .btn-action in MediaQuote, damit die Flaeche unter ihm
+     durchscheint: so faerbt sich beim Quittieren ("Hinzugefuegt", orange) der ganze
+     Knopf und nicht nur sein Inneres. Schriftgroesse und -staerke ebenfalls wie dort
+     (12 px / 600); damit ist der Knopf mit 30,5 px genauso hoch wie seine beiden
+     Geschwister. Die 600 gelten zugleich fuer den Knopf "Position hinzufuegen" in
+     MediaQuote. Die Auswahlfelder daneben sind 38,5 px hoch; die 4 px
+     Abstand nach unten heben den Knopf auf deren Mitte, sonst saesse er fussbuendig
+     und damit optisch abgesackt. (22.09.2026) */
+  .btn-add { flex-shrink: 0; display: inline-flex; align-items: center; justify-content: center; gap: 6px; padding: 5px 12px; background: var(--navy); color: var(--white); border: 1.5px solid transparent; border-radius: var(--radius-md); font-size: 12px; font-weight: 600; cursor: pointer; transition: background .15s; white-space: nowrap; align-self: flex-end; margin-bottom: 4px; }
   .btn-add:hover { background: var(--navy-hover); }
 
   /* ── Options bar ── */
@@ -222,6 +233,16 @@ button, input, select, textarea { font-family: inherit; }
   .btn-clear { display: inline-flex; align-items: center; gap: 6px; background: var(--red); border: 1.5px solid var(--red); color: var(--white); padding: 5px 12px; border-radius: var(--radius-md); font-size: 12px; font-weight: 600; cursor: pointer; transition: all .15s; }
   .btn-clear:hover { background: #9c2e22; border-color: #9c2e22; }
   .btn-data:active, .btn-add:active, .btn-clear:active { transform: translateY(1px); }
+  /* Einheitliche Symbolgroesse - die width/height der SVG selbst weichen ab.
+     Das Pluszeichen in „Hinzufuegen" war als einziges 14 px gross, die beiden
+     Geschwister tragen 13 px. Seit dem 22.09.2026 entscheidet diese eine Regel
+     ueber alle drei, damit die Groessen nicht wieder auseinanderlaufen. In
+     MediaQuote steht dieselbe Regel (.btn-action svg, .btn-add svg). Das rote
+     Loeschkreuz in der Tabelle (.btn-rm) gehoert nicht dazu: es steht fuer sich
+     und ist kein beschrifteter Knopf - so auch .btn-del in MediaQuote. */
+  .btn-data svg,
+  .btn-add svg,
+  .btn-clear svg { width: 13px; height: 13px; }
 
   /* ── Staffel summary ── */
   .staffel-bar { display: flex; gap: 0; background: var(--navy); border-radius: var(--radius-lg); overflow: hidden; margin-bottom: 20px; }
@@ -1057,10 +1078,18 @@ function addItem() {
   render();
   saveStand();
 
-  // Feedback
+  /* Quittung: 2000 ms wie in MediaQuote und OpenSlots. Bis zum 22.09.2026 stand hier 1100 ms
+     - der Wert kam mit dem Werkzeug herein und war nie an den Geschwistern gemessen. Gerade
+     hier braucht die Quittung eher mehr Zeit: die neue Position landet weit unterhalb des
+     Knopfes, die Quittung ist also das einzige Zeichen in Blickrichtung.
+     Die laufende Uhr wird zuerst gestoppt. Ohne das stellte beim zuegigen Anlegen mehrerer
+     Positionen die Uhr des ersten Klicks den Knopf zurueck, waehrend die zweite Quittung noch
+     stehen musste - sie flackerte. ADD_RUHE/ADD_QUITTUNG sind feste Texte, deshalb genuegt
+     hier das Stoppen; OpenSlots muss zusaetzlich die Beschriftung sichern (flash()). */
   const btn = document.querySelector('.btn-add');
-  btn.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"/></svg>Hinzugefügt'; btn.style.background = 'var(--orange-dark)';
-  setTimeout(() => { btn.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>Hinzufügen'; btn.style.background = ''; }, 1100);
+  clearTimeout(addQuittungUhr);
+  btn.innerHTML = ADD_QUITTUNG; btn.style.background = 'var(--orange-dark)';
+  addQuittungUhr = setTimeout(() => { btn.innerHTML = ADD_RUHE; btn.style.background = ''; addQuittungUhr = null; }, 2000);
 }
 
 function removeItem(id) { items = items.filter(it => it.id !== id); render(); saveStand(); }
@@ -1558,6 +1587,29 @@ ladePreislisteAusDatenbank().then(ok=>{ if(!ok) ladePreislisteVonServer(); });
   new MutationObserver(pruefen).observe(leiste,
     { subtree:true, childList:true, characterData:true, attributes:true, attributeFilter:['style'] });
   pruefen();
+})();
+/* Die Quittung „Hinzugefuegt" ist laenger als die Beschriftung „Hinzufuegen", weshalb der
+   Knopf beim Klicken um einige Pixel aufsprang und die Zeile kurz zuckte. Deshalb wird die
+   Breite einmal beim Laden festgelegt: gemessen werden beide Zustaende, reserviert wird der
+   breitere. Der Text steht in dieser Breite mittig, weil .btn-add ohnehin zentriert.
+   Gemessen wird erst, wenn die Schrift geladen ist - vorher misst man die Ersatzschrift und
+   damit die falsche Breite. OpenSlots loest das seit demselben Tag genauso
+   (knopfbreitenReservieren()). (22.09.2026) */
+let addQuittungUhr = null;   /* laufende Quittungsuhr des Hinzufuegen-Knopfes */
+const ADD_RUHE = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>Hinzufügen';
+const ADD_QUITTUNG = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"/></svg>Hinzugefügt';
+(function addBreiteReservieren(){
+  const b = document.querySelector('.btn-add');
+  if(!b) return;
+  const messen = () => {
+    if(!b.getClientRects().length) return;
+    const ruhe = b.getBoundingClientRect().width;
+    b.innerHTML = ADD_QUITTUNG;
+    const quittung = b.getBoundingClientRect().width;
+    b.innerHTML = ADD_RUHE;
+    b.style.minWidth = Math.ceil(Math.max(ruhe, quittung)) + 'px';
+  };
+  if(document.fonts && document.fonts.ready) document.fonts.ready.then(messen); else messen();
 })();
 </script>
 </body>

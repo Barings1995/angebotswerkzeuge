@@ -651,13 +651,22 @@ button, input, select, textarea { font-family: inherit; }
   }
 
   /* ── Add button ── */
+  /* Gebaut wie .btn-action: die Hoehe entsteht aus Polsterung, Kante und Zeilenhoehe,
+     nicht aus einer festen Angabe - Polster 5/12, Kante 1,5 px, Radius 6 px,
+     12 px halbfett, daraus 30,5 px. Die Kante ist durchsichtig gesetzt, damit die
+     navyblaue Flaeche unter ihr durchscheint; ohne Kante faellt der Knopf 3 px
+     niedriger aus als die Knoepfe der Kopfleiste. Bis zum 22.09.2026 war dieser
+     Knopf der letzte Einzelfall: beim Angleichen der Knopfformen am 06.09.2026
+     wurde er uebersehen, weil er weit unterhalb der Kopfleiste steht und der
+     Unterschied deshalb nie im Blick war. Derselbe Einzelfall bestand in
+     PreisWerk und wurde am selben Tag behoben. */
   .btn-add {
     background: var(--navy);
     color: #fff;
-    border: none;
-    padding: 8px 18px;
+    border: 1.5px solid transparent;
+    padding: 5px 12px;
     border-radius: var(--radius-md);
-    font-size: 12.5px;
+    font-size: 12px;
     font-weight: 600;
     cursor: pointer;
     display: inline-flex;
@@ -667,7 +676,6 @@ button, input, select, textarea { font-family: inherit; }
     transition: background 0.15s;
   }
   .btn-add:hover { background: #003a80; }
-  .btn-add svg { width: 14px; height: 14px; }
 
   /* ── Summary ── */
   .summary-block {
@@ -775,8 +783,12 @@ button, input, select, textarea { font-family: inherit; }
     outline: 2px solid var(--navy);
     outline-offset: 2px;
   }
-  /* Einheitliche Symbolgröße – die width/height der SVG selbst weichen ab */
-  .btn-action svg { width: 13px; height: 13px; }
+  /* Einheitliche Symbolgröße – die width/height der SVG selbst weichen ab.
+     Das Pluszeichen in „Position hinzufügen" war bis zum 22.09.2026 als einziges
+     14 px gross; seit der Knopf wie die uebrigen gebaut ist, traegt er auch
+     deren Symbolgroesse. */
+  .btn-action svg,
+  .btn-add svg { width: 13px; height: 13px; }
   .btn-print { background: var(--orange); border-color: var(--orange); color: #fff; }
   .btn-print:hover { background: #d46e0d; border-color: #d46e0d; }
   /* „Alles zurücksetzen" löscht das ganze Formular und ist damit der einzige
