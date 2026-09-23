@@ -373,8 +373,8 @@ button, input, select, textarea { font-family: inherit; }
   /* Kopf der Titelliste: links die Zahl der Titel, rechts „Alle zuklappen“ bzw.
      „Alle aufklappen“. Steht wie der Fuss ausserhalb der rollenden Liste, damit
      er nicht wegrollt. Bewusst ohne neues Element: die Flaeche ist das Grau der
-     Fachbereichsbaender, die Zahl steht in der Schrift von „Jahrgang 2026 ·
-     49 Formate“ (.inhalt-kopf .neben), die Aktion ist dieselbe leise Textaktion
+     Fachbereichsbaender, die Zahl steht in der Schrift der Leiste (siehe
+     .anzahl unten, bis 24.09.2026 wie .inhalt-kopf .neben), die Aktion ist dieselbe leise Textaktion
      wie „Entfernen“ im Kopf einer Kategorie (.kat-tat). Eine Ueberschrift
      „Titel“ und ein kleiner gerahmter Knopf wie in OpenSlots standen zur Wahl
      und blieben weg - beides gibt es in der Datenpflege sonst nirgends.
@@ -383,7 +383,13 @@ button, input, select, textarea { font-family: inherit; }
      aus. Die Linie unten ersetzt die obere des ersten Bandes. (23.09.2026) */
   .titel-kopf { display: flex; align-items: center; justify-content: space-between; gap: 8px;
     padding: 4px 8px 4px 14px; background: var(--surface); border-bottom: 1px solid var(--border); }
-  .titel-kopf .anzahl { font-size: 12px; color: var(--grey-600); }
+  /* Die Zahl steht seit dem 24.09.2026 in der Schrift der Leiste selbst: klein,
+     fett, versal wie „Alle zuklappen“ daneben und die Baender darunter, eine Stufe
+     dunkler als die Aktion (--grey-600 statt --grey-500) - Angabe vor Aktion.
+     Vorher 12 px normal in gemischter Schreibweise wie .inhalt-kopf .neben; im
+     grauen Streifen zwischen lauter Versalien wirkte das fremd. Marineblau bleibt
+     den Fachbereichen vorbehalten (die Zeile saehe sonst wie ein Band aus). */
+  .titel-kopf .anzahl { font-size: 10.5px; font-weight: 700; text-transform: uppercase; letter-spacing: .06em; color: var(--grey-600); }
   /* Derselbe feste Fuss unter der Formattafel. Der Knopf steht hier links und
      nicht ueber die ganze Breite: die Tafel ist mehr als dreimal so breit wie
      die Titelliste. Ohne Knopf — bei der Suche und ohne gewaehlten Titel —
