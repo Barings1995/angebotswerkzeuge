@@ -146,10 +146,13 @@ button, input, select, textarea { font-family: inherit; }
      Die Fehlerblase und der Stand-Hinweis bleiben bewusst links beim Ladeknopf: sie
      erscheinen nur vorübergehend und gehören zur Ladeaktion. */
   .bar-status { display: inline-flex; align-items: center; gap: 8px; margin-left: auto; text-align: right; }
-  /* Gruppe mit feinem Trennstrich davor, gleicher Name und gleiche Maße wie in den
-     beiden anderen Werkzeugen: 1 x 16 px, senkrecht mittig. */
+  /* Gruppe mit feinem Trennstrich davor, gleicher Name und gleiche Maße wie in
+     MediaQuote, OpenSlots und MediaSheet: 16 px hoch, senkrecht mittig, Ton #aeb8cc,
+     2 px auf die halbe Breite gestaucht - zeichnet bei jeder Zoomstufe gleich breit.
+     Bis zum 24.09.2026 stand hier ein glatter 1-px-Strich in der hellen Rahmenfarbe.
+     Nicht auf glatte 1 px zurückstellen. */
   .bar-grp { display: inline-flex; align-items: center; gap: 8px; padding-left: 10px; position: relative; }
-  .bar-grp::before { content: ""; position: absolute; left: 0; top: 50%; margin-top: -8px; width: 1px; height: 16px; background: var(--border); }
+  .bar-grp::before { content: ""; position: absolute; left: 0; top: 50%; margin-top: -8px; width: 2px; transform: scaleX(.5); transform-origin: left center; height: 16px; background: #aeb8cc; }
   /* Hinweis, kein Fehler: bewusst neutral gehalten. Rot wäre falsch - es ist nichts
      schiefgegangen, es fehlt nur ein Posten in der Preisliste. Das helle Springer-Blau
      bleibt der Ersparnis vorbehalten, deshalb die neutrale Fläche. */
@@ -232,7 +235,8 @@ button, input, select, textarea { font-family: inherit; }
   .opt-group { display: flex; align-items: center; gap: 8px; }
   .opt-group label { font-size: 13px; font-weight: 500; color: var(--navy); cursor: pointer; display: flex; align-items: center; gap: 7px; }
   .opt-group .tag { font-size: 11px; color: var(--grey-600); font-weight: 400; }
-  .sep { width: 1px; height: 16px; background: var(--border); }
+  /* Trenner der Optionsleiste wie .bar-grp::before (24.09.2026). */
+  .sep { width: 2px; height: 16px; transform: scaleX(.5); transform-origin: left center; background: #aeb8cc; }
   .btn-clear { display: inline-flex; align-items: center; gap: 6px; background: var(--red); border: 1.5px solid var(--red); color: var(--white); padding: 5px 12px; border-radius: var(--radius-md); font-size: 12px; font-weight: 600; cursor: pointer; transition: all .15s; }
   .btn-clear:hover { background: #9c2e22; border-color: #9c2e22; }
   .btn-data:active, .btn-add:active, .btn-clear:active { transform: translateY(1px); }
