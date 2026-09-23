@@ -31,7 +31,9 @@
   --sm-bg:      #f4f6fa;
   --radius-sm:  4px;
   --radius-md:  6px;
-  --radius-lg:  10px;
+  /* 8 px wie PreisWerk, MediaSheet und Datenpflege; bis zum 23.09.2026 stand hier 10 px.
+     Die 10 px der Fenster (.dlg-box, Baustein fenster.css) entsprechen dort --radius-xl. */
+  --radius-lg:  8px;
   --shadow-sm:  0 1px 3px rgba(0,40,90,.08);
   --shadow-md:  0 2px 8px rgba(0,40,90,.10);
   /* Ebenen-Skala: klebende Matrix-Zellen unten, Klappmenüs oben.
@@ -648,7 +650,7 @@ button, input, select, textarea { font-family: inherit; }
    Einklappen ab (bei eingeklappter letzter Rubrik deren Kopfzeile) - deshalb nicht
    :last-child, sondern: sichtbar, und keine sichtbare Zeile folgt mehr. */
 .mx-karte .mx tbody tr:not(.hidden):not(:has(~ tr:not(.hidden))) > * { border-bottom:none; }
-/* Die Zelle unten rechts folgt der Kartenrundung (10 px abzueglich 1 px Rahmen).
+/* Die Zelle unten rechts folgt der Kartenrundung (--radius-lg abzueglich 1 px Rahmen).
    Sonst schnitt die Karte den orangen Hover-Ring dort eckig ab. */
 .mx-karte .mx tbody tr:not(.hidden):not(:has(~ tr:not(.hidden))) > :last-child { border-bottom-right-radius:calc(var(--radius-lg) - 1px); }
 /* Das Rollfeld beginnt je nach Browser-Zoom auf einem Bruchteil eines Geraetepixels.
