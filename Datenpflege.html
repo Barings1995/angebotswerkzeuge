@@ -370,6 +370,20 @@ button, input, select, textarea { font-family: inherit; }
      sonst weggerollt, gerade wenn ein zwanzigster hinzukommen soll. */
   .titel-fuss { border-top: 1px solid var(--border); padding: 9px 12px; background: var(--surface); }
   .titel-fuss .btn { width: 100%; justify-content: center; }
+  /* Kopf der Titelliste: links die Zahl der Titel, rechts „Alle zuklappen“ bzw.
+     „Alle aufklappen“. Steht wie der Fuss ausserhalb der rollenden Liste, damit
+     er nicht wegrollt. Bewusst ohne neues Element: die Flaeche ist das Grau der
+     Fachbereichsbaender, die Zahl steht in der Schrift von „Jahrgang 2026 ·
+     49 Formate“ (.inhalt-kopf .neben), die Aktion ist dieselbe leise Textaktion
+     wie „Entfernen“ im Kopf einer Kategorie (.kat-tat). Eine Ueberschrift
+     „Titel“ und ein kleiner gerahmter Knopf wie in OpenSlots standen zur Wahl
+     und blieben weg - beides gibt es in der Datenpflege sonst nirgends.
+     Beim Ueberfahren dunkelt die Aktion wie die Baender (5 % Marineblau) statt
+     nach --surface-hover aufzuhellen: auf grauem Grund saehe das wie ein Loch
+     aus. Die Linie unten ersetzt die obere des ersten Bandes. (23.09.2026) */
+  .titel-kopf { display: flex; align-items: center; justify-content: space-between; gap: 8px;
+    padding: 4px 8px 4px 14px; background: var(--surface); border-bottom: 1px solid var(--border); }
+  .titel-kopf .anzahl { font-size: 12px; color: var(--grey-600); }
   /* Derselbe feste Fuss unter der Formattafel. Der Knopf steht hier links und
      nicht ueber die ganze Breite: die Tafel ist mehr als dreimal so breit wie
      die Titelliste. Ohne Knopf — bei der Suche und ohne gewaehlten Titel —
@@ -506,10 +520,11 @@ button, input, select, textarea { font-family: inherit; }
   .kat-kopf .kat-name:hover { border-color: var(--border); background: var(--white); }
   .kat-kopf .kat-name:focus { outline: none; border-color: var(--navy); background: var(--white); box-shadow: 0 0 0 2px rgba(0,40,90,.08); }
   .kat-kopf .kat-zahl { flex: none; font-size: 10.5px; color: var(--grey-600); letter-spacing: .1em; }
-  .kat-kopf .kat-tat { flex: none; font-family: var(--font-body); font-size: 10.5px; font-weight: 700; text-transform: uppercase; letter-spacing: .06em; color: var(--grey-500);
+  .kat-kopf .kat-tat, .titel-kopf .kat-tat { flex: none; font-family: var(--font-body); font-size: 10.5px; font-weight: 700; text-transform: uppercase; letter-spacing: .06em; color: var(--grey-500);
     background: none; border: none; cursor: pointer; padding: 2px 6px; border-radius: var(--radius-sm); }
   .kat-kopf .kat-tat:hover { color: var(--navy); background: var(--surface-hover); }
-  .kat-kopf .kat-tat:active { transform: translateY(1px); }
+  .titel-kopf .kat-tat:hover { color: var(--navy); background: rgba(0, 40, 90, .05); }
+  .kat-kopf .kat-tat:active, .titel-kopf .kat-tat:active { transform: translateY(1px); }
   .kat-kopf .kat-weg:hover { color: var(--red); background: var(--red-bg); }
   /* Die Pfeile stehen dicht beieinander wie in den Formatzeilen - der Abstand
      der Kopfzeile (gap) gilt zwischen den Gruppen, nicht zwischen hoch und runter. */
@@ -898,6 +913,7 @@ button, input, select, textarea { font-family: inherit; }
 
     <div class="arbeit">
       <div class="spalte">
+        <div class="titel-kopf" id="titelKopf"></div>
         <div class="titelliste" id="titelListe"></div>
         <div class="titel-fuss"><button class="btn" onclick="titelAnlegenOeffnen()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>Titel anlegen …</button></div>
       </div>
@@ -2122,6 +2138,33 @@ function fachKlappen(i) {
   if (fachZu.has(fach)) fachZu.delete(fach); else fachZu.add(fach);
   const band = document.querySelectorAll('#titelListe .fach-kopf')[i];
   if (band) fachBandAuffrischen(band, fach); else titellisteZeichnen();
+  titelKopfZeichnen();
+}
+
+/* Kopf der Titelliste: Zahl der Titel und „Alle zuklappen“ / „Alle aufklappen“.
+   Die Beschriftung folgt der Regel von „Alle Platzierungen ausklappen“ in
+   OpenSlots: ist irgendein Band zu, klappt der Knopf alle auf, sonst alle zu.
+   Ohne Fachbereiche bleibt nur die Zahl stehen. (23.09.2026) */
+function titelKopfZeichnen() {
+  const kopf = document.getElementById('titelKopf');
+  if (!kopf) return;
+  const einerZu = fachNamen.some(f => fachZu.has(f));
+  kopf.innerHTML = '<span class="anzahl">' + titelSortiert().length + ' Titel</span>' +
+    (fachNamen.length
+      ? '<button class="kat-tat" onclick="alleFachKlappen()" title="' +
+        (einerZu ? 'Alle Fachbereiche aufklappen' : 'Alle Fachbereiche zuklappen') + '">' +
+        (einerZu ? 'Alle aufklappen' : 'Alle zuklappen') + '</button>'
+      : '');
+}
+
+/* Alle Baender auf einmal. Umgelegt wird wie bei einem einzelnen Band, damit
+   die Dreiecke sich drehen, statt gedreht neu zu entstehen. */
+function alleFachKlappen() {
+  const aufklappen = fachNamen.some(f => fachZu.has(f));
+  fachZu = aufklappen ? new Set() : new Set(fachNamen);
+  const baender = document.querySelectorAll('#titelListe .fach-kopf');
+  fachNamen.forEach((fach, i) => { if (baender[i]) fachBandAuffrischen(baender[i], fach); });
+  titelKopfZeichnen();
 }
 
 /* Band und seine Zeilen auf den Klappzustand bringen: Dreieck drehen, den Stand
@@ -2205,6 +2248,7 @@ function titellisteZeichnen() {
   });
   liste.innerHTML = html || '<div class="fach-kopf">Keine Titel in diesem Jahrgang</div>';
   liste.scrollTop = merkeRollen;
+  titelKopfZeichnen();
 }
 
 function inhaltZeichnen() {
