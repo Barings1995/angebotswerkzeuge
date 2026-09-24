@@ -1432,7 +1432,7 @@ function preisLegende(L, zeigeRabatt, zeigeAE, zeigeTermin, einspaltig){
   if(zeigeTermin){
     const du = L.preise.some(p => p.terminart === 'DU'), eh = L.preise.some(p => p.terminart === 'EH');
     teile.push('<b>Produktionstermin</b> – ' + [
-      du ? '<b>DU-Schluss</b>: letzter Termin für die Druckunterlagen.' : '',
+      du ? '<b>DU-Schluss</b>: letzter Termin für die Übermittlung der Druckunterlagen.' : '',
       eh ? '<b>Anlieferschluss</b>: letzter Termin für die Anlieferung von Ein- und Durchheftern sowie Beilagen.' : ''
     ].filter(Boolean).join(' '));
   }else if(L.hatTerminart){
