@@ -1163,7 +1163,14 @@ function render() {
   const { list: sumList, rabatt: sumRabatt, after: sumAfter, ae: sumAE, net: sumNet } = paket.summe;
   let rows = '';
 
-  const spalten = useAE ? 9 : 8;   // Titel, Format, Anzahl, Listenpreis, Rabatt, nach Rabatt, [AE], Netto, Entfernen
+  /* s/w-Preis und 4c-Zuschlag stehen getrennt vor dem Listenpreis, sobald eine
+     4c-Position im Paket liegt (24.09.2026) - wie die Spalte AE nur bei Bedarf.
+     Daran ist auch abzulesen, dass der Staffelrabatt nur auf den s/w-Preis geht. */
+  const zeige4c = items.some(it => it.use4c && it.s4c > 0);
+  let sumSw = 0, sum4c = 0;
+
+  // Titel, Format, Anzahl, [s/w-Preis, 4c-Zuschlag], Listenpreis, Rabatt, nach Rabatt, [AE], Netto, Entfernen
+  const spalten = 8 + (useAE ? 1 : 0) + (zeige4c ? 2 : 0);
 
   gruppen.forEach(g => {
     if (mehrere) {
@@ -1186,12 +1193,22 @@ function render() {
       const aeDisp = !useAE ? ''
         : it.ae === false ? `<td class="r" style="color:var(--grey-500);">–</td>`
         : `<td class="r orange">–${euro(aeEuro)}</td>`;
+      let swDisp = '';
+      if (zeige4c) {
+        const sw = it.base * it.count;
+        const z4 = it.use4c ? (it.s4c || 0) * it.count : 0;
+        sumSw += sw; sum4c += z4;
+        swDisp = `<td class="r">${euro(sw)}</td>` + (z4 > 0
+          ? `<td class="r">${euro(z4)}</td>`
+          : `<td class="r" style="color:var(--grey-500);">–</td>`);
+      }
 
       rows += `<tr>
         <td class="journal">${it.journal}</td>
         <td class="format-cell">${it.fn}${colorTag}${nrTag}</td>
         <td><input class="count-inp" type="number" min="1" max="99" value="${it.count}"
           onchange="updateAnz(${it.id},this.value)"></td>
+        ${swDisp}
         <td class="r">${euro(list)}</td>
         ${rabDisp}
         <td class="r">${euro(after)}</td>
@@ -1208,13 +1225,15 @@ function render() {
     ? `<td class="r" style="color:${farbe};">–${euro(betrag)}</td>`
     : '<td class="r" style="color:var(--grey-500);">–</td>';
   const aeSub    = useAE ? abzug(sumAE, 'var(--orange-dark)') : '';
+  const swHeader = zeige4c ? '<th class="r">s/w-Preis</th><th class="r">4c-Zuschlag</th>' : '';
+  const swSub    = zeige4c ? `<td class="r">${euro(sumSw)}</td><td class="r">${euro(sum4c)}</td>` : '';
 
   document.getElementById('basketContent').innerHTML = `
     <div class="tbl-wrap">
       <table>
         <thead>
           <tr>
-            <th>Titel</th><th>Format</th><th>Anzahl</th>
+            <th>Titel</th><th>Format</th><th>Anzahl</th>${swHeader}
             <th class="r">Listenpreis</th><th class="r">Staffelrabatt</th>
             <th class="r">Nach Rabatt</th>${aeHeader}
             <th class="r">Netto gesamt</th><th></th>
@@ -1224,6 +1243,7 @@ function render() {
         <tfoot>
           <tr class="sub-row">
             <td colspan="3">Zwischensumme</td>
+            ${swSub}
             <td class="r">${euro(sumList)}</td>
             ${abzug(sumRabatt, 'var(--blue)')}
             <td class="r">${euro(sumAfter)}</td>
@@ -1232,7 +1252,7 @@ function render() {
             <td></td>
           </tr>
           <tr class="total-row">
-            <td class="total-label" colspan="${useAE ? 7 : 6}">Gesamtpaket netto (zzgl. MwSt.)</td>
+            <td class="total-label" colspan="${spalten - 2}">Gesamtpaket netto (zzgl. MwSt.)</td>
             <td class="total-num">${euro(sumNet)}</td>
             <td></td>
           </tr>
