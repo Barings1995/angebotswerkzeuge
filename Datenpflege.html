@@ -502,25 +502,6 @@ button, input, select, textarea { font-family: inherit; }
   .feld label { font-size: 10.5px; font-weight: 700; color: var(--navy); text-transform: uppercase; letter-spacing: .4px; }
   .feld input, .feld select { padding: 5px 8px; border: 1px solid var(--border); border-radius: var(--radius-sm); font-size: 13px; font-family: var(--font-body); color: var(--text); background: var(--white); }
   .feld input:focus, .feld select:focus { outline: none; border-color: var(--navy); box-shadow: 0 0 0 2px rgba(0,40,90,.08); }
-  /* „Fachbereich“ ist ein Textfeld mit Vorschlagsliste (datalist): man waehlt einen
-     vorhandenen Fachbereich oder tippt einen neuen. Den Pfeil daran zeichnete bis zum
-     24.09.2026 der Browser - in Chrome ein dicker Keil, und nur beim Ueberfahren oder
-     Anklicken, in Ruhe gar keiner. Jetzt steht immer derselbe feine Haken wie in den
-     Auswahlfeldern der Formattafel: Schriftfarbe, 9 x 5 px, Strich 0,9 - nach Chromes
-     eigenem Haken ausgemessen (zuerst 1,5 wie .hero-jahr, das war sichtbar dicker). Chromes
-     Knopf (::-webkit-calendar-picker-indicator) bleibt unsichtbar stehen und laesst
-     die Maus durch: die Liste geht bei jedem Klick ins Feld auf, mit cursor:pointer
-     blieb links neben dem Haken nur eine Zone mit Hand-Zeiger. display:none geht
-     nicht - Chrome zeigt den Keil beim Ueberfahren dann trotzdem (24.09.2026). Safaris
-     ::-webkit-list-button bleibt unsichtbar stehen. Der Haken steht in Einzelangaben und mit .aend im
-     Waehler: die Aenderungsmarke setzt die Flaeche mit „background:“ und naehme
-     ihn sonst mit. */
-  .feld input[list] { padding-right: 26px; }
-  .feld input[list], .feld.aend input[list] {
-    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 12' fill='none' stroke='%231a2340' stroke-width='.9'%3E%3Cpath d='M2 4.25 6 8.25l4-4'/%3E%3C/svg%3E");
-    background-repeat: no-repeat; background-position: right 8px center; background-size: 12px 12px; }
-  .feld input[list]::-webkit-calendar-picker-indicator { opacity: 0; pointer-events: none; }
-  .feld input[list]::-webkit-list-button { opacity: 0; }
   .feld-titel { flex: 1 1 360px; min-width: 360px; max-width: 620px; }
   .feld-titel input { width: 100%; }
 
