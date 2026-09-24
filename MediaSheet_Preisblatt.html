@@ -534,6 +534,7 @@ td.zahl{text-align:right; font-variant-numeric:tabular-nums; white-space:nowrap}
 td.zahl.stark{font-weight:700; color:var(--navy)}
 td.mitte{text-align:center}
 td.klein{font-size:10px}
+.haken{font-size:11px; color:var(--navy)}
 td.grau{color:var(--grey-600)}
 td.fmt{width:44%}
 .leer{color:var(--grey-500)}
@@ -557,6 +558,20 @@ td.fmt{width:44%}
 
 .legende{margin-top:9px; font-size:10px; color:var(--grey-600); line-height:1.5}
 .legende b{color:var(--text)}
+
+/* Konditionen unter der Preistabelle: Stufen nebeneinander, damit der Abschnitt
+   niedrig bleibt (151 statt 202 px untereinander, gemessen am 24.09.2026). */
+/* Der Abstand ueber der Ueberschrift steht als Polster am Abschnitt, nicht als
+   Rand an der Ueberschrift: ein Rand faellt aus dem Abschnitt heraus und fehlte in
+   der Umbruchmessung (siehe .koerper). Auf einem eigenen Blatt entfaellt er wie
+   bei jedem ersten Blattteil. */
+.kond-block{padding-top:16px}
+.kond-block > h2.abschnitt{margin-top:0}
+.koerper > .kond-block:first-child{padding-top:0}
+.kond-block .legende{margin-top:8px}
+table.kond th, table.kond td{text-align:right}
+table.kond th:first-child, table.kond td:first-child{text-align:left; width:34%}
+table.kond + table.kond{margin-top:8px}
 .fuss{
   margin-top:auto; padding-top:9px; border-top:1px solid var(--border);
   display:flex; justify-content:space-between; align-items:flex-end; gap:14px;
@@ -783,9 +798,10 @@ td.fmt{width:44%}
       </button>
       <div class="fach-liste" id="fachListe" hidden></div>
     </span>
-    <label id="sRabattFeld"><input type="checkbox" id="sRabatt" checked> Rabatt-Spalte</label>
-    <label id="sAEFeld"><input type="checkbox" id="sAE" checked> AE-Spalte</label>
-    <label id="sTerminFeld"><input type="checkbox" id="sTermin" checked> Termin-Spalte</label>
+    <label id="sRabattFeld"><input type="checkbox" id="sRabatt" checked> Spalte „Rabattfähig“</label>
+    <label id="sAEFeld"><input type="checkbox" id="sAE" checked> Spalte „AE-fähig“</label>
+    <label id="sTerminFeld"><input type="checkbox" id="sTermin" checked> Spalte „Produktionstermin“</label>
+    <label id="sKondFeld"><input type="checkbox" id="sKond" checked> Konditionen</label>
   </div>
   <div class="o-grp" id="gTermin"><div class="o-kopf">Terminteil</div>
     <label id="sThemenFeld"><input type="checkbox" id="sThemen" checked> Themenschwerpunkte</label>
@@ -829,6 +845,40 @@ const DB_FELDER =
 let BESTAND = {};        // { jahr: { titel: {auflage, fach, preise:[], termine:[], stand} } }
 let HERKUNFT = '';       // woher die Zahlen stammen — steht in der Statuszeile („geladen: …“)
 let AUSWAHL = null;      // abgewaehlte Formate des offenen Blattes (Set), sonst null
+/* Rabattstaffeln je Jahrgang, wie PreisWerk sie rechnet:
+   { jahr: { standard:{mal:[[ab,prozent]], menge:[…]}, fach:{ Name:{mal,menge} } } }.
+   Ein Jahrgang ohne Staffeln fehlt hier; sein Blatt hat dann keine Konditionen. */
+let STAFFELN = {};
+
+/* Zeilen { jahr, fach, art, ab, prozent } aus Datenbank oder Blatt „Staffeln“.
+   Ohne Fachbereich ist die Zeile der Standard des Jahrgangs, mit Fachbereich eine
+   Abweichung fuer diese Fachgruppe (dieselbe Regel wie in PreisWerk). */
+function staffelnAusZeilen(zeilen){
+  const A = {};
+  (zeilen || []).forEach(z => {
+    const jahr = zelle(z.jahr), a = zelle(z.art);
+    const art = /^mal(staffel)?$/i.test(a) ? 'mal' : /^menge(nstaffel)?$/i.test(a) ? 'menge' : '';
+    const ab = Number(z.ab), pct = z.prozent == null || z.prozent === '' ? NaN : Number(z.prozent);
+    if(!jahr || !art || !(ab > 0) || !isFinite(pct)) return;
+    if(!A[jahr]) A[jahr] = { standard:{mal:[], menge:[]}, fach:{} };
+    const f = zelle(z.fach);
+    const ziel = f ? (A[jahr].fach[f] = A[jahr].fach[f] || {mal:[], menge:[]}) : A[jahr].standard;
+    ziel[art].push([ab, pct]);
+  });
+  Object.values(A).forEach(j => [j.standard, ...Object.values(j.fach)].forEach(s => {
+    s.mal.sort((a, b) => a[0] - b[0]); s.menge.sort((a, b) => a[0] - b[0]);
+  }));
+  return A;
+}
+
+/* Die Staffel, die fuer einen Titel gilt: die seiner Fachgruppe, sonst der
+   Standard des Jahrgangs. null, wenn der Jahrgang keine Staffeln kennt. */
+function staffelFuer(jahr, fach){
+  const j = STAFFELN[jahr];
+  if(!j) return null;
+  const s = j.fach[fach] || j.standard;
+  return (s.mal.length || s.menge.length) ? s : null;
+}
 
 /* ══ BAUSTEIN datenbank.js ══ Nicht hier ändern: gepflegt in Bausteine/datenbank.js, eingesetzt mit „node Bausteine/einsetzen.mjs". */
 /* ── DATENBANK (nur lesen) ────────────────────────────────────────────────────
@@ -857,13 +907,19 @@ async function dbHolen(pfad) {
 async function ausDatenbank(){
   if(!dbErreichbar()) return false;
   try{
-    const titel = await dbHolen(
-      'titel?select=' + encodeURIComponent(DB_FELDER) +
-      '&order=jahr.asc,reihenfolge.asc&preis.order=reihenfolge.asc' +
-      '&termin.order=reihenfolge.asc&limit=500');
+    /* Fehlen die Staffeln, bleibt das Blatt ohne Konditionen - kein Grund,
+       auf den Notweg zu gehen. */
+    const [titel, staffel] = await Promise.all([
+      dbHolen(
+        'titel?select=' + encodeURIComponent(DB_FELDER) +
+        '&order=jahr.asc,reihenfolge.asc&preis.order=reihenfolge.asc' +
+        '&termin.order=reihenfolge.asc&limit=500'),
+      dbHolen('staffel?select=jahr,fachbereich,art,ab,prozent&limit=500').catch(() => [])
+    ]);
     const B = datenbankZuBestand(titel);
     if(!B || !Object.keys(B).length) throw new Error('Keine Jahrgänge in der Datenbank.');
     BESTAND = B; HERKUNFT = 'Preisliste';
+    STAFFELN = staffelnAusZeilen(staffel.map(z => ({ ...z, fach: z.fachbereich })));
     kopieSichern();
     return true;
   }catch(e){
@@ -880,7 +936,8 @@ async function ausDatenbank(){
 const KOPIE_SCHLUESSEL = 'mediaSheetPreisliste';
 
 function kopieSichern(){
-  try{ localStorage.setItem(KOPIE_SCHLUESSEL, JSON.stringify(BESTAND)); }catch(e){}
+  try{ localStorage.setItem(KOPIE_SCHLUESSEL, JSON.stringify(BESTAND));
+       localStorage.setItem(KOPIE_SCHLUESSEL + 'Staffeln', JSON.stringify(STAFFELN)); }catch(e){}
 }
 
 function kopieLaden(){
@@ -888,6 +945,7 @@ function kopieLaden(){
     const B = JSON.parse(localStorage.getItem(KOPIE_SCHLUESSEL) || 'null');
     if(B && typeof B === 'object' && Object.keys(B).length){
       BESTAND = B; HERKUNFT = 'Browser-Speicher';
+      STAFFELN = JSON.parse(localStorage.getItem(KOPIE_SCHLUESSEL + 'Staffeln') || '{}') || {};
       return true;
     }
   }catch(e){}
@@ -979,6 +1037,7 @@ async function dateiGewaehlt(ev){
     if(!B || !Object.keys(B).length) throw new Error('Die Datei enthält keine Jahrgänge im Blatt „Preise“.');
     standAusMappe(mappe, B);
     BESTAND = B; HERKUNFT = datei.name;
+    STAFFELN = staffelnAusMappe(mappe);
     auswahlAufbauen();
     wechseln();
   }catch(e){
@@ -1006,6 +1065,7 @@ async function ausMappe(){
     if(!B || !Object.keys(B).length) throw new Error('Keine Jahrgänge in der Datei.');
     standAusMappe(mappe, B);
     BESTAND = B; HERKUNFT = 'Angebotsdaten.xlsx';
+    STAFFELN = staffelnAusMappe(mappe);
     return true;
   }catch(e){
     console.warn('Preisliste nicht von der Adresse geholt:', e);
@@ -1078,6 +1138,20 @@ function zahlLesen(w){
   if(w == null || w === '') return null;
   const n = Number(w);
   return isNaN(n) ? null : n;
+}
+
+/* Blatt „Staffeln“: Jahrgang · Fachbereich · Art · ab · Prozent, wie in PreisWerk.
+   Das Blatt ist freiwillig; fehlt es, bleiben die Blaetter ohne Konditionen. */
+function staffelnAusMappe(mappe){
+  const bl = mappe.getWorksheet('Staffeln');
+  if(!bl) return {};
+  const zeilen = [];
+  bl.eachRow((zeile, nr) => {
+    if(nr === 1) return;
+    const w = i => zeile.getCell(i).value;
+    zeilen.push({ jahr:w(1), fach:w(2), art:w(3), ab:zahlLesen(w(4)), prozent:zahlLesen(w(5)) });
+  });
+  return staffelnAusZeilen(zeilen);
 }
 
 function mappeZuBestand(mappe){
@@ -1325,11 +1399,16 @@ function preisKopf(zeigeRabatt, zeigeAE, zeigeTermin, einspaltig){
     h += '<th class="zahl">s/w-Preis €</th><th class="zahl">4c-Zuschlag €</th>' +
          '<th class="zahl">4c-Preis €</th>';
   }
-  if(zeigeTermin) h += '<th class="mitte">Termin</th>';
-  if(zeigeRabatt) h += '<th class="mitte">Rabatt</th>';
-  if(zeigeAE) h += '<th class="mitte">AE</th>';
+  if(zeigeTermin) h += '<th class="mitte">Produktionstermin</th>';
+  if(zeigeRabatt) h += '<th class="mitte">Rabattfähig</th>';
+  if(zeigeAE) h += '<th class="mitte">AE-fähig</th>';
   return h + '</tr></thead>';
 }
+
+/* Ausgeschrieben statt DU/EH, damit die Zelle ohne Legende verstaendlich ist;
+   ein Haken statt R/AE, weil die Ueberschrift schon sagt, wofuer er steht. */
+const TERMIN_WORT = {DU:'DU-Schluss', EH:'Anlieferschluss'};
+const HAKEN = '<span class="haken">✓</span>';
 
 function preisZeile(p, zeigeRabatt, zeigeAE, zeigeTermin, einspaltig){
   let h = '<tr><td class="fmt">' + esc(p.format) + '</td>';
@@ -1342,25 +1421,28 @@ function preisZeile(p, zeigeRabatt, zeigeAE, zeigeTermin, einspaltig){
          '<td class="zahl">' + (p.zuschlag ? geld(p.zuschlag) : '') + '</td>' +
          '<td class="zahl stark">' + vier + '</td>';
   }
-  if(zeigeTermin) h += '<td class="mitte klein">' + esc(p.terminart || '') + '</td>';
-  if(zeigeRabatt) h += '<td class="mitte klein grau">' + (p.rabatt ? 'R' : '') + '</td>';
-  if(zeigeAE) h += '<td class="mitte klein grau">' + (p.ae ? 'AE' : '') + '</td>';
+  if(zeigeTermin) h += '<td class="mitte klein">' + esc(TERMIN_WORT[p.terminart] || p.terminart || '') + '</td>';
+  if(zeigeRabatt) h += '<td class="mitte klein">' + (p.rabatt ? HAKEN : '') + '</td>';
+  if(zeigeAE) h += '<td class="mitte klein">' + (p.ae ? HAKEN : '') + '</td>';
   return h + '</tr>';
 }
 
 function preisLegende(L, zeigeRabatt, zeigeAE, zeigeTermin, einspaltig){
   const teile = [];
   if(zeigeTermin){
-    teile.push('<b>Termin</b> – maßgeblicher Produktionstermin je Format: ' +
-               '<b>DU</b> Druckunterlagenschluss, <b>EH</b> Anlieferung der Einhefter und Beilagen.');
+    const du = L.preise.some(p => p.terminart === 'DU'), eh = L.preise.some(p => p.terminart === 'EH');
+    teile.push('<b>Produktionstermin</b> – ' + [
+      du ? '<b>DU-Schluss</b>: letzter Termin für die Druckunterlagen.' : '',
+      eh ? '<b>Anlieferschluss</b>: letzter Termin für die Anlieferung von Ein- und Durchheftern sowie Beilagen.' : ''
+    ].filter(Boolean).join(' '));
   }else if(L.hatTerminart){
     teile.push('Der maßgebliche Produktionstermin wird je Format mitgeteilt.');
   }
-  if(zeigeRabatt) teile.push('<b>Rabatt</b> – <b>R</b> kennzeichnet rabattfähige Formate.');
   /* Eigene AE-Spalte neben der Rabatt-Spalte, nicht mit ihr zusammengelegt.
      Ohne Spalte bleibt der Pauschalsatz, aber nur, wenn er fuer den Titel stimmt. */
-  if(zeigeAE) teile.push('<b>AE</b> kennzeichnet AE-provisionsfähige Formate.');
-  else if(L.alleAE) teile.push('Alle Formate sind AE-provisionsfähig.');
+  if(zeigeRabatt || zeigeAE) teile.push('<b>✓</b>&nbsp;kennzeichnet ' +
+    (zeigeRabatt && zeigeAE ? 'rabatt- bzw. AE-provisionsfähige' : zeigeRabatt ? 'rabattfähige' : 'AE-provisionsfähige') + ' Formate.');
+  if(!zeigeAE && L.alleAE) teile.push('Alle Formate sind AE-provisionsfähig.');
   teile.push('Alle Preise verstehen sich zuzüglich der gesetzlichen Umsatzsteuer.');
   return '<div class="legende">' + teile.join(' ') + '</div>';
 }
@@ -1455,6 +1537,56 @@ function preisseitenBauen(L){
     }
   });
   legendeSetzen(blatt);
+
+  /* Konditionen einmal, hinter der Legende der letzten Preisseite. Reicht der
+     Platz nicht, kommen sie auf ein eigenes Blatt; wer das nicht will, schaltet
+     sie fuer diesen Titel ab. */
+  const kond = document.getElementById('sKond').checked && L.hatRabatt ? konditionenHtml(L, zeigeRabatt) : '';
+  if(kond){
+    koerper(blatt).insertAdjacentHTML('beforeend', kond);
+    if(laeuftUeber(blatt)){
+      koerper(blatt).querySelector('.kond-block').remove();
+      blatt = neuesBlatt('Anzeigenpreisliste · Fortsetzung', unter);
+      koerper(blatt).insertAdjacentHTML('beforeend', kond);
+    }
+  }
+}
+
+/* ── Konditionen ────────────────────────────────────────────────────────────
+   Die Staffeln kommen aus der Preisliste, der AE-Satz ist derselbe feste Wert
+   wie in PreisWerk (dort zeileRechnen) - aendert er sich, an beiden Stellen. */
+const AE_SATZ = 10;
+
+function konditionenHtml(L, zeigeRabatt){
+  const s = staffelFuer(GEWAEHLT.jahr, L.fach);
+  if(!s) return '';
+  const pz = p => String(p).replace('.', ',') + ' %';
+  const zeile = (name, stufen) => '<tr><td>' + name + '</td>' +
+    stufen.map(([, p]) => '<td class="zahl">' + pz(p) + '</td>').join('') + '</tr>';
+  const kopf = (stufen) => '<thead><tr><th>Staffelrabatt</th>' +
+    stufen.map(([ab]) => '<th>ab ' + zahl(ab) + '</th>').join('') + '</tr></thead>';
+  const MAL = 'Malstaffel (Schaltungen)', MENGE = 'Mengenstaffel (Seiten)';
+  /* Gleiche Schwellen: eine Tabelle mit zwei Zeilen. Sonst je Staffel eine
+     eigene, weil die Spaltenkoepfe nicht mehr fuer beide stimmen. */
+  const gleich = s.mal.length && s.menge.length &&
+                 s.mal.map(x => x[0]).join() === s.menge.map(x => x[0]).join();
+  let tab;
+  if(gleich){
+    tab = '<table class="kond">' + kopf(s.mal) + '<tbody>' + zeile(MAL, s.mal) + zeile(MENGE, s.menge) + '</tbody></table>';
+  }else{
+    tab = [[MAL, s.mal], [MENGE, s.menge]].filter(([, st]) => st.length).map(([n, st]) =>
+      '<table class="kond">' + kopf(st) + '<tbody>' + zeile(n, st) + '</tbody></table>').join('');
+  }
+  const beide = s.mal.length && s.menge.length;
+  const text = [
+    'Die Staffeln gelten für rabattfähige Formate' + (zeigeRabatt ? ' (<b>✓</b> in der Spalte „Rabattfähig“)' : '') + '.',
+    'Gezählt wird über alle Titel des Fachbereichs ' + esc(L.fach) + ' im Kalenderjahr ' + esc(GEWAEHLT.jahr) +
+      (beide ? '; Mal- und Mengenstaffel werden nicht addiert, es gilt der höhere Satz.' : '.'),
+    s.menge.length ? 'Seiten sind Seitenäquivalente: eine 1/2 Seite zählt als 0,5.' : '',
+    L.hatAE ? '<b>AE-Provision</b> ' + AE_SATZ + ' % auf AE-fähige Formate, berechnet auf den Betrag nach Rabatt.' : ''
+  ].filter(Boolean).join(' ');
+  return '<div class="kond-block"><h2 class="abschnitt">Konditionen</h2>' +
+         tab + '<div class="legende">' + text + '</div></div>';
 }
 
 /* ── Terminseiten ───────────────────────────────────────────────────────── */
@@ -1511,7 +1643,7 @@ function terminseitenBauen(L){
   if(L.hatET) kuerzel.push('<b>ET</b> Erscheinungstermin');
   if(L.hatAS) kuerzel.push('<b>AS</b> Anzeigenschluss');
   if(L.hatDU) kuerzel.push('<b>DU</b> Druckunterlagenschluss');
-  if(L.hatEH) kuerzel.push('<b>EH</b> Anlieferung Einhefter und Beilagen');
+  if(L.hatEH) kuerzel.push('<b>EH</b> Anlieferschluss Ein- und Durchhefter sowie Beilagen');
   const legende =
     '<div class="legende">' +
     (kuerzel.length ? kuerzel.join(' · ') + '. Termine ohne Jahresangabe gelten für ' +
@@ -1875,6 +2007,7 @@ function leisteNachfuehren(){
   zeigen('sRabattFeld',    !!(preisteil && L.hatRabatt));
   zeigen('sAEFeld',        !!(preisteil && L.hatAE));
   zeigen('sTerminFeld',    !!(preisteil && L.hatTerminart));
+  zeigen('sKondFeld',      !!(preisteil && L.hatRabatt && staffelFuer(GEWAEHLT.jahr, L.fach)));
   zeigen('sThemenFeld',    !!(terminteil && L.hatThemen));
   zeigen('sKongFeld',      !!(terminteil && L.hatKongresse));
   zeigen('sVerstrichenFeld', !!(terminteil && L.hatVerstrichene));
@@ -2023,6 +2156,9 @@ function titelSucheLeeren(){
 
 function wechseln(){
   AUSWAHL = null;                 /* Auswahl ueberdauert den Wechsel nicht */
+  /* Die Konditionen werden je Titel abgeschaltet, etwa wenn sie ein Extrablatt
+     kosten - beim naechsten Titel stehen sie wieder da. Deshalb nicht gemerkt. */
+  document.getElementById('sKond').checked = true;
   AKTUELL = lage(GEWAEHLT.jahr, GEWAEHLT.titel);
   leisteNachfuehren();
   fachAufbauen();
@@ -2109,7 +2245,7 @@ async function starten(){
   document.querySelectorAll('.umfang button').forEach(b => {
     b.addEventListener('click', () => { if(!b.disabled) umfangSetzen(b.id); });
   });
-  ['sRabatt','sAE','sTermin','sThemen','sKong','sVerstrichen','sVorl'].forEach(id => {
+  ['sRabatt','sAE','sTermin','sKond','sThemen','sKong','sVerstrichen','sVorl'].forEach(id => {
     document.getElementById(id).addEventListener('change', () => {
       einstellungenMerken(id);
       zeichnen();
@@ -2169,7 +2305,7 @@ async function starten(){
      es bei der Kopie oder beim Weg ueber „Daten laden". */
   const ausKopie = kopieLaden();
   if(ausKopie){ auswahlAufbauen(); wechseln(); }
-  const vorher = ausKopie ? JSON.stringify(BESTAND) : '';
+  const vorher = ausKopie ? JSON.stringify([BESTAND, STAFFELN]) : '';
   const ok = await ausDatenbank() || await ausMappe();
   if(!Object.keys(BESTAND).length && !ok){
     document.getElementById('status').textContent = location.protocol === 'file:'
@@ -2180,7 +2316,7 @@ async function starten(){
   if(!ok) return;
   /* Unveraenderte Zahlen: nur die Statuszeile nachziehen, damit eine schon
      getroffene Formatauswahl nicht verloren geht. */
-  if(ausKopie && JSON.stringify(BESTAND) === vorher){
+  if(ausKopie && JSON.stringify([BESTAND, STAFFELN]) === vorher){
     AKTUELL = lage(GEWAEHLT.jahr, GEWAEHLT.titel);
     leisteNachfuehren();
     return;
