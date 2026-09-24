@@ -627,6 +627,35 @@ td.fmt{width:44%}
 @media print { .dlg-back { display: none !important; } }
 /* ══ ENDE BAUSTEIN fenster.css ══ */
 
+/* ── Mehrere Titel ────────────────────────────────────────────────────────
+   Fenster zum Sammeldruck (seit 24.09.2026). Kasten, Kopf und Knoepfe kommen
+   aus fenster.css; hier nur die Titelliste. Fachbereiche wie .tl-grp in der
+   Titelleiste, Haken wie in der Karte „Blattinhalt“. */
+.sd-box{max-width:560px}
+.sd-kopfzeile{font-size:12px; color:var(--grey-600); margin:-4px 0 10px}
+.sd-kopfzeile b{color:var(--text); font-weight:600}
+.sd-liste{max-height:min(380px,48vh); overflow-y:auto; border:1px solid var(--border); border-radius:var(--radius-lg); padding:4px 12px 10px}
+.sd-grp{
+  display:flex; align-items:center; gap:9px; margin:10px 0 4px; padding-bottom:4px; border-bottom:1px solid var(--border);
+  font-size:10px; font-weight:700; letter-spacing:.09em; text-transform:uppercase; color:var(--navy); cursor:pointer;
+}
+.sd-grp .sd-zahl{margin-left:auto; font-size:11px; font-weight:600; letter-spacing:0; text-transform:none; color:var(--grey-500)}
+.sd-titel{display:flex; align-items:center; gap:9px; padding:3px 0 3px 2px; font-size:12.5px; color:var(--text); cursor:pointer}
+.sd-titel.aus{color:var(--grey-500); cursor:default}
+.sd-titel .sd-grund{margin-left:auto; font-size:11px; color:var(--grey-500)}
+.sd-liste input{accent-color:var(--navy); width:15px; height:15px; flex:none; margin:0; cursor:pointer}
+.sd-liste input:disabled{cursor:default}
+.sd-fuss{font-size:11.5px; color:var(--grey-600); line-height:1.45; margin-top:10px}
+.sd-box .dlg-btn:disabled{opacity:.5; cursor:not-allowed}
+.sd-box .dlg-btn:disabled:active{transform:none}
+/* In der Vorschau steht vor jedem Titel des Stapels sein Name; im Druck nicht. */
+.sd-trenner{
+  display:flex; align-items:center; gap:10px; width:210mm; margin:0 auto 14px;
+  font-size:11px; font-weight:700; letter-spacing:.08em; text-transform:uppercase; color:var(--navy);
+}
+.sd-trenner::after{content:''; flex:1; border-top:1px solid #aeb8cc}
+@media print{ .sd-trenner{display:none!important} }
+
 /* ── Druck ────────────────────────────────────────────────────────────────
    Nur die Blaetter, je Blatt eine Seite. Die Bedienung verschwindet. */
 @media print{
@@ -708,6 +737,10 @@ td.fmt{width:44%}
   </span>
 
   <span class="bar-grp">
+    <button type="button" class="knopf" id="sammelKnopf" disabled title="Mehrere Titel dieses Jahrgangs in einem PDF">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 2H9a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h9a2 2 0 0 0 2-2V7z"/><path d="M15 2v5h5"/><path d="M3 8v12a2 2 0 0 0 2 2h10"/></svg>
+      Mehrere Titel &hellip;
+    </button>
     <button class="knopf druck" id="druckKnopf" disabled>
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>
       Drucken / PDF
@@ -1570,6 +1603,139 @@ function zeichnen(){
   document.title = GEWAEHLT.titel + ' ' + GEWAEHLT.jahr + ' – ' + zusatz;
 }
 
+/* ── Mehrere Titel in einem PDF (seit 24.09.2026) ─────────────────────────
+   Fuer Agenturen, die einen ganzen Fachbereich auf einmal brauchen. Am Grundsatz
+   „ein Blatt = ein Titel, ein Jahrgang“ aendert das nichts: Die Blaetter der
+   gewaehlten Titel stehen nacheinander, jeder mit eigenem Stand, eigenem
+   Ansprechpartner und eigener Seitenzaehlung. Umfang und Blattinhalt gelten wie
+   eingestellt. Die Formatauswahl nicht — sie gehoert nur zum offenen Blatt (siehe
+   fachAufbauen), im Stapel stehen alle Formate. Nach dem Druckdialog zeigt die
+   Vorschau wieder das offene Blatt. Eigenes Fenster statt Haken in der
+   Titelleiste, damit ein Klick links weiter genau ein Blatt bedeutet. */
+const UMFANG_TEXT = { uBeides:'Preise und Termine', uPreise:'Nur Preise', uTermine:'Nur Termine' };
+
+/* Warum ein Titel unter dem eingestellten Umfang kein Blatt ergibt, sonst ''. */
+function grundOhneBlatt(t){
+  const L = lage(GEWAEHLT.jahr, t);
+  if(!L) return 'keine Daten';
+  const m = umfang(), termine = hatTerminblatt(L);
+  if(m === 'uPreise')  return L.hatPreise ? '' : 'keine Preise';
+  if(m === 'uTermine') return termine ? '' : 'keine Termine';
+  return (L.hatPreise || termine) ? '' : 'keine Daten';
+}
+
+function sammelFenster(){
+  const B = BESTAND[GEWAEHLT.jahr] || {};
+  const eigene = String((B[GEWAEHLT.titel] || {}).fach || '').trim();
+  let h = '';
+  titelGruppen(GEWAEHLT.jahr).forEach((g, gi) => {
+    h += '<label class="sd-grp"><input type="checkbox" data-g="' + gi + '">' +
+         esc(g.f || 'Weitere Titel') + '<span class="sd-zahl"></span></label>';
+    g.titel.forEach(t => {
+      const grund = grundOhneBlatt(t);
+      h += '<label class="sd-titel' + (grund ? ' aus' : '') + '"><input type="checkbox" data-g="' + gi +
+           '" data-t="' + esc(t) + '"' + (grund ? ' disabled' : (g.f === eigene ? ' checked' : '')) + '>' +
+           esc(t) + (grund ? '<span class="sd-grund">' + grund + '</span>' : '') + '</label>';
+    });
+  });
+
+  const back = document.createElement('div');
+  back.className = 'dlg-back';
+  back.innerHTML = '<div class="dlg-box sd-box" role="dialog" aria-modal="true" aria-label="Mehrere Titel drucken">' +
+    '<div class="dlg-hd">Mehrere Titel drucken</div>' +
+    '<div class="sd-kopfzeile">Jahrgang <b>' + esc(GEWAEHLT.jahr) + '</b> · ' + UMFANG_TEXT[umfang()] +
+      ' · Blattinhalt wie eingestellt</div>' +
+    '<div class="sd-liste">' + h + '</div>' +
+    '<div class="sd-fuss">Jeder Titel beginnt auf einer neuen Seite und trägt seinen eigenen Stand, ' +
+      'seinen Ansprechpartner und seine eigene Seitenzählung. Alle Formate stehen auf dem Blatt.</div>' +
+    '<div class="dlg-row"><button type="button" class="dlg-btn sekundaer" id="sdAbbr">Abbrechen</button>' +
+    '<button type="button" class="dlg-btn" id="sdLos"></button></div></div>';
+  document.body.appendChild(back);
+
+  const titelHaken = [...back.querySelectorAll('input[data-t]')];
+  const glieder = gk => titelHaken.filter(x => x.dataset.g === gk.dataset.g && !x.disabled);
+  const nachfuehren = () => {
+    back.querySelectorAll('.sd-grp input').forEach(gk => {
+      const alle = glieder(gk), an = alle.filter(x => x.checked).length;
+      gk.checked = alle.length > 0 && an === alle.length;
+      gk.indeterminate = an > 0 && an < alle.length;
+      gk.disabled = alle.length === 0;
+      gk.parentNode.querySelector('.sd-zahl').textContent = an ? an + ' von ' + alle.length : '';
+    });
+    const n = titelHaken.filter(x => x.checked).length;
+    const los = back.querySelector('#sdLos');
+    los.textContent = n + ' Titel drucken';
+    los.disabled = n === 0;
+  };
+  back.querySelectorAll('.sd-grp input').forEach(gk => gk.addEventListener('change', () => {
+    glieder(gk).forEach(x => { x.checked = gk.checked; });
+    nachfuehren();
+  }));
+  titelHaken.forEach(x => x.addEventListener('change', nachfuehren));
+  nachfuehren();
+
+  /* Die Liste steht beim Oeffnen auf dem Fachbereich des offenen Titels. */
+  const erster = titelHaken.find(x => x.checked);
+  if(erster){
+    let k = erster.closest('label');
+    while(k && !k.classList.contains('sd-grp')) k = k.previousElementSibling;
+    const liste = back.querySelector('.sd-liste');
+    if(k) liste.scrollTop = k.offsetTop - liste.offsetTop - 10;
+  }
+
+  /* Wie hinweis(): Escape und Abbrechen schliessen, ein Klick daneben nicht. */
+  const zu = () => { document.removeEventListener('keydown', escZu, true); back.remove(); };
+  function escZu(e){ if(e.key === 'Escape'){ e.stopPropagation(); zu(); } }
+  document.addEventListener('keydown', escZu, true);
+  back.querySelector('#sdAbbr').onclick = zu;
+  back.querySelector('#sdLos').onclick = () => {
+    const titel = titelHaken.filter(x => x.checked).map(x => x.dataset.t);
+    zu();
+    sammelZeichnen(titel);
+    window.print();
+  };
+  (back.querySelector('#sdLos:not(:disabled)') || back.querySelector('#sdAbbr')).focus();
+}
+
+/* Baut die Blaetter der Titel nacheinander auf die Buehne. GEWAEHLT, AKTUELL und
+   die Formatauswahl werden je Titel umgestellt, weil der Blattaufbau sie liest,
+   und danach auf das offene Blatt zurueckgesetzt. */
+function sammelZeichnen(titel){
+  const buehne = document.getElementById('buehne');
+  const offen = GEWAEHLT.titel, auswahl = AUSWAHL, modus = umfang();
+  buehne.innerHTML = '';
+  AUSWAHL = null;
+  let alle = [];
+  titel.forEach(t => {
+    const L = lage(GEWAEHLT.jahr, t);
+    if(!L) return;
+    GEWAEHLT.titel = t; AKTUELL = L; SEITEN = [];
+    const trenner = document.createElement('div');
+    trenner.className = 'sd-trenner';
+    trenner.textContent = t;
+    buehne.appendChild(trenner);
+    if(modus !== 'uTermine' && L.hatPreise) preisseitenBauen(L);
+    if(modus !== 'uPreise') terminseitenBauen(L);
+    const kopf = t + ' · Jahrgang ' + GEWAEHLT.jahr;
+    SEITEN.forEach((b, i) => {
+      b.querySelector('.seite').textContent = kopf + ' · Seite ' + (i+1) + ' von ' + SEITEN.length;
+    });
+    kontaktSetzen();
+    alle = alle.concat(SEITEN);
+  });
+  SEITEN = alle;
+  GEWAEHLT.titel = offen; AUSWAHL = auswahl; AKTUELL = lage(GEWAEHLT.jahr, offen);
+
+  /* Dateiname: ist ein ganzer Fachbereich gewaehlt, dessen Name, sonst die Zahl
+     der Titel — „Onkologie 2027 – Preise und Termine“, „4 Titel 2027 – Preise“. */
+  const B = BESTAND[GEWAEHLT.jahr] || {};
+  const fb = [...new Set(titel.map(t => String((B[t] || {}).fach || '').trim()))];
+  const g = fb.length === 1 && fb[0] && titelGruppen(GEWAEHLT.jahr).find(x => x.f === fb[0]);
+  const ganz = g && g.titel.filter(t => !grundOhneBlatt(t)).length === titel.length;
+  document.title = (ganz ? fb[0] : titel.length + ' Titel') + ' ' + GEWAEHLT.jahr + ' – ' +
+                   UMFANG_TEXT[modus].replace('Nur ', '');
+}
+
 /* ── Ansprechpartner ──────────────────────────────────────────────────────
    Geschrieben wird im Feld „Ansprechpartner“ der Leiste (seit 15.09.2026, vorher
    unmittelbar im Fuss der ersten Seite). Jede Eingabe steht sofort auf allen
@@ -1734,6 +1900,8 @@ function leisteNachfuehren(){
   document.getElementById('uTermine').disabled = ohneTermine;
   if(ohnePreise && !ohneTermine) umfangSetzen('uTermine', true);
   if(ohneTermine && !ohnePreise) umfangSetzen('uPreise', true);
+  /* Mehrere Titel erst ab zwei Titeln im Jahrgang. */
+  document.getElementById('sammelKnopf').disabled = titelListe(GEWAEHLT.jahr).length < 2;
 
   /* Statuszeile wie in den uebrigen Werkzeugen: Herkunft, Jahrgaenge, Stand.
      Der Stand bleibt der dieses Blattes (siehe juengster()). */
@@ -1948,6 +2116,9 @@ async function starten(){
     });
   });
   document.getElementById('druckKnopf').addEventListener('click', () => window.print());
+  document.getElementById('sammelKnopf').addEventListener('click', sammelFenster);
+  /* Nach dem Sammeldruck (auch abgebrochen) wieder das offene Blatt. */
+  window.addEventListener('afterprint', () => { if(document.querySelector('.sd-trenner')) zeichnen(); });
 
   /* Klappfach: oeffnet und schliesst am Knopf, schliesst beim Klick daneben
      und mit Escape. */
