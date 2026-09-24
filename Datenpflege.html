@@ -1445,7 +1445,7 @@ function staffelAenderungen(jahr) {
    wie beim Speichern (nurFelder). */
 const STAMM_PRUEF  = [['name', 'Titel'], ['auflage', 'Auflage'], ['fachbereich', 'Fachbereich']];
 const PREIS_PRUEF  = [['format', 'Format'], ['preis', 'Preis €'], ['zuschlag_4c', '4c-Zuschlag €'],
-  ['rabattfaehig', 'rabatt'], ['ae_faehig', 'AE'], ['termin_art', 'Termin'], ['seiten_aequivalent', 'Seiten-Äqu.']];
+  ['rabattfaehig', 'Rabattfähig'], ['ae_faehig', 'AE-fähig'], ['termin_art', 'Produktionstermin'], ['seiten_aequivalent', 'Seiten-Äqu.']];
 const TERMIN_PRUEF = [['heft', 'Heft'], ['monat', 'Monat'], ['et', 'ET'], ['anzeigenschluss', 'AS'],
   ['du_schluss', 'DU-Schluss'], ['eh_termin', 'EH-Termin'], ['themen', 'Themenschwerpunkte'], ['kongresse', 'Kongresse']];
 const TRENNER = ' ||| ';
@@ -2333,7 +2333,7 @@ function preiseZeichnen(t, karte) {
       '<button class="kat-tat kat-weg" title="Diese Kategorie mit allen ihren Formaten entfernen" onclick="kategorieEntfernen(' + i + ')">Entfernen</button>' +
       '</div>';
     html += '<table class="preis-tab"><colgroup><col style="width:34%"><col style="width:13%"><col style="width:13%"><col style="width:9%"><col style="width:9%"><col style="width:9%"><col style="width:10%"><col style="width:84px"></colgroup>' +
-      '<tr><th>Format</th><th class="r">Preis €</th><th class="r">4c-Zuschlag €</th><th>rabatt</th><th>AE</th><th>Termin</th><th class="r">Seiten-Äqu.</th><th></th></tr>';
+      '<tr><th>Format</th><th class="r">Preis €</th><th class="r">4c-Zuschlag €</th><th>Rabattfähig</th><th>AE-fähig</th><th title="Produktionstermin">Prod.-Termin</th><th class="r">Seiten-Äqu.</th><th></th></tr>';
     g.zeilen.forEach((p, nr) => {
       /* Jedes geaenderte Feld wird markiert, eine neu angelegte Zeile als Ganzes
          (Hintergrund, Strich am Zeilenanfang, Marke „neu") - nicht jedes ihrer Felder. */
