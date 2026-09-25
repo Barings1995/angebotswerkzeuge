@@ -661,6 +661,21 @@ table.kond + table.kond{margin-top:8px}
 .sd-liste input{accent-color:var(--navy); width:15px; height:15px; flex:none; margin:0; cursor:pointer}
 .sd-liste input:disabled{cursor:default}
 .sd-fuss{font-size:11.5px; color:var(--grey-600); line-height:1.45; margin-top:10px}
+/* Kalenderfenster: die vier Terminarten unter der Titelliste, Haken wie oben. */
+.kd-box{max-width:680px}  /* vier Terminarten in einer Zeile */
+/* Doppelte Klasse, damit die Hakenregel .sd-liste input nicht greift. */
+.sd-liste .kd-kurz{
+  margin-left:auto; width:150px; height:auto; flex:none; padding:1px 7px; cursor:text; font:inherit; font-size:12px; color:var(--text);
+  border:1.5px solid var(--border); border-radius:var(--radius-md); background:var(--white); transition:border-color .12s;
+}
+.sd-liste .kd-kurz:focus{outline:none; border-color:var(--navy); box-shadow:0 0 0 2px rgba(0,40,90,.08)}
+.sd-liste .kd-kurz::placeholder{color:var(--grey-500)}
+.sd-titel:not(:has(input[data-t]:checked)) .kd-kurz{visibility:hidden}
+.kd-box .sd-titel{padding:1px 0 1px 2px; min-height:25px}  /* gleiche Zeilenhoehe mit und ohne Feld */
+.kd-fristen{display:flex; flex-wrap:wrap; gap:6px 16px; margin-top:10px; font-size:12.5px; color:var(--text)}
+.kd-fristen label{display:flex; align-items:center; gap:7px; cursor:pointer}
+.kd-fristen b{font-weight:700; color:var(--navy)}
+.kd-fristen input{accent-color:var(--navy); width:15px; height:15px; flex:none; margin:0; cursor:pointer}
 .sd-box .dlg-btn:disabled{opacity:.5; cursor:not-allowed}
 .sd-box .dlg-btn:disabled:active{transform:none}
 /* In der Vorschau steht vor jedem Titel des Stapels sein Name; im Druck nicht. */
@@ -752,6 +767,10 @@ table.kond + table.kond{margin-top:8px}
   </span>
 
   <span class="bar-grp">
+    <button type="button" class="knopf" id="kalenderKnopf" disabled title="Anstehende Termine als Kalenderdatei f&uuml;r Outlook">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+      Kalender
+    </button>
     <button type="button" class="knopf" id="sammelKnopf" disabled title="Mehrere Titel dieses Jahrgangs in einem PDF">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 2H9a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h9a2 2 0 0 0 2-2V7z"/><path d="M15 2v5h5"/><path d="M3 8v12a2 2 0 0 0 2 2h10"/></svg>
       Mehrere Titel &hellip;
@@ -1735,6 +1754,203 @@ function zeichnen(){
   document.title = GEWAEHLT.titel + ' ' + GEWAEHLT.jahr + ' – ' + zusatz;
 }
 
+/* ── Fristen als Kalenderdatei (seit 25.09.2026) ─────────────────────────
+   Anzeigenschluss, DU-Schluss und Anlieferschluss als .ics-Datei, die Outlook
+   einliest. Der Knopf oeffnet ein Fenster wie „Mehrere Titel …“: Titel des
+   Jahrgangs waehlen (vorgewaehlt der offene), Fristen einzeln abwaehlbar, alles
+   in eine Datei. Je Frist ein ganztaegiger Eintrag, der Kalender bleibt dabei
+   „frei“. Der Erscheinungstermin ist waehlbar, aber nicht vorgewaehlt — fuer
+   ihn muss niemand etwas tun (so bis 25.09.2026 fest; seitdem auf Marcus'
+   Wunsch als vierter Haken). In der Beschreibung steht er immer. Bewusst ohne Erinnerung: die stellt sich jeder selbst ein.
+   Aufgenommen wird nur, was noch ansteht; eine heute ablaufende Frist zaehlt
+   mit. Der Betreff beginnt mit dem Kuerzel, weil Outlook lange Titel in der
+   Monatsansicht abschneidet. Die Kennung je Eintrag bleibt ueber wiederholte
+   Ausgaben gleich, damit ein erneuter Import die Eintraege ersetzt statt sie zu
+   verdoppeln. Unabhaengig von Umfang und Blattinhalt: Die Datei gehoert zum
+   Titel, nicht zum Blatt.
+   Kurzname je Titel (seit 25.09.2026): steht statt des vollen Titels im
+   Betreff und als Kategorie; die Beschreibung nennt weiter den vollen Titel,
+   die Kennung haengt am vollen Titel (ein geaenderter Kurzname ersetzt beim
+   erneuten Einlesen, statt zu verdoppeln). Gemerkt wird er auf diesem Geraet,
+   wie der Ansprechpartner. Die Kategorie ist der Weg zu Farben: Outlook
+   uebernimmt keine Farbangaben aus der Datei, aber Kategorien — jeder Kategorie
+   wird dort einmal eine Farbe zugewiesen. Komma und Semikolon trennen in
+   Outlook Kategorien und fallen deshalb aus dem Kategorienamen heraus. */
+const KURZNAMEN_SCHLUESSEL = 'mediaSheetKurznamen';
+function kurznamenLesen(){
+  try{
+    const o = JSON.parse(localStorage.getItem(KURZNAMEN_SCHLUESSEL) || '{}');
+    return (o && typeof o === 'object' && !Array.isArray(o)) ? o : {};
+  }catch(e){ return {}; }
+}
+function kurznameSchreiben(titel, text){
+  const o = kurznamenLesen();
+  if(String(text).trim()) o[titel] = String(text).trim(); else delete o[titel];
+  try{ localStorage.setItem(KURZNAMEN_SCHLUESSEL, JSON.stringify(o)); }catch(e){}
+}
+
+/* Reihenfolge wie im Terminblatt. Ohne Angabe gelten die drei Fristen. */
+const FRISTEN = [
+  ['et', 'ET', 'Erscheinungstermin'],
+  ['as', 'AS', 'Anzeigenschluss'],
+  ['du', 'DU', 'Druckunterlagenschluss'],
+  ['eh', 'EH', 'Anlieferschluss Ein- und Durchhefter sowie Beilagen']
+];
+
+const FRIST_STANDARD = ['AS', 'DU', 'EH'];
+
+/* arten: Auswahl der Kuerzel ('ET', 'AS', 'DU', 'EH'); ohne Angabe die drei Fristen. */
+function kalenderEintraege(L, jahr, heute, arten){
+  arten = arten || FRIST_STANDARD;
+  const tag0 = new Date(heute.getFullYear(), heute.getMonth(), heute.getDate());
+  const liste = [];
+  (L ? L.termine : []).forEach(a => FRISTEN.forEach(([feld, kurz]) => {
+    if(!arten.includes(kurz)) return;
+    const d = mitJahr(a[feld], jahr);
+    if(d && d >= tag0) liste.push({ a, feld, kurz, d });
+  }));
+  return liste.sort((x, y) => x.d - y.d);
+}
+
+/* posten: [[titel, lage, kurzname], …]; die Eintraege aller Titel stehen nach
+   Datum sortiert in einer Datei. Ohne Kurzname gilt der volle Titel. */
+function kalenderText(posten, jahr, heute, jetzt, arten, name){
+  const zwei = n => String(n).padStart(2, '0');
+  const ical = d => d.getFullYear() + zwei(d.getMonth() + 1) + zwei(d.getDate());
+  const lang = d => zwei(d.getDate()) + '.' + zwei(d.getMonth() + 1) + '.' + d.getFullYear();
+  const utc = d => d.getUTCFullYear() + zwei(d.getUTCMonth() + 1) + zwei(d.getUTCDate()) + 'T' +
+                   zwei(d.getUTCHours()) + zwei(d.getUTCMinutes()) + zwei(d.getUTCSeconds()) + 'Z';
+  const maske = s => String(s).replace(/\\/g, '\\\\').replace(/;/g, '\\;').replace(/,/g, '\\,').replace(/\r?\n/g, '\\n');
+  /* Zeilen ueber 75 Byte werden gefaltet (RFC 5545), ohne ein Zeichen zu teilen. */
+  const falten = z => {
+    const teile = []; let akt = '', bytes = 0;
+    for(const ch of z){
+      const b = new TextEncoder().encode(ch).length;
+      if(bytes + b > (teile.length ? 74 : 75)){ teile.push(akt); akt = ''; bytes = 0; }
+      akt += ch; bytes += b;
+    }
+    teile.push(akt);
+    return teile.join('\r\n ');
+  };
+  const heft = (titel, a) => {
+    const h = String(a.heft || '').trim();
+    return /^\d+([–-]\d+)?$/.test(h) ? titel + ' ' + h + '/' + jahr
+                                     : titel + ' ' + jahr + (h ? ' · ' + h : '');
+  };
+  const kennung = s => String(s).toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+                                .replace(/ß/g, 'ss').replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+  const z = ['BEGIN:VCALENDAR', 'VERSION:2.0', 'PRODID:-//Springer Medizin//MediaSheet//DE',
+             'CALSCALE:GREGORIAN', 'METHOD:PUBLISH', 'X-WR-CALNAME:' + maske(name)];
+  const alle = [];
+  posten.forEach(([titel, L, kn]) => {
+    const anzeige = String(kn || '').trim() || titel;
+    kalenderEintraege(L, jahr, heute, arten).forEach(e => alle.push(Object.assign({ titel, anzeige }, e)));
+  });
+  alle.sort((x, y) => x.d - y.d);
+  alle.forEach(({ titel, anzeige, a, feld, kurz, d }) => {
+    const folgetag = new Date(d.getFullYear(), d.getMonth(), d.getDate() + 1);
+    const beschr = [heft(titel, a) + (String(a.monat || '').trim() ? ' (' + String(a.monat).trim() + ')' : '')];
+    FRISTEN.forEach(([f, k, wort]) => {
+      const x = mitJahr(a[f], jahr);
+      if(x) beschr.push(k + ' ' + wort + ': ' + lang(x));
+    });
+    z.push('BEGIN:VEVENT',
+      'UID:' + kennung(['mediasheet', jahr, titel, a.heft, feld].join(' ')) + '@angebotswerkzeuge',
+      'DTSTAMP:' + utc(jetzt),
+      'DTSTART;VALUE=DATE:' + ical(d),
+      'DTEND;VALUE=DATE:' + ical(folgetag),
+      'SUMMARY:' + maske(kurz + ' · ' + heft(anzeige, a)),
+      'DESCRIPTION:' + maske(beschr.join('\n')),
+      'CATEGORIES:' + maske(anzeige.replace(/\s*[,;]\s*/g, ' ').trim()),
+      'TRANSP:TRANSPARENT',
+      'X-MICROSOFT-CDO-BUSYSTATUS:FREE',
+      'X-MICROSOFT-CDO-ALLDAYEVENT:TRUE',
+      'END:VEVENT');
+  });
+  z.push('END:VCALENDAR');
+  return z.map(falten).join('\r\n') + '\r\n';
+}
+
+/* Dateiname wie beim Sammeldruck: ein Titel mit Namen, ein ganzer
+   Fachbereich mit dessen Namen, sonst die Zahl der Titel. */
+function kalenderName(titel, jahr, grund){
+  if(titel.length === 1) return titel[0] + ' ' + jahr + ' – Termine';
+  const B = BESTAND[jahr] || {};
+  const fb = [...new Set(titel.map(t => String((B[t] || {}).fach || '').trim()))];
+  const g = fb.length === 1 && fb[0] && titelGruppen(jahr).find(x => x.f === fb[0]);
+  const ganz = g && g.titel.filter(t => !grund(t)).length === titel.length;
+  return (ganz ? fb[0] : titel.length + ' Titel') + ' ' + jahr + ' – Termine';
+}
+
+function kalenderGrund(t){
+  return kalenderEintraege(lage(GEWAEHLT.jahr, t), GEWAEHLT.jahr, new Date(), FRISTEN.map(f => f[1])).length
+    ? '' : 'keine anstehenden Termine';
+}
+
+function kalenderFenster(){
+  const jahr = GEWAEHLT.jahr;
+  const h = titelWahlHtml(kalenderGrund, t => t === GEWAEHLT.titel);
+  const fristen = FRISTEN.map(([f, k]) =>
+    '<label><input type="checkbox" data-k="' + k + '"' + (FRIST_STANDARD.includes(k) ? ' checked' : '') + '><b>' + k + '</b> ' +
+    { ET:'Erscheinungstermin', AS:'Anzeigenschluss', DU:'Druckunterlagenschluss', EH:'Anlieferschluss' }[k] + '</label>').join('');
+
+  const back = document.createElement('div');
+  back.className = 'dlg-back';
+  back.innerHTML = '<div class="dlg-box sd-box kd-box" role="dialog" aria-modal="true" aria-label="Kalenderdatei">' +
+    '<div class="dlg-hd">Kalenderdatei</div>' +
+    '<div class="sd-kopfzeile">Jahrgang <b>' + esc(jahr) + '</b> · nur anstehende Termine · ganztägig, ohne Erinnerung</div>' +
+    '<div class="sd-liste">' + h + '</div>' +
+    '<div class="kd-fristen" role="group" aria-label="Termine">' + fristen + '</div>' +
+    '<div class="sd-fuss">Alle gewählten Titel kommen in eine Datei. Ein Kurzname steht im Betreff ' +
+      'statt des vollen Titels und wird auf diesem Gerät gemerkt. Jeder Titel wird in Outlook eine ' +
+      'Kategorie, der sich dort einmal eine Farbe zuweisen lässt. Erneut eingelesen, ersetzt Outlook die ' +
+      'Einträge, statt sie zu verdoppeln.</div>' +
+    '<div class="dlg-row"><button type="button" class="dlg-btn sekundaer" id="sdAbbr">Abbrechen</button>' +
+    '<button type="button" class="dlg-btn" id="sdLos"></button></div></div>';
+  document.body.appendChild(back);
+
+  const los = back.querySelector('#sdLos');
+  /* Kurzname je Titel: Feld rechts in der Zeile, sichtbar solange der Titel
+     angehakt ist. Ein Klick ins Feld schaltet den Haken nicht um. */
+  const kn = kurznamenLesen();
+  back.querySelectorAll('.sd-titel:not(.aus)').forEach(l => {
+    const t = l.querySelector('input[data-t]').dataset.t;
+    const f = document.createElement('input');
+    f.type = 'text'; f.className = 'kd-kurz'; f.maxLength = 40;
+    f.placeholder = 'Kurzname'; f.value = kn[t] || '';
+    f.setAttribute('aria-label', 'Kurzname für ' + t);
+    f.title = 'Steht im Kalender statt des vollen Titels im Betreff und als Kategorie. Leer: voller Titel.';
+    f.spellcheck = false; f.autocomplete = 'off';
+    f.addEventListener('input', () => kurznameSchreiben(t, f.value));
+    l.appendChild(f);
+  });
+  const artHaken = [...back.querySelectorAll('.kd-fristen input')];
+  const arten = () => artHaken.filter(x => x.checked).map(x => x.dataset.k);
+  let w = null;
+  const zaehlen = () => {
+    const titel = [...back.querySelectorAll('input[data-t]:checked')].map(x => x.dataset.t);
+    const n = titel.reduce((s, t) => s + kalenderEintraege(lage(jahr, t), jahr, new Date(), arten()).length, 0);
+    los.textContent = n === 1 ? '1 Termin sichern' : n + ' Termine sichern';
+    los.disabled = n === 0;
+  };
+  artHaken.forEach(x => x.addEventListener('change', zaehlen));
+  w = titelWahlVerdrahten(back, zaehlen);
+  los.onclick = () => {
+    const titel = w.gewaehlt(), heute = new Date();
+    const name = kalenderName(titel, jahr, kalenderGrund);
+    const kurz = kurznamenLesen();
+    const text = kalenderText(titel.map(t => [t, lage(jahr, t), kurz[t]]), jahr, heute, heute, arten(), name);
+    w.zu();
+    const url = URL.createObjectURL(new Blob([text], { type: 'text/calendar;charset=utf-8' }));
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = name.replace(/[\\/:*?"<>|]/g, '-') + '.ics';
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
+  };
+  (back.querySelector('#sdLos:not(:disabled)') || back.querySelector('#sdAbbr')).focus();
+}
+
 /* ── Mehrere Titel in einem PDF (seit 24.09.2026) ─────────────────────────
    Fuer Agenturen, die einen ganzen Fachbereich auf einmal brauchen. Am Grundsatz
    „ein Blatt = ein Titel, ein Jahrgang“ aendert das nichts: Die Blaetter der
@@ -1756,20 +1972,68 @@ function grundOhneBlatt(t){
   return (L.hatPreise || termine) ? '' : 'keine Daten';
 }
 
-function sammelFenster(){
-  const B = BESTAND[GEWAEHLT.jahr] || {};
-  const eigene = String((B[GEWAEHLT.titel] || {}).fach || '').trim();
+/* Titelliste der Fenster „Mehrere Titel …“ und „Kalender“: Fachbereiche mit
+   Sammelhaken, Titel ohne Inhalt ausgegraut mit Grund. grund(t) liefert den
+   Grund oder '', vorwahl(t, fach) sagt, ob ein Titel beim Oeffnen angehakt ist. */
+function titelWahlHtml(grund, vorwahl){
   let h = '';
   titelGruppen(GEWAEHLT.jahr).forEach((g, gi) => {
     h += '<label class="sd-grp"><input type="checkbox" data-g="' + gi + '">' +
          esc(g.f || 'Weitere Titel') + '<span class="sd-zahl"></span></label>';
     g.titel.forEach(t => {
-      const grund = grundOhneBlatt(t);
-      h += '<label class="sd-titel' + (grund ? ' aus' : '') + '"><input type="checkbox" data-g="' + gi +
-           '" data-t="' + esc(t) + '"' + (grund ? ' disabled' : (g.f === eigene ? ' checked' : '')) + '>' +
-           esc(t) + (grund ? '<span class="sd-grund">' + grund + '</span>' : '') + '</label>';
+      const gr = grund(t);
+      h += '<label class="sd-titel' + (gr ? ' aus' : '') + '"><input type="checkbox" data-g="' + gi +
+           '" data-t="' + esc(t) + '"' + (gr ? ' disabled' : (vorwahl(t, g.f) ? ' checked' : '')) + '>' +
+           esc(t) + (gr ? '<span class="sd-grund">' + gr + '</span>' : '') + '</label>';
     });
   });
+  return h;
+}
+
+/* Verdrahtet Liste, Escape und Abbrechen eines solchen Fensters. nachher()
+   laeuft nach jeder Aenderung; zurueck kommen die Titelhaken und das
+   Schliessen. Wie hinweis(): Escape und Abbrechen schliessen, ein Klick
+   daneben nicht. */
+function titelWahlVerdrahten(back, nachher){
+  const titelHaken = [...back.querySelectorAll('input[data-t]')];
+  const glieder = gk => titelHaken.filter(x => x.dataset.g === gk.dataset.g && !x.disabled);
+  const nachfuehren = () => {
+    back.querySelectorAll('.sd-grp input').forEach(gk => {
+      const alle = glieder(gk), an = alle.filter(x => x.checked).length;
+      gk.checked = alle.length > 0 && an === alle.length;
+      gk.indeterminate = an > 0 && an < alle.length;
+      gk.disabled = alle.length === 0;
+      gk.parentNode.querySelector('.sd-zahl').textContent = an ? an + ' von ' + alle.length : '';
+    });
+    nachher();
+  };
+  back.querySelectorAll('.sd-grp input').forEach(gk => gk.addEventListener('change', () => {
+    glieder(gk).forEach(x => { x.checked = gk.checked; });
+    nachfuehren();
+  }));
+  titelHaken.forEach(x => x.addEventListener('change', nachfuehren));
+  nachfuehren();
+
+  /* Die Liste steht beim Oeffnen auf dem Fachbereich des ersten gewaehlten Titels. */
+  const erster = titelHaken.find(x => x.checked);
+  if(erster){
+    let k = erster.closest('label');
+    while(k && !k.classList.contains('sd-grp')) k = k.previousElementSibling;
+    const liste = back.querySelector('.sd-liste');
+    if(k) liste.scrollTop = k.offsetTop - liste.offsetTop - 10;
+  }
+
+  const zu = () => { document.removeEventListener('keydown', escZu, true); back.remove(); };
+  function escZu(e){ if(e.key === 'Escape'){ e.stopPropagation(); zu(); } }
+  document.addEventListener('keydown', escZu, true);
+  back.querySelector('#sdAbbr').onclick = zu;
+  return { titelHaken, zu, gewaehlt: () => titelHaken.filter(x => x.checked).map(x => x.dataset.t) };
+}
+
+function sammelFenster(){
+  const B = BESTAND[GEWAEHLT.jahr] || {};
+  const eigene = String((B[GEWAEHLT.titel] || {}).fach || '').trim();
+  const h = titelWahlHtml(grundOhneBlatt, (t, f) => f === eigene);
 
   const back = document.createElement('div');
   back.className = 'dlg-back';
@@ -1784,45 +2048,15 @@ function sammelFenster(){
     '<button type="button" class="dlg-btn" id="sdLos"></button></div></div>';
   document.body.appendChild(back);
 
-  const titelHaken = [...back.querySelectorAll('input[data-t]')];
-  const glieder = gk => titelHaken.filter(x => x.dataset.g === gk.dataset.g && !x.disabled);
-  const nachfuehren = () => {
-    back.querySelectorAll('.sd-grp input').forEach(gk => {
-      const alle = glieder(gk), an = alle.filter(x => x.checked).length;
-      gk.checked = alle.length > 0 && an === alle.length;
-      gk.indeterminate = an > 0 && an < alle.length;
-      gk.disabled = alle.length === 0;
-      gk.parentNode.querySelector('.sd-zahl').textContent = an ? an + ' von ' + alle.length : '';
-    });
-    const n = titelHaken.filter(x => x.checked).length;
-    const los = back.querySelector('#sdLos');
+  const los = back.querySelector('#sdLos');
+  const w = titelWahlVerdrahten(back, () => {
+    const n = back.querySelectorAll('input[data-t]:checked').length;
     los.textContent = n + ' Titel drucken';
     los.disabled = n === 0;
-  };
-  back.querySelectorAll('.sd-grp input').forEach(gk => gk.addEventListener('change', () => {
-    glieder(gk).forEach(x => { x.checked = gk.checked; });
-    nachfuehren();
-  }));
-  titelHaken.forEach(x => x.addEventListener('change', nachfuehren));
-  nachfuehren();
-
-  /* Die Liste steht beim Oeffnen auf dem Fachbereich des offenen Titels. */
-  const erster = titelHaken.find(x => x.checked);
-  if(erster){
-    let k = erster.closest('label');
-    while(k && !k.classList.contains('sd-grp')) k = k.previousElementSibling;
-    const liste = back.querySelector('.sd-liste');
-    if(k) liste.scrollTop = k.offsetTop - liste.offsetTop - 10;
-  }
-
-  /* Wie hinweis(): Escape und Abbrechen schliessen, ein Klick daneben nicht. */
-  const zu = () => { document.removeEventListener('keydown', escZu, true); back.remove(); };
-  function escZu(e){ if(e.key === 'Escape'){ e.stopPropagation(); zu(); } }
-  document.addEventListener('keydown', escZu, true);
-  back.querySelector('#sdAbbr').onclick = zu;
-  back.querySelector('#sdLos').onclick = () => {
-    const titel = titelHaken.filter(x => x.checked).map(x => x.dataset.t);
-    zu();
+  });
+  los.onclick = () => {
+    const titel = w.gewaehlt();
+    w.zu();
     sammelZeichnen(titel);
     window.print();
   };
@@ -2035,6 +2269,11 @@ function leisteNachfuehren(){
   if(ohneTermine && !ohnePreise) umfangSetzen('uPreise', true);
   /* Mehrere Titel erst ab zwei Titeln im Jahrgang. */
   document.getElementById('sammelKnopf').disabled = titelListe(GEWAEHLT.jahr).length < 2;
+  /* Kalender nur, wenn im Jahrgang noch ein Termin ansteht. */
+  const kal = document.getElementById('kalenderKnopf');
+  kal.disabled = titelListe(GEWAEHLT.jahr).every(t => kalenderGrund(t));
+  kal.title = kal.disabled ? 'In diesem Jahrgang stehen keine Termine mehr an'
+                           : 'Anstehende Termine als Kalenderdatei für Outlook';
 
   /* Statuszeile wie in den uebrigen Werkzeugen: Herkunft, Jahrgaenge, Stand.
      Der Stand bleibt der dieses Blattes (siehe juengster()). */
@@ -2253,6 +2492,7 @@ async function starten(){
   });
   document.getElementById('druckKnopf').addEventListener('click', () => window.print());
   document.getElementById('sammelKnopf').addEventListener('click', sammelFenster);
+  document.getElementById('kalenderKnopf').addEventListener('click', kalenderFenster);
   /* Nach dem Sammeldruck (auch abgebrochen) wieder das offene Blatt. */
   window.addEventListener('afterprint', () => { if(document.querySelector('.sd-trenner')) zeichnen(); });
 
