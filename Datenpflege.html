@@ -485,6 +485,28 @@ button, input, select, textarea { font-family: inherit; }
   .such-wert { white-space: pre-line; }
   mark { background: #fdf0d5; color: inherit; border-radius: 2px; padding: 0 1px; }
 
+  /* ── Klickflaechen als echte Knoepfe ──
+     Baender, Titelzeilen und Suchtreffer waren angeklickte Flaechen ohne Knopf:
+     mit der Maus bedienbar, mit der Tabulatortaste nicht erreichbar. Sie sind
+     jetzt Knoepfe - wie die Baender und Gruppenzeilen in OpenSlots. Die Regel
+     hier nimmt dem Knopf nur, was der Browser ihm mitgibt (Rahmen, Flaeche,
+     eigene Schrift, Mittelsatz, Breite nach Inhalt); alles Sichtbare kommt
+     unveraendert aus den Klassen oben. Ohne Gewicht (:where), damit jede Klasse
+     sie uebersteuert. In Tabellenzeilen steckt der Knopf in der ersten Zelle,
+     angeklickt wird weiter die ganze Zeile; der Knopf selbst hat keinen eigenen
+     Klick, sein Klick steigt zur Zeile auf. Der Fokus-Ring liegt innen, weil
+     Liste und Trefferfeld rollen und einen Ring aussen abschnitten; an der
+     Zeile liegt er um die ganze Zeile. (26.09.2026) */
+  :where(button.flaeche) { margin: 0; padding: 0; border: 0; background: none; color: inherit;
+    font: inherit; letter-spacing: inherit; word-spacing: inherit; text-transform: inherit;
+    text-indent: inherit; text-align: left; width: 100%; }
+  :where(td > button.flaeche) { cursor: inherit; }
+  .flaeche:focus-visible { outline: 2px solid var(--navy); outline-offset: -2px; border-radius: var(--radius-sm); }
+  td > .flaeche:focus-visible { outline: none; }
+  tr:has(> td > .flaeche:focus-visible) > td { box-shadow: inset 0 2px var(--navy), inset 0 -2px var(--navy); }
+  tr:has(> td > .flaeche:focus-visible) > td:first-child { box-shadow: inset 2px 2px var(--navy), inset 0 -2px var(--navy); }
+  tr:has(> td > .flaeche:focus-visible) > td:last-child { box-shadow: inset -2px 2px var(--navy), inset 0 -2px var(--navy); }
+
   .inhalt { padding: 14px 16px 18px; }
   .inhalt-kopf { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; flex-wrap: wrap; margin-bottom: 12px; padding-bottom: 9px; border-bottom: 2px solid var(--navy); }
   /* Der Titel steht in 18 px, damit er vom Kategoriekopf darunter (14 px) klar
@@ -1651,7 +1673,7 @@ function uebersichtOeffnen() {
                : '<td class="fe">' + esc(x.name) + '</td><td class="wert"><span class="alt">' + esc(x.alt) +
                  '</span><span class="pf">→</span><span class="jetzt">' + esc(x.neu) + '</span></td>';
     html += '<tr' + (geht ? ' class="geht" onclick="uebersichtSprung(' + i + ')"' : '') + '>' +
-      '<td class="ber">' + esc(x.bereich) + '</td><td class="wo">' + esc(x.wo) + '</td>' + wert +
+      '<td class="ber">' + (geht ? '<button type="button" class="flaeche">' + esc(x.bereich) + '</button>' : esc(x.bereich)) + '</td><td class="wo">' + esc(x.wo) + '</td>' + wert +
       '<td class="hin">' + (geht ? '›' : '') + '</td></tr>';
   });
   html += '</table></div>';
@@ -1850,7 +1872,22 @@ function reiterWechseln(welcher) {
   document.getElementById('reiterTermine').classList.toggle('an', welcher === 'termine');
   zeichnen();
 }
-function titelWaehlen(id) { gewTitel = id; zeichnen(); }
+function titelWaehlen(id) { const fokus = listenFokus(); gewTitel = id; zeichnen(); listenFokusSetzen(fokus); }
+
+/* Titelzeilen und Suchtreffer zeichnen die Liste neu; der Knopf, der den Fokus
+   hatte, ist danach ersetzt. Wer mit der Tastatur kam, landet deshalb auf der
+   gewaehlten Titelzeile statt wieder am Anfang der Seite. Mit der Maus bleibt
+   alles wie bisher: die Liste rollt nicht mit. (26.09.2026) */
+function listenFokus() {
+  const f = document.activeElement;
+  if (!f || !f.classList || !f.classList.contains('flaeche')) return null;
+  return { tastatur: f.matches(':focus-visible') };
+}
+function listenFokusSetzen(fokus) {
+  if (!fokus) return;
+  const zeile = document.querySelector('#titelListe .titel-zeile.an');
+  if (zeile) zeile.focus({ preventScroll: !fokus.tastatur });
+}
 
 function esc(s) {
   return String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;')
@@ -1920,9 +1957,11 @@ function sucheBeenden() {
    von der Trefferliste. Das Suchwort bleibt im Feld nicht erhalten; wer weiter
    suchen will, sucht neu. */
 function suchTrefferOeffnen(jahr, id) {
+  const fokus = listenFokus();
   gewJahr = jahr;
   gewTitel = id;
   sucheBeenden();
+  listenFokusSetzen(fokus);
 }
 
 function passt(wert, suche) {
@@ -2015,10 +2054,10 @@ function sucheZeichnen() {
     if (x.t.id !== letzter) {
       if (letzter !== null) html += '</table>';
       const eigene = treffer.filter(y => y.t.id === x.t.id).length;
-      html += '<div class="such-titel" onclick="suchTrefferOeffnen(\'' + esc(x.t.jahr) + '\',\'' + x.t.id + '\')">' +
+      html += '<button type="button" class="flaeche such-titel" onclick="suchTrefferOeffnen(\'' + esc(x.t.jahr) + '\',\'' + x.t.id + '\')">' +
         '<b>' + esc(x.t.name) + '</b>' +
         '<span class="neben">Jahrgang ' + esc(x.t.jahr) + ' \u00b7 ' + eigene +
-        (eigene === 1 ? ' Fundstelle' : ' Fundstellen') + '</span></div>' +
+        (eigene === 1 ? ' Fundstelle' : ' Fundstellen') + '</span></button>' +
         '<table><colgroup><col style="width:26%"><col><col style="width:110px"></colgroup>';
       letzter = x.t.id;
     }
@@ -2026,7 +2065,7 @@ function sucheZeichnen() {
       ? '<td class="r">' + esc(preisText(x.preis)) + '</td>'
       : '<td>' + esc(x.heft) + '</td>';
     html += '<tr class="such-zeile" onclick="suchTrefferOeffnen(\'' + esc(x.t.jahr) + '\',\'' + x.t.id + '\')">' +
-      '<td class="such-feld">' + (x.kat ? hervor(x.feld, suche) : esc(x.feld)) + '</td>' +
+      '<td class="such-feld"><button type="button" class="flaeche">' + (x.kat ? hervor(x.feld, suche) : esc(x.feld)) + '</button></td>' +
       '<td class="such-wert">' + (x.kat ? esc(x.wert) : hervor(x.wert, suche)) + '</td>' +
       dritte + '</tr>';
   });
@@ -2233,10 +2272,10 @@ function titellisteZeichnen() {
   let html = '';
   fachNamen.forEach((fach, i) => {
     const zu = fachZu.has(fach);
-    html += '<div class="fach-kopf klappbar' + (zu ? ' zu' : '') + '" onclick="fachKlappen(' + i + ')" ' +
+    html += '<button type="button" class="flaeche fach-kopf klappbar' + (zu ? ' zu' : '') + '" onclick="fachKlappen(' + i + ')" ' +
             'title="' + (zu ? 'Fachbereich aufklappen' : 'Fachbereich zuklappen') + '">' +
             '<span class="fach-pfeil">&#9660;</span>' +
-            '<span class="fach-name">' + esc(fach) + '</span>' + (zu ? fachStand(fach) : '') + '</div>';
+            '<span class="fach-name">' + esc(fach) + '</span>' + (zu ? fachStand(fach) : '') + '</button>';
     nachFach[fach].forEach(t => {
       const gewaehlt = t.id === gewTitel;
       const ohnePreis = (t.preis || []).filter(p => p.preis == null || Number(p.preis) === 0).length;
@@ -2247,9 +2286,9 @@ function titellisteZeichnen() {
       /* Alle Zeilen stehen im Text, die zugeklappten liegen nur weg. So entscheidet
          eine Stelle ueber die Sichtbarkeit, und fachKlappen kommt ohne neues
          Zeichnen aus. */
-      html += '<div class="titel-zeile' + (gewaehlt ? ' an' : '') + (zu && !gewaehlt ? ' weg' : '') +
+      html += '<button type="button" class="flaeche titel-zeile' + (gewaehlt ? ' an' : '') + (zu && !gewaehlt ? ' weg' : '') +
               '" onclick="titelWaehlen(\'' + t.id + '\')">' +
-              '<span>' + esc(t.name) + titelMarke(t) + '</span>' + zusatz + '</div>';
+              '<span>' + esc(t.name) + titelMarke(t) + '</span>' + zusatz + '</button>';
     });
   });
   liste.innerHTML = html || '<div class="fach-kopf">Keine Titel in diesem Jahrgang</div>';
