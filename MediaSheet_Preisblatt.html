@@ -446,6 +446,9 @@ select:disabled{opacity:.5; cursor:not-allowed}
 }
 .tl-titel:hover{border-color:var(--navy); color:var(--navy); background:var(--weiss-hover)}
 .tl-titel.on{border-color:var(--navy); background:var(--navy); color:#fff; font-weight:600; box-shadow:0 2px 6px rgba(0,40,90,.22)}
+/* Druckpunkt wie bei den Titelknoepfen in OpenSlots (.tab:active): der Titel sinkt beim
+   Druecken um 1 px ab (seit 26.09.2026). Die Fachbereichsbaender bleiben wie dort ohne. */
+.tl-titel:active{transform:translateY(1px)}
 .tl-leer{font-size:12px; color:var(--grey-500); padding:6px 2px}
 
 /* ── Buehne und Blatt ─────────────────────────────────────────────────────
