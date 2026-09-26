@@ -1107,10 +1107,11 @@ tr.pl-row.alt td:not(.pl-cell) {
   border: 1.5px solid var(--sm-border);
   border-radius: var(--radius-md);
   background: var(--sm-white);
-  /* Navy wie die uebrigen weissen Knoepfe (seit 26.09.2026, vorher grau). */
+  /* Navy wie die uebrigen weissen Knoepfe (seit 26.09.2026, vorher grau).
+     12 px wie alle Knoepfe der Werkzeuge (seit 26.09.2026, vorher 11,5 px). */
   color: var(--sm-navy);
   font-family: 'Source Sans 3', sans-serif;
-  font-size: 11.5px;
+  font-size: 12px;
   font-weight: 600;
   cursor: pointer;
   transition: all .15s;
@@ -1120,14 +1121,17 @@ tr.pl-row.alt td:not(.pl-cell) {
 .mx-tool-toggle {
   display: inline-flex;
   align-items: center;
-  gap: 6px;
-  font-size: 11.5px;
+  gap: 9px;
+  font-size: 12px;
   font-weight: 600;
-  color: var(--sm-muted);
+  color: var(--sm-navy);
   cursor: pointer;
   user-select: none;
 }
-.mx-tool-toggle input { accent-color: var(--sm-orange); width: 14px; height: 14px; cursor: pointer; }
+/* Kästchen wie alle Haken der Werkzeuge: Navy, 15 px, 9 px Abstand. Die Beschriftung folgt
+   wie in MediaQuote der eigenen Leiste, hier dem Knopf daneben: 12 px, fett, Navy
+   (seit 26.09.2026, vorher Kästchen Orange, 14 px, 6 px, Beschriftung grau). */
+.mx-tool-toggle input { accent-color: var(--sm-navy); width: 15px; height: 15px; flex: none; cursor: pointer; }
 
 /* ── DRUCKPUNKT (sichtbare Rückmeldung beim Klicken) ──
    Die Schaltfläche sinkt beim Drücken um 1 px ab und federt beim Loslassen
