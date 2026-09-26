@@ -37,6 +37,7 @@
      auf, ohne dass man haette sagen koennen, woran. */
   --navy:#00285a;            /* primaer: Kopf, Knoepfe, Auswahl, Ueberschriften */
   --navy-hover:#003a80;      /* Knopf beim Ueberfahren */
+  --weiss-hover:#e6eaf0;     /* weisser Knopf und Kachel beim Ueberfahren, wie in OpenSlots */
   --blue:#0176c3;            /* Springer-Blau · Verweise in der Formatliste */
   --blue-light:#b3dcf5;      /* Fokusschein im Ansprechpartner-Feld */
   --orange:#ee7d11;          /* einziger Akzent */
@@ -209,7 +210,7 @@ select:disabled{opacity:.5; cursor:not-allowed}
   color:var(--navy); border:1.5px solid var(--border); border-radius:var(--radius-md);
   padding:5px 12px; font-size:12px; font-weight:600; cursor:pointer; transition:all .15s;
 }
-.knopf:hover{border-color:var(--navy); background:var(--surface-hover)}
+.knopf:hover{border-color:var(--navy); background:var(--weiss-hover)}
 .knopf.primär{background:var(--navy); color:var(--white); border-color:var(--navy)}
 .knopf.primär:hover{background:var(--navy-hover); border-color:var(--navy-hover)}
 .knopf:disabled{opacity:.5; cursor:not-allowed}
@@ -438,7 +439,7 @@ select:disabled{opacity:.5; cursor:not-allowed}
   border-radius:var(--radius-md); background:var(--white); color:var(--grey-600); font-size:12px;
   font-weight:500; line-height:1.25; cursor:pointer; transition:all .15s; box-shadow:var(--shadow-sm);
 }
-.tl-titel:hover{border-color:var(--navy); color:var(--navy); background:var(--surface-hover)}
+.tl-titel:hover{border-color:var(--navy); color:var(--navy); background:var(--weiss-hover)}
 .tl-titel.on{border-color:var(--navy); background:var(--navy); color:#fff; font-weight:600; box-shadow:0 2px 6px rgba(0,40,90,.22)}
 .tl-leer{font-size:12px; color:var(--grey-500); padding:6px 2px}
 
@@ -630,8 +631,12 @@ table.kond + table.kond{margin-top:8px}
   padding: 7px 14px; border-radius: 6px; cursor: pointer;
   border: 1px solid #00285a; background: #00285a; color: #fff;
 }
+/* Beim Überfahren wie alle Knöpfe der Werkzeuge: gefüllte werden dunkler,
+   weiße bekommen Navy-Rahmen und hellblaue Fläche (26.09.2026). Der Hauptknopf
+   reagierte bis dahin gar nicht. */
+.dlg-btn:hover { background: #003a80; border-color: #003a80; }
 .dlg-btn.sekundaer { background: #fff; color: #00285a; border-color: #d6dbe8; }
-.dlg-btn.sekundaer:hover { border-color: #00285a; }
+.dlg-btn.sekundaer:hover { background: #e6eaf0; border-color: #00285a; }
 .dlg-btn.gefahr { background: var(--dlg-gefahr); border-color: var(--dlg-gefahr); color: #fff; }
 .dlg-btn.gefahr:hover { background: var(--dlg-gefahr-dunkel); border-color: var(--dlg-gefahr-dunkel); }
 /* Der Knopf sinkt beim Drücken um 1 px ab und federt beim Loslassen zurück —
@@ -678,6 +683,7 @@ table.kond + table.kond{margin-top:8px}
 .kd-fristen input{accent-color:var(--navy); width:15px; height:15px; flex:none; margin:0; cursor:pointer}
 .sd-box .dlg-btn:disabled{opacity:.5; cursor:not-allowed}
 .sd-box .dlg-btn:disabled:active{transform:none}
+.sd-box .dlg-btn:disabled:hover{background:#00285a; border-color:#00285a}
 /* In der Vorschau steht vor jedem Titel des Stapels sein Name; im Druck nicht. */
 .sd-trenner{
   display:flex; align-items:center; gap:10px; width:210mm; margin:0 auto 14px;

@@ -247,8 +247,11 @@ button, input, select, textarea { font-family: inherit; }
 /* Fokus wie in den uebrigen Werkzeugen: blauer Rahmen und ein zarter Schimmer
    ringsum, damit die Tastaturbedienung ueberall gleich aussieht. */
 .year-sel:focus { outline: none; border-color: var(--sm-navy); box-shadow: 0 0 0 2px rgba(0,40,90,.08); }
-.data-btn.subtle { background: var(--sm-navy-10); border-color: var(--sm-navy); color: var(--sm-navy); }
-.data-btn.subtle:hover { background: var(--sm-navy); border-color: var(--sm-navy); color: #fff; }
+/* „Nach Kongress“ ist seit dem 26.09.2026 ein weisser Knopf wie „Angebot oeffnen“:
+   blasser Rahmen, Navy-Schrift; das Dreieck zeigt, dass ein Menue aufgeht. Beim
+   Ueberfahren wie alle weissen Knoepfe Navy-Rahmen und hellblaue Flaeche. */
+.data-btn.subtle { background: var(--sm-white); border-color: var(--sm-border); color: var(--sm-navy); }
+.data-btn.subtle:hover { background: var(--sm-navy-10); border-color: var(--sm-navy); color: var(--sm-navy); }
 /* Die beiden Hinweiszeilen - geoeffnete Angebotsdatei und Datenstand - stehen
    zusammen am rechten Rand: der Leerraum der Leiste sammelt sich vor ihnen und
    schiebt sie dorthin. */
@@ -308,7 +311,7 @@ button, input, select, textarea { font-family: inherit; }
   background: #aeb8cc;
 }
 .data-btn.ang-btn { background: var(--sm-white); border-color: var(--sm-border); color: var(--sm-navy); }
-.data-btn.ang-btn:hover { background: var(--sm-navy); border-color: var(--sm-navy); color: #fff; }
+.data-btn.ang-btn:hover { background: var(--sm-navy-10); border-color: var(--sm-navy); color: var(--sm-navy); }
 /* Quittung nach dem Speichern: Der Knopf traegt sie zwei Sekunden lang selbst
    (siehe flash()). Bisher wechselte nur die Beschriftung; mit demselben Gruen,
    das „Als Tabelle kopieren" nach dem Kopieren zeigt (.copy-btn.done), ist sie
@@ -387,8 +390,12 @@ button, input, select, textarea { font-family: inherit; }
   padding: 7px 14px; border-radius: 6px; cursor: pointer;
   border: 1px solid #00285a; background: #00285a; color: #fff;
 }
+/* Beim Überfahren wie alle Knöpfe der Werkzeuge: gefüllte werden dunkler,
+   weiße bekommen Navy-Rahmen und hellblaue Fläche (26.09.2026). Der Hauptknopf
+   reagierte bis dahin gar nicht. */
+.dlg-btn:hover { background: #003a80; border-color: #003a80; }
 .dlg-btn.sekundaer { background: #fff; color: #00285a; border-color: #d6dbe8; }
-.dlg-btn.sekundaer:hover { border-color: #00285a; }
+.dlg-btn.sekundaer:hover { background: #e6eaf0; border-color: #00285a; }
 .dlg-btn.gefahr { background: var(--dlg-gefahr); border-color: var(--dlg-gefahr); color: #fff; }
 .dlg-btn.gefahr:hover { background: var(--dlg-gefahr-dunkel); border-color: var(--dlg-gefahr-dunkel); }
 /* Der Knopf sinkt beim Drücken um 1 px ab und federt beim Loslassen zurück —
@@ -564,7 +571,7 @@ button, input, select, textarea { font-family: inherit; }
 .tab:hover {
   border-color: var(--sm-navy);
   color: var(--sm-navy);
-  background: var(--sm-navy-05);
+  background: var(--sm-navy-10);
 }
 .tab.on {
   border-color: var(--sm-navy);
@@ -601,12 +608,12 @@ button, input, select, textarea { font-family: inherit; }
 .heft-row { display:flex; align-items:stretch; gap:10px; margin-bottom:.85rem; }
 .heft-bar { flex:1; display:grid; gap:6px; min-width:0; }
 .heft-alle { display:grid; grid-template-columns:1fr 1fr; gap:6px; padding-left:10px; border-left:1px solid var(--sm-border); }
-/* Wie frueher "Alle Ausgaben": dunkelblauer Rahmen und Schrift statt Grau. */
+/* Navy-Schrift wie die uebrigen weissen Knoepfe; Rahmen blass und Ueberfahren wie
+   bei allen (seit 26.09.2026, vorher Navy-Rahmen und beim Ueberfahren ganz Navy). */
 .heft-alle .mx-tool-btn {
   justify-content:center; padding:4px 12px;
-  border-color:var(--sm-navy); color:var(--sm-navy); font-size:12.5px;
+  color:var(--sm-navy); font-size:12.5px;
 }
-.heft-alle .mx-tool-btn:hover { background:var(--sm-navy); color:#fff; }
 .heft-chip {
   display:flex; flex-direction:column; align-items:center; gap:1px;
   min-width:0; white-space:nowrap; padding:5px 8px 4px;
@@ -617,7 +624,7 @@ button, input, select, textarea { font-family: inherit; }
   font-variant-numeric: tabular-nums;
 }
 .heft-chip small { font-size:10px; font-weight:500; color:var(--sm-muted); }
-.heft-chip:hover { border-color:var(--sm-navy); background:var(--sm-navy-05); }
+.heft-chip:hover { border-color:var(--sm-navy); background:var(--sm-navy-10); }
 .heft-chip.on { border-color:var(--sm-navy); background:var(--sm-navy); color:#fff; box-shadow:0 2px 6px rgba(0,40,90,.22); }
 .heft-chip.on small { color:rgba(255,255,255,.78); }
 .heft-chip.mem { border-style:dashed; border-color:var(--sm-navy); }
@@ -1028,12 +1035,12 @@ tr.pl-row.alt td:not(.pl-cell) {
   transition: all .15s;
   border: 1.5px solid var(--sm-border);
   background: var(--sm-white);
-  color: var(--sm-muted);
+  color: var(--sm-navy);
 }
 .copy-btn:hover {
   border-color: var(--sm-navy);
   color: var(--sm-navy);
-  background: var(--sm-navy-05);
+  background: var(--sm-navy-10);
 }
 .copy-btn.primary {
   background: var(--sm-orange);
@@ -1042,8 +1049,8 @@ tr.pl-row.alt td:not(.pl-cell) {
   box-shadow: 0 2px 5px rgba(238,125,17,.30);
 }
 .copy-btn.primary:hover {
-  background: #d4700f;
-  border-color: #d4700f;
+  background: #d46e0d;
+  border-color: #d46e0d;
   color: #fff;
 }
 /* Auch fuer :hover gesetzt, damit die Quittung unter dem Mauszeiger nicht orange
@@ -1107,7 +1114,7 @@ tr.pl-row.alt td:not(.pl-cell) {
   cursor: pointer;
   transition: all .15s;
 }
-.mx-tool-btn:hover { border-color: var(--sm-navy); color: var(--sm-navy); background: var(--sm-navy-05); }
+.mx-tool-btn:hover { border-color: var(--sm-navy); color: var(--sm-navy); background: var(--sm-navy-10); }
 .mx-tool-spacer { flex: 1; }
 .mx-tool-toggle {
   display: inline-flex;
