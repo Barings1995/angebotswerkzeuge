@@ -407,7 +407,9 @@ select:disabled{opacity:.5; cursor:not-allowed}
   .arbeit{grid-template-columns:244px minmax(0,1fr) 250px; grid-template-areas:"tl haupt einst"}
   .titelleiste{grid-row:auto}
   .einst{position:sticky; top:12px; margin:0}
-  .einst .schalter{flex-direction:column; gap:0; padding:.3rem 1rem .8rem}
+  /* Innen oben und unten je 16 px sichtbarer Abstand wie in OpenSlots: .3rem der Karte
+     plus .7rem des Abschnitts (seit 27.09.2026, vorher unten .8rem, zusammen 24 px). */
+  .einst .schalter{flex-direction:column; gap:0; padding:.3rem 1rem}
   .einst .o-grp{border-top:1px solid var(--border)}
   .einst .o-grp:first-child{border-top:none}
   #sKontakt{width:100%}
