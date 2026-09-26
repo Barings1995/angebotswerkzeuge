@@ -257,11 +257,13 @@ a:focus-visible, button:focus-visible, label:focus-visible, [tabindex]:focus-vis
 /* Fokus wie in den uebrigen Werkzeugen: blauer Rahmen und ein zarter Schimmer
    ringsum, damit die Tastaturbedienung ueberall gleich aussieht. */
 .year-sel:focus { outline: none; border-color: var(--sm-navy); box-shadow: 0 0 0 2px rgba(0,40,90,.08); }
-/* „Nach Kongress“ ist seit dem 26.09.2026 ein weisser Knopf wie „Angebot oeffnen“:
-   blasser Rahmen, Navy-Schrift; das Dreieck zeigt, dass ein Menue aufgeht. Beim
-   Ueberfahren wie alle weissen Knoepfe Navy-Rahmen und hellblaue Flaeche. */
-.data-btn.subtle { background: var(--sm-white); border-color: var(--sm-border); color: var(--sm-navy); }
-.data-btn.subtle:hover { background: var(--sm-navy-10); border-color: var(--sm-navy); color: var(--sm-navy); }
+/* „Nach Kongress“ ist seit dem 26.09.2026 (abends) mit Springer-Hellblau #B3DCF5 aus dem
+   Brand Hub gefuellt, Navy-Schrift (Kontrast 10 : 1): hebt sich von den weissen Knoepfen
+   ab, bleibt aber leiser als „Daten laden“. Beim Ueberfahren wie alle gefuellten Knoepfe
+   dunkler. Bei offenem Menue keine eigene Farbe (Wunsch Marcus), nur das Dreieck dreht.
+   Vorher weiss mit blassem Rahmen, davor hellblau mit Navy-Rahmen. */
+.data-btn.subtle { background: #b3dcf5; border-color: #b3dcf5; color: var(--sm-navy); }
+.data-btn.subtle:hover { background: #94cdf0; border-color: #94cdf0; color: var(--sm-navy); }
 /* Die beiden Hinweiszeilen - geoeffnete Angebotsdatei und Datenstand - stehen
    zusammen am rechten Rand: der Leerraum der Leiste sammelt sich vor ihnen und
    schiebt sie dorthin. */
