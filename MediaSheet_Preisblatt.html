@@ -425,7 +425,10 @@ select:disabled{opacity:.5; cursor:not-allowed}
   border-radius:var(--radius-sm); transition:color .12s, background .12s;
 }
 .such-x:hover{color:var(--navy); background:var(--surface-hover)}
-.tl-liste{display:flex; flex-direction:column; gap:4px; flex:1 1 auto; min-height:0; overflow-y:auto; padding-right:2px}
+.tl-liste{display:flex; flex-direction:column; gap:4px; flex:1 1 auto; min-height:0; overflow-y:auto;
+  /* 4 px Luft ringsum fuer den Fokus-Ring, den die rollbare Liste sonst abschneidet; die
+     negativen Raender heben sie wieder auf (seit 26.09.2026, vorher nur padding-right:2px). */
+  padding:4px 6px 4px 4px; margin:-4px}
 .tl-grp{
   display:flex; align-items:center; width:100%; margin:.5rem 0 .1rem; padding:2px 2px 4px;
   font-size:10px; font-weight:700; letter-spacing:.09em; text-transform:uppercase; line-height:normal;

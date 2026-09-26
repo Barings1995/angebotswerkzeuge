@@ -83,6 +83,16 @@ body {
    danebenliegt - die Luecke soll nicht wiederkehren. */
 button, input, select, textarea { font-family: inherit; }
 
+/* Sichtbarer Fokus-Ring für die Tastatur, wie in MediaSheet und PreisWerk (seit 26.09.2026;
+   vorher der Standardrahmen des Browsers). Nur für Knöpfe und Verweise: bei Auswahlfeldern
+   zieht der Browser :focus-visible auch beim Mausklick heran, der Ring stünde dort also bei
+   jedem Anklicken. */
+a:focus-visible, button:focus-visible, label:focus-visible, [tabindex]:focus-visible {
+  outline: 2px solid var(--sm-navy);
+  outline-offset: 2px;
+  border-radius: var(--radius-sm);
+}
+
 /* ── KOPFLEISTE ── */
 /* ══ BAUSTEIN kopfleiste.css ══ Nicht hier ändern: gepflegt in Bausteine/kopfleiste.css, eingesetzt mit „node Bausteine/einsetzen.mjs". */
 /* Kopfleiste (Hero-Streifen) mit Logo, Name des Werkzeugs, Unterzeile, Rückweg
@@ -543,11 +553,14 @@ button, input, select, textarea { font-family: inherit; }
   display: flex;
   flex-direction: column;
   gap: 4px;
-  margin-bottom: 0;
   flex: 1 1 auto;
   min-height: 0;
   overflow-y: auto;
-  padding-right: 2px;
+  /* 4 px Luft ringsum für den Fokus-Ring, den die rollbare Liste sonst abschneidet; die
+     negativen Ränder heben sie wieder auf, Titel und Bänder bleiben an ihrem Platz
+     (seit 26.09.2026, vorher nur padding-right: 2px). */
+  padding: 4px 6px 4px 4px;
+  margin: -4px -4px -4px -4px;
 }
 .tab {
   display: flex;
@@ -835,13 +848,28 @@ tr.cat td.pl-cell {
   background: var(--sm-navy-10);
   padding: 0;
 }
-/* Kategorie-Label klebt beim horizontalen Scrollen am linken Rand (colspan-Zelle selbst kann nicht kleben) */
+/* Kategorie-Label klebt beim horizontalen Scrollen am linken Rand (colspan-Zelle selbst kann nicht kleben).
+   Seit 26.09.2026 ein echter Knopf wie die Fachbereichs-Bänder: per Tab-Taste erreichbar,
+   Enter/Leertaste klappt. Er hat keinen eigenen Klick – sein Klick steigt zur Zeile auf,
+   deren onclick weiterhin die ganze Zeile klickbar hält. Schrift und Farbe erbt er von
+   der Zelle, damit er genauso aussieht wie vorher der einfache Text. */
 tr.cat td.pl-cell .cat-lbl {
   position: sticky;
   left: 0;
   display: inline-block;
   padding: 4px 12px;
+  margin: 0;
+  border: 0;
+  background: none;
+  font: inherit;
+  letter-spacing: inherit;
+  text-transform: inherit;
+  text-align: left;
+  color: inherit;
+  cursor: inherit;
 }
+/* Der Fokus-Ring liegt hier innen: außen schnitte ihn die klebende Tabellenzelle ab. */
+tr.cat td.pl-cell .cat-lbl:focus-visible { outline-offset: -2px; }
 tr.cat td .cat-toggle {
   display: inline-block;
   font-family: Arial, Helvetica, sans-serif; /* ▼ wie in der Jahresvorschau, s. .kg-chev */
@@ -2901,7 +2929,7 @@ function rMx(){
   });
   h+='</tr></thead><tbody>';
   j.g.forEach((g,gi)=>{
-    h+=`<tr class="cat" id="cat_${ji}_${gi}" onclick="toggleCat(${ji},${gi})"><td class="pl-cell" colspan="${1+iss.length}"><span class="cat-lbl"><span class="cat-toggle">&#9660;</span>${esc(g.l)}<span class="cat-badge" id="catbadge_${ji}_${gi}" style="display:none" title="belegte Platzierungen"></span></span></td></tr>`;
+    h+=`<tr class="cat" id="cat_${ji}_${gi}" onclick="toggleCat(${ji},${gi})"><td class="pl-cell" colspan="${1+iss.length}"><button type="button" class="cat-lbl"><span class="cat-toggle">&#9660;</span>${esc(g.l)}<span class="cat-badge" id="catbadge_${ji}_${gi}" style="display:none" title="belegte Platzierungen"></span></button></td></tr>`;
     g.i.forEach(([nm,pr],ii)=>{
       const allOn=iss.length>0&&iss.every(i=>i.sel.has(nm));
       h+=`<tr class="pl-row${ii%2?' alt':''}" data-cat="${ji}_${gi}"><td class="pl-cell"><div class="pl-inner"><span class="pl-nm">${esc(nm)}</span>`;

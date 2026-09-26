@@ -786,6 +786,8 @@ button, input, select, textarea { font-family: inherit; }
   .btn-del:focus-visible {
     outline: 2px solid var(--navy);
     outline-offset: 2px;
+    /* Ecken 4 px wie in OpenSlots, MediaSheet und PreisWerk (seit 26.09.2026). */
+    border-radius: var(--radius-sm);
   }
   /* Einheitliche Symbolgröße – die width/height der SVG selbst weichen ab.
      Das Pluszeichen in „Position hinzufügen" war bis zum 22.09.2026 als einziges
