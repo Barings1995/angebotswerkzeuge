@@ -360,6 +360,8 @@ select:disabled{opacity:.5; cursor:not-allowed}
   color:var(--text); cursor:pointer;
 }
 .o-grp > label input{accent-color:var(--navy); width:15px; height:15px; cursor:pointer; flex:none}
+.o-grp > label.aus{color:var(--grey-500); cursor:default}
+.o-grp > label.aus input{cursor:default}
 /* Umfang untereinander: nebeneinander ist die Spalte zu schmal. */
 .schalter .umfang{flex-direction:column; align-self:stretch}
 .schalter .umfang button{text-align:left}
@@ -560,6 +562,29 @@ td.fmt{width:44%}
 .legende{margin-top:9px; font-size:10px; color:var(--grey-600); line-height:1.5}
 .legende b{color:var(--text)}
 
+/* Aenderungsmarke seit dem letzten Versand (26.09.2026): orangefarbener Punkt
+   hinter dem Wert. In Zahlen- und Mittelspalten haengt er rechts neben dem
+   Wert, ohne ihn zu verschieben - die Spalten bleiben buendig. */
+.gm::after,.gm-punkt{
+  content:''; display:inline-block; width:6px; height:6px; border-radius:50%;
+  background:var(--orange); margin-left:5px; vertical-align:middle; position:relative; top:-1px;
+}
+td.zahl .gm, td.mitte .gm{position:relative}
+td.zahl .gm::after, td.mitte .gm::after{position:absolute; left:100%; top:50%; margin:-3px 0 0 4px}
+/* Mit Marken bekommen die Preisspalten rechts Platz fuer Abstand und Punkt;
+   ohne haengt er im engsten Fall (12 px zur Nachbarspalte, Ärzte Zeitung
+   ONKOLOGIE 2026) fast am naechsten Preis. Alle Zellen gleich, damit die
+   Zahlen buendig bleiben. */
+table.mit-marken td.zahl, table.mit-marken th.zahl{padding-right:15px}
+/* Die Terminspalten sind so eng, dass ein haengender Punkt am Nachbarwert
+   klebte: Dort steht er im Fluss, und ein gleich breiter leerer Vorsatz haelt
+   den Wert mittig. Die Spalte wird dadurch nur um den Punkt breiter. */
+.termine td.mitte .gm::after{position:relative; left:auto; top:-1px; margin:0 0 0 3px}
+.termine td.mitte .gm::before{content:''; display:inline-block; width:9px}
+.termine td.mitte .gm{white-space:nowrap}
+.gm-punkt{margin:0 5px 0 0}
+.lg-versand{display:block}
+
 /* Konditionen unter der Preistabelle: Stufen nebeneinander, damit der Abschnitt
    niedrig bleibt (151 statt 202 px untereinander, gemessen am 24.09.2026). */
 /* Der Abstand ueber der Ueberschrift steht als Polster am Abschnitt, nicht als
@@ -666,6 +691,8 @@ table.kond + table.kond{margin-top:8px}
 .sd-liste input{accent-color:var(--navy); width:15px; height:15px; flex:none; margin:0; cursor:pointer}
 .sd-liste input:disabled{cursor:default}
 .sd-fuss{font-size:11.5px; color:var(--grey-600); line-height:1.45; margin-top:10px}
+.sd-merk{display:flex; align-items:center; gap:9px; margin-top:10px; font-size:12.5px; color:var(--text); cursor:pointer}
+.sd-merk input{accent-color:var(--navy); width:15px; height:15px; flex:none; margin:0; cursor:pointer}
 /* Kalenderfenster: die vier Terminarten unter der Titelliste, Haken wie oben. */
 .kd-box{max-width:680px}  /* vier Terminarten in einer Zeile */
 /* Doppelte Klasse, damit die Hakenregel .sd-liste input nicht greift. */
@@ -835,6 +862,8 @@ table.kond + table.kond{margin-top:8px}
   </div>
   <div class="o-grp" id="gKenn"><div class="o-kopf">Kennzeichnung</div>
     <label id="sVorlFeld"><input type="checkbox" id="sVorl" checked> Vermerk &bdquo;vorl&auml;ufig&ldquo;</label>
+    <label id="sAendFeld"><input type="checkbox" id="sAend"> <span id="sAendText">&Auml;nderungen seit Versand</span></label>
+    <label id="sMerkFeld"><input type="checkbox" id="sMerk"> Beim Drucken als versendet merken</label>
   </div>
   <div class="o-grp" id="gKontakt"><div class="o-kopf">Ansprechpartner</div>
     <textarea id="sKontakt" rows="2" placeholder="Name &middot; Funktion" aria-label="Ansprechpartner im Fu&szlig; des Blattes" autocomplete="off" spellcheck="false"></textarea>
@@ -1325,6 +1354,59 @@ function gruppen(L, auswahl){
   return folge.map(k => ({ name: k, zeilen: nach[k] }));
 }
 
+/* ── Aenderungen seit dem letzten Versand (seit 26.09.2026) ─────────────────
+   Wer beim Drucken „als versendet merken“ anhakt, legt auf dem Geraet einen
+   Abzug des ganzen Titel-Jahrgangs ab — alle Formate, gleich was gerade
+   ausgeblendet ist. Der naechste Druck kann dagegen vergleichen: Feld fuer
+   Feld, neue Zeilen als Ganzes, entfallene mit Namen. Der Zeitstempel der
+   Datenbank taugt dafuer nicht, weil Einlesen und Zurueckspielen ganze
+   Jahrgaenge neu stempeln und er nicht sagt, welcher Wert sich geaendert hat.
+   Formate gelten ueber Kategorie und Namen als dieselben, Ausgaben ueber die
+   Heftnummer. */
+const VERSAND_PREIS  = ['preis', 'zuschlag', 'terminart', 'rabatt', 'ae'];
+const VERSAND_TERMIN = ['et', 'as', 'du', 'eh', 'themen', 'kongresse'];
+
+function versandWert(v){
+  return v == null ? '' : String(v).replace(/\r\n?/g, '\n').trim();
+}
+function versandFormat(p){ return p.kategorie + ' § ' + p.format; }
+
+function versandAbzug(t){
+  const nur = (o, felder) => felder.reduce((r, f) => { r[f] = versandWert(o[f]); return r; }, {});
+  return {
+    /* Ein Zuschlag von 0 steht auf dem Blatt wie keiner: als leere Zelle. */
+    preise: t.preise.filter(p => p.preis != null).map(p =>
+      Object.assign({ kategorie: p.kategorie, format: p.format },
+                    nur(Object.assign({}, p, { zuschlag: p.zuschlag > 0 ? p.zuschlag : null }), VERSAND_PREIS))),
+    termine: t.termine.map(a => Object.assign({ heft: versandWert(a.heft) }, nur(a, VERSAND_TERMIN)))
+  };
+}
+
+/* Liefert je Format und je Heft 'neu' oder die Liste der geaenderten Felder
+   (nur Eintraege mit Aenderung), dazu die entfallenen Formate und Hefte. */
+function versandVergleich(alt, t){
+  const jetzt = versandAbzug(t);
+  const seite = (alte, neue, schluessel, felder) => {
+    const vorher = new Map(alte.map(x => [schluessel(x), x]));
+    const da = new Set(), geaendert = {};
+    neue.forEach(x => {
+      const k = schluessel(x), v = vorher.get(k);
+      da.add(k);
+      if(!v){ geaendert[k] = 'neu'; return; }
+      const f = felder.filter(f => versandWert(v[f]) !== x[f]);
+      if(f.length) geaendert[k] = f;
+    });
+    return { geaendert, entfallen: alte.filter(x => !da.has(schluessel(x))) };
+  };
+  const p = seite(alt.preise || [], jetzt.preise, versandFormat, VERSAND_PREIS);
+  const a = seite(alt.termine || [], jetzt.termine, x => versandWert(x.heft), VERSAND_TERMIN);
+  return {
+    preise: p.geaendert, termine: a.geaendert,
+    entfallenFormate: p.entfallen.map(x => x.format),
+    entfallenHefte: a.entfallen.map(x => versandWert(x.heft))
+  };
+}
+
 /* ══ ENDE RECHNUNG ══════════════════════════════════════════════════════════ */
 
 function heuteOhneZeit(){
@@ -1335,6 +1417,49 @@ function heuteOhneZeit(){
 function lage(jahr, titel){
   return lageRechnen((BESTAND[jahr] || {})[titel], jahr, heuteOhneZeit());
 }
+
+/* ── Gemerkter Versand je Titel und Jahrgang (siehe versandVergleich) ──────
+   Nur auf diesem Geraet, mit eigenem Schluessel. Gemerkt wird ausschliesslich
+   auf ausdruecklichen Wunsch: Haken „Beim Drucken als versendet merken“, der
+   nach dem Druck wieder abfaellt. */
+const VERSAND_SCHLUESSEL = 'mediaSheetVersand';
+let VGL = null;              /* Vergleich fuer das Blatt im Aufbau, sonst null */
+let VERSAND_OFFEN = null;    /* Titel, die nach dem Druckdialog gemerkt werden */
+
+function versandLesen(){
+  try{
+    const o = JSON.parse(localStorage.getItem(VERSAND_SCHLUESSEL) || '{}');
+    return (o && typeof o === 'object' && !Array.isArray(o)) ? o : {};
+  }catch(e){ return {}; }
+}
+function versandEintrag(jahr, titel){
+  const e = versandLesen()[jahr + ' § ' + titel];
+  return e && e.abzug && e.datum ? e : null;
+}
+function versandMerken(jahr, titel){
+  const t = (BESTAND[jahr] || {})[titel];
+  if(!t) return;
+  const o = versandLesen();
+  o[jahr + ' § ' + titel] = { datum: datumText(new Date()), abzug: versandAbzug(t) };
+  try{ localStorage.setItem(VERSAND_SCHLUESSEL, JSON.stringify(o)); }catch(e){}
+}
+function versandFuer(jahr, titel){
+  if(!document.getElementById('sAend').checked) return null;
+  const e = versandEintrag(jahr, titel), t = (BESTAND[jahr] || {})[titel];
+  return e && t ? Object.assign({ datum: e.datum }, versandVergleich(e.abzug, t)) : null;
+}
+/* Satz fuer die Legende. sichtbar: ob auf dem Blatt mindestens ein Punkt steht. */
+/* Eigene Zeile ueber den uebrigen Erlaeuterungen (Marcus, 26.09.2026). */
+function versandSatz(sichtbar, entfallen){
+  if(!VGL) return '';
+  const d = esc(VGL.datum), weg = entfallen.map(esc).join(', ');
+  const satz = sichtbar
+    ? '<span class="gm-punkt"></span>Geändert seit dem Versand am ' + d + '.' + (weg ? ' Entfallen: ' + weg + '.' : '')
+    : weg ? 'Seit dem Versand am ' + d + ' entfallen: ' + weg + '.'
+          : 'Seit dem Versand am ' + d + ' unverändert.';
+  return '<span class="lg-versand">' + satz + '</span>';
+}
+const markiert = (html, ja) => ja ? '<span class="gm">' + html + '</span>' : html;
 
 /* ═══════════════════════════════════════════════════════════════════════════
    Aufbau der Blaetter
@@ -1436,24 +1561,27 @@ const TERMIN_WORT = {DU:'DU-Schluss', EH:'Anlieferschluss'};
 const HAKEN = '<span class="haken">✓</span>';
 
 function preisZeile(p, zeigeRabatt, zeigeAE, zeigeTermin, einspaltig){
-  let h = '<tr><td class="fmt">' + esc(p.format) + '</td>';
+  /* Aenderungsmarken: ein neues Format einmal am Namen, sonst je Wert. */
+  const d = VGL ? VGL.preise[versandFormat(p)] : null;
+  const neu = d === 'neu', hat = f => Array.isArray(d) && d.includes(f);
+  let h = '<tr><td class="fmt">' + markiert(esc(p.format), neu) + '</td>';
   if(einspaltig){
-    h += '<td class="zahl stark">' + geld(p.preis) + '</td>';
+    h += '<td class="zahl stark">' + markiert(geld(p.preis), hat('preis')) + '</td>';
   }else{
     const vier = (p.preis != null && p.zuschlag != null && p.zuschlag > 0)
       ? geld(Number(p.preis) + Number(p.zuschlag)) : '';
-    h += '<td class="zahl">' + geld(p.preis) + '</td>' +
-         '<td class="zahl">' + (p.zuschlag ? geld(p.zuschlag) : '') + '</td>' +
-         '<td class="zahl stark">' + vier + '</td>';
+    h += '<td class="zahl">' + markiert(geld(p.preis), hat('preis')) + '</td>' +
+         '<td class="zahl">' + markiert(p.zuschlag ? geld(p.zuschlag) : '', hat('zuschlag')) + '</td>' +
+         '<td class="zahl stark">' + markiert(vier, hat('preis') || hat('zuschlag')) + '</td>';
   }
-  if(zeigeTermin) h += '<td class="mitte klein">' + esc(TERMIN_WORT[p.terminart] || p.terminart || '') + '</td>';
-  if(zeigeRabatt) h += '<td class="mitte klein">' + (p.rabatt ? HAKEN : '') + '</td>';
-  if(zeigeAE) h += '<td class="mitte klein">' + (p.ae ? HAKEN : '') + '</td>';
+  if(zeigeTermin) h += '<td class="mitte klein">' + markiert(esc(TERMIN_WORT[p.terminart] || p.terminart || ''), hat('terminart')) + '</td>';
+  if(zeigeRabatt) h += '<td class="mitte klein">' + markiert(p.rabatt ? HAKEN : '', hat('rabatt')) + '</td>';
+  if(zeigeAE) h += '<td class="mitte klein">' + markiert(p.ae ? HAKEN : '', hat('ae')) + '</td>';
   return h + '</tr>';
 }
 
-function preisLegende(L, zeigeRabatt, zeigeAE, zeigeTermin, einspaltig){
-  const teile = [];
+function preisLegende(L, zeigeRabatt, zeigeAE, zeigeTermin, einspaltig, versand){
+  const teile = versand ? [versand] : [];
   if(zeigeTermin){
     const du = L.preise.some(p => p.terminart === 'DU'), eh = L.preise.some(p => p.terminart === 'EH');
     teile.push('<b>Produktionstermin</b> – ' + [
@@ -1492,13 +1620,23 @@ function preisseitenBauen(L){
   const zeigeTermin = document.getElementById('sTermin').checked && L.hatTerminart;
   const einspaltig = !L.hatZuschlag;
   const kopfHtml = preisKopf(zeigeRabatt, zeigeAE, zeigeTermin, einspaltig);
-  const legende = preisLegende(L, zeigeRabatt, zeigeAE, zeigeTermin, einspaltig);
+  const G = gruppen(L, AUSWAHL);
+  if(!G.length) return;
+
+  /* Steht auf dem Blatt ueberhaupt ein Punkt? Aenderungen in ausgeblendeten
+     Spalten oder Formaten zeigen keinen. */
+  VGL = versandFuer(GEWAEHLT.jahr, GEWAEHLT.titel);
+  const zuSehen = ['preis'].concat(einspaltig ? [] : ['zuschlag'], zeigeTermin ? ['terminart'] : [],
+                                   zeigeRabatt ? ['rabatt'] : [], zeigeAE ? ['ae'] : []);
+  const sichtbar = !!VGL && G.some(g => g.zeilen.some(p => {
+    const d = VGL.preise[versandFormat(p)];
+    return d === 'neu' || (Array.isArray(d) && d.some(f => zuSehen.includes(f)));
+  }));
+  const legende = preisLegende(L, zeigeRabatt, zeigeAE, zeigeTermin, einspaltig,
+                               VGL ? versandSatz(sichtbar, VGL.entfallenFormate) : '');
   const unter = 'Fachbereich ' + esc(L.fach) +
                 (L.auflage ? ' · Auflage <b>' + zahl(L.auflage) + '</b> Exemplare' : '') +
                 (L.termine.length ? ' · ' + L.termine.length + ' Ausgaben im Jahr' : '');
-
-  const G = gruppen(L, AUSWAHL);
-  if(!G.length) return;
 
   let blatt = neuesBlatt('Anzeigenpreisliste', unter);
   koerper(blatt).insertAdjacentHTML('beforeend', '<h2 class="abschnitt">Preise</h2>');
@@ -1513,11 +1651,11 @@ function preisseitenBauen(L){
 
   const anfuegen = (html) => {
     zeilen.push(html);
-    tabelleSetzen(blatt, kopfHtml, zeilen, null);
+    tabelleSetzen(blatt, kopfHtml, zeilen, VGL ? 'mit-marken' : null);
     legendeSetzen(blatt);
     if(laeuftUeber(blatt)){
       zeilen.pop();
-      tabelleSetzen(blatt, kopfHtml, zeilen, null);
+      tabelleSetzen(blatt, kopfHtml, zeilen, VGL ? 'mit-marken' : null);
       return false;      /* passt nicht mehr */
     }
     return true;
@@ -1552,7 +1690,7 @@ function preisseitenBauen(L){
         /* Der Rest der Gruppe kommt auf ein neues Blatt. Wurde auf diesem Blatt
            noch keine einzige Zeile der Gruppe gesetzt, wandert auch die
            Ueberschrift mit, damit sie nicht allein stehen bleibt. */
-        if(gesetzt === 0){ zeilen.pop(); tabelleSetzen(blatt, kopfHtml, zeilen, null); }
+        if(gesetzt === 0){ zeilen.pop(); tabelleSetzen(blatt, kopfHtml, zeilen, VGL ? 'mit-marken' : null); }
         blatt = neuesBlatt('Anzeigenpreisliste · Fortsetzung', unter);
         zeilen = [];
         fortsetzung = gesetzt > 0;
@@ -1632,14 +1770,16 @@ function terminZeile(L, a, zeigeThemen, zeigeKong){
     if(!s) return '<span class="leer">–</span>';
     return s.split(/\r?\n/).filter(z => z.trim()).map(z => esc(z.trim())).join('<br>');
   };
-  let h = '<tr><td class="mitte stark">' + esc(a.heft) + '</td>' +
+  const d = VGL ? VGL.termine[versandWert(a.heft)] : null;
+  const hat = f => Array.isArray(d) && d.includes(f);
+  let h = '<tr><td class="mitte stark">' + markiert(esc(a.heft), d === 'neu') + '</td>' +
           '<td>' + esc(a.monat) + '</td>';
-  if(L.hatET) h += '<td class="mitte">' + esc(a.et) + '</td>';
-  if(L.hatAS) h += '<td class="mitte">' + esc(a.as) + '</td>';
-  if(L.hatDU) h += '<td class="mitte">' + esc(a.du) + '</td>';
-  if(L.hatEH) h += '<td class="mitte">' + esc(a.eh) + '</td>';
-  if(zeigeThemen) h += '<td class="thema">' + mehrzeilig(a.themen) + '</td>';
-  if(zeigeKong)   h += '<td class="kong">' + mehrzeilig(a.kongresse) + '</td>';
+  if(L.hatET) h += '<td class="mitte">' + markiert(esc(a.et), hat('et')) + '</td>';
+  if(L.hatAS) h += '<td class="mitte">' + markiert(esc(a.as), hat('as')) + '</td>';
+  if(L.hatDU) h += '<td class="mitte">' + markiert(esc(a.du), hat('du')) + '</td>';
+  if(L.hatEH) h += '<td class="mitte">' + markiert(esc(a.eh), hat('eh')) + '</td>';
+  if(zeigeThemen) h += '<td class="thema">' + markiert(mehrzeilig(a.themen), hat('themen')) + '</td>';
+  if(zeigeKong)   h += '<td class="kong">' + markiert(mehrzeilig(a.kongresse), hat('kongresse')) + '</td>';
   return h + '</tr>';
 }
 
@@ -1664,13 +1804,21 @@ function terminseitenBauen(L){
   if(!L.hatET && !L.hatAS && !L.hatDU && !L.hatEH && !zeigeThemen && !zeigeKong) return;
 
   const kopfHtml = terminKopf(L, zeigeThemen, zeigeKong);
+  VGL = versandFuer(GEWAEHLT.jahr, GEWAEHLT.titel);
+  const zuSehen = [].concat(L.hatET ? ['et'] : [], L.hatAS ? ['as'] : [], L.hatDU ? ['du'] : [],
+                            L.hatEH ? ['eh'] : [], zeigeThemen ? ['themen'] : [], zeigeKong ? ['kongresse'] : []);
+  const sichtbar = !!VGL && liste.some(a => {
+    const d = VGL.termine[versandWert(a.heft)];
+    return d === 'neu' || (Array.isArray(d) && d.some(f => zuSehen.includes(f)));
+  });
+  const versand = VGL ? versandSatz(sichtbar, VGL.entfallenHefte.map(h => 'Heft ' + h)) + ' ' : '';
   const kuerzel = [];
   if(L.hatET) kuerzel.push('<b>ET</b> Erscheinungstermin');
   if(L.hatAS) kuerzel.push('<b>AS</b> Anzeigenschluss');
   if(L.hatDU) kuerzel.push('<b>DU</b> Druckunterlagenschluss');
   if(L.hatEH) kuerzel.push('<b>EH</b> Anlieferschluss Ein- und Durchhefter sowie Beilagen');
   const legende =
-    '<div class="legende">' +
+    '<div class="legende">' + versand +
     (kuerzel.length ? kuerzel.join(' · ') + '. Termine ohne Jahresangabe gelten für ' +
                       esc(GEWAEHLT.jahr) + '. ' : '') +
     (ohneAlte ? 'Ausgaben mit verstrichenem Anzeigenschluss sind nicht aufgeführt.' : '') +
@@ -2050,6 +2198,8 @@ function sammelFenster(){
     '<div class="sd-liste">' + h + '</div>' +
     '<div class="sd-fuss">Jeder Titel beginnt auf einer neuen Seite und trägt seinen eigenen Stand, ' +
       'seinen Ansprechpartner und seine eigene Seitenzählung. Alle Formate stehen auf dem Blatt.</div>' +
+    '<label class="sd-merk"><input type="checkbox" id="sdMerk"' +
+      (document.getElementById('sMerk').checked ? ' checked' : '') + '> Beim Drucken als versendet merken</label>' +
     '<div class="dlg-row"><button type="button" class="dlg-btn sekundaer" id="sdAbbr">Abbrechen</button>' +
     '<button type="button" class="dlg-btn" id="sdLos"></button></div></div>';
   document.body.appendChild(back);
@@ -2062,6 +2212,7 @@ function sammelFenster(){
   });
   los.onclick = () => {
     const titel = w.gewaehlt();
+    VERSAND_OFFEN = back.querySelector('#sdMerk').checked ? titel : null;
     w.zu();
     sammelZeichnen(titel);
     window.print();
@@ -2252,6 +2403,16 @@ function leisteNachfuehren(){
   zeigen('sKongFeld',      !!(terminteil && L.hatKongresse));
   zeigen('sVerstrichenFeld', !!(terminteil && L.hatVerstrichene));
   document.getElementById('sVorlFeld').hidden = !(preisteil || terminteil);
+  /* Aenderungsmarken nur, wenn fuer Titel und Jahrgang ein Versand gemerkt ist. */
+  zeigen('sAendFeld', !!(preisteil || terminteil));
+  zeigen('sMerkFeld', !!(preisteil || terminteil));
+  const vs = L ? versandEintrag(GEWAEHLT.jahr, GEWAEHLT.titel) : null;
+  const aend = document.getElementById('sAend');
+  aend.disabled = !vs;
+  if(!vs) aend.checked = false;
+  document.getElementById('sAendFeld').classList.toggle('aus', !vs);
+  document.getElementById('sAendText').textContent =
+    vs ? 'Änderungen seit Versand am ' + vs.datum : 'Noch kein Versand gemerkt';
   document.getElementById('fachFeld').hidden = !preisteil;
 
   /* Bleibt in einem Abschnitt kein Schalter uebrig, entfaellt der Abschnitt
@@ -2404,6 +2565,10 @@ function wechseln(){
   /* Die Konditionen werden je Titel abgeschaltet, etwa wenn sie ein Extrablatt
      kosten - beim naechsten Titel stehen sie wieder da. Deshalb nicht gemerkt. */
   document.getElementById('sKond').checked = true;
+  /* Aenderungsmarken und Merken gelten nur fuer das offene Blatt, damit keines
+     davon unbemerkt auf dem naechsten Kundenblatt landet. */
+  document.getElementById('sAend').checked = false;
+  document.getElementById('sMerk').checked = false;
   AKTUELL = lage(GEWAEHLT.jahr, GEWAEHLT.titel);
   leisteNachfuehren();
   fachAufbauen();
@@ -2490,17 +2655,30 @@ async function starten(){
   document.querySelectorAll('.umfang button').forEach(b => {
     b.addEventListener('click', () => { if(!b.disabled) umfangSetzen(b.id); });
   });
-  ['sRabatt','sAE','sTermin','sKond','sThemen','sKong','sVerstrichen','sVorl'].forEach(id => {
+  ['sRabatt','sAE','sTermin','sKond','sThemen','sKong','sVerstrichen','sVorl','sAend'].forEach(id => {
     document.getElementById(id).addEventListener('change', () => {
       einstellungenMerken(id);
       zeichnen();
     });
   });
-  document.getElementById('druckKnopf').addEventListener('click', () => window.print());
+  document.getElementById('druckKnopf').addEventListener('click', () => {
+    VERSAND_OFFEN = document.getElementById('sMerk').checked ? [GEWAEHLT.titel] : null;
+    window.print();
+  });
   document.getElementById('sammelKnopf').addEventListener('click', sammelFenster);
   document.getElementById('kalenderKnopf').addEventListener('click', kalenderFenster);
   /* Nach dem Sammeldruck (auch abgebrochen) wieder das offene Blatt. */
-  window.addEventListener('afterprint', () => { if(document.querySelector('.sd-trenner')) zeichnen(); });
+  window.addEventListener('afterprint', () => {
+    /* Gemerkt wird erst nach dem Druckdialog, damit das PDF die Punkte noch
+       gegen den alten Stand traegt. Der Haken faellt danach wieder ab. */
+    if(VERSAND_OFFEN){
+      VERSAND_OFFEN.forEach(t => versandMerken(GEWAEHLT.jahr, t));
+      VERSAND_OFFEN = null;
+      document.getElementById('sMerk').checked = false;
+      leisteNachfuehren();
+      zeichnen();
+    }else if(document.querySelector('.sd-trenner')) zeichnen();
+  });
 
   /* Klappfach: oeffnet und schliesst am Knopf, schliesst beim Klick daneben
      und mit Escape. */
