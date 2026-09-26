@@ -501,7 +501,9 @@ button, input, select, textarea { font-family: inherit; }
   border-bottom: 1px solid var(--sm-border);
 }
 
-/* ── FACHBEREICHS-GRUPPEN (Kopfzeilen in der Titel-Sidebar) ── */
+/* ── FACHBEREICHS-GRUPPEN (Kopfzeilen in der Titel-Sidebar) ──
+   Seit 26.09.2026 echte Knöpfe wie in MediaSheet (vorher ein <div> mit Mausklick):
+   per Tab-Taste erreichbar, Enter/Leertaste klappt, Vorleseprogramme sagen „Taste“. */
 .tabgrp {
   display: flex;
   align-items: center;
@@ -2448,7 +2450,7 @@ function buildTabs(){
   if(!J.length)el.innerHTML='';
   else if(!fbGroups.length)el.innerHTML=J.map((j,i)=>tabHtml(i,null)).join('');
   else el.innerHTML=fbGroups.map((g,gi)=>
-    `<div class="tabgrp" id="fb_${gi}" onclick="toggleFb(${gi})"><span class="fb-toggle">&#9660;</span><span class="fb-lbl">${esc(g.l)}</span><span class="cat-badge" id="fbbadge_${gi}" style="display:none" title="belegte Platzierungen"></span></div>`
+    `<button type="button" class="tabgrp" id="fb_${gi}" onclick="toggleFb(${gi})"><span class="fb-toggle">&#9660;</span><span class="fb-lbl">${esc(g.l)}</span><span class="cat-badge" id="fbbadge_${gi}" style="display:none" title="belegte Platzierungen"></span></button>`
     +g.idx.map(ji=>tabHtml(ji,gi)).join('')).join('');
   const sw=document.getElementById('titleSearchWrap');if(sw)sw.style.display=J.length>1?'':'none';
   const si=document.getElementById('titleSearch');filterTabs(si?si.value:'');
