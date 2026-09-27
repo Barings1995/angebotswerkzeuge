@@ -683,9 +683,35 @@ button, input, select, textarea { font-family: inherit; }
   /* Umschalter „Termine und Themen“ / „Interne Termine“ (27.09.2026) */
   .ansicht-wahl { margin: 0 0 10px; }
   .reiter.klein button { height: 30px; font-size: 12.5px; padding: 0 12px; }
-  .termin-tab.intern { min-width: 776px; }
-  .termin-tab.intern th { white-space: normal; }
-  .termin-tab td.nur-lesen { color: var(--grey-600); padding-left: 10px; vertical-align: middle; }
+  .termin-tab th.intern-kopf { white-space: normal; }
+  .spalte-inhalt .tab-roll.eigen { overflow-x: auto; }
+  .termin-tab.inhalte th { white-space: normal; }
+  .termin-tab td.nur-lesen { color: var(--grey-600); padding-left: 10px; vertical-align: top; padding-top: 9px; }
+  .termin-tab.inhalte .kleben { position: sticky; left: 0; z-index: 4; background: var(--white); box-shadow: inset -1px 0 0 var(--border); }
+  .termin-tab.inhalte th.kleben { z-index: 5; background: var(--surface-hover); }
+  .termin-tab.inhalte .ausgabe-heft { color: var(--text); font-weight: 600; }
+  /* Rubrikenleiste (27.09.2026) */
+  .rubrik-leiste { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin: 0 0 12px;
+    padding: 8px 10px; background: var(--surface-hover); border: 1px solid var(--border); border-radius: var(--radius-md); }
+  .rubrik-leiste.aend { border-color: #f0c58c; background: #fff7ec; }
+  .rubrik-etikett { font-size: 11px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--navy); margin-right: 6px; }
+  .rubrik-chip { display: inline-flex; align-items: center; height: 28px; padding: 0 4px; background: var(--white);
+    border: 1px solid #aeb8cc; border-radius: 14px; }
+  .rubrik-chip.fest { background: #eef4fa; }
+  .rubrik-chip button { border: none; background: none; font-family: var(--font-body); cursor: pointer; border-radius: 10px; }
+  .rubrik-chip .chip-name { font-size: 12.5px; font-weight: 600; color: var(--navy); padding: 3px 6px; }
+  .rubrik-chip .chip-knopf { color: var(--grey-500); font-size: 15px; line-height: 1; width: 20px; height: 22px; padding: 0; }
+  .rubrik-chip .chip-x { font-size: 16px; }
+  .rubrik-chip button:hover { background: #e3f1fb; color: var(--navy); }
+  .rubrik-knopf { height: 28px; font-size: 12.5px; padding: 0 10px; gap: 5px; }
+  .rubrik-feld { height: 28px; width: 230px; font-size: 12.5px; padding: 0 8px; }
+  .rubrik-vs { flex-basis: 100%; display: flex; flex-wrap: wrap; align-items: center; gap: 6px;
+    margin-top: 4px; padding-top: 8px; border-top: 1px solid var(--border); }
+  .rubrik-vs .vs-kopf { font-size: 12px; color: var(--grey-600); margin-right: 4px; }
+  .vs-chip { height: 26px; padding: 0 10px 0 8px; border: 1px dashed #aeb8cc; background: var(--white);
+    border-radius: 13px; font-family: var(--font-body); font-size: 12.5px; color: var(--navy); cursor: pointer; }
+  .vs-chip:hover { background: #e3f1fb; border-style: solid; border-color: var(--navy); }
+  .vs-chip .vs-plus { color: var(--grey-500); margin-right: 4px; }
   .termin-tab td { padding-top: 4px; padding-bottom: 4px; vertical-align: top; }
   .termin-tab td input, .termin-tab td textarea { line-height: 1.5; }
   .termin-tab td textarea { display: block; width: 100%; padding: 3px 6px;
@@ -1152,10 +1178,10 @@ async function abmelden() {
 
 /* ── Laden ────────────────────────────────────────────────────────────────── */
 const FELDER =
-  'id,jahr,reihenfolge,name,auflage,fachbereich,' +
+  'id,jahr,reihenfolge,name,auflage,fachbereich,rubriken,' +
   'preis(id,reihenfolge,kategorie,format,preis,zuschlag_4c,rabattfaehig,ae_faehig,termin_art,seiten_aequivalent),' +
   'termin(id,reihenfolge,heft,monat,et,anzeigenschluss,du_schluss,eh_termin,' +
-  'anlieferung_herstellung,heftfreigabe,versand_themenvorschau,themen,kongresse)';
+  'anlieferung_herstellung,heftfreigabe,versand_themenvorschau,themen,kongresse,inhalte)';
 
 async function ladenAusDatenbank() {
   const zeilen = await daten('titel?select=' + encodeURIComponent(FELDER) +
@@ -1163,7 +1189,8 @@ async function ladenAusDatenbank() {
   zeilen.forEach(t => {
     t.jahr = String(t.jahr);
     t.preis  = (t.preis  || []).map(p => Object.assign({}, p));
-    t.termin = (t.termin || []).map(a => Object.assign({}, a));
+    t.termin = (t.termin || []).map(a => Object.assign({}, a, { inhalte: inhalteOrdnen(a.inhalte) }));
+    t.rubriken = rubrikenOrdnen(t.rubriken);
   });
   URSPRUNG = zeilen;
   ARBEIT = JSON.parse(JSON.stringify(zeilen));
@@ -1414,6 +1441,7 @@ function titelGeaendert(t) {
   if (u.name !== t.name || u.auflage !== t.auflage || u.fachbereich !== t.fachbereich) return true;
   if (!gleich(u.preis, t.preis)) return true;
   if (!gleich(u.termin, t.termin)) return true;
+  if (!gleich(u.rubriken || [], t.rubriken || [])) return true;
   return false;
 }
 function offeneAenderungen() {
@@ -1565,14 +1593,27 @@ function aenderungenVon(t) {
       stelle: 'kat-' + (erste == null ? katJetzt[0] : erste) });
   }
 
+  if (!gleich(rubrikenVon(u), rubrikenVon(t))) dazu({ bereich: 'Themen und Kongresse', wo: 'Rubriken', name: 'Rubriken',
+    alt: rubrikenVon(u).map(x => x.name).join(' · '), neu: rubrikenVon(t).map(x => x.name).join(' · '),
+    reiter: 'termine', stelle: 'rubriken' });
+
   const altTermin = u.termin || [], neuTermin = t.termin || [];
   neuTermin.forEach(z => {
     const a = altTermin.find(x => x.id === z.id);
     const wo = heftText(z.heft) || 'Ausgabe ohne Heft';
     if (!a) { dazu({ bereich: 'Termine', wo: wo, art: 'neu', zeileId: z.id, reiter: 'termine', stelle: 'termin-' + z.id + '-heft' }); return; }
     TERMIN_PRUEF.forEach(([f, name]) => {
-      if (roh(a[f]) !== roh(z[f])) dazu({ bereich: 'Termine', wo: wo, name: name,
+      const inhalt = f === 'themen' || f === 'kongresse';
+      if (inhalt) name = (rubrikenVon(t).find(x => x.id === f) || {}).name || name;
+      if (roh(a[f]) !== roh(z[f])) dazu({ bereich: inhalt ? 'Themen und Kongresse' : 'Termine', wo: wo, name: name,
         alt: terminWert(f, a[f]), neu: terminWert(f, z[f]), reiter: 'termine', stelle: 'termin-' + z.id + '-' + f });
+    });
+    const ai = a.inhalte || {}, zi = z.inhalte || {};
+    [...new Set(Object.keys(ai).concat(Object.keys(zi)))].forEach(rid => {
+      if (roh(ai[rid]) === roh(zi[rid])) return;
+      const rub = rubrikenVon(t).find(x => x.id === rid) || rubrikenVon(u).find(x => x.id === rid);
+      dazu({ bereich: 'Themen und Kongresse', wo: wo, name: rub ? rub.name : 'Rubrik',
+        alt: leerText(ai[rid]), neu: leerText(zi[rid]), reiter: 'termine', stelle: 'termin-' + z.id + '-inhalt-' + rid });
     });
   });
   altTermin.forEach(a => {
@@ -1724,7 +1765,7 @@ function uebersichtSprung(i) {
   }
   gewJahr = x.jahr;
   gewTitel = x.titelId;
-  if (x.reiter === 'termine' && x.stelle) terminIntern = INTERN_FELDER.some(f => x.stelle.endsWith('-' + f));
+  if (x.reiter === 'termine' && x.stelle) terminAnsichtWahl = stelleIstInhalt(x.stelle) ? 'inhalte' : 'termine';
   if (x.reiter && x.reiter !== reiter) reiterWechseln(x.reiter); else zeichnen();
   const ziel = x.stelle && [...document.querySelectorAll('#inhalt [data-stelle]')].find(el => el.dataset.stelle === x.stelle);
   if (!ziel) { document.getElementById('inhalt').scrollIntoView({ block: 'start' }); return; }
@@ -2032,6 +2073,11 @@ function suchTreffer() {
             raus.push({ t: t, feld: f[1], wert: trefferZeilen(a[f[0]], suche),
                         heft: (a.heft || '') + (a.monat ? ' \u00b7 ' + a.monat : '') });
           }
+        });
+        rubrikenVon(t).filter(x => !FESTE_RUBRIK[x.id]).forEach(x => {
+          const w = (a.inhalte || {})[x.id];
+          if (passt(w, suche)) raus.push({ t: t, feld: x.name, wert: trefferZeilen(w, suche),
+                                           heft: (a.heft || '') + (a.monat ? ' \u00b7 ' + a.monat : '') });
         });
       });
     }
@@ -2483,58 +2529,221 @@ function jaNein(id, feld, wert) {
     '<option value="nein"' + (wert ? '' : ' selected') + '>nein</option></select>';
 }
 
-/* Interne Termine (seit 27.09.2026): Anzeigen an Herstellung (HST), Heft- bzw.
-   Druckfreigabe (FREI) und Versand der Themenvorschau (TV). Sie erreichen nur den
-   Kalender von MediaSheet, nie ein Angebot oder Preisblatt. Eigene Ansicht statt
-   drei weiterer Spalten: mit ihnen wurde die Tabelle selbst bei 1440 px zu breit,
-   Kongresse rutschten aus dem Bild, Themen und Kongresse schrumpften auf 170 px
-   und die Zeilen wurden sehr hoch (Variante A, verworfen). Die Ansicht bleibt beim
-   Titelwechsel stehen - eingetragen wird meist Titel fuer Titel. */
+/* Zwei Ansichten im Reiter „Termine“ (seit 27.09.2026, Marcus' Vorschlag):
+   „Termine“ traegt alle Termine einer Ausgabe - die veroeffentlichten und die
+   internen (HST Anzeigen an Herstellung, FREI Heft-/Druckfreigabe, TV Versand
+   Themenvorschau; nur fuer den Kalender von MediaSheet). „Themen und Kongresse“
+   traegt die Inhalte: Themenschwerpunkte und Kongresse als feste Rubriken, dazwischen
+   die freien Rubriken des Titels, benannt wie in seinem Themenplan.
+   Vorher (nur wenige Stunden): Termine mit Themen/Kongressen und eine eigene
+   Ansicht „Interne Termine“ mit ET/AS/DU/EH grau zum Nachsehen. Alle drei internen
+   Termine als weitere Spalten neben Themen und Kongressen waren zu breit (bei 1440 px
+   1116 statt 1074 px, Kongresse aus dem Bild). Die Wahl bleibt beim Titelwechsel
+   stehen - gepflegt wird meist Titel fuer Titel. */
 const INTERN_FELDER = ['anlieferung_herstellung', 'heftfreigabe', 'versand_themenvorschau'];
-let terminIntern = false;
-function terminAnsicht(intern) { terminIntern = intern; zeichnen(); }
+let terminAnsichtWahl = 'termine';
+function terminAnsicht(w) { terminAnsichtWahl = w; rubrikEingabe = null; zeichnen(); }
+function stelleIstInhalt(stelle) {
+  return stelle === 'rubriken' || stelle.includes('-inhalt-') || /-(themen|kongresse)$/.test(stelle);
+}
+
+/* ── Rubriken ──
+   titel.rubriken ist eine Liste { id, name } in der Reihenfolge der Spalten.
+   Themenschwerpunkte und Kongresse stehen darin mit festen Kennungen; ihr Inhalt
+   bleibt in termin.themen und termin.kongresse, die OpenSlots, MediaQuote und
+   MediaSheet unveraendert lesen. Umbenennen laesst sich jede Rubrik, entfernen und
+   verschieben nur die freien. Die Inhalte der freien Rubriken stehen in
+   termin.inhalte unter der Kennung der Rubrik, nicht unter ihrem Namen - so aendert
+   ein Umbenennen keine einzige Ausgabe. Eine leere Liste heisst: nur die beiden
+   festen, unter ihren gewohnten Namen. */
+const FESTE_RUBRIK = { themen: 'Themenschwerpunkte', kongresse: 'Kongresse' };
+function rubrikenOrdnen(liste) {
+  return Array.isArray(liste) ? liste.filter(x => x && x.id).map(x => ({ id: String(x.id), name: String(x.name || '') })) : [];
+}
+function rubrikenVon(t) {
+  const eigen = rubrikenOrdnen(t && t.rubriken);
+  const fest = id => eigen.find(x => x.id === id) || { id: id, name: FESTE_RUBRIK[id] };
+  return [fest('themen')].concat(eigen.filter(x => !FESTE_RUBRIK[x.id]), [fest('kongresse')]);
+}
+/* Leere Eintraege fallen weg, die Schluessel stehen sortiert: die Datenbank gibt
+   jsonb mit eigener Schluesselfolge zurueck, und der Vergleich laeuft ueber den
+   Wortlaut - ohne feste Folge stuende „geaendert“ ohne Aenderung. */
+function inhalteOrdnen(o) {
+  const raus = {};
+  if (o && typeof o === 'object') Object.keys(o).sort().forEach(k => { if (String(o[k] || '').trim()) raus[k] = String(o[k]); });
+  return raus;
+}
+function rubrikKennung(t) {
+  const da = new Set(rubrikenVon(t).map(x => x.id));
+  let id;
+  do { id = 'r' + Math.random().toString(36).slice(2, 8); } while (da.has(id));
+  return id;
+}
+function rubrikenSetzen(t, liste) {
+  /* Gespeichert wird nur, was vom Standard abweicht - ein Titel, dessen Rubriken
+     man nie angefasst hat, bleibt bei der leeren Liste. */
+  const standard = [{ id: 'themen', name: FESTE_RUBRIK.themen }, { id: 'kongresse', name: FESTE_RUBRIK.kongresse }];
+  t.rubriken = gleich(liste, standard) ? [] : liste.map(x => ({ id: x.id, name: x.name }));
+}
+function rubrikNameFehler(t, name, ausser) {
+  if (!name) return 'Die Rubrik braucht einen Namen.';
+  if (rubrikenVon(t).some(x => x.id !== ausser && x.name.trim().toLowerCase() === name.toLowerCase()))
+    return 'Die Rubrik „' + name + '“ gibt es bei diesem Titel schon.';
+  return '';
+}
+let rubrikEingabe = null;   /* null: zu; sonst der Text im Eingabefeld */
+function rubrikOeffnen() { rubrikEingabe = ''; zeichnen(); const f = document.getElementById('rubrikFeld'); if (f) f.focus(); }
+function rubrikSchliessen() { rubrikEingabe = null; zeichnen(); }
+function rubrikHinzufuegen(name) {
+  const t = titelVonId(gewTitel); if (!t) return;
+  name = String(name == null ? (document.getElementById('rubrikFeld') || {}).value || '' : name).trim();
+  const fehler = rubrikNameFehler(t, name);
+  if (fehler) { meldung(fehler, true); return; }
+  const liste = rubrikenVon(t);
+  liste.splice(liste.length - 1, 0, { id: rubrikKennung(t), name: name });
+  rubrikenSetzen(t, liste);
+  rubrikEingabe = null;
+  zeichnen();
+}
+function rubrikVorschlagen(i) {
+  const t = titelVonId(gewTitel); if (!t) return;
+  const v = rubrikVorschlaege(t)[i]; if (v) rubrikHinzufuegen(v[0]);
+}
+function rubrikSchieben(i, um) {
+  const t = titelVonId(gewTitel); if (!t) return;
+  const liste = rubrikenVon(t), j = i + um;
+  if (FESTE_RUBRIK[liste[i].id] || !liste[j] || FESTE_RUBRIK[liste[j].id]) return;
+  [liste[i], liste[j]] = [liste[j], liste[i]];
+  rubrikenSetzen(t, liste);
+  zeichnen();
+}
+async function rubrikUmbenennen(i) {
+  const t = titelVonId(gewTitel); if (!t) return;
+  const liste = rubrikenVon(t), x = liste[i];
+  const name = await eingabe('Rubrik umbenennen',
+    FESTE_RUBRIK[x.id] ? 'Der Name erscheint in MediaSheet. Der Inhalt bleibt derselbe, den auch OpenSlots und MediaQuote als ' + FESTE_RUBRIK[x.id] + ' lesen.'
+                       : 'Die Inhalte der Ausgaben bleiben erhalten; nur die Überschrift ändert sich.',
+    'Name', x.name, 'Umbenennen');
+  if (name == null) return;
+  const neu = String(name).trim();
+  const fehler = rubrikNameFehler(t, neu, x.id);
+  if (fehler) { meldung(fehler, true); return; }
+  x.name = neu;
+  rubrikenSetzen(t, liste);
+  zeichnen();
+}
+async function rubrikEntfernen(i) {
+  const t = titelVonId(gewTitel); if (!t) return;
+  const liste = rubrikenVon(t), x = liste[i];
+  if (FESTE_RUBRIK[x.id]) return;
+  const gefuellt = (t.termin || []).filter(a => String((a.inhalte || {})[x.id] || '').trim()).length;
+  if (gefuellt && !await frage('Rubrik entfernen?',
+    '<p>„' + esc(x.name) + '“ ist in ' + (gefuellt === 1 ? 'einer Ausgabe' : gefuellt + ' Ausgaben') + ' ausgefüllt. Diese Inhalte gehen mit der Rubrik verloren.</p>' +
+    '<p>Die Änderung wird erst mit „Speichern“ wirksam. Bis dahin nimmt „Verwerfen“ sie zurück.</p>', 'Entfernen')) return;
+  (t.termin || []).forEach(a => { if (a.inhalte && x.id in a.inhalte) { const o = Object.assign({}, a.inhalte); delete o[x.id]; a.inhalte = inhalteOrdnen(o); } });
+  rubrikenSetzen(t, liste.filter((_, k) => k !== i));
+  zeichnen();
+}
+/* Vorschlaege: freie Rubriken der uebrigen Titel desselben Jahrgangs, die haeufigsten
+   zuerst - damit neben „CME-Beitrag“ nicht aus Versehen „CME Beitrag“ entsteht. */
+function rubrikVorschlaege(t) {
+  const zahl = {}, hier = new Set(rubrikenVon(t).map(x => x.name.trim().toLowerCase()));
+  titelDesJahres().filter(x => x.id !== t.id).forEach(x => rubrikenVon(x).forEach(rub => {
+    if (FESTE_RUBRIK[rub.id]) return;
+    const n = rub.name.trim();
+    if (n && !hier.has(n.toLowerCase())) zahl[n] = (zahl[n] || 0) + 1;
+  }));
+  return Object.keys(zahl).sort((a, b) => zahl[b] - zahl[a] || a.localeCompare(b, 'de')).map(n => [n, zahl[n]]);
+}
+function inhaltSetzen(id, rid, wert) {
+  const t = titelVonId(gewTitel); if (!t) return;
+  const a = (t.termin || []).find(x => x.id === id); if (!a) return;
+  const o = Object.assign({}, a.inhalte);
+  o[rid] = String(wert).split('\n').map(z => z.trim()).filter(Boolean).join('\n');
+  a.inhalte = inhalteOrdnen(o);
+  spaeterZeichnen();
+}
 
 function termineZeichnen(t, karte) {
   karte = karte || aendKarte(t);
   const liste = t.termin || [];
-  if (!liste.length) return '<table><tr class="leer-zeile"><td>Noch keine Ausgaben hinterlegt.</td></tr></table>';
+  const knopf = (w, name) => '<button' + (terminAnsichtWahl === w ? ' class="an"' : '') +
+    ' onclick="terminAnsicht(\'' + w + '\')"><span>' + name + '</span></button>';
   const umschalter = '<div class="ansicht-wahl"><div class="reiter klein">' +
-    '<button' + (terminIntern ? '' : ' class="an"') + ' onclick="terminAnsicht(false)"><span>Termine und Themen</span></button>' +
-    '<button' + (terminIntern ? ' class="an"' : '') + ' onclick="terminAnsicht(true)"><span>Interne Termine</span></button></div></div>';
-  return umschalter + (terminIntern ? termineInternZeichnen(karte, liste) : termineAllgemeinZeichnen(karte, liste));
+    knopf('termine', 'Termine') + knopf('inhalte', 'Themen und Kongresse') + '</div></div>';
+  if (terminAnsichtWahl === 'inhalte') return umschalter + rubrikLeiste(t, karte) + inhalteZeichnen(t, karte, liste);
+  if (!liste.length) return umschalter + '<table><tr class="leer-zeile"><td>Noch keine Ausgaben hinterlegt.</td></tr></table>';
+  return umschalter + termineAllgemeinZeichnen(karte, liste);
 }
 
-/* ET, AS, DU und EH stehen daneben nur zum Nachsehen - die internen Termine
-   werden aus ihnen abgeleitet. Geaendert werden sie in der anderen Ansicht. */
-function termineInternZeichnen(karte, liste) {
-  let html = '<div class="tab-roll"><table class="termin-tab intern"><colgroup><col style="width:52px"><col style="width:88px"><col style="width:86px"><col style="width:86px"><col style="width:86px"><col style="width:86px"><col><col><col></colgroup>' +
-    '<tr><th>Heft</th><th>Monat</th><th>ET</th><th>AS</th><th>DU-Schluss</th><th>EH-Termin</th>' +
-    '<th title="Anzeigen an Herstellung">HST · Herstellung</th><th title="Heft-/Druckfreigabe">FREI · Freigabe</th>' +
-    '<th title="Versand Themenvorschau">TV · Themenvorschau</th></tr>';
+function rubrikLeiste(t, karte) {
+  const liste = rubrikenVon(t);
+  let h = '<div class="rubrik-leiste' + (karte.felder.has('rubriken') ? ' aend' : '') + '" data-stelle="rubriken"' +
+    (karte.felder.has('rubriken') ? ' data-vorher="' + esc('vorher: ' + karte.felder.get('rubriken')) + '"' : '') +
+    '><span class="rubrik-etikett">Rubriken</span>';
+  liste.forEach((x, i) => {
+    const frei = !FESTE_RUBRIK[x.id];
+    const links = frei && liste[i - 1] && !FESTE_RUBRIK[liste[i - 1].id];
+    const rechts = frei && liste[i + 1] && !FESTE_RUBRIK[liste[i + 1].id];
+    h += '<span class="rubrik-chip' + (frei ? '' : ' fest') + '">' +
+      (links ? '<button class="chip-knopf" title="nach links" aria-label="' + esc(x.name) + ' nach links" onclick="rubrikSchieben(' + i + ',-1)">‹</button>' : '') +
+      '<button class="chip-name" title="' + (frei ? 'Umbenennen' : 'Feste Rubrik – umbenennen') + '" onclick="rubrikUmbenennen(' + i + ')">' + esc(x.name) + '</button>' +
+      (rechts ? '<button class="chip-knopf" title="nach rechts" aria-label="' + esc(x.name) + ' nach rechts" onclick="rubrikSchieben(' + i + ',1)">›</button>' : '') +
+      (frei ? '<button class="chip-knopf chip-x" title="Rubrik entfernen" aria-label="' + esc(x.name) + ' entfernen" onclick="rubrikEntfernen(' + i + ')">×</button>' : '') +
+      '</span>';
+  });
+  if (rubrikEingabe === null) {
+    h += '<button class="btn rubrik-knopf" onclick="rubrikOeffnen()"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>Rubrik hinzufügen</button>';
+  } else {
+    h += '<input id="rubrikFeld" class="rubrik-feld" placeholder="Name der Rubrik" value="' + esc(rubrikEingabe) + '"' +
+      ' oninput="rubrikEingabe=this.value"' +
+      ' onkeydown="if(event.key===\'Enter\'){event.preventDefault();rubrikHinzufuegen()}else if(event.key===\'Escape\'){rubrikSchliessen()}">' +
+      '<button class="btn rubrik-knopf" onclick="rubrikHinzufuegen()">Hinzufügen</button>' +
+      '<button class="btn rubrik-knopf" onclick="rubrikSchliessen()">Abbrechen</button>';
+    const vs = rubrikVorschlaege(t);
+    if (vs.length) h += '<div class="rubrik-vs"><span class="vs-kopf">Bei anderen Titeln in Gebrauch:</span>' +
+      vs.map(([n, z], i) => '<button class="vs-chip" title="bei ' + z + (z === 1 ? ' Titel' : ' Titeln') + '" onclick="rubrikVorschlagen(' + i + ')"><span class="vs-plus" aria-hidden="true">+</span>' + esc(n) + '</button>').join('') + '</div>';
+  }
+  return h + '</div>';
+}
+
+/* Heft und Monat stehen grau in einer Spalte zum Zurechtfinden, geaendert werden
+   sie unter „Termine“. Jede Rubrik mindestens 150 px; bei vielen Rubriken rollt
+   die Tabelle seitlich, die Ausgabenspalte bleibt dabei links stehen. Eine Spalte
+   statt zwei: zwischen zwei stehenden Zellen schien beim Rollen der Text der
+   darunter durchlaufenden Spalte durch (Randnaht bei border-collapse). */
+function inhalteZeichnen(t, karte, liste) {
+  const rub = rubrikenVon(t);
+  if (!liste.length) return '<table><tr class="leer-zeile"><td>Noch keine Ausgaben hinterlegt.</td></tr></table>';
+  let html = '<div class="tab-roll"><table class="termin-tab inhalte" style="min-width:' + (100 + rub.length * 150) + 'px">' +
+    '<colgroup><col style="width:100px">' + rub.map(() => '<col>').join('') + '</colgroup>' +
+    '<tr><th class="kleben">Ausgabe</th>' + rub.map(x => '<th>' + esc(x.name) + '</th>').join('') + '</tr>';
   liste.forEach(a => {
-    const f = feld => terminGueltig(a[feld]) ? '' : ' fehler';
-    const nurLesen = feld => '<td class="nur-lesen">' + esc(a[feld] || '') + '</td>';
-    const feldZelle = feld => aendZelle(karte, 'termin-' + a.id + '-' + feld, '',
-      '<input class="' + f(feld) + '" value="' + esc(a[feld]) + '" onchange="terminSetzen(\'' + a.id + '\',\'' + feld + '\',this.value)">');
     html += '<tr' + (karte.neu.has(a.id) ? ' class="zeile-neu"' : '') + '>' +
-      nurLesen('heft') + nurLesen('monat') + nurLesen('et') + nurLesen('anzeigenschluss') +
-      nurLesen('du_schluss') + nurLesen('eh_termin') + INTERN_FELDER.map(feldZelle).join('') + '</tr>';
+      '<td class="nur-lesen kleben"><span class="ausgabe-heft">' + esc(a.heft || '') + '</span>' +
+        (a.monat ? '<br>' + esc(a.monat) : '') + '</td>' +
+      rub.map(x => FESTE_RUBRIK[x.id]
+        ? aendZelle(karte, 'termin-' + a.id + '-' + x.id, '', mehrzeilig(a.id, x.id, a[x.id]))
+        : aendZelle(karte, 'termin-' + a.id + '-inhalt-' + x.id, '',
+            '<textarea rows="1" oninput="hoeheAnpassen(this)" onchange="inhaltSetzen(\'' + a.id + '\',\'' + x.id + '\',this.value)">' +
+            esc((a.inhalte || {})[x.id] || '') + '</textarea>')).join('') +
+    '</tr>';
   });
   html += '</table></div>';
-  html += '<div class="fehlertext" style="color:var(--grey-600)">Interne Termine erscheinen nur im Kalender von MediaSheet, nie in Angebot oder Preisblatt. Ein leeres Feld ergibt keinen Kalendereintrag. ET, AS, DU- und EH-Termin stehen hier nur zum Nachsehen; geändert werden sie unter „Termine und Themen“.</div>';
+  html += '<div class="fehlertext" style="color:var(--grey-600)">Mehrere Punkte je Rubrik jeweils in eine eigene Zeile — Zeilenumbruch mit der Eingabetaste. Die Rubriken zwischen Themenschwerpunkten und Kongressen erscheinen nur in MediaSheet; leere Felder bleiben dort weg.</div>';
   return html;
 }
 
 function termineAllgemeinZeichnen(karte, liste) {
-  /* Eine Zeile je Ausgabe, Themenschwerpunkte und Kongresse als eigene Spalten.
-     Die sechs vorderen Spalten sind fest, die beiden hinteren teilen sich den
-     Rest — mindestens aber 170 px, darunter rollt die Tabelle seitlich.
-     Die festen Breiten sind gemessen, nicht geschätzt: Die Datumsspalten fassen
-     die lange Form 22.12.2026, die Spalte Monat den längsten Monatsnamen.
-     Zuvor standen Thema und Kongresse in einer zweiten Zeile darunter —
-     bequemer zu bearbeiten, aber die Liste war doppelt so lang. */
-  let html = '<div class="tab-roll"><table class="termin-tab"><colgroup><col style="width:52px"><col style="width:88px"><col style="width:86px"><col style="width:86px"><col style="width:86px"><col style="width:86px"><col><col><col style="width:34px"></colgroup>' +
-    '<tr><th>Heft</th><th>Monat</th><th>ET</th><th>AS</th><th>DU-Schluss</th><th>EH-Termin</th><th>Themenschwerpunkte</th><th>Kongresse</th><th></th></tr>';
+  /* Eine Zeile je Ausgabe mit allen Terminen: vorn die veroeffentlichten, dahinter
+     die drei internen. Die Datumsspalten fassen die lange Form 22.12.2026, die
+     Spalte Monat den laengsten Monatsnamen (gemessen, nicht geschaetzt). Themen
+     und Kongresse stehen seit dem 27.09.2026 unter „Themen und Kongresse“. */
+  let html = '<div class="tab-roll"><table class="termin-tab"><colgroup><col style="width:100px"><col style="width:88px"><col style="width:86px"><col style="width:86px"><col style="width:86px"><col style="width:86px"><col class="intern"><col class="intern"><col class="intern"><col style="width:34px"></colgroup>' +
+    '<tr><th>Heft</th><th>Monat</th><th>ET</th><th>AS</th><th>DU-Schluss</th><th>EH-Termin</th>' +
+    '<th class="intern-kopf" title="Anzeigen an Herstellung (intern)">HST · Herstellung</th>' +
+    '<th class="intern-kopf" title="Heft-/Druckfreigabe (intern)">FREI · Freigabe</th>' +
+    '<th class="intern-kopf" title="Versand Themenvorschau (intern)">TV · Themenvorschau</th><th></th></tr>';
   liste.forEach(a => {
     const f = feld => terminGueltig(a[feld]) ? '' : ' fehler';
     const st = feld => 'termin-' + a.id + '-' + feld;
@@ -2544,13 +2753,12 @@ function termineAllgemeinZeichnen(karte, liste) {
       feldZelle('heft') + feldZelle('monat') +
       feldZelle('et', f('et')) + feldZelle('anzeigenschluss', f('anzeigenschluss')) +
       feldZelle('du_schluss', f('du_schluss')) + feldZelle('eh_termin', f('eh_termin')) +
-      aendZelle(karte, st('themen'), '', mehrzeilig(a.id, 'themen', a.themen)) +
-      aendZelle(karte, st('kongresse'), '', mehrzeilig(a.id, 'kongresse', a.kongresse)) +
+      INTERN_FELDER.map(x => feldZelle(x, f(x))).join('') +
       '<td class="tat"><button class="zeilen-x" title="Ausgabe entfernen" onclick="terminEntfernen(\'' + a.id + '\')"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button></td>' +
     '</tr>';
   });
   html += '</table></div>';
-  html += '<div class="fehlertext" style="color:var(--grey-600)">Termine in der Form <b>TT.MM.</b> — der Jahrgang wird von den Werkzeugen ergänzt. Fällt ein Termin ins Vor- oder Folgejahr, die Jahreszahl mitschreiben: <b>22.12.2026</b>. Mehrere Themen und mehrere Kongresse jeweils in eine eigene Zeile — Zeilenumbruch mit der Eingabetaste.</div>';
+  html += '<div class="fehlertext" style="color:var(--grey-600)">Termine in der Form <b>TT.MM.</b> — der Jahrgang wird von den Werkzeugen ergänzt. Fällt ein Termin ins Vor- oder Folgejahr, die Jahreszahl mitschreiben: <b>22.12.2026</b>. HST, FREI und TV sind intern: Sie erscheinen nur im Kalender von MediaSheet, nie in Angebot oder Preisblatt; ein leeres Feld ergibt keinen Kalendereintrag.</div>';
   return html;
 }
 
@@ -2568,6 +2776,15 @@ function hoeheAnpassen(el) {
 }
 function hoehenAuffrischen() {
   document.querySelectorAll('.termin-tab textarea').forEach(hoeheAnpassen);
+  /* Ist die Inhaltstabelle breiter als die Tafel (viele Rubriken), rollt nur sie
+     seitlich - sonst wanderten Titelname, Felder und Rubrikenleiste mit. Heft und
+     Monat bleiben dabei links stehen. Die Kopfzeile bleibt dann beim Rollen nach
+     unten nicht mehr oben stehen; das ist der Preis. */
+  document.querySelectorAll('.termin-tab.inhalte').forEach(tab => {
+    const roll = tab.parentElement;
+    roll.classList.remove('eigen');
+    if (tab.offsetWidth > roll.clientWidth + 1) roll.classList.add('eigen');
+  });
 }
 
 /* Die Höhe der beiden mehrzeiligen Felder richtet sich nach dem Inhalt, und der
@@ -2641,7 +2858,8 @@ function terminZeileLeer(a) {
   /* „Heft" traegt beim Anlegen schon die naechste Nummer und zaehlt nicht als
      Eingabe. */
   return ['monat', 'et', 'anzeigenschluss', 'du_schluss', 'eh_termin', 'themen', 'kongresse']
-    .concat(INTERN_FELDER).every(f => leerFeld(a[f]));
+    .concat(INTERN_FELDER).every(f => leerFeld(a[f])) &&
+    !Object.keys(a.inhalte || {}).length;
 }
 /* Zwei Saetze statt Gedankenstrich: ein Strich kann beim Umbruch an den
    Zeilenanfang rutschen und steht dort wie ein Listenpunkt. (16.09.2026) 
@@ -2776,7 +2994,7 @@ function terminAnlegen() {
   t.termin.push({ id: neueKennung(), reihenfolge: t.termin.length + 1,
     heft: String(t.termin.length + 1), monat: '', et: '', anzeigenschluss: '',
     du_schluss: '', eh_termin: '', themen: '', kongresse: '',
-    anlieferung_herstellung: '', heftfreigabe: '', versand_themenvorschau: '' });
+    anlieferung_herstellung: '', heftfreigabe: '', versand_themenvorschau: '', inhalte: {} });
   zeichnen();
 }
 
@@ -2795,7 +3013,7 @@ async function aenderungenVerwerfen() {
 /* ── Speichern ────────────────────────────────────────────────────────────── */
 const PREIS_FELDER  = ['reihenfolge', 'kategorie', 'format', 'preis', 'zuschlag_4c', 'rabattfaehig', 'ae_faehig', 'termin_art', 'seiten_aequivalent'];
 const TERMIN_FELDER = ['reihenfolge', 'heft', 'monat', 'et', 'anzeigenschluss', 'du_schluss', 'eh_termin', 'themen', 'kongresse',
-  'anlieferung_herstellung', 'heftfreigabe', 'versand_themenvorschau'];
+  'anlieferung_herstellung', 'heftfreigabe', 'versand_themenvorschau', 'inhalte'];
 
 function nurFelder(zeile, felder) {
   const o = {};
@@ -2842,17 +3060,19 @@ async function speichern() {
          Terminzeilen, sodass zeilenSchreiben sie sammt und sonders anlegt. */
       if (!u && istNeu(t.id)) {
         const angelegt = await schreiben('titel', 'POST',
-          { jahr: t.jahr, reihenfolge: t.reihenfolge, name: t.name, auflage: t.auflage, fachbereich: t.fachbereich });
+          { jahr: t.jahr, reihenfolge: t.reihenfolge, name: t.name, auflage: t.auflage, fachbereich: t.fachbereich,
+            rubriken: t.rubriken || [] });
         const alteKennung = t.id;
         t.id = angelegt[0].id;
         if (gewTitel === alteKennung) gewTitel = t.id;
-        u = { id: t.id, name: t.name, auflage: t.auflage, fachbereich: t.fachbereich, preis: [], termin: [] };
+        u = { id: t.id, name: t.name, auflage: t.auflage, fachbereich: t.fachbereich, rubriken: t.rubriken || [], preis: [], termin: [] };
         n++;
       }
       if (!u) continue;
-      if (u.name !== t.name || u.auflage !== t.auflage || u.fachbereich !== t.fachbereich) {
+      if (u.name !== t.name || u.auflage !== t.auflage || u.fachbereich !== t.fachbereich ||
+          !gleich(u.rubriken || [], t.rubriken || [])) {
         await schreiben('titel?id=eq.' + t.id, 'PATCH',
-          { name: t.name, auflage: t.auflage, fachbereich: t.fachbereich });
+          { name: t.name, auflage: t.auflage, fachbereich: t.fachbereich, rubriken: t.rubriken || [] });
         n++;
       }
       n += await zeilenSchreiben('preis',  t, u, 'preis',  PREIS_FELDER);
@@ -3139,7 +3359,7 @@ function titelAnlegenOeffnen() {
     '<div class="dialog-zeile"><span>Auflage</span>' +
       '<input id="taAuflage" class="kurz" oninput="titelAnlegenRechnen()" ' +
       'onblur="this.value = ganzText(this.value)"></div>' +
-    '<div class="dialog-zeile"><span>Formate übernehmen von</span><select id="taVorbild" onchange="titelAnlegenRechnen()">' +
+    '<div class="dialog-zeile"><span>Formate und Rubriken übernehmen von</span><select id="taVorbild" onchange="titelAnlegenRechnen()">' +
       '<option value="">(ohne Vorbild)</option>' +
       titel.map(t => '<option value="' + t.id + '"' + (t.id === gewTitel ? ' selected' : '') + '>' + esc(t.name) + '</option>').join('') +
       '</select></div>' +
@@ -3165,7 +3385,8 @@ function titelAnlegenVorschau() {
     name: String(document.getElementById('taName').value || '').trim(),
     fach: fach, neuerFach: neuerFach, vorbild: vorbild,
     auflage: parseInt(String(document.getElementById('taAuflage').value || '').replace(/\D/g, ''), 10) || 0,
-    formate: vorbild ? (vorbild.preis || []).length : 0
+    formate: vorbild ? (vorbild.preis || []).length : 0,
+    rubriken: vorbild ? rubrikenVon(vorbild).filter(x => !FESTE_RUBRIK[x.id]).length : 0
   };
 }
 
@@ -3185,8 +3406,9 @@ function titelAnlegenRechnen() {
   } else {
     text = '<b>' + esc(v.name) + '</b> wird angelegt' +
       (v.fach ? ', im Fachbereich <b>' + esc(v.fach) + '</b>' : ', ohne Fachbereich') + '.<br>' +
-      (v.formate
-        ? '<b>' + v.formate + ' Formate</b> kommen ohne Preise von „' + esc(v.vorbild.name) + '“ mit'
+      (v.formate || v.rubriken
+        ? [v.formate ? '<b>' + v.formate + ' Formate</b>' : '', v.rubriken ? '<b>' + v.rubriken + (v.rubriken === 1 ? ' Rubrik' : ' Rubriken') + '</b>' : '']
+            .filter(Boolean).join(' und ') + ' kommen ohne Preise und Inhalte von „' + esc(v.vorbild.name) + '“ mit'
         : 'Formate entstehen keine') +
       '; Ausgaben entstehen keine.<br>Angelegt wird der Titel erst mit „Speichern“.';
   }
@@ -3207,6 +3429,7 @@ function titelAnlegenAusfuehren() {
       termin_art: p.termin_art || null,
       seiten_aequivalent: (p.seiten_aequivalent == null ? null : p.seiten_aequivalent)
     })),
+    rubriken: v.vorbild ? rubrikenOrdnen(v.vorbild.rubriken) : [],
     termin: []
   };
   ARBEIT.push(neu);
@@ -3815,7 +4038,8 @@ async function jahrgangAnlegenAusfuehren() {
     let nA = 0;
     for (const q of v.fehlende) {
       const angelegt = await schreiben('titel', 'POST',
-        { jahr: v.ziel, reihenfolge: q.reihenfolge, name: q.name, auflage: q.auflage, fachbereich: q.fachbereich });
+        { jahr: v.ziel, reihenfolge: q.reihenfolge, name: q.name, auflage: q.auflage, fachbereich: q.fachbereich,
+          rubriken: rubrikenOrdnen(q.rubriken) });
       const tid = angelegt[0].id;
       /* Nur Heft und Monat wandern mit; alles Uebrige steht leer. */
       const termine = (q.termin || []).map((a, i) => ({
@@ -3852,6 +4076,7 @@ async function jahrgangAnlegenAusfuehren() {
 async function sicherungAnlegen(jahr, bezeichnung, still) {
   const titel = (ARBEIT || []).filter(t => t.jahr === jahr).map(t => ({
     reihenfolge: t.reihenfolge, name: t.name, auflage: t.auflage, fachbereich: t.fachbereich,
+    rubriken: t.rubriken || [],
     preise: (t.preis || []).map(p => nurFelder(p, PREIS_FELDER)),
     termine: (t.termin || []).map(a => nurFelder(a, TERMIN_FELDER))
   }));
@@ -3921,7 +4146,8 @@ async function sicherungZurueck(id, wann) {
     await schreiben('titel?jahr=eq.' + encodeURIComponent(gewJahr), 'DELETE');
     for (const t of inhalt.titel) {
       const angelegt = await schreiben('titel', 'POST',
-        { jahr: gewJahr, reihenfolge: t.reihenfolge, name: t.name, auflage: t.auflage, fachbereich: t.fachbereich });
+        { jahr: gewJahr, reihenfolge: t.reihenfolge, name: t.name, auflage: t.auflage, fachbereich: t.fachbereich,
+          rubriken: rubrikenOrdnen(t.rubriken) });
       const tid = angelegt[0].id;
       const preise  = (t.preise  || []).map(p => Object.assign({ titel_id: tid }, p));
       const termine = (t.termine || []).map(a => Object.assign({ titel_id: tid }, a));
@@ -4200,6 +4426,8 @@ async function excelMappeBauen() {
       '   ' + PREIS_KOPF.join(' · '),
       'Blatt »Termine« – eine Zeile je Ausgabe:',
       '   ' + TERMIN_KOPF.join(' · '),
+      'Blatt »Inhalte« – eine Zeile je Rubrik und Ausgabe (Jahrgang · Titel · Heft · Rubrik · Inhalt).',
+      '   Nur zum Lesen: Beim Einlesen bleiben Rubriken und Inhalte der Datenpflege unverändert.',
       'Blatt »Staffeln« – eine Zeile je Rabattstufe:',
       '   ' + STAFFEL_KOPF.join(' · '),
       '   • Fachbereich leer = Standard, gilt für alle Fachgruppen ohne eigene Zeilen.',
@@ -4221,6 +4449,21 @@ async function excelMappeBauen() {
        Umbruch zeigte Excel nur die erste. */
     [9, 10].forEach(i => { termine.getColumn(i).alignment = { wrapText: true, vertical: 'top' }; });
     termine.views = [{ state: 'frozen', ySplit: 1 }];
+
+    /* Themenschwerpunkte und Kongresse stehen weiter im Blatt „Termine“ (Spalten 9
+       und 10); hier nur die freien Rubriken, in der Reihenfolge des Titels. */
+    const inhalte = mappe.addWorksheet('Inhalte');
+    inhalte.addRow(['Jahrgang', 'Titel', 'Heft', 'Rubrik', 'Inhalt']).font = { bold: true };
+    [10, 43.29, 10, 30, 90].forEach((b, i) => { inhalte.getColumn(i + 1).width = b; });
+    inhalte.getColumn(5).alignment = { wrapText: true, vertical: 'top' };
+    inhalte.views = [{ state: 'frozen', ySplit: 1 }];
+    (ARBEIT || []).forEach(t => {
+      const frei = rubrikenVon(t).filter(x => !FESTE_RUBRIK[x.id]);
+      (t.termin || []).forEach(a => frei.forEach(x => {
+        const w = (a.inhalte || {})[x.id];
+        if (w) inhalte.addRow([Number(t.jahr), t.name, a.heft, x.name, w]);
+      }));
+    });
 
     const staffeln = mappe.addWorksheet('Staffeln');
     staffeln.addRow(STAFFEL_KOPF).font = { bold: true };
@@ -4375,7 +4618,9 @@ function abzugLesen(mappe, dateiname) {
   const ohneTitel = [];
   /* Abzuege von vor dem 27.09.2026 kennen die internen Termine nicht. Fehlt die
      Spalte, bleiben die gepflegten Werte der Ausgabe stehen, statt beim Einlesen
-     stillschweigend geleert zu werden. */
+     stillschweigend geleert zu werden. Die freien Rubriken und ihre Inhalte
+     fuehrt kein Abzug zum Einlesen (das Blatt „Inhalte“ ist nur zum Lesen): sie
+     bleiben immer, wie sie in der Datenpflege stehen. */
   const mitIntern = !!(bT && zelleText(bT.getRow(1).getCell(11)));
   const internBisher = (jahr, name, heft) => {
     const t = (ARBEIT || []).find(x => x.jahr === jahr && x.name === name);
@@ -4383,6 +4628,11 @@ function abzugLesen(mappe, dateiname) {
     const o = {};
     INTERN_FELDER.forEach(f => { o[f] = (a && a[f]) || ''; });
     return o;
+  };
+  const inhalteBisher = (jahr, name, heft) => {
+    const t = (ARBEIT || []).find(x => x.jahr === jahr && x.name === name);
+    const a = t && (t.termin || []).find(x => String(x.heft) === heft);
+    return inhalteOrdnen(a && a.inhalte);
   };
   if (bT) bT.eachRow((zeile, nr) => {
     if (nr === 1) return;
@@ -4405,7 +4655,7 @@ function abzugLesen(mappe, dateiname) {
       monat: zelleText(zeile.getCell(4)), et: zelleText(zeile.getCell(5)),
       anzeigenschluss: zelleText(zeile.getCell(6)), du_schluss: zelleText(zeile.getCell(7)),
       eh_termin: zelleText(zeile.getCell(8)), themen: zelleText(zeile.getCell(9)),
-      kongresse: zelleText(zeile.getCell(10)) }, intern));
+      kongresse: zelleText(zeile.getCell(10)), inhalte: inhalteBisher(jahr, name, heft) }, intern));
   });
 
   /* Das Blatt „Staffeln" ist freiwillig. Fehlt es, bleiben die Staffeln der
@@ -4604,8 +4854,10 @@ async function excelUebernehmen() {
       let rf = 0;
       for (const t of st.jahre[jahr].titel) {
         rf++;
+        const bisher = (ARBEIT || []).find(x => x.jahr === jahr && x.name === t.name);
         const angelegt = await schreiben('titel', 'POST',
-          { jahr: jahr, reihenfolge: rf, name: t.name, auflage: t.auflage, fachbereich: t.fachbereich });
+          { jahr: jahr, reihenfolge: rf, name: t.name, auflage: t.auflage, fachbereich: t.fachbereich,
+            rubriken: rubrikenOrdnen(bisher && bisher.rubriken) });
         const tid = angelegt[0].id;
         for (let i = 0; i < t.preise.length; i += 250) {
           const teil = t.preise.slice(i, i + 250).map(p => Object.assign({ titel_id: tid }, p));

@@ -116,6 +116,15 @@ alter table termin
   add column if not exists heftfreigabe           text not null default '',
   add column if not exists versand_themenvorschau text not null default '';
 
+-- Rubriken (seit 27.09.2026): titel.rubriken ist eine Liste { id, name } in der
+-- Reihenfolge der Spalten; „themen“ und „kongresse“ sind feste Kennungen, ihr Inhalt
+-- bleibt in termin.themen und termin.kongresse. termin.inhalte haelt die freien
+-- Rubriken unter ihrer Kennung. Leere Liste = nur die beiden festen.
+alter table titel
+  add column if not exists rubriken jsonb not null default '[]';
+alter table termin
+  add column if not exists inhalte  jsonb not null default '{}';
+
 create index if not exists termin_titel_idx on termin (titel_id, reihenfolge);
 
 -- -------------------------------------------------------------- Sicherung --
