@@ -101,9 +101,20 @@ create table if not exists termin (
   eh_termin       text    not null default '',
   themen          text    not null default '',
   kongresse       text    not null default '',
+  anlieferung_herstellung text not null default '',
+  heftfreigabe           text not null default '',
+  versand_themenvorschau text not null default '',
   geaendert_am    timestamptz not null default now(),
   unique (titel_id, heft)
 );
+
+-- Interne Termine (seit 27.09.2026): Anzeigen an Herstellung (HST), Heft- bzw.
+-- Druckfreigabe (FREI), Versand Themenvorschau (TV). Nur fuer den Kalender von
+-- MediaSheet, nie im Angebot. Fuer bestehende Datenbanken nachgezogen mit:
+alter table termin
+  add column if not exists anlieferung_herstellung text not null default '',
+  add column if not exists heftfreigabe           text not null default '',
+  add column if not exists versand_themenvorschau text not null default '';
 
 create index if not exists termin_titel_idx on termin (titel_id, reihenfolge);
 

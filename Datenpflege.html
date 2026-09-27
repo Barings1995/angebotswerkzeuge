@@ -680,6 +680,12 @@ button, input, select, textarea { font-family: inherit; }
      rollt die Tabelle stattdessen seitlich, wie in OpenSlots und PreisWerk. */
   .tab-roll { overflow-x: auto; }
   .termin-tab { table-layout: fixed; min-width: 858px; }
+  /* Umschalter „Termine und Themen“ / „Interne Termine“ (27.09.2026) */
+  .ansicht-wahl { margin: 0 0 10px; }
+  .reiter.klein button { height: 30px; font-size: 12.5px; padding: 0 12px; }
+  .termin-tab.intern { min-width: 776px; }
+  .termin-tab.intern th { white-space: normal; }
+  .termin-tab td.nur-lesen { color: var(--grey-600); padding-left: 10px; vertical-align: middle; }
   .termin-tab td { padding-top: 4px; padding-bottom: 4px; vertical-align: top; }
   .termin-tab td input, .termin-tab td textarea { line-height: 1.5; }
   .termin-tab td textarea { display: block; width: 100%; padding: 3px 6px;
@@ -1148,7 +1154,8 @@ async function abmelden() {
 const FELDER =
   'id,jahr,reihenfolge,name,auflage,fachbereich,' +
   'preis(id,reihenfolge,kategorie,format,preis,zuschlag_4c,rabattfaehig,ae_faehig,termin_art,seiten_aequivalent),' +
-  'termin(id,reihenfolge,heft,monat,et,anzeigenschluss,du_schluss,eh_termin,themen,kongresse)';
+  'termin(id,reihenfolge,heft,monat,et,anzeigenschluss,du_schluss,eh_termin,' +
+  'anlieferung_herstellung,heftfreigabe,versand_themenvorschau,themen,kongresse)';
 
 async function ladenAusDatenbank() {
   const zeilen = await daten('titel?select=' + encodeURIComponent(FELDER) +
@@ -1469,7 +1476,9 @@ const STAMM_PRUEF  = [['name', 'Titel'], ['auflage', 'Auflage'], ['fachbereich',
 const PREIS_PRUEF  = [['format', 'Format'], ['preis', 'Preis €'], ['zuschlag_4c', '4c-Zuschlag €'],
   ['rabattfaehig', 'Rabattfähig'], ['ae_faehig', 'AE-fähig'], ['termin_art', 'Produktionstermin'], ['seiten_aequivalent', 'Seiten-Äqu.']];
 const TERMIN_PRUEF = [['heft', 'Heft'], ['monat', 'Monat'], ['et', 'ET'], ['anzeigenschluss', 'AS'],
-  ['du_schluss', 'DU-Schluss'], ['eh_termin', 'EH-Termin'], ['themen', 'Themenschwerpunkte'], ['kongresse', 'Kongresse']];
+  ['du_schluss', 'DU-Schluss'], ['eh_termin', 'EH-Termin'], ['themen', 'Themenschwerpunkte'], ['kongresse', 'Kongresse'],
+  ['anlieferung_herstellung', 'Anzeigen an Herstellung'], ['heftfreigabe', 'Heft-/Druckfreigabe'],
+  ['versand_themenvorschau', 'Versand Themenvorschau']];
 const TRENNER = ' ||| ';
 
 function roh(w) { return w == null ? '' : String(w); }
@@ -1715,6 +1724,7 @@ function uebersichtSprung(i) {
   }
   gewJahr = x.jahr;
   gewTitel = x.titelId;
+  if (x.reiter === 'termine' && x.stelle) terminIntern = INTERN_FELDER.some(f => x.stelle.endsWith('-' + f));
   if (x.reiter && x.reiter !== reiter) reiterWechseln(x.reiter); else zeichnen();
   const ziel = x.stelle && [...document.querySelectorAll('#inhalt [data-stelle]')].find(el => el.dataset.stelle === x.stelle);
   if (!ziel) { document.getElementById('inhalt').scrollIntoView({ block: 'start' }); return; }
@@ -1797,7 +1807,9 @@ function alleFehler() {
       const wo = t.name + ' · ' + (heftText(a.heft) || 'Ausgabe ohne Heft');
       if (!String(a.heft || '').trim()) fehler.push(t.name + ': eine Ausgabe ohne Heftangabe');
       mitzaehlen(hefte, String(a.heft || ''), wo);
-      [['et', 'ET'], ['anzeigenschluss', 'Anzeigenschluss'], ['du_schluss', 'DU-Schluss'], ['eh_termin', 'EH-Termin']]
+      [['et', 'ET'], ['anzeigenschluss', 'Anzeigenschluss'], ['du_schluss', 'DU-Schluss'], ['eh_termin', 'EH-Termin'],
+       ['anlieferung_herstellung', 'Anzeigen an Herstellung'], ['heftfreigabe', 'Heft-/Druckfreigabe'],
+       ['versand_themenvorschau', 'Versand Themenvorschau']]
         .forEach(([feld, name]) => { if (!terminGueltig(a[feld])) fehler.push(wo + ': ' + name + ' muss TT.MM. sein'); });
     });
     dublettenMelden(hefte, d => d.wo + ': steht ' + malText(d.n), fehler);
@@ -2471,10 +2483,49 @@ function jaNein(id, feld, wert) {
     '<option value="nein"' + (wert ? '' : ' selected') + '>nein</option></select>';
 }
 
+/* Interne Termine (seit 27.09.2026): Anzeigen an Herstellung (HST), Heft- bzw.
+   Druckfreigabe (FREI) und Versand der Themenvorschau (TV). Sie erreichen nur den
+   Kalender von MediaSheet, nie ein Angebot oder Preisblatt. Eigene Ansicht statt
+   drei weiterer Spalten: mit ihnen wurde die Tabelle selbst bei 1440 px zu breit,
+   Kongresse rutschten aus dem Bild, Themen und Kongresse schrumpften auf 170 px
+   und die Zeilen wurden sehr hoch (Variante A, verworfen). Die Ansicht bleibt beim
+   Titelwechsel stehen - eingetragen wird meist Titel fuer Titel. */
+const INTERN_FELDER = ['anlieferung_herstellung', 'heftfreigabe', 'versand_themenvorschau'];
+let terminIntern = false;
+function terminAnsicht(intern) { terminIntern = intern; zeichnen(); }
+
 function termineZeichnen(t, karte) {
   karte = karte || aendKarte(t);
   const liste = t.termin || [];
   if (!liste.length) return '<table><tr class="leer-zeile"><td>Noch keine Ausgaben hinterlegt.</td></tr></table>';
+  const umschalter = '<div class="ansicht-wahl"><div class="reiter klein">' +
+    '<button' + (terminIntern ? '' : ' class="an"') + ' onclick="terminAnsicht(false)"><span>Termine und Themen</span></button>' +
+    '<button' + (terminIntern ? ' class="an"' : '') + ' onclick="terminAnsicht(true)"><span>Interne Termine</span></button></div></div>';
+  return umschalter + (terminIntern ? termineInternZeichnen(karte, liste) : termineAllgemeinZeichnen(karte, liste));
+}
+
+/* ET, AS, DU und EH stehen daneben nur zum Nachsehen - die internen Termine
+   werden aus ihnen abgeleitet. Geaendert werden sie in der anderen Ansicht. */
+function termineInternZeichnen(karte, liste) {
+  let html = '<div class="tab-roll"><table class="termin-tab intern"><colgroup><col style="width:52px"><col style="width:88px"><col style="width:86px"><col style="width:86px"><col style="width:86px"><col style="width:86px"><col><col><col></colgroup>' +
+    '<tr><th>Heft</th><th>Monat</th><th>ET</th><th>AS</th><th>DU-Schluss</th><th>EH-Termin</th>' +
+    '<th title="Anzeigen an Herstellung">HST · Herstellung</th><th title="Heft-/Druckfreigabe">FREI · Freigabe</th>' +
+    '<th title="Versand Themenvorschau">TV · Themenvorschau</th></tr>';
+  liste.forEach(a => {
+    const f = feld => terminGueltig(a[feld]) ? '' : ' fehler';
+    const nurLesen = feld => '<td class="nur-lesen">' + esc(a[feld] || '') + '</td>';
+    const feldZelle = feld => aendZelle(karte, 'termin-' + a.id + '-' + feld, '',
+      '<input class="' + f(feld) + '" value="' + esc(a[feld]) + '" onchange="terminSetzen(\'' + a.id + '\',\'' + feld + '\',this.value)">');
+    html += '<tr' + (karte.neu.has(a.id) ? ' class="zeile-neu"' : '') + '>' +
+      nurLesen('heft') + nurLesen('monat') + nurLesen('et') + nurLesen('anzeigenschluss') +
+      nurLesen('du_schluss') + nurLesen('eh_termin') + INTERN_FELDER.map(feldZelle).join('') + '</tr>';
+  });
+  html += '</table></div>';
+  html += '<div class="fehlertext" style="color:var(--grey-600)">Interne Termine erscheinen nur im Kalender von MediaSheet, nie in Angebot oder Preisblatt. Ein leeres Feld ergibt keinen Kalendereintrag. ET, AS, DU- und EH-Termin stehen hier nur zum Nachsehen; geändert werden sie unter „Termine und Themen“.</div>';
+  return html;
+}
+
+function termineAllgemeinZeichnen(karte, liste) {
   /* Eine Zeile je Ausgabe, Themenschwerpunkte und Kongresse als eigene Spalten.
      Die sechs vorderen Spalten sind fest, die beiden hinteren teilen sich den
      Rest — mindestens aber 170 px, darunter rollt die Tabelle seitlich.
@@ -2590,7 +2641,7 @@ function terminZeileLeer(a) {
   /* „Heft" traegt beim Anlegen schon die naechste Nummer und zaehlt nicht als
      Eingabe. */
   return ['monat', 'et', 'anzeigenschluss', 'du_schluss', 'eh_termin', 'themen', 'kongresse']
-    .every(f => leerFeld(a[f]));
+    .concat(INTERN_FELDER).every(f => leerFeld(a[f]));
 }
 /* Zwei Saetze statt Gedankenstrich: ein Strich kann beim Umbruch an den
    Zeilenanfang rutschen und steht dort wie ein Listenpunkt. (16.09.2026) 
@@ -2724,7 +2775,8 @@ function terminAnlegen() {
   t.termin = t.termin || [];
   t.termin.push({ id: neueKennung(), reihenfolge: t.termin.length + 1,
     heft: String(t.termin.length + 1), monat: '', et: '', anzeigenschluss: '',
-    du_schluss: '', eh_termin: '', themen: '', kongresse: '' });
+    du_schluss: '', eh_termin: '', themen: '', kongresse: '',
+    anlieferung_herstellung: '', heftfreigabe: '', versand_themenvorschau: '' });
   zeichnen();
 }
 
@@ -2742,7 +2794,8 @@ async function aenderungenVerwerfen() {
 
 /* ── Speichern ────────────────────────────────────────────────────────────── */
 const PREIS_FELDER  = ['reihenfolge', 'kategorie', 'format', 'preis', 'zuschlag_4c', 'rabattfaehig', 'ae_faehig', 'termin_art', 'seiten_aequivalent'];
-const TERMIN_FELDER = ['reihenfolge', 'heft', 'monat', 'et', 'anzeigenschluss', 'du_schluss', 'eh_termin', 'themen', 'kongresse'];
+const TERMIN_FELDER = ['reihenfolge', 'heft', 'monat', 'et', 'anzeigenschluss', 'du_schluss', 'eh_termin', 'themen', 'kongresse',
+  'anlieferung_herstellung', 'heftfreigabe', 'versand_themenvorschau'];
 
 function nurFelder(zeile, felder) {
   const o = {};
@@ -3767,7 +3820,8 @@ async function jahrgangAnlegenAusfuehren() {
       /* Nur Heft und Monat wandern mit; alles Uebrige steht leer. */
       const termine = (q.termin || []).map((a, i) => ({
         titel_id: tid, reihenfolge: i + 1, heft: a.heft, monat: a.monat || '',
-        et: '', anzeigenschluss: '', du_schluss: '', eh_termin: '', themen: '', kongresse: ''
+        et: '', anzeigenschluss: '', du_schluss: '', eh_termin: '', themen: '', kongresse: '',
+        anlieferung_herstellung: '', heftfreigabe: '', versand_themenvorschau: ''
       }));
       for (let i = 0; i < termine.length; i += 250) {
         const teil = termine.slice(i, i + 250);
@@ -4076,9 +4130,12 @@ const PREIS_KOPF = ['Jahrgang', 'Titel', 'Auflage', 'Kategorie', 'Format',
   'Grundpreis / 4c-Preis (€)', '4c-Zuschlag (€)', 'rabattfähig', 'AE-fähig',
   'Termin (DU/EH)', 'Fachbereich', 'Seiten-Äquivalent'];
 const PREIS_BREITE = [10, 40, 10.29, 30, 34, 25.14, 16.57, 13.14, 10.86, 16, 12.86, 17.43];
+/* Die internen Termine stehen hinten (Spalten 11–13): so lesen die Werkzeuge,
+   die das Blatt als Notweg nach Position lesen, unveraendert die ersten zehn. */
 const TERMIN_KOPF = ['Jahrgang', 'Titel', 'Heft', 'Monat', 'ET', 'AS', 'DU-Schluss',
-  'EH-Termin', 'Themenschwerpunkte', 'Kongresse'];
-const TERMIN_BREITE = [10, 43.29, 6.86, 10.29, 10.14, 10.29, 13.14, 12.14, 122, 60.43];
+  'EH-Termin', 'Themenschwerpunkte', 'Kongresse',
+  'HST · Anzeigen an Herstellung', 'FREI · Heft-/Druckfreigabe', 'TV · Versand Themenvorschau'];
+const TERMIN_BREITE = [10, 43.29, 6.86, 10.29, 10.14, 10.29, 13.14, 12.14, 122, 60.43, 30, 27, 29];
 /* Das Blatt „Staffeln" führt eine Zeile je Stufe. Leerer Fachbereich heißt
    Standard. Das Blatt darf fehlen — PreisWerk nimmt dann die eingebauten Werte. */
 const STAFFEL_KOPF = ['Jahrgang', 'Fachbereich', 'Art', 'ab', 'Prozent'];
@@ -4184,7 +4241,8 @@ async function excelMappeBauen() {
       (t.termin || []).forEach(a => {
         termine.addRow([Number(t.jahr), t.name, a.heft, a.monat || null, a.et || null,
           a.anzeigenschluss || null, a.du_schluss || null, a.eh_termin || null,
-          a.themen || null, a.kongresse || null]);
+          a.themen || null, a.kongresse || null,
+          a.anlieferung_herstellung || null, a.heftfreigabe || null, a.versand_themenvorschau || null]);
         nT++;
       });
     });
@@ -4315,6 +4373,17 @@ function abzugLesen(mappe, dateiname) {
   });
 
   const ohneTitel = [];
+  /* Abzuege von vor dem 27.09.2026 kennen die internen Termine nicht. Fehlt die
+     Spalte, bleiben die gepflegten Werte der Ausgabe stehen, statt beim Einlesen
+     stillschweigend geleert zu werden. */
+  const mitIntern = !!(bT && zelleText(bT.getRow(1).getCell(11)));
+  const internBisher = (jahr, name, heft) => {
+    const t = (ARBEIT || []).find(x => x.jahr === jahr && x.name === name);
+    const a = t && (t.termin || []).find(x => String(x.heft) === heft);
+    const o = {};
+    INTERN_FELDER.forEach(f => { o[f] = (a && a[f]) || ''; });
+    return o;
+  };
   if (bT) bT.eachRow((zeile, nr) => {
     if (nr === 1) return;
     const jahr = zelleText(zeile.getCell(1)), name = zelleText(zeile.getCell(2));
@@ -4324,15 +4393,19 @@ function abzugLesen(mappe, dateiname) {
     if (!jahre[jahr] || !jahre[jahr].nachName[name]) { ohneTitel.push(jahr + ' · ' + name); return; }
     const t = jahre[jahr].nachName[name];
     if (t.termine.some(a => a.heft === heft)) { beanstandet.push('Termine, Zeile ' + nr + ': ' + heftText(heft) + ' steht bei ' + name + ' zweimal'); return; }
-    ['et', 'anzeigenschluss', 'du_schluss', 'eh_termin'].forEach((f, i) => {
-      const w = zelleText(zeile.getCell(5 + i));
+    [5, 6, 7, 8].concat(mitIntern ? [11, 12, 13] : []).forEach(sp => {
+      const w = zelleText(zeile.getCell(sp));
       if (!terminGueltig(w)) beanstandet.push('Termine, Zeile ' + nr + ': „' + w + '“ ist kein Termin der Form TT.MM.');
     });
-    t.termine.push({ reihenfolge: t.termine.length + 1, heft: heft,
+    const intern = mitIntern
+      ? { anlieferung_herstellung: zelleText(zeile.getCell(11)), heftfreigabe: zelleText(zeile.getCell(12)),
+          versand_themenvorschau: zelleText(zeile.getCell(13)) }
+      : internBisher(jahr, name, heft);
+    t.termine.push(Object.assign({ reihenfolge: t.termine.length + 1, heft: heft,
       monat: zelleText(zeile.getCell(4)), et: zelleText(zeile.getCell(5)),
       anzeigenschluss: zelleText(zeile.getCell(6)), du_schluss: zelleText(zeile.getCell(7)),
       eh_termin: zelleText(zeile.getCell(8)), themen: zelleText(zeile.getCell(9)),
-      kongresse: zelleText(zeile.getCell(10)) });
+      kongresse: zelleText(zeile.getCell(10)) }, intern));
   });
 
   /* Das Blatt „Staffeln" ist freiwillig. Fehlt es, bleiben die Staffeln der
