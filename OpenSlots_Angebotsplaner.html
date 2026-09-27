@@ -2684,12 +2684,16 @@ function hefteAlle(an){
 }
 /* Gleich breite Knoepfe in gleichmaessig gefuellten Zeilen: passt nicht alles in
    eine Zeile, werden es zwei (oder mehr) gleich lange - 12 Hefte also 6 + 6
-   statt 9 + 3. Mindestbreite je Knopf: genug fuer "ET 21.01.". */
+   statt 9 + 3. Mindestbreite je Knopf: genug fuer "ET 21.01.", bei laengeren Namen
+   wie „Supplement 1“ so breit wie der breiteste Knopf (seit 27.09.2026, vorher
+   liefen solche Namen in schmalen Fenstern ueber den Rand). */
 const HEFT_MIN=66;
 function heftRaster(){
   const bar=document.getElementById('heftBar');if(!bar)return;
   const n=bar.children.length;if(!n){bar.style.gridTemplateColumns='';return;}
-  const proZeile=Math.max(1,Math.floor((bar.clientWidth+6)/(HEFT_MIN+6)));
+  bar.style.gridTemplateColumns=`repeat(${n},max-content)`;
+  const breit=Math.max(HEFT_MIN,...[...bar.children].map(k=>k.offsetWidth+1));
+  const proZeile=Math.max(1,Math.floor((bar.clientWidth+6)/(breit+6)));
   const zeilen=Math.ceil(n/proZeile);
   bar.style.gridTemplateColumns=`repeat(${Math.ceil(n/zeilen)},minmax(0,1fr))`;
 }
