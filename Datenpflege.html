@@ -682,6 +682,9 @@ button, input, select, textarea { font-family: inherit; }
   .termin-tab { table-layout: fixed; min-width: 858px; }
   /* Ansichten „Termine“ (mit internen Terminen) und „Inhalte“ (27.09.2026) */
   .termin-tab th.intern-kopf { white-space: normal; }
+  /* Legende der Terminkuerzel (28.09.2026) */
+  .termin-legende { color: var(--grey-600); display: flex; flex-wrap: wrap; column-gap: 18px; row-gap: 2px; padding-top: 6px; }
+  .termin-legende b { color: var(--text); }
   .spalte-inhalt .tab-roll.eigen { overflow-x: auto; }
   .termin-tab.inhalte th { white-space: normal; }
   .termin-tab td.nur-lesen { color: var(--grey-600); padding-left: 10px; vertical-align: top; padding-top: 9px; }
@@ -2749,17 +2752,26 @@ function inhalteZeichnen(t, karte, liste) {
   return html;
 }
 
+/* Spaltenkoepfe der Ansicht „Termine“ nur als Kuerzel, erklaert in der Legende
+   unter der Tabelle (28.09.2026). Wortlaut wie in der Legende von MediaSheet. */
+const TERMIN_KUERZEL = [
+  ['ET', 'Erscheinungstermin'], ['AS', 'Anzeigenschluss'], ['DU', 'Druckunterlagenschluss'],
+  ['EH', 'Anlieferschluss Ein- und Durchhefter sowie Beilagen'],
+  ['HST', 'Anzeigen an Herstellung', true], ['FREI', 'Heft-/Druckfreigabe', true],
+  ['TV', 'Versand Themenvorschau', true]];
+
 function termineAllgemeinZeichnen(karte, liste) {
   /* Eine Zeile je Ausgabe mit allen Terminen: vorn die veroeffentlichten, dahinter
      die drei internen. Die Datumsspalten fassen die lange Form 22.12.2026, die
-     Spalte Monat den laengsten Monatsnamen (gemessen, nicht geschaetzt). Themen
+     Spalte Monat den laengsten Monatsnamen (gemessen, nicht geschaetzt). Seit die
+     Koepfe nur Kuerzel tragen (28.09.2026), teilen sich alle sieben Datumsspalten
+     den Rest gleichmaessig; bei der Mindestbreite 858 px bleiben je 91 px. Themen
      und Kongresse stehen seit dem 27.09.2026 unter „Inhalte“ (bis 28.09.2026
      „Themen und Kongresse“). */
-  let html = '<div class="tab-roll"><table class="termin-tab"><colgroup><col style="width:100px"><col style="width:88px"><col style="width:86px"><col style="width:86px"><col style="width:86px"><col style="width:86px"><col class="intern"><col class="intern"><col class="intern"><col style="width:34px"></colgroup>' +
-    '<tr><th>Heft</th><th>Monat</th><th>ET</th><th>AS</th><th>DU-Schluss</th><th>EH-Termin</th>' +
-    '<th class="intern-kopf" title="Anzeigen an Herstellung (intern)">HST · Herstellung</th>' +
-    '<th class="intern-kopf" title="Heft-/Druckfreigabe (intern)">FREI · Freigabe</th>' +
-    '<th class="intern-kopf" title="Versand Themenvorschau (intern)">TV · Themenvorschau</th><th></th></tr>';
+  let html = '<div class="tab-roll"><table class="termin-tab"><colgroup><col style="width:100px"><col style="width:88px">' + TERMIN_KUERZEL.map(([, , intern]) => intern ? '<col class="intern">' : '<col>').join('') + '<col style="width:34px"></colgroup>' +
+    '<tr><th>Heft</th><th>Monat</th>' +
+    TERMIN_KUERZEL.map(([k, text, intern]) => '<th' + (intern ? ' class="intern-kopf"' : '') +
+      ' title="' + text + (intern ? ' (intern)' : '') + '">' + k + '</th>').join('') + '<th></th></tr>';
   liste.forEach(a => {
     const f = feld => terminGueltig(a[feld]) ? '' : ' fehler';
     const st = feld => 'termin-' + a.id + '-' + feld;
@@ -2774,6 +2786,8 @@ function termineAllgemeinZeichnen(karte, liste) {
     '</tr>';
   });
   html += '</table></div>';
+  html += '<div class="fehlertext termin-legende">' +
+    TERMIN_KUERZEL.map(([k, text]) => '<span><b>' + k + '</b> ' + text + '</span>').join('') + '</div>';
   html += '<div class="fehlertext" style="color:var(--grey-600)">Termine in der Form <b>TT.MM.</b> — der Jahrgang wird von den Werkzeugen ergänzt. Fällt ein Termin ins Vor- oder Folgejahr, die Jahreszahl mitschreiben: <b>22.12.2026</b>. HST, FREI und TV sind intern: Sie erscheinen nur im Kalender von MediaSheet, nie in Angebot oder Preisblatt; ein leeres Feld ergibt keinen Kalendereintrag.</div>';
   return html;
 }
