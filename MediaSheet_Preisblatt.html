@@ -2079,6 +2079,28 @@ function teilText(t){
   return n.length < 2 ? (n[0] || '') : n.slice(0, -1).join(', ') + ' und ' + n[n.length - 1];
 }
 
+/* Warum die Vorschau leer bleibt. Bis 29.09.2026 hiess es hier immer „weder
+   Preise noch Termine hinterlegt“ — auch wenn nur im Inhaltsteil nichts
+   angehakt war. Jetzt nennt der Satz den tatsaechlichen Grund. */
+function leerGrund(L, teile){
+  const pflege = '<a href="Datenpflege.html">Datenpflege</a>';
+  if(!teile.length)
+    return 'Für diesen Titel und Jahrgang sind weder Preise noch Termine hinterlegt. ' +
+           'Gepflegt wird beides in der ' + pflege + '.';
+  const ohneAlte = !document.getElementById('sVerstrichen').checked && L.hatVerstrichene;
+  if(ohneAlte && L.termine.every(a => a.verstrichen))
+    return 'Alle Ausgaben dieses Jahrgangs sind verstrichen und ausgeblendet. ' +
+           'Sichtbar werden sie mit „Verstrichene Ausgaben zeigen“.';
+  const inhaltGewaehlt = (L.hatThemen && document.getElementById('sThemen').checked) ||
+                         (L.hatKongresse && document.getElementById('sKong').checked) ||
+                         (L.hatRubriken && document.getElementById('sRub').checked);
+  if(teile.includes('I') && !inhaltGewaehlt)
+    return 'Im Inhaltsteil ist nichts angehakt. Für ein Blatt muss dort mindestens ' +
+           'ein Punkt gewählt sein.';
+  return 'Zur gewählten Auswahl ist ' + (ohneAlte ? 'in den anstehenden Ausgaben ' : '') +
+         'nichts eingetragen. Gepflegt werden die Inhalte in der ' + pflege + '.';
+}
+
 function zeichnen(){
   const buehne = document.getElementById('buehne');
   buehne.innerHTML = '';
@@ -2099,12 +2121,7 @@ function zeichnen(){
   kontaktFeldNachfuehren();
   kontaktSetzen();
   document.getElementById('druckKnopf').disabled = SEITEN.length === 0;
-  if(!SEITEN.length){
-    buehne.innerHTML =
-      '<div class="nichts">Für diesen Titel und Jahrgang sind weder Preise noch ' +
-      'Termine hinterlegt. Gepflegt wird beides in der ' +
-      '<a href="Datenpflege.html">Datenpflege</a>.</div>';
-  }
+  if(!SEITEN.length) buehne.innerHTML = '<div class="nichts">' + leerGrund(L, teile) + '</div>';
 
   /* Der Dokumenttitel wird zum Dateinamen, den der Browser beim Sichern als
      PDF vorschlaegt. Er soll den Empfaenger etwas angehen, nicht die Ablage. */
