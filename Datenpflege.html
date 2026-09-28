@@ -704,7 +704,9 @@ button, input, select, textarea { font-family: inherit; }
   .rubrik-chip .chip-x { font-size: 16px; }
   .rubrik-chip button:hover { background: #e3f1fb; color: var(--navy); }
   .rubrik-knopf { height: 28px; font-size: 12.5px; padding: 0 10px; gap: 5px; }
-  .rubrik-feld { height: 28px; width: 230px; font-size: 12.5px; padding: 0 8px; }
+  .rubrik-feld { height: 28px; width: 230px; font-size: 12.5px; padding: 0 8px; font-family: var(--font-body);
+    border: 1px solid var(--border); border-radius: var(--radius-md); background: var(--white); color: var(--text); }
+  .rubrik-feld:focus { outline: none; border-color: var(--navy); box-shadow: 0 0 0 2px rgba(0,40,90,.08); }
   .rubrik-vs { flex-basis: 100%; display: flex; flex-wrap: wrap; align-items: center; gap: 6px;
     margin-top: 4px; padding-top: 8px; border-top: 1px solid var(--border); }
   .rubrik-vs .vs-kopf { font-size: 12px; color: var(--grey-600); margin-right: 4px; }
