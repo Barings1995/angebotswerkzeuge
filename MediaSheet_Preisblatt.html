@@ -732,6 +732,9 @@ table.kond + table.kond{margin-top:8px}
 .kd-fristen label{display:flex; align-items:center; gap:7px; cursor:pointer}
 .kd-fristen b{font-weight:700; color:var(--navy)}
 .kd-fristen input{accent-color:var(--navy); width:15px; height:15px; flex:none; margin:0; cursor:pointer}
+/* Zweite Zeile: interne Termine, eingeleitet mit „Intern“ wie ein Gruppenkopf. */
+.kd-intern-zeile{margin-top:6px}
+.kd-intern{font-size:10px; font-weight:700; letter-spacing:.09em; text-transform:uppercase; color:var(--grey-500); align-self:center}
 .sd-box .dlg-btn:disabled{opacity:.5; cursor:not-allowed}
 .sd-box .dlg-btn:disabled:active{transform:none}
 .sd-box .dlg-btn:disabled:hover{background:#00285a; border-color:#00285a}
@@ -919,6 +922,7 @@ const DB_FELDER =
   'preis(reihenfolge,kategorie,format,preis,zuschlag_4c,rabattfaehig,ae_faehig,' +
   'termin_art,geaendert_am),' +
   'termin(reihenfolge,heft,monat,et,anzeigenschluss,du_schluss,eh_termin,' +
+  'anlieferung_herstellung,heftfreigabe,versand_themenvorschau,' +
   'themen,kongresse,inhalte,geaendert_am)';
 
 let BESTAND = {};        // { jahr: { titel: {auflage, fach, preise:[], termine:[], stand} } }
@@ -1200,6 +1204,7 @@ function datenbankZuBestand(titel){
       termine: (t.termin || []).map(a => mitInhalten({
         heft: String(a.heft || ''), monat: a.monat || '', et: a.et || '',
         as: a.anzeigenschluss || '', du: a.du_schluss || '', eh: a.eh_termin || '',
+        hst: a.anlieferung_herstellung || '', frei: a.heftfreigabe || '', tv: a.versand_themenvorschau || '',
         themen: a.themen || '', kongresse: a.kongresse || ''
       }, a.inhalte)),
       stand: datumText(juengster([].concat(t.preis || [], t.termin || [])))
@@ -1319,7 +1324,8 @@ function mappeZuBestand(mappe){
     const t = fach(jahr, titel, '');
     t.termine.push({
       heft: zelle(w(3)), monat: zelle(w(4)), et: zelle(w(5)), as: zelle(w(6)),
-      du: zelle(w(7)), eh: zelle(w(8)), themen: zelle(w(9)), kongresse: zelle(w(10))
+      du: zelle(w(7)), eh: zelle(w(8)), themen: zelle(w(9)), kongresse: zelle(w(10)),
+      hst: zelle(w(11)), frei: zelle(w(12)), tv: zelle(w(13))
     });
   });
   return B;
@@ -2094,7 +2100,11 @@ function zeichnen(){
    wie der Ansprechpartner. Die Kategorie ist der Weg zu Farben: Outlook
    uebernimmt keine Farbangaben aus der Datei, aber Kategorien — jeder Kategorie
    wird dort einmal eine Farbe zugewiesen. Komma und Semikolon trennen in
-   Outlook Kategorien und fallen deshalb aus dem Kategorienamen heraus. */
+   Outlook Kategorien und fallen deshalb aus dem Kategorienamen heraus.
+   Interne Termine (seit 28.09.2026): HST, FREI und TV, eingetragen in der
+   Datenpflege. Sie stehen nur hier, nie im Blatt, und im Fenster in einer
+   eigenen Zeile „Intern“. In der Beschreibung eines Eintrags erscheinen sie
+   nur, wenn die Datei auch interne Termine enthaelt. */
 const KURZNAMEN_SCHLUESSEL = 'mediaSheetKurznamen';
 function kurznamenLesen(){
   try{
@@ -2113,12 +2123,17 @@ const FRISTEN = [
   ['et', 'ET', 'Erscheinungstermin'],
   ['as', 'AS', 'Anzeigenschluss'],
   ['du', 'DU', 'Druckunterlagenschluss'],
-  ['eh', 'EH', 'Anlieferschluss Ein- und Durchhefter sowie Beilagen']
+  ['eh', 'EH', 'Anlieferschluss Ein- und Durchhefter sowie Beilagen'],
+  ['hst', 'HST', 'Anzeigen an Herstellung'],
+  ['frei', 'FREI', 'Heft-/Druckfreigabe'],
+  ['tv', 'TV', 'Versand Themenvorschau']
 ];
+const FRIST_INTERN = ['HST', 'FREI', 'TV'];
 
 const FRIST_STANDARD = ['AS', 'DU', 'EH'];
 
-/* arten: Auswahl der Kuerzel ('ET', 'AS', 'DU', 'EH'); ohne Angabe die drei Fristen. */
+/* arten: Auswahl der Kuerzel ('ET', 'AS', 'DU', 'EH', 'HST', 'FREI', 'TV');
+   ohne Angabe die drei Fristen. */
 function kalenderEintraege(L, jahr, heute, arten){
   arten = arten || FRIST_STANDARD;
   const tag0 = new Date(heute.getFullYear(), heute.getMonth(), heute.getDate());
@@ -2166,10 +2181,12 @@ function kalenderText(posten, jahr, heute, jetzt, arten, name){
     kalenderEintraege(L, jahr, heute, arten).forEach(e => alle.push(Object.assign({ titel, anzeige }, e)));
   });
   alle.sort((x, y) => x.d - y.d);
+  const mitIntern = (arten || []).some(k => FRIST_INTERN.includes(k));
   alle.forEach(({ titel, anzeige, a, feld, kurz, d }) => {
     const folgetag = new Date(d.getFullYear(), d.getMonth(), d.getDate() + 1);
     const beschr = [heft(titel, a) + (String(a.monat || '').trim() ? ' (' + String(a.monat).trim() + ')' : '')];
     FRISTEN.forEach(([f, k, wort]) => {
+      if(FRIST_INTERN.includes(k) && !mitIntern) return;
       const x = mitJahr(a[f], jahr);
       if(x) beschr.push(k + ' ' + wort + ': ' + lang(x));
     });
@@ -2209,9 +2226,13 @@ function kalenderGrund(t){
 function kalenderFenster(){
   const jahr = GEWAEHLT.jahr;
   const h = titelWahlHtml(kalenderGrund, t => t === GEWAEHLT.titel);
-  const fristen = FRISTEN.map(([f, k]) =>
+  const haken = ([f, k]) =>
     '<label><input type="checkbox" data-k="' + k + '"' + (FRIST_STANDARD.includes(k) ? ' checked' : '') + '><b>' + k + '</b> ' +
-    { ET:'Erscheinungstermin', AS:'Anzeigenschluss', DU:'Druckunterlagenschluss', EH:'Anlieferschluss' }[k] + '</label>').join('');
+    { ET:'Erscheinungstermin', AS:'Anzeigenschluss', DU:'Druckunterlagenschluss', EH:'Anlieferschluss',
+      HST:'Anzeigen an Herstellung', FREI:'Heft-/Druckfreigabe', TV:'Versand Themenvorschau' }[k] + '</label>';
+  const fristen = FRISTEN.filter(f => !FRIST_INTERN.includes(f[1])).map(haken).join('');
+  const intern = '<span class="kd-intern">Intern</span>' +
+    FRISTEN.filter(f => FRIST_INTERN.includes(f[1])).map(haken).join('');
 
   const back = document.createElement('div');
   back.className = 'dlg-back';
@@ -2220,6 +2241,7 @@ function kalenderFenster(){
     '<div class="sd-kopfzeile">Jahrgang <b>' + esc(jahr) + '</b> · nur anstehende Termine · ganztägig, ohne Erinnerung</div>' +
     '<div class="sd-liste">' + h + '</div>' +
     '<div class="kd-fristen" role="group" aria-label="Termine">' + fristen + '</div>' +
+    '<div class="kd-fristen kd-intern-zeile" role="group" aria-label="Interne Termine">' + intern + '</div>' +
     '<div class="sd-fuss">Alle gewählten Titel kommen in eine Datei. Ein Kurzname steht im Betreff ' +
       'statt des vollen Titels und wird auf diesem Gerät gemerkt. Jeder Titel wird in Outlook eine ' +
       'Kategorie, der sich dort einmal eine Farbe zuweisen lässt. Erneut eingelesen, ersetzt Outlook die ' +
