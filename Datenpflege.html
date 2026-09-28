@@ -685,8 +685,16 @@ button, input, select, textarea { font-family: inherit; }
   .spalte-inhalt .tab-roll.eigen { overflow-x: auto; }
   .termin-tab.inhalte th { white-space: normal; }
   .termin-tab td.nur-lesen { color: var(--grey-600); padding-left: 10px; vertical-align: top; padding-top: 9px; }
-  .termin-tab.inhalte .kleben { position: sticky; left: 0; z-index: 4; background: var(--white); box-shadow: inset -1px 0 0 var(--border); }
+  /* Getrennte Raender statt border-collapse: dort gehoert ein Rand der Tabelle,
+     nicht der Zelle, und die weisse stehende Ausgabenspalte deckte ihren
+     Zeilenstrich zu. Jetzt traegt jede Zelle ihren Strich selbst, er liegt in
+     allen Spalten auf derselben Hoehe. Der Spaltenstrich hinter der Ausgabe ist
+     der Rand der stehenden Zelle; der der Nachbarzelle entfaellt, sonst lagen
+     dort zwei Striche nebeneinander. (28.09.2026) */
+  .termin-tab.inhalte { border-collapse: separate; border-spacing: 0; }
+  .termin-tab.inhalte .kleben { position: sticky; left: 0; z-index: 4; background: var(--white); border-right: 1px solid var(--border); }
   .termin-tab.inhalte th.kleben { z-index: 5; background: var(--surface-hover); }
+  .termin-tab.inhalte .kleben + td, .termin-tab.inhalte .kleben + th { border-left: none; }
   .termin-tab.inhalte .ausgabe-heft { color: var(--text); font-weight: 600; }
   /* Rubrikenleiste (27.09.2026) */
   .rubrik-leiste { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin: 0 0 12px;
