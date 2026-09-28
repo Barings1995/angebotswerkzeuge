@@ -180,26 +180,6 @@ a:focus-visible, button:focus-visible, label:focus-visible, [tabindex]:focus-vis
 select:focus{outline:none; border-color:var(--navy); box-shadow:0 0 0 2px rgba(0,40,90,.08)}
 select:disabled{opacity:.5; cursor:not-allowed}
 
-/* Wahlschalter mit drei Stellungen, immer genau eine aktiv. Bauform wie die
-   Reiter der Datenpflege: weisse Huelle, innen gerundete Knoepfe, der aktive
-   gefuellt. Nur flacher — 27 px statt 36 px innen: mit der eigenen Kante
-   ergibt das 29 px, und damit laufen die Aussenkanten mit den Auswahlfeldern und
-   den Knoepfen der Leiste auf einer Linie (gemessen). Die Datenpflege fuehrt
-   eine Leiste mit 38 px hohen Feldern, deshalb dort 36. Der Schatten liegt 1 px ueber dem
-   gefuellten Knopf und wandert beim Absetzen mit ihm nach unten, sonst blitzt
-   dort der helle Grund auf. */
-.umfang{
-  display:inline-flex; border:1px solid var(--border); border-radius:var(--radius-md);
-  overflow:hidden; background:var(--white);
-}
-.umfang button{
-  border:none; background:var(--white); font-size:12px; font-weight:600;
-  color:var(--grey-600); padding:0 13px; height:27px; border-radius:var(--radius-sm);
-  cursor:pointer;
-}
-.umfang button[aria-pressed="true"]{background:var(--navy); color:#fff; box-shadow:0 -1px 0 var(--navy)}
-.umfang button:disabled{color:var(--grey-500); cursor:not-allowed; background:var(--surface-hover)}
-
 /* Knoepfe, Form Wert fuer Wert wie .data-btn in OpenSlots und .btn-data in
    PreisWerk: Polster 5/12, Kante 1,5 px in der Fuellfarbe, 6 px rund,
    12 px halbfett — daraus ergeben sich 31 px Hoehe. Weiss ist die Regel, der
@@ -224,14 +204,6 @@ select:disabled{opacity:.5; cursor:not-allowed}
 /* Druckpunkt: der Knopf sinkt beim Druecken um 1 px ab, wie in allen vier
    uebrigen Werkzeugen. Gesperrte Knoepfe geben nicht nach. */
 .knopf:active:not(:disabled){transform:translateY(1px)}
-/* Ausnahme Umfang: Die drei Knoepfe stecken in einer gemeinsamen Huelle mit
-   overflow:hidden. Sinkt dort der ganze Knopf ab, reisst oben eine helle Fuge
-   auf und unten wird die Fuellung beschnitten — die Gruppe wirkt verschoben.
-   Deshalb bleibt der Kasten stehen und nur die Beschriftung gibt nach. Die
-   Beschriftung steht dafuer in einem eigenen Element; inline-block, weil
-   transform an rein inline stehendem Text nicht greift. */
-.umfang button span{display:inline-block}
-.umfang button:active:not(:disabled) span{transform:translateY(1px)}
 .pfeil{font-size:.58rem; opacity:.8; transition:transform .15s}
 /* Klapppfeil wie in der Jahresvorschau: Arial ausdruecklich, weil Source Sans 3
    kein Zeichen ▼ hat und sonst die Systemschrift einen schmaleren Pfeil zeichnet.
@@ -340,7 +312,7 @@ select:disabled{opacity:.5; cursor:not-allowed}
 
 /* ── Blattinhalt ──────────────────────────────────────────────────────────
    Was auf dem Blatt erscheint, wird in einer Karte gewaehlt, gegliedert nach den
-   Teilen des Blattes: Umfang, Preisteil, Terminteil, Kennzeichnung. Karte und
+   Teilen des Blattes: Umfang, Preisteil, Terminteil, Inhaltsteil, Kennzeichnung. Karte und
    Haekchen wie .options-panel und .tog in OpenSlots (12,5 px normal, 9 px
    Abstand). Ein Schalter erscheint nur, wenn der Titel auch etwas zu schalten
    hat; bleibt in einem Abschnitt keiner uebrig, entfaellt der Abschnitt, und
@@ -351,7 +323,9 @@ select:disabled{opacity:.5; cursor:not-allowed}
   box-shadow:var(--shadow-sm);
 }
 .o-grp{display:flex; flex-direction:column; align-items:flex-start; gap:8px; padding:.7rem 0; border-top:1px solid var(--border)}
-.o-grp:first-child{border-top:none}
+.o-grp:first-child, .o-grp.oben{border-top:none}
+/* Karte „Umfang“ ueber der Karte mit den Abschnitten */
+.umfang-karte{margin-bottom:10px}
 .o-kopf{font-size:10px; font-weight:700; letter-spacing:.08em; text-transform:uppercase; color:var(--navy); line-height:normal}
 /* Nur die Haekchen der Karte selbst: Die Formatliste liegt ebenfalls in der
    Karte und behaelt ihre eigenen Regeln (.fach-liste label, eine je Zeile). */
@@ -362,9 +336,6 @@ select:disabled{opacity:.5; cursor:not-allowed}
 .o-grp > label input{accent-color:var(--navy); width:15px; height:15px; cursor:pointer; flex:none}
 .o-grp > label.aus{color:var(--grey-500); cursor:default}
 .o-grp > label.aus input{cursor:default}
-/* Umfang untereinander: nebeneinander ist die Spalte zu schmal. */
-.schalter .umfang{flex-direction:column; align-self:stretch}
-.schalter .umfang button{text-align:left}
 /* Mindestens zwei Zeilen hoch und waechst mit, sobald die Angabe laenger wird
    (seit 16.09.2026); der Fuss selbst bleibt einzeilig, Zeilenumbrueche werden
    deshalb nicht angenommen. */
@@ -403,6 +374,10 @@ select:disabled{opacity:.5; cursor:not-allowed}
 .einst{grid-area:einst; min-width:0; margin:0 20px 16px}
 .einst .schalter{flex-direction:row; flex-wrap:wrap; gap:0 2rem; padding:.2rem 1.25rem}
 .einst .o-grp{border-top:none}
+/* Steht die Karte ueber dem Blatt, liegen die drei Haken des Umfangs
+   nebeneinander; untereinander blieb die breite Karte fast leer. */
+.einst .umfang-karte .o-grp{flex-direction:row; flex-wrap:wrap; column-gap:2rem}
+.einst .umfang-karte .o-kopf, .einst .umfang-karte .o-hinweis{flex-basis:100%}
 @media screen and (min-width:1400px){
   .arbeit{grid-template-columns:244px minmax(0,1fr) 250px; grid-template-areas:"tl haupt einst"}
   .titelleiste{grid-row:auto}
@@ -410,8 +385,9 @@ select:disabled{opacity:.5; cursor:not-allowed}
   /* Innen oben und unten je 16 px sichtbarer Abstand wie in OpenSlots: .3rem der Karte
      plus .7rem des Abschnitts (seit 27.09.2026, vorher unten .8rem, zusammen 24 px). */
   .einst .schalter{flex-direction:column; gap:0; padding:.3rem 1rem}
+  .einst .umfang-karte .o-grp{flex-direction:column}
   .einst .o-grp{border-top:1px solid var(--border)}
-  .einst .o-grp:first-child{border-top:none}
+  .einst .o-grp:first-child, .einst .o-grp.oben{border-top:none}
   #sKontakt{width:100%}
 }
 .tl-suche{position:relative; margin:0 0 .6rem}
@@ -859,14 +835,18 @@ table.kond + table.kond{margin-top:8px}
 </aside>
 <aside class="einst" id="einst" aria-label="Blattinhalt">
 <div class="sec-label">Blattinhalt</div>
-<div class="schalter" id="schalter">
+<!-- Umfang in eigener Karte ueber den uebrigen Abschnitten (Variante C,
+     28.09.2026): Er bestimmt, welche Abschnitte darunter erscheinen. Seit
+     demselben Tag drei Haken statt dreier Knoepfe mit genau einer Wahl. -->
+<div class="schalter umfang-karte" id="umfangKarte">
   <div class="o-grp" id="gUmfang"><div class="o-kopf">Umfang</div>
-  <span class="umfang" role="group" aria-label="Umfang des Blattes">
-      <button type="button" id="uBeides" aria-pressed="true"><span>Preise und Termine</span></button>
-      <button type="button" id="uPreise" aria-pressed="false"><span>Nur Preise</span></button>
-      <button type="button" id="uTermine" aria-pressed="false"><span>Nur Termine</span></button>
-    </span>
+    <label id="uPreiseFeld"><input type="checkbox" id="uPreise" data-teil="P" checked> Preise</label>
+    <label id="uTermineFeld"><input type="checkbox" id="uTermine" data-teil="T" checked> Termine</label>
+    <label id="uInhalteFeld"><input type="checkbox" id="uInhalte" data-teil="I" checked> Inhalte</label>
+    <div class="o-hinweis">Bestimmt, welche Abschnitte darunter erscheinen.</div>
   </div>
+</div>
+<div class="schalter" id="schalter">
   <div class="o-grp" id="gPreis"><div class="o-kopf">Preisteil</div>
     <span class="fach" id="fachFeld">
       <button type="button" class="knopf" id="fachKnopf" aria-haspopup="true" aria-expanded="false"
@@ -883,10 +863,15 @@ table.kond + table.kond{margin-top:8px}
     <label id="sKondFeld"><input type="checkbox" id="sKond" checked> Konditionen</label>
   </div>
   <div class="o-grp" id="gTermin"><div class="o-kopf">Terminteil</div>
+    <label id="sVerstrichenFeld"><input type="checkbox" id="sVerstrichen" checked> Verstrichene Ausgaben zeigen</label>
+    <label id="sHSTFeld"><input type="checkbox" id="sHST"> <span><b>HST</b> Anzeigen an Herstellung</span></label>
+    <label id="sFREIFeld"><input type="checkbox" id="sFREI"> <span><b>FREI</b> Heft-/Druckfreigabe</span></label>
+    <label id="sTVFeld"><input type="checkbox" id="sTV"> <span><b>TV</b> Versand Themenvorschau</span></label>
+  </div>
+  <div class="o-grp" id="gInhalt"><div class="o-kopf">Inhaltsteil</div>
     <label id="sThemenFeld"><input type="checkbox" id="sThemen" checked> Themenschwerpunkte</label>
     <label id="sKongFeld"><input type="checkbox" id="sKong" checked> Kongresse</label>
     <label id="sRubFeld"><input type="checkbox" id="sRub" checked> Weitere Rubriken</label>
-    <label id="sVerstrichenFeld"><input type="checkbox" id="sVerstrichen" checked> Verstrichene Ausgaben zeigen</label>
   </div>
   <div class="o-grp" id="gKenn"><div class="o-kopf">Kennzeichnung</div>
     <label id="sVorlFeld"><input type="checkbox" id="sVorl" checked> Vermerk &bdquo;vorl&auml;ufig&ldquo;</label>
@@ -1419,7 +1404,11 @@ function lageRechnen(t, jahr, heute){
     hatET: termine.some(a => String(a.et).trim()),
     hatAS: termine.some(a => String(a.as).trim()),
     hatDU: termine.some(a => String(a.du).trim()),
-    hatEH: termine.some(a => String(a.eh).trim())
+    hatEH: termine.some(a => String(a.eh).trim()),
+    /* Interne Termine (seit 28.09.2026 auch aufs Terminblatt waehlbar) */
+    hatHST: termine.some(a => String(a.hst || '').trim()),
+    hatFREI: termine.some(a => String(a.frei || '').trim()),
+    hatTV: termine.some(a => String(a.tv || '').trim())
   };
 }
 
@@ -1446,7 +1435,7 @@ function gruppen(L, auswahl){
    Formate gelten ueber Kategorie und Namen als dieselben, Ausgaben ueber die
    Heftnummer. */
 const VERSAND_PREIS  = ['preis', 'zuschlag', 'terminart', 'rabatt', 'ae'];
-const VERSAND_TERMIN = ['et', 'as', 'du', 'eh', 'themen', 'kongresse'];
+const VERSAND_TERMIN = ['et', 'as', 'du', 'eh', 'hst', 'frei', 'tv', 'themen', 'kongresse'];
 
 function versandWert(v){
   return v == null ? '' : String(v).replace(/\r\n?/g, '\n').trim();
@@ -1842,12 +1831,26 @@ function konditionenHtml(L, zeigeRabatt){
 }
 
 /* ── Terminseiten ───────────────────────────────────────────────────────── */
-function terminKopf(L, zeigeThemen, zeigeKong){
+/* Interne Termine (seit 28.09.2026): HST, FREI und TV lassen sich einzeln aufs
+   Terminblatt nehmen, als Spalten hinter EH. Beim Oeffnen sind sie nie
+   angehakt und werden nicht gemerkt — sie gehoeren nicht auf ein Blatt fuer
+   Kunden, es sei denn, jemand will es ausdruecklich so. */
+const INTERN_SPALTEN = [
+  ['hst', 'HST', 'sHST', 'hatHST', 'Anzeigen an Herstellung'],
+  ['frei', 'FREI', 'sFREI', 'hatFREI', 'Heft-/Druckfreigabe'],
+  ['tv', 'TV', 'sTV', 'hatTV', 'Versand Themenvorschau']
+];
+function internGewaehlt(L){
+  return INTERN_SPALTEN.filter(s => L[s[3]] && document.getElementById(s[2]).checked);
+}
+
+function terminKopf(L, zeigeThemen, zeigeKong, intern){
   let h = '<thead><tr><th class="mitte">Heft</th><th>Monat</th>';
   if(L.hatET) h += '<th class="mitte">ET</th>';
   if(L.hatAS) h += '<th class="mitte">AS</th>';
   if(L.hatDU) h += '<th class="mitte">DU</th>';
   if(L.hatEH) h += '<th class="mitte">EH</th>';
+  intern.forEach(s => { h += '<th class="mitte">' + s[1] + '</th>'; });
   if(zeigeThemen) h += '<th>' + esc(rubrikName(L, 'themen')) + '</th>';
   if(zeigeKong)   h += '<th>' + esc(rubrikName(L, 'kongresse')) + '</th>';
   return h + '</tr></thead>';
@@ -1864,7 +1867,7 @@ function textZeilen(t){
   return s.split(/\r?\n/).filter(z => z.trim()).map(z => esc(z.trim())).join('<br>');
 }
 
-function terminZeile(L, a, zeigeThemen, zeigeKong){
+function terminZeile(L, a, zeigeThemen, zeigeKong, intern){
   const mehrzeilig = textZeilen;
   const d = VGL ? VGL.termine[versandWert(a.heft)] : null;
   const hat = f => Array.isArray(d) && d.includes(f);
@@ -1874,32 +1877,39 @@ function terminZeile(L, a, zeigeThemen, zeigeKong){
   if(L.hatAS) h += '<td class="mitte">' + markiert(esc(a.as), hat('as')) + '</td>';
   if(L.hatDU) h += '<td class="mitte">' + markiert(esc(a.du), hat('du')) + '</td>';
   if(L.hatEH) h += '<td class="mitte">' + markiert(esc(a.eh), hat('eh')) + '</td>';
+  intern.forEach(s => { h += '<td class="mitte">' + markiert(esc(a[s[0]] || ''), hat(s[0])) + '</td>'; });
   if(zeigeThemen) h += '<td class="thema">' + markiert(mehrzeilig(a.themen), hat('themen')) + '</td>';
   if(zeigeKong)   h += '<td class="kong">' + markiert(mehrzeilig(a.kongresse), hat('kongresse')) + '</td>';
   return h + '</tr>';
 }
 
-/* Kaeme ueberhaupt ein Terminblatt zustande? Heftnummer und Monat allein
-   ergeben keines; es braucht mindestens einen Termin, ein Thema oder einen
-   Kongress. */
-function hatTerminblatt(L){
-  if(!L || !L.termine.length) return false;
-  const zeigeThemen = document.getElementById('sThemen').checked && L.hatThemen;
-  const zeigeKong   = document.getElementById('sKong').checked && L.hatKongresse;
-  return !!(L.hatET || L.hatAS || L.hatDU || L.hatEH || zeigeThemen || zeigeKong || themenplanAn(L));
+/* Dreiteilung wie in der Datenpflege (seit 28.09.2026): Preise, Termine und
+   Inhalte sind je ein Teil des Blattes und einzeln waehlbar. Welche Teile ein
+   Titel ueberhaupt hergibt, haengt allein an den Daten; Heftnummer und Monat
+   allein ergeben keinen Terminteil. */
+function hatTermine(L){
+  return !!(L && L.termine.length &&
+            (L.hatET || L.hatAS || L.hatDU || L.hatEH || L.hatHST || L.hatFREI || L.hatTV));
 }
+function hatInhalte(L){
+  return !!(L && L.termine.length && (L.hatThemen || L.hatKongresse || L.hatRubriken));
+}
+/* Kaeme ueberhaupt ein Termin- oder Inhaltsblatt zustande? */
+function hatTerminblatt(L){ return hatTermine(L) || hatInhalte(L); }
 
 /* Themenplan (Variante B, 28.09.2026): Hat ein Titel freie Rubriken mit
    Inhalt, steht hinter den Terminen ein eigener Themenplan — je Ausgabe ein
    Block mit Rubrik und Inhalt. Themen und Kongresse wandern dann mit dorthin,
    die Termintabelle behaelt nur die Termine. Als weitere Spalten passten die
    Rubriken nicht aufs Blatt (MMW: drei Rubriken, Tabelle ragte ueber den
-   Rand). Titel ohne freie Rubriken bleiben, wie sie waren. */
+   Rand). Titel ohne freie Rubriken bleiben, wie sie waren — ausser der
+   Terminteil ist abgewaehlt: Dann tragen Themen und Kongresse den Themenplan
+   allein, weil es keine Termintabelle gibt, in der sie als Spalten stuenden. */
 function themenplanAn(L){
   return !!(L && L.hatRubriken && document.getElementById('sRub').checked);
 }
-function themenplanRubriken(L, zeigeThemen, zeigeKong){
-  const frei = new Set(L.freieRubriken.map(r => r.id));
+function themenplanRubriken(L, zeigeThemen, zeigeKong, mitFreien){
+  const frei = new Set(mitFreien ? L.freieRubriken.map(r => r.id) : []);
   return L.rubriken.filter(r => r.id === 'themen' ? zeigeThemen : r.id === 'kongresse' ? zeigeKong : frei.has(r.id));
 }
 /* Feldname im Versandvergleich */
@@ -1920,8 +1930,13 @@ function themenplanBlock(a, R){
 function themenplanBauen(L, liste, R, legende){
   const zeilen = liste.filter(a => R.some(r => rubrikWert(a, r.id).trim()));
   if(!zeilen.length) return;
-  const unter = R.some(r => r.id === 'kongresse') ? 'Themen, Rubriken und Kongresse je Ausgabe'
-                                                  : 'Themen und Rubriken je Ausgabe';
+  /* Die Unterzeile nennt, was im Plan steht. */
+  const stuecke = [];
+  if(R.some(r => r.id === 'themen')) stuecke.push('Themen');
+  if(R.some(r => !FESTE_RUBRIK[r.id])) stuecke.push('Rubriken');
+  if(R.some(r => r.id === 'kongresse')) stuecke.push('Kongresse');
+  const unter = (stuecke.length === 1 ? stuecke[0]
+               : stuecke.slice(0, -1).join(', ') + ' und ' + stuecke[stuecke.length - 1]) + ' je Ausgabe';
   let blatt = null, tab = null;
   const neu = () => {
     blatt = neuesBlatt(blatt ? 'Themenplan · Fortsetzung' : 'Themenplan', unter);
@@ -1951,24 +1966,29 @@ function themenplanBauen(L, liste, R, legende){
   }
 }
 
-function terminseitenBauen(L){
-  const zeigeThemen = document.getElementById('sThemen').checked && L.hatThemen;
-  const zeigeKong   = document.getElementById('sKong').checked && L.hatKongresse;
+/* T: Terminteil gewaehlt, I: Inhaltsteil gewaehlt (siehe teileFuer). */
+function terminseitenBauen(L, T, I){
+  const zeigeThemen = I && document.getElementById('sThemen').checked && L.hatThemen;
+  const zeigeKong   = I && document.getElementById('sKong').checked && L.hatKongresse;
   const ohneAlte    = !document.getElementById('sVerstrichen').checked && L.hatVerstrichene;
   const liste = L.termine.filter(a => !(ohneAlte && a.verstrichen));
   if(!liste.length) return;
-  const plan = themenplanAn(L);
-  const imPlan = plan ? themenplanRubriken(L, zeigeThemen, zeigeKong) : [];
+  const intern = T ? internGewaehlt(L) : [];
+  const freie = I && themenplanAn(L);
+  /* Themenplan, wenn freie Rubriken dabei sind oder keine Termintabelle kommt. */
+  const plan = freie || (I && !T);
+  const imPlan = plan ? themenplanRubriken(L, zeigeThemen, zeigeKong, freie) : [];
   const tabThemen = zeigeThemen && !plan, tabKong = zeigeKong && !plan;
   /* Ohne Termine und ohne Themen bliebe eine Tabelle aus Heftnummern und
      Monatsnamen — das ist keine Terminliste, sondern ein Geruest. */
-  const tabelle = !!(L.hatET || L.hatAS || L.hatDU || L.hatEH || tabThemen || tabKong);
-  if(!tabelle && !plan) return;
+  const tabelle = T && !!(L.hatET || L.hatAS || L.hatDU || L.hatEH || intern.length || tabThemen || tabKong);
+  if(!tabelle && !imPlan.length) return;
 
-  const kopfHtml = terminKopf(L, tabThemen, tabKong);
+  const kopfHtml = terminKopf(L, tabThemen, tabKong, intern);
   VGL = versandFuer(GEWAEHLT.jahr, GEWAEHLT.titel);
-  const zuSehen = [].concat(L.hatET ? ['et'] : [], L.hatAS ? ['as'] : [], L.hatDU ? ['du'] : [],
-                            L.hatEH ? ['eh'] : [], tabThemen ? ['themen'] : [], tabKong ? ['kongresse'] : [],
+  const zuSehen = [].concat(tabelle && L.hatET ? ['et'] : [], tabelle && L.hatAS ? ['as'] : [],
+                            tabelle && L.hatDU ? ['du'] : [], tabelle && L.hatEH ? ['eh'] : [],
+                            intern.map(s => s[0]), tabThemen ? ['themen'] : [], tabKong ? ['kongresse'] : [],
                             imPlan.map(rubrikFeld));
   const sichtbar = !!VGL && liste.some(a => {
     const d = VGL.termine[versandWert(a.heft)];
@@ -1980,6 +2000,7 @@ function terminseitenBauen(L){
   if(L.hatAS) kuerzel.push('<b>AS</b> Anzeigenschluss');
   if(L.hatDU) kuerzel.push('<b>DU</b> Druckunterlagenschluss');
   if(L.hatEH) kuerzel.push('<b>EH</b> Anlieferschluss Ein- und Durchhefter sowie Beilagen');
+  intern.forEach(s => kuerzel.push('<b>' + s[1] + '</b> ' + s[4]));
   const legende =
     '<div class="legende">' + versand +
     (kuerzel.length ? kuerzel.join(' · ') + '. Termine ohne Jahresangabe gelten für ' +
@@ -2013,7 +2034,7 @@ function terminseitenBauen(L){
   };
 
   liste.forEach(a => {
-    zeilen.push(terminZeile(L, a, tabThemen, tabKong));
+    zeilen.push(terminZeile(L, a, tabThemen, tabKong, intern));
     tabelleSetzen(blatt, kopfHtml, zeilen, 'termine');
     legendeSetzen(blatt);
     if(laeuftUeber(blatt)){
@@ -2021,13 +2042,13 @@ function terminseitenBauen(L){
       tabelleSetzen(blatt, kopfHtml, zeilen, 'termine');
       blatt = neuesBlatt(ueber + ' · Fortsetzung', unter);
       koerper(blatt).insertAdjacentHTML('beforeend', '<h2 class="abschnitt">Ausgaben</h2>');
-      zeilen = [terminZeile(L, a, tabThemen, tabKong)];
+      zeilen = [terminZeile(L, a, tabThemen, tabKong, intern)];
       tabelleSetzen(blatt, kopfHtml, zeilen, 'termine');
       legendeSetzen(blatt);
     }
   });
   legendeSetzen(blatt);
-  if(plan) themenplanBauen(L, liste, imPlan, '');
+  if(imPlan.length) themenplanBauen(L, liste, imPlan, '');
 }
 
 /* ═══════════════════════════════════════════════════════════════════════════
@@ -2039,9 +2060,23 @@ let AKTUELL = null;
 const KONTAKT_SCHLUESSEL  = 'mediaSheetKontakt';    /* abgeloest, wird beim Start geraeumt */
 const KONTAKTE_SCHLUESSEL = 'mediaSheetKontakte';   /* je Titel */
 
-function umfang(){
-  const b = document.querySelector('.umfang button[aria-pressed="true"]');
-  return b ? b.id : 'uBeides';
+/* Umfang (seit 28.09.2026): gewaehlte Teile P(reise), T(ermine), I(nhalte).
+   Gezeichnet wird die Schnittmenge mit dem, was der Titel hergibt. Bliebe
+   davon nichts, zeigt das offene Blatt alles, was da ist — die Wahl selbst
+   bleibt dabei stehen und gilt fuer den naechsten Titel wieder. */
+const TEILE = ['P', 'T', 'I'];
+const TEIL_NAME = { P:'Preise', T:'Termine', I:'Inhalte' };
+let WAHL = new Set(TEILE);
+function verfuegbar(L){ return { P: !!(L && L.hatPreise), T: hatTermine(L), I: hatInhalte(L) }; }
+function teileFuer(L, mitErsatz){
+  const v = verfuegbar(L);
+  const t = TEILE.filter(k => WAHL.has(k) && v[k]);
+  return (t.length || !mitErsatz) ? t : TEILE.filter(k => v[k]);
+}
+/* „Preise“, „Preise und Termine“, „Preise, Termine und Inhalte“ */
+function teilText(t){
+  const n = t.map(k => TEIL_NAME[k]);
+  return n.length < 2 ? (n[0] || '') : n.slice(0, -1).join(', ') + ' und ' + n[n.length - 1];
 }
 
 function zeichnen(){
@@ -2051,9 +2086,9 @@ function zeichnen(){
   const L = AKTUELL = lage(GEWAEHLT.jahr, GEWAEHLT.titel);
   if(!L){ document.getElementById('druckKnopf').disabled = true; return; }
 
-  const modus = umfang();
-  if(modus !== 'uTermine' && L.hatPreise) preisseitenBauen(L);
-  if(modus !== 'uPreise') terminseitenBauen(L);
+  const teile = teileFuer(L, true);
+  if(teile.includes('P')) preisseitenBauen(L);
+  if(teile.includes('T') || teile.includes('I')) terminseitenBauen(L, teile.includes('T'), teile.includes('I'));
 
   /* Seitenzaehlung erst, wenn feststeht, wie viele es geworden sind. */
   const kopf = GEWAEHLT.titel + ' · Jahrgang ' + GEWAEHLT.jahr;
@@ -2073,9 +2108,7 @@ function zeichnen(){
 
   /* Der Dokumenttitel wird zum Dateinamen, den der Browser beim Sichern als
      PDF vorschlaegt. Er soll den Empfaenger etwas angehen, nicht die Ablage. */
-  const zusatz = modus === 'uPreise' ? 'Preise'
-               : modus === 'uTermine' ? 'Termine'
-               : (L.hatPreise ? 'Preise und Termine' : 'Termine');
+  const zusatz = teilText(teile) || 'Preise und Termine';
   document.title = GEWAEHLT.titel + ' ' + GEWAEHLT.jahr + ' – ' + zusatz;
 }
 
@@ -2102,8 +2135,8 @@ function zeichnen(){
    wird dort einmal eine Farbe zugewiesen. Komma und Semikolon trennen in
    Outlook Kategorien und fallen deshalb aus dem Kategorienamen heraus.
    Interne Termine (seit 28.09.2026): HST, FREI und TV, eingetragen in der
-   Datenpflege. Sie stehen nur hier, nie im Blatt, und im Fenster in einer
-   eigenen Zeile „Intern“. In der Beschreibung eines Eintrags erscheinen sie
+   Datenpflege. Im Fenster stehen sie in einer eigenen Zeile „Intern“; aufs
+   Blatt kommen sie nur, wenn sie im Terminteil einzeln angehakt sind. In der Beschreibung eines Eintrags erscheinen sie
    nur, wenn die Datei auch interne Termine enthaelt. */
 const KURZNAMEN_SCHLUESSEL = 'mediaSheetKurznamen';
 function kurznamenLesen(){
@@ -2301,16 +2334,13 @@ function kalenderFenster(){
    fachAufbauen), im Stapel stehen alle Formate. Nach dem Druckdialog zeigt die
    Vorschau wieder das offene Blatt. Eigenes Fenster statt Haken in der
    Titelleiste, damit ein Klick links weiter genau ein Blatt bedeutet. */
-const UMFANG_TEXT = { uBeides:'Preise und Termine', uPreise:'Nur Preise', uTermine:'Nur Termine' };
-
 /* Warum ein Titel unter dem eingestellten Umfang kein Blatt ergibt, sonst ''. */
 function grundOhneBlatt(t){
   const L = lage(GEWAEHLT.jahr, t);
   if(!L) return 'keine Daten';
-  const m = umfang(), termine = hatTerminblatt(L);
-  if(m === 'uPreise')  return L.hatPreise ? '' : 'keine Preise';
-  if(m === 'uTermine') return termine ? '' : 'keine Termine';
-  return (L.hatPreise || termine) ? '' : 'keine Daten';
+  if(teileFuer(L, false).length) return '';
+  const w = TEILE.filter(k => WAHL.has(k));
+  return w.length === 1 ? 'keine ' + TEIL_NAME[w[0]] : 'keine Daten';
 }
 
 /* Titelliste der Fenster „Mehrere Titel …“ und „Kalender“: Fachbereiche mit
@@ -2380,7 +2410,7 @@ function sammelFenster(){
   back.className = 'dlg-back';
   back.innerHTML = '<div class="dlg-box sd-box" role="dialog" aria-modal="true" aria-label="Mehrere Titel drucken">' +
     '<div class="dlg-hd">Mehrere Titel drucken</div>' +
-    '<div class="sd-kopfzeile">Jahrgang <b>' + esc(GEWAEHLT.jahr) + '</b> · ' + UMFANG_TEXT[umfang()] +
+    '<div class="sd-kopfzeile">Jahrgang <b>' + esc(GEWAEHLT.jahr) + '</b> · ' + teilText(TEILE.filter(k => WAHL.has(k))) +
       ' · Blattinhalt wie eingestellt</div>' +
     '<div class="sd-liste">' + h + '</div>' +
     '<div class="sd-fuss">Jeder Titel beginnt auf einer neuen Seite und trägt seinen eigenen Stand, ' +
@@ -2412,7 +2442,7 @@ function sammelFenster(){
    und danach auf das offene Blatt zurueckgesetzt. */
 function sammelZeichnen(titel){
   const buehne = document.getElementById('buehne');
-  const offen = GEWAEHLT.titel, auswahl = AUSWAHL, modus = umfang();
+  const offen = GEWAEHLT.titel, auswahl = AUSWAHL;
   buehne.innerHTML = '';
   AUSWAHL = null;
   let alle = [];
@@ -2424,8 +2454,9 @@ function sammelZeichnen(titel){
     trenner.className = 'sd-trenner';
     trenner.textContent = t;
     buehne.appendChild(trenner);
-    if(modus !== 'uTermine' && L.hatPreise) preisseitenBauen(L);
-    if(modus !== 'uPreise') terminseitenBauen(L);
+    const teile = teileFuer(L, false);
+    if(teile.includes('P')) preisseitenBauen(L);
+    if(teile.includes('T') || teile.includes('I')) terminseitenBauen(L, teile.includes('T'), teile.includes('I'));
     const kopf = t + ' · Jahrgang ' + GEWAEHLT.jahr;
     SEITEN.forEach((b, i) => {
       b.querySelector('.seite').textContent = kopf + ' · Seite ' + (i+1) + ' von ' + SEITEN.length;
@@ -2443,7 +2474,7 @@ function sammelZeichnen(titel){
   const g = fb.length === 1 && fb[0] && titelGruppen(GEWAEHLT.jahr).find(x => x.f === fb[0]);
   const ganz = g && g.titel.filter(t => !grundOhneBlatt(t)).length === titel.length;
   document.title = (ganz ? fb[0] : titel.length + ' Titel') + ' ' + GEWAEHLT.jahr + ' – ' +
-                   UMFANG_TEXT[modus].replace('Nur ', '');
+                   teilText(TEILE.filter(k => WAHL.has(k)));
 }
 
 /* ── Ansprechpartner ──────────────────────────────────────────────────────
@@ -2578,18 +2609,28 @@ function fachZahlSetzen(){
 function leisteNachfuehren(){
   const L = AKTUELL;
   const zeigen = (id, ja) => { document.getElementById(id).hidden = !ja; };
-  const modus = umfang();
-  const preisteil  = L && L.hatPreise && modus !== 'uTermine';
-  const terminteil = hatTerminblatt(L) && modus !== 'uPreise';
+  const teile = L ? teileFuer(L, true) : [];
+  const preisteil  = teile.includes('P');
+  let terminteil = teile.includes('T');
+  const inhaltsteil = teile.includes('I');
 
   zeigen('sRabattFeld',    !!(preisteil && L.hatRabatt));
   zeigen('sAEFeld',        !!(preisteil && L.hatAE));
   zeigen('sTerminFeld',    !!(preisteil && L.hatTerminart));
   zeigen('sKondFeld',      !!(preisteil && L.hatRabatt && staffelFuer(GEWAEHLT.jahr, L.fach)));
-  zeigen('sThemenFeld',    !!(terminteil && L.hatThemen));
-  zeigen('sKongFeld',      !!(terminteil && L.hatKongresse));
-  zeigen('sRubFeld',       !!(terminteil && L.hatRubriken));
-  zeigen('sVerstrichenFeld', !!(terminteil && L.hatVerstrichene));
+  INTERN_SPALTEN.forEach(s => zeigen(s[2] + 'Feld', !!(terminteil && L[s[3]])));
+  zeigen('sThemenFeld',    !!(inhaltsteil && L.hatThemen));
+  zeigen('sKongFeld',      !!(inhaltsteil && L.hatKongresse));
+  zeigen('sRubFeld',       !!(inhaltsteil && L.hatRubriken));
+  /* Verstrichene Ausgaben betreffen Termine wie Inhalte; der Schalter steht im
+     Terminteil und wandert in den Inhaltsteil, wenn es nur den gibt. */
+  const verstr = document.getElementById('sVerstrichenFeld');
+  const verstrIn = document.getElementById(terminteil ? 'gTermin' : 'gInhalt');
+  if(verstr.parentNode !== verstrIn){
+    if(terminteil) verstrIn.children[0].after(verstr); else verstrIn.appendChild(verstr);
+  }
+  zeigen('sVerstrichenFeld', !!((terminteil || inhaltsteil) && L.hatVerstrichene));
+  terminteil = terminteil || inhaltsteil;
   document.getElementById('sVorlFeld').hidden = !(preisteil || terminteil);
   /* Aenderungsmarken nur, wenn fuer Titel und Jahrgang ein Versand gemerkt ist. */
   zeigen('sAendFeld', !!(preisteil || terminteil));
@@ -2606,22 +2647,28 @@ function leisteNachfuehren(){
   /* Bleibt in einem Abschnitt kein Schalter uebrig, entfaellt der Abschnitt
      samt Kopf; der Umfang steht, sobald ein Blatt geladen ist. Ohne Blatt
      entfaellt die ganze Spalte „Blattinhalt“. */
-  document.getElementById('gUmfang').hidden = !L;
-  document.querySelectorAll('#schalter > .o-grp:not(#gUmfang)').forEach(g => {
+  document.getElementById('umfangKarte').hidden = !L;
+  document.querySelectorAll('#schalter > .o-grp').forEach(g => {
     g.hidden = !Array.from(g.children).some(k => !k.classList.contains('o-kopf') && !k.hidden);
   });
   document.getElementById('gKontakt').hidden = !L;
   const kasten = document.getElementById('schalter');
-  document.getElementById('einst').hidden = !Array.from(kasten.children).some(k => !k.hidden);
+  /* Der oberste sichtbare Abschnitt traegt keinen Trennstrich, auch wenn der
+     Preisteil abgewaehlt ist. */
+  const gruppen = Array.from(kasten.children);
+  gruppen.forEach(g => g.classList.toggle('oben', g === gruppen.find(k => !k.hidden)));
+  kasten.hidden = !gruppen.some(k => !k.hidden);
+  document.getElementById('einst').hidden = !L && kasten.hidden;
 
   /* Was der Titel nicht hergibt, laesst sich auch nicht waehlen. */
   const ohnePreise = !!(L && !L.hatPreise);
   const ohneTermine = !hatTerminblatt(L);
-  document.getElementById('uBeides').disabled  = ohnePreise || ohneTermine;
-  document.getElementById('uPreise').disabled  = ohnePreise;
-  document.getElementById('uTermine').disabled = ohneTermine;
-  if(ohnePreise && !ohneTermine) umfangSetzen('uTermine', true);
-  if(ohneTermine && !ohnePreise) umfangSetzen('uPreise', true);
+  const v = verfuegbar(L);
+  document.querySelectorAll('#gUmfang input').forEach(b => {
+    b.disabled = !v[b.dataset.teil];
+    b.checked = teile.includes(b.dataset.teil);
+    b.parentNode.classList.toggle('aus', b.disabled);
+  });
   /* Mehrere Titel erst ab zwei Titeln im Jahrgang. */
   document.getElementById('sammelKnopf').disabled = titelListe(GEWAEHLT.jahr).length < 2;
   /* Kalender nur, wenn im Jahrgang noch ein Termin ansteht. */
@@ -2649,12 +2696,17 @@ function leisteNachfuehren(){
   hw.hidden = !text;
 }
 
-function umfangSetzen(id, still){
-  document.querySelectorAll('.umfang button').forEach(b => {
-    b.setAttribute('aria-pressed', b.id === id ? 'true' : 'false');
-  });
-  try{ localStorage.setItem('mediaSheetUmfang', id); }catch(e){}
-  if(!still){ leisteNachfuehren(); zeichnen(); }
+/* Ein Teil an oder ab. Mindestens einer der Teile, die der Titel hergibt,
+   bleibt an; der letzte laesst sich nicht abwaehlen. */
+function teilUmschalten(k){
+  const L = AKTUELL, v = verfuegbar(L), eff = teileFuer(L, true);
+  if(!TEILE.some(x => WAHL.has(x) && v[x])) eff.forEach(x => WAHL.add(x));
+  if(WAHL.has(k)){
+    if(!eff.some(x => x !== k)){ document.querySelector('#gUmfang input[data-teil="' + k + '"]').checked = true; return; }
+    WAHL.delete(k);
+  } else WAHL.add(k);
+  try{ localStorage.setItem('mediaSheetTeile', TEILE.filter(x => WAHL.has(x)).join('')); }catch(e){}
+  leisteNachfuehren(); zeichnen();
 }
 
 /* ── Auswahlfelder ───────────────────────────────────────────────────────── */
@@ -2792,8 +2844,12 @@ function einstellungenLesen(){
   });
   document.getElementById('sVorl').checked = true;
   try{
-    const u = localStorage.getItem('mediaSheetUmfang');
-    if(u === 'uBeides' || u === 'uPreise' || u === 'uTermine') umfangSetzen(u, true);
+    /* Bis 28.09.2026 drei Stellungen unter „mediaSheetUmfang“; „Nur Termine“
+       schloss Themen und Kongresse ein und wird deshalb zu Termine + Inhalte. */
+    const alt = { uBeides:'PTI', uPreise:'P', uTermine:'TI' }[localStorage.getItem('mediaSheetUmfang')];
+    if(alt){ localStorage.setItem('mediaSheetTeile', alt); localStorage.removeItem('mediaSheetUmfang'); }
+    const u = String(localStorage.getItem('mediaSheetTeile') || '').split('').filter(k => TEILE.includes(k));
+    if(u.length) WAHL = new Set(u);
     const t = localStorage.getItem('mediaSheetTitel'); if(t) GEWAEHLT.titel = t;
     const j = localStorage.getItem('mediaSheetJahr');  if(j) GEWAEHLT.jahr = j;
   }catch(e){}
@@ -2840,10 +2896,10 @@ async function starten(){
     if(e.key === 'Escape' && e.target.value !== ''){ e.stopPropagation(); titelSucheLeeren(); }
   });
   document.getElementById('tlSucheX').addEventListener('click', titelSucheLeeren);
-  document.querySelectorAll('.umfang button').forEach(b => {
-    b.addEventListener('click', () => { if(!b.disabled) umfangSetzen(b.id); });
+  document.querySelectorAll('#gUmfang input').forEach(b => {
+    b.addEventListener('change', () => teilUmschalten(b.dataset.teil));
   });
-  ['sRabatt','sAE','sTermin','sKond','sThemen','sKong','sRub','sVerstrichen','sVorl','sAend'].forEach(id => {
+  ['sRabatt','sAE','sTermin','sKond','sThemen','sKong','sRub','sVerstrichen','sHST','sFREI','sTV','sVorl','sAend'].forEach(id => {
     document.getElementById(id).addEventListener('change', () => {
       einstellungenMerken(id);
       zeichnen();
