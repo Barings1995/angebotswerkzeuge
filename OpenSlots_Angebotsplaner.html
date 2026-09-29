@@ -1419,6 +1419,14 @@ let cJ=0;
 
 function pOf(ji,n){for(const g of J[ji].g)for(const[nm,p]of g.i)if(nm===n)return p;return null;}
 function entryOf(ji,n){for(const g of J[ji].g)for(const e of g.i)if(e[0]===n)return e;return null;}
+/* Mehrere Platzierungen einer Ausgabe stehen in der Kopiervorlage nach Preis, die
+   teuerste zuerst (bei s/w + 4c-Zuschlag zählt die Summe). Gleich teure behalten die
+   Reihenfolge der Haken, Platzierungen ohne Preis folgen am Ende. Die Matrix und der
+   gespeicherte Stand bleiben davon unberührt. */
+function nachPreis(ji,names){
+  const wert=n=>{const p=pOf(ji,n);return p==null?-Infinity:(Array.isArray(p)?p[0]+p[1]:p);};
+  return [...names].map(n=>[n,wert(n)]).sort((a,b)=>b[1]-a[1]||0).map(x=>x[0]);
+}
 /* ── Welcher Termin gilt? ──
    Kommt ausschließlich aus der Spalte „Termin (DU/EH)" der Preisliste:
    »DU« = Druckunterlagenschluss (der Verlag druckt), »EH« = Anliefertermin
@@ -3048,7 +3056,7 @@ function buildHtml(o=angebotsOptionen()){
          Name um, rutschte alles darunter gegen die Nachbarspalten. */
       const tdN=td+';white-space:nowrap';
       const t=heftDaten(ji,s);
-      const names=s.sel.size>0?[...s.sel]:[];
+      const names=nachPreis(ji,s.sel);
       const cells=names.map(n=>{const e=entryOf(ji,n);return e?posCalc(e,discOn,aeOn,pct):null;});
       const pl=names.length?names.map(esc).join('<br>'):'&ndash;';
       const priceLines=names.length?names.map(n=>{const p=pOf(ji,n);return p!=null?fmtP(p):'&ndash;';}).join('<br>'):'&ndash;';
@@ -3121,13 +3129,14 @@ function buildTxt(o=angebotsOptionen()){
       if(inf.length)hdr+=` (${inf.join(', ')})`;
       L.push(hdr);
       if(!s.sel.size)L.push('  \u2013');
-      else s.sel.forEach(n=>{
+      else nachPreis(ji,s.sel).forEach(n=>{
         const art=terminArt(ji,n);
         L.push('  '+n+((duOn&&art==='EH'&&t.eh)?(' (Anlieferung '+t.eh+')'):''));
       });
     });
     const pm=new Map();
-    iss.forEach(s=>s.sel.forEach(n=>{if(!pm.has(n)){const p=pOf(ji,n);if(p!=null)pm.set(n,p);}}));
+    /* Die Preisliste des Titels gilt über alle Ausgaben, daher auch sie als Ganzes nach Preis */
+    nachPreis(ji,new Set(iss.flatMap(s=>[...s.sel]))).forEach(n=>{const p=pOf(ji,n);if(p!=null)pm.set(n,p);});
     if(pm.size){L.push('','PREISE:');pm.forEach((p,n)=>L.push(`${n}: ${fmtPtxt(p)}`));}
     const T=sumTitle(ji,iss,discOn,aeOn,pct);
     if((discOn||aeOn)&&T.preis>0){
