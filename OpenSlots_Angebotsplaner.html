@@ -1176,6 +1176,11 @@ tr.pl-row.alt td:not(.pl-cell) {
 .tab:active,
 .heft-chip:active,
 .mx-tool-btn:active { transform: translateY(1px); }
+/* Beide Beschriftungen liegen uebereinander, die Breite folgt der laengeren:
+   der Button aendert beim Umschalten seine Groesse nicht. */
+.tb-lbl { display:inline-grid; text-align:center; }
+.tb-lbl > span { grid-area:1/1; }
+.tb-lbl > .off { visibility:hidden; }
 
 /* ── KATEGORIE-ZÄHLER ── */
 .cat-badge {
@@ -2641,7 +2646,7 @@ function updMxTools(){
       /* Pfeile nach aussen = ausklappen, nach innen = einklappen; Wortlaut nennt,
          was sich bewegt: die Platzierungen unter den Kategoriezeilen. */
       const pf=anyCollapsed?'<path d="m7 15 5 5 5-5"/><path d="m7 9 5-5 5 5"/>':'<path d="m7 20 5-5 5 5"/><path d="m7 4 5 5 5-5"/>';
-      tb.innerHTML='<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">'+pf+'</svg>'+(anyCollapsed?'Alle Platzierungen ausklappen':'Alle Platzierungen einklappen');
+      tb.innerHTML='<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">'+pf+'</svg><span class="tb-lbl"><span'+(anyCollapsed?'':' class="off"')+'>Alle Platzierungen ausklappen</span><span'+(anyCollapsed?' class="off"':'')+'>Alle Platzierungen einklappen</span></span>';
       tb.title=anyCollapsed?'Alle Kategorien öffnen und ihre Platzierungen zeigen':'Alle Kategorien schließen – nur die Kategoriezeilen bleiben sichtbar';
     }
   }
