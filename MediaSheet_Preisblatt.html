@@ -320,7 +320,9 @@ select:disabled{opacity:.5; cursor:not-allowed}
 }
 .std-knopf:hover{opacity:1; text-decoration:underline}
 .std-knopf:focus-visible{opacity:1; outline:2px solid var(--navy); outline-offset:2px; border-radius:3px}
-.std-knopf svg{width:12px; height:12px; flex:none}
+/* Pfeilspitze ragt links etwas ueber die viewBox hinaus (seit 02.10.2026: Bogen
+   mit frei stehender Spitze, vorher wirkte der Kreis geschlossen). */
+.std-knopf svg{width:12px; height:12px; flex:none; overflow:visible}
 
 /* ── Blattinhalt ──────────────────────────────────────────────────────────
    Was auf dem Blatt erscheint, wird in einer Karte gewaehlt, gegliedert nach den
@@ -848,7 +850,7 @@ table.kond + table.kond{margin-top:8px}
 <aside class="einst" id="einst" aria-label="Blattinhalt">
 <div class="sec-label mit-knopf">Blattinhalt
   <button type="button" class="std-knopf" id="standardKnopf" title="Umfang, Schalter und Formate auf die Standardwerte stellen. Daten, Kontakte und Titelwahl bleiben.">
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 12a9 9 0 1 0 3-6.7"/><polyline points="3 3 3 9 9 9"/></svg>Standard
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 4a8 8 0 1 1-8 8"/><polyline points="0.5 9.5 4 6 7.5 9.5"/><line x1="4" y1="6" x2="4" y2="12"/></svg>Standard
   </button>
 </div>
 <!-- Umfang in eigener Karte ueber den uebrigen Abschnitten (Variante C,
