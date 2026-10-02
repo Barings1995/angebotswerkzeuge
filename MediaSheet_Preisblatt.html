@@ -874,7 +874,7 @@ table.kond + table.kond{margin-top:8px}
     <label id="sRubFeld"><input type="checkbox" id="sRub" checked> Weitere Rubriken</label>
   </div>
   <div class="o-grp" id="gKenn"><div class="o-kopf">Kennzeichnung</div>
-    <label id="sVorlFeld"><input type="checkbox" id="sVorl" checked> Vermerk &bdquo;vorl&auml;ufig&ldquo;</label>
+    <label id="sVorlFeld"><input type="checkbox" id="sVorl"> Vermerk &bdquo;vorl&auml;ufig&ldquo;</label>
     <label id="sAendFeld"><input type="checkbox" id="sAend"> <span id="sAendText">&Auml;nderungen seit Versand</span></label>
     <label id="sMerkFeld"><input type="checkbox" id="sMerk"> Beim Drucken als versendet merken</label>
   </div>
@@ -2836,8 +2836,8 @@ function wechseln(){
 
 /* ── Gemerkte Einstellungen ───────────────────────────────────────────────
    Gemerkt wird alles bis auf zwei: Der Vermerk „vorlaeufig" steht bei jedem
-   Oeffnen wieder auf „an", damit ein einmaliges Ausschalten nicht still auf das
-   naechste Vorab-Blatt durchschlaegt. Die Formatauswahl gilt ohnehin nur fuer
+   Oeffnen wieder auf „aus" (seit 02.10.2026, vorher „an"), damit ein einmaliges
+   Einschalten nicht still auf das naechste Kundenblatt durchschlaegt. Die Formatauswahl gilt ohnehin nur fuer
    das offene Blatt. */
 const GEMERKT = ['sRabatt','sAE','sTermin','sThemen','sKong','sRub','sVerstrichen'];
 
@@ -2859,7 +2859,7 @@ function einstellungenLesen(){
       if(w === '0' || w === '1') document.getElementById(id).checked = (w === '1');
     }catch(e){}
   });
-  document.getElementById('sVorl').checked = true;
+  document.getElementById('sVorl').checked = false;
   try{
     /* Bis 28.09.2026 drei Stellungen unter „mediaSheetUmfang“; „Nur Termine“
        schloss Themen und Kongresse ein und wird deshalb zu Termine + Inhalte. */
