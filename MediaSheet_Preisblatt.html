@@ -309,6 +309,18 @@ select:disabled{opacity:.5; cursor:not-allowed}
   font-size:10px; font-weight:700; color:var(--grey-600); letter-spacing:.1em; text-transform:uppercase;
   line-height:normal; margin:0 0 .6rem; padding-bottom:5px; border-bottom:1px solid var(--border);
 }
+/* „Standard" rechts neben der Ueberschrift „Blattinhalt" (seit 02.10.2026). Bewusst
+   kein roter Knopf und ohne Rueckfrage: Er stellt nur Haken zurueck, und die sind mit
+   einem Klick wieder gesetzt. Daten, Kontakte und Titelwahl bleiben. */
+.sec-label.mit-knopf{display:flex; align-items:center; justify-content:space-between; gap:8px}
+.std-knopf{
+  all:unset; display:inline-flex; align-items:center; gap:4px; cursor:pointer;
+  font-size:11px; font-weight:600; letter-spacing:0; text-transform:none;
+  color:var(--navy); opacity:.75; transition:opacity .15s;
+}
+.std-knopf:hover{opacity:1; text-decoration:underline}
+.std-knopf:focus-visible{opacity:1; outline:2px solid var(--navy); outline-offset:2px; border-radius:3px}
+.std-knopf svg{width:12px; height:12px; flex:none}
 
 /* ── Blattinhalt ──────────────────────────────────────────────────────────
    Was auf dem Blatt erscheint, wird in einer Karte gewaehlt, gegliedert nach den
@@ -834,7 +846,11 @@ table.kond + table.kond{margin-top:8px}
   <div class="tl-liste" id="tlListe"></div>
 </aside>
 <aside class="einst" id="einst" aria-label="Blattinhalt">
-<div class="sec-label">Blattinhalt</div>
+<div class="sec-label mit-knopf">Blattinhalt
+  <button type="button" class="std-knopf" id="standardKnopf" title="Umfang, Schalter und Formate auf die Standardwerte stellen. Daten, Kontakte und Titelwahl bleiben.">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 12a9 9 0 1 0 3-6.7"/><polyline points="3 3 3 9 9 9"/></svg>Standard
+  </button>
+</div>
 <!-- Umfang in eigener Karte ueber den uebrigen Abschnitten (Variante C,
      28.09.2026): Er bestimmt, welche Abschnitte darunter erscheinen. Seit
      demselben Tag drei Haken statt dreier Knoepfe mit genau einer Wahl. -->
@@ -2872,6 +2888,26 @@ function einstellungenLesen(){
   }catch(e){}
 }
 
+/* Knopf „Standard": Umfang, Schalter und Formatauswahl wie beim ersten Oeffnen.
+   Die Werte entsprechen den checked-Attributen im Markup; der Ansprechpartner
+   bleibt, weil er je Titel gepflegt wird. */
+const STANDARD = { sRabatt:true, sAE:true, sTermin:true, sKond:true,
+                   sVerstrichen:true, sHST:false, sFREI:false, sTV:false,
+                   sThemen:true, sKong:true, sRub:true,
+                   sVorl:false, sAend:false, sMerk:false };
+function standardSetzen(){
+  Object.keys(STANDARD).forEach(id => {
+    document.getElementById(id).checked = STANDARD[id];
+    einstellungenMerken(id);
+  });
+  WAHL = new Set(TEILE);
+  try{ localStorage.setItem('mediaSheetTeile', TEILE.join('')); }catch(e){}
+  AUSWAHL = null;
+  leisteNachfuehren();
+  fachAufbauen();
+  zeichnen();
+}
+
 function einstellungenMerken(id){
   if(GEMERKT.indexOf(id) < 0) return;
   try{ localStorage.setItem('mediaSheet_' + id, document.getElementById(id).checked ? '1' : '0'); }catch(e){}
@@ -2922,6 +2958,7 @@ async function starten(){
       zeichnen();
     });
   });
+  document.getElementById('standardKnopf').addEventListener('click', standardSetzen);
   document.getElementById('druckKnopf').addEventListener('click', () => {
     VERSAND_OFFEN = document.getElementById('sMerk').checked ? [GEWAEHLT.titel] : null;
     window.print();
