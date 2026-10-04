@@ -845,6 +845,93 @@ button, input, select, textarea { font-family: inherit; }
     border: 1px solid var(--red-border); border-radius: var(--radius-md); padding: 7px 10px; margin-top: 8px; }
   @media (max-width: 620px) { .staffel-paar { grid-template-columns: minmax(0,1fr); } }
 
+  /* Formate und Maße (04.10.2026): links die Einträge des Formatsatzes, rechts
+     das Bearbeitungsfeld. Standard und Abweichungen tragen denselben Kopf wie
+     die Blöcke der Rabattstaffeln. */
+  .dialog.formate { max-width: 1060px; height: 100%; }
+  .fm-satz { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; padding: 0 20px 12px; font-size: 13px; }
+  .fm-satz label { font-size: 10.5px; font-weight: 700; color: var(--navy); text-transform: uppercase; letter-spacing: .4px; }
+  .fm-satz select { padding: 5px 8px; border: 1px solid var(--border); border-radius: var(--radius-sm); font-size: 13px;
+    font-family: var(--font-body); color: var(--text); background: var(--white); min-width: 240px; }
+  .fm-satz > span { font-size: 12px; color: var(--grey-600); margin-right: 6px; }
+  .fm-leise { background: none; border: none; cursor: pointer; padding: 0 2px; font-size: 12px; font-family: inherit;
+    color: var(--navy); font-weight: 600; }
+  .fm-leise:hover { text-decoration: underline; }
+  .fm-leise.fm-rot { color: var(--red); font-weight: 400; }
+  .dialog.formate > .fm-koerper { flex: 1 1 auto; min-height: 0; }
+  .fm-koerper { display: grid; grid-template-columns: 240px minmax(0,1fr); border-top: 1px solid var(--border); overflow: hidden; }
+  .fm-liste { border-right: 1px solid var(--border); overflow-y: auto; background: #f7f9fc; }
+  .fm-grp { font-size: 10.5px; font-weight: 700; color: var(--navy); text-transform: uppercase; letter-spacing: .6px;
+    padding: 12px 14px 5px; border-bottom: 1px solid var(--border); }
+  .fm-liste button { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; width: 100%;
+    text-align: left; border: none; background: none; padding: 7px 14px; font-size: 13px; font-family: inherit;
+    color: var(--text); border-bottom: 1px solid #eef1f5; cursor: pointer; }
+  .fm-liste button:hover { background: #eef4fa; }
+  .fm-liste button.an { background: var(--white); color: var(--navy); font-weight: 700; box-shadow: inset 3px 0 0 var(--navy); }
+  .fm-liste .fm-name { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .fm-neben { font-size: 11px; font-weight: 400; color: var(--grey-600); white-space: nowrap; }
+  .fm-abw-zahl { font-size: 11px; font-weight: 600; color: var(--orange-dark); white-space: nowrap; }
+  .fm-ohne { color: var(--grey-500); }
+  .fm-leer { font-size: 12.5px; color: var(--grey-600); padding: 8px 14px; }
+  td.fm-leer { padding: 8px 6px; }
+  .fm-edit { padding: 4px 20px 18px; overflow-y: auto; }
+  .fm-edit > .staffel-kopf:first-child, .fm-edit > .fm-feld:first-child { margin-top: 10px; }
+  .fm-feld { display: flex; flex-direction: column; gap: 4px; margin-bottom: 12px; }
+  .fm-feld input, .fm-feld textarea { padding: 5px 8px; border: 1px solid var(--border); border-radius: var(--radius-sm);
+    font-size: 13px; font-family: var(--font-body); color: var(--text); background: var(--white); }
+  .fm-feld textarea { resize: vertical; line-height: 1.45; }
+  .fm-feld input:focus, .fm-feld textarea:focus { outline: none; border-color: var(--navy); box-shadow: 0 0 0 2px rgba(0,40,90,.08); }
+  .fm-chips { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+  .fm-chip { display: inline-flex; align-items: center; gap: 4px; font-size: 12.5px; background: #eef4fa;
+    border: 1px solid var(--border); border-radius: 999px; padding: 2px 4px 2px 10px; color: var(--navy); }
+  .fm-chip button { border: none; background: none; cursor: pointer; color: var(--grey-500); font-size: 14px; line-height: 1; padding: 0 4px; }
+  .fm-chip button:hover { color: var(--red); }
+  .fm-chip-wahl { padding: 3px 6px; border: 1px solid var(--border); border-radius: var(--radius-sm); font-size: 12.5px;
+    font-family: var(--font-body); color: var(--navy); background: var(--white); max-width: 260px; }
+  .fm-zwei { display: grid; grid-template-columns: 200px minmax(0,1fr); gap: 18px; align-items: start; margin-top: 10px; }
+  .fm-bild { border: 1px solid var(--border); border-radius: var(--radius-md); padding: 8px; background: var(--white); }
+  .fm-bild img { display: block; width: 100%; height: auto; border-radius: 3px; }
+  .fm-bild-knoepfe { display: flex; gap: 6px; margin-top: 8px; flex-wrap: wrap; }
+  .fm-bild-knoepfe .btn, .fm-bild-leer .btn { font-size: 12px; padding: 4px 9px; }
+  .fm-bild-info { font-size: 11px; color: var(--grey-600); margin-top: 6px; word-break: break-word; }
+  .fm-bild-leer { display: flex; flex-direction: column; align-items: center; gap: 8px; padding: 18px 8px;
+    font-size: 12px; color: var(--grey-600); text-align: center; }
+  table.fm-mtab { width: 100%; border-collapse: collapse; font-size: 13px; }
+  table.fm-mtab th { font-size: 10.5px; font-weight: 700; color: var(--navy); text-transform: uppercase; letter-spacing: .4px;
+    text-align: left; padding: 0 4px 4px; }
+  table.fm-mtab th:first-child { width: 36%; }
+  table.fm-mtab td { padding: 2px 4px; vertical-align: top; }
+  table.fm-mtab input, table.fm-mtab textarea { width: 100%; box-sizing: border-box; padding: 4px 7px; border: 1px solid var(--border);
+    border-radius: var(--radius-sm); font-size: 13px; font-family: var(--font-body); color: var(--text); background: var(--white);
+    line-height: 1.45; }
+  table.fm-mtab textarea { resize: none; overflow: hidden; display: block; }
+  table.fm-mtab td.tat { width: 76px; padding-top: 5px; }
+  .fm-abw { border-left: 3px solid var(--orange); padding-left: 12px; margin-top: 18px; }
+  .fm-abw > .staffel-kopf { margin-top: 0; }
+  .fm-abw-knopf { margin-top: 16px; }
+  .masse-heft { display: flex; gap: 22px; align-items: flex-end; flex-wrap: wrap; margin: 10px 0 12px; padding: 10px 12px;
+    border: 1px solid var(--border); border-radius: var(--radius-md); background: #f7f9fc; }
+  .masse-heft .m-etikett { font-size: 11px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--navy);
+    align-self: center; margin-right: 2px; }
+  .masse-heft .feld { display: flex; flex-direction: column; gap: 4px; }
+  .m-paar { display: inline-flex; align-items: center; gap: 5px; white-space: nowrap; }
+  .m-paar input { width: 54px; text-align: right; padding: 4px 6px; border: 1px solid var(--border); border-radius: var(--radius-sm);
+    font-size: 13px; font-family: var(--font-body); color: var(--text); background: var(--white); }
+  .m-paar input:focus { outline: none; border-color: var(--navy); box-shadow: 0 0 0 2px rgba(0,40,90,.08); }
+  .m-paar .m-x { color: var(--grey-500); font-size: 13px; }
+  .m-paar .m-mm { color: var(--grey-600); font-size: 12.5px; }
+  .masse-tab { width: 100%; }
+  .masse-tab td input.m-format { width: 100%; box-sizing: border-box; }
+  .masse-tab td select { width: 100%; }
+  .masse-sonst { margin-top: 14px; }
+  .masse-sonst label { display: block; font-size: 10.5px; font-weight: 700; letter-spacing: .4px; text-transform: uppercase;
+    color: var(--navy); margin-bottom: 5px; }
+  .masse-sonst textarea { width: 100%; box-sizing: border-box; min-height: 54px; font-family: var(--font-body); font-size: 13px;
+    padding: 6px 8px; border: 1px solid var(--border); border-radius: var(--radius-sm); resize: vertical; color: var(--text); }
+  .m-hinweis { font-size: 12px; color: var(--grey-600); margin-top: 5px; }
+  @media (max-width: 760px) { .fm-koerper { grid-template-columns: minmax(0,1fr); } .fm-liste { max-height: 180px; border-right: none; border-bottom: 1px solid var(--border); }
+    .fm-zwei { grid-template-columns: minmax(0,1fr); } }
+
   .meldung { position: fixed; left: 50%; transform: translateX(-50%); bottom: 22px; background: var(--navy); color: #fff; font-size: 13px; font-weight: 600; padding: 9px 18px; border-radius: var(--radius-md); box-shadow: var(--shadow-lg); z-index: 60; }
   .meldung.schlecht { background: var(--red); }
   .fehlerkasten { display: none; align-items: flex-start; gap: 8px; font-size: 12.5px; color: var(--red); background: var(--red-bg); border: 1px solid var(--red-border); border-radius: var(--radius-md); padding: 8px 12px; margin-bottom: 14px; }
@@ -957,8 +1044,14 @@ button, input, select, textarea { font-family: inherit; }
              Das kippt, sobald Fachgruppen regelmäßig einzeln gepflegt werden:
              dann braucht die Maske eine eigene Fachbereichsebene, etwa die
              Titelliste nach Fachgruppe gruppiert, mit der Staffel an der
-             Gruppenüberschrift. So entschieden am 20.09.2026. -->
+             Gruppenüberschrift. So entschieden am 20.09.2026.
+
+             „Formate und Maße …" (04.10.2026) steht in derselben Gruppe und
+             erfüllt den Maßstab: die Formatsätze hängen am Jahrgang und gelten
+             für alle Titel des Satzes; ein Titel wählt seinen Satz an seinen
+             Angaben. -->
         <div class="gruppe">
+          <button class="btn" onclick="formateOeffnen()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="3" width="16" height="18" rx="1"/><line x1="8" y1="7" x2="16" y2="7"/><rect x="8" y="11" width="8" height="6"/></svg>Formate und Maße …</button>
           <button class="btn" onclick="staffelnOeffnen()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="4" y1="20" x2="4" y2="14"/><line x1="10" y1="20" x2="10" y2="10"/><line x1="16" y1="20" x2="16" y2="6"/><line x1="22" y1="20" x2="22" y2="4"/></svg>Rabattstaffeln …</button>
         </div>
         <div class="gruppe">
@@ -1196,13 +1289,19 @@ const FELDER =
   'anlieferung_herstellung,heftfreigabe,versand_themenvorschau,themen,kongresse,inhalte)';
 
 async function ladenAusDatenbank() {
-  const zeilen = await daten('titel?select=' + encodeURIComponent(FELDER) +
+  /* Die Spalte „formatsatz" (04.10.2026) gibt es erst, wenn das Schema
+     nachgezogen ist. Fehlt sie, wird ohne sie gelesen und das Feld bleibt aus. */
+  const abfrage = felder => daten('titel?select=' + encodeURIComponent(felder) +
     '&order=jahr.asc,reihenfolge.asc&preis.order=reihenfolge.asc&termin.order=reihenfolge.asc&limit=500');
+  let zeilen;
+  try { zeilen = await abfrage(FELDER.replace('rubriken,', 'rubriken,formatsatz,')); FORMATSATZ_DA = true; }
+  catch (e) { if (e && e.status === 401) throw e; zeilen = await abfrage(FELDER); FORMATSATZ_DA = false; }
   zeilen.forEach(t => {
     t.jahr = String(t.jahr);
     t.preis  = (t.preis  || []).map(p => Object.assign({}, p));
     t.termin = (t.termin || []).map(a => Object.assign({}, a, { inhalte: inhalteOrdnen(a.inhalte) }));
     t.rubriken = rubrikenOrdnen(t.rubriken);
+    t.formatsatz = t.formatsatz || '';
   });
   URSPRUNG = zeilen;
   ARBEIT = JSON.parse(JSON.stringify(zeilen));
@@ -1214,6 +1313,7 @@ async function ladenAusDatenbank() {
   URSPRUNG_STAFFEL = staffel.map(z => ({ id: z.id, jahr: String(z.jahr), fachbereich: z.fachbereich || '',
     art: String(z.art || '').toLowerCase(), ab: z.ab, prozent: z.prozent }));
   ARBEIT_STAFFEL = JSON.parse(JSON.stringify(URSPRUNG_STAFFEL));
+  await formateLaden();
   try {
     const s = await daten('stand?select=geaendert_am');
     const d = (s && s[0] && s[0].geaendert_am) ? new Date(s[0].geaendert_am) : null;
@@ -1451,6 +1551,7 @@ function titelGeaendert(t) {
   const u = ursprungTitel(t.id);
   if (!u) return true;
   if (u.name !== t.name || u.auflage !== t.auflage || u.fachbereich !== t.fachbereich) return true;
+  if ((u.formatsatz || '') !== (t.formatsatz || '')) return true;
   if (!gleich(u.preis, t.preis)) return true;
   if (!gleich(u.termin, t.termin)) return true;
   if (!gleich(u.rubriken || [], t.rubriken || [])) return true;
@@ -1459,6 +1560,7 @@ function titelGeaendert(t) {
 function offeneAenderungen() {
   if (!ARBEIT || !URSPRUNG) return false;
   if (staffelnGeaendert()) return true;
+  if (formateGeaendert()) return true;
   if (ARBEIT.length !== URSPRUNG.length) return true;
   return ARBEIT.some(titelGeaendert);
 }
@@ -1512,7 +1614,7 @@ function staffelAenderungen(jahr) {
    Zaehlung, die Markierung in den Tabellen und die Uebersicht - alle drei zeigen
    damit dasselbe. Verglichen wird der Wortlaut; null und leer gelten als gleich,
    wie beim Speichern (nurFelder). */
-const STAMM_PRUEF  = [['name', 'Titel'], ['auflage', 'Auflage'], ['fachbereich', 'Fachbereich']];
+const STAMM_PRUEF  = [['name', 'Titel'], ['auflage', 'Auflage'], ['fachbereich', 'Fachbereich'], ['formatsatz', 'Formatsatz']];
 const PREIS_PRUEF  = [['format', 'Format'], ['preis', 'Preis €'], ['zuschlag_4c', '4c-Zuschlag €'],
   ['rabattfaehig', 'Rabattfähig'], ['ae_faehig', 'AE-fähig'], ['termin_art', 'Produktionstermin'], ['seiten_aequivalent', 'Seiten-Äqu.']];
 const TERMIN_PRUEF = [['heft', 'Heft'], ['monat', 'Monat'], ['et', 'ET'], ['anzeigenschluss', 'AS'],
@@ -1523,7 +1625,10 @@ const TRENNER = ' ||| ';
 
 function roh(w) { return w == null ? '' : String(w); }
 function leerText(w) { return roh(w).trim() === '' ? 'leer' : roh(w); }
-function stammWert(f, w) { return f === 'auflage' ? (ganzText(w) || 'leer') : leerText(w); }
+function stammWert(f, w) {
+  if (f === 'formatsatz') return roh(w) || 'erster Formatsatz';
+  return f === 'auflage' ? (ganzText(w) || 'leer') : leerText(w);
+}
 function preisWert(f, w) {
   if (f === 'preis' || f === 'zuschlag_4c') return preisText(w) || 'leer';
   if (f === 'rabattfaehig' || f === 'ae_faehig') return w ? 'ja' : 'nein';
@@ -1639,7 +1744,8 @@ function aenderungenVon(t) {
 function aenderungen() {
   if (!ARBEIT || !URSPRUNG) return [];
   const bleiben = new Set(ARBEIT.map(t => t.id));
-  const jahre = [...new Set(ARBEIT.map(t => t.jahr).concat(URSPRUNG.map(u => u.jahr)).concat(staffelJahre()))].sort();
+  const jahre = [...new Set(ARBEIT.map(t => t.jahr).concat(URSPRUNG.map(u => u.jahr)).concat(staffelJahre())
+    .concat(formatJahre()))].sort();
   let liste = [];
   jahre.forEach(j => {
     titelNachAnzeige(j).forEach(t => { liste = liste.concat(aenderungenVon(t)); });
@@ -1648,6 +1754,7 @@ function aenderungen() {
     /* Die Staffeln am Ende ihres Jahrgangs: sie haengen an keinem Titel und
        bekommen in der Uebersicht einen eigenen Block. */
     liste = liste.concat(staffelAenderungen(j));
+    liste = liste.concat(formatAenderungen(j));
   });
   return liste;
 }
@@ -1708,15 +1815,17 @@ function uebersichtOeffnen() {
   const liste = uebersichtListe;
   if (!liste.length) return;
   const gruppeVon = x => x.jahr + TRENNER + x.titel + TRENNER + x.titelId;
-  const titelZahl = new Set(liste.filter(x => !x.staffel).map(gruppeVon)).size;
+  const titelZahl = new Set(liste.filter(x => !x.staffel && !x.format).map(gruppeVon)).size;
   const staffelZahl = new Set(liste.filter(x => x.staffel).map(x => x.jahr)).size;
+  const formatZahl = new Set(liste.filter(x => x.format).map(x => x.jahr)).size;
   const jahre = new Set(liste.map(x => x.jahr)).size;
   const wo = [];
   if (titelZahl) wo.push(titelZahl === 1 ? '1 Titel' : titelZahl + ' Titeln');
   if (staffelZahl) wo.push('den Rabattstaffeln');
+  if (formatZahl) wo.push('den Formaten und Maßen');
   let html = '<h3>Offene Änderungen</h3><div class="erklaerung">' +
     (liste.length === 1 ? '1 Änderung' : liste.length + ' Änderungen') +
-    (wo.length ? ' in ' + wo.join(' und ') : '') +
+    (wo.length ? ' in ' + (wo.length > 2 ? wo.slice(0, -1).join(', ') + ' und ' + wo[wo.length - 1] : wo.join(' und ')) : '') +
     ', noch nicht gespeichert. Ein Klick auf eine Zeile führt zur Stelle.</div><div class="ueb">';
   let gruppe = null;
   liste.forEach((x, i) => {
@@ -1766,6 +1875,14 @@ function uebersichtSprung(i) {
     uebersichtSchliessen();
     if (x.jahr !== gewJahr) jahrWechseln(x.jahr);
     staffelnOeffnen();
+    return;
+  }
+  if (x.format) {
+    uebersichtSchliessen();
+    if (x.jahr !== gewJahr) jahrWechseln(x.jahr);
+    fmSatz = x.formatSatz;
+    fmWahl = { art: x.formatArt, name: x.formatArt === 'standard' ? '' : x.formatName };
+    formateOeffnen();
     return;
   }
   if (!x.titelId || !titelVonId(x.titelId)) return;
@@ -1870,7 +1987,7 @@ function alleFehler() {
   });
   Object.keys(namenJeJahr).forEach(jahr => dublettenMelden(namenJeJahr[jahr],
     d => 'Der Titel „' + d.wo + '“ steht ' + malText(d.n) + ' im Jahrgang ' + jahr + '.', kopf));
-  return kopf.concat(fehler, staffelFehler());
+  return kopf.concat(fehler, staffelFehler(), formatFehler());
 }
 
 /* Die Staffeln pruefen sich je Stufe. Die Schwelle ist eine ganze Zahl groesser
@@ -2376,6 +2493,20 @@ function titellisteZeichnen() {
   titelKopfZeichnen();
 }
 
+/* Der Formatsatz steht bei den Angaben des Titels, aber nur, wenn es die Spalte
+   gibt und der Jahrgang mehr als einen Satz fuehrt — bei einem einzigen Satz
+   gaebe es nichts zu waehlen. Leer heisst der erste Satz; wer den ersten waehlt,
+   setzt das Feld deshalb zurueck auf leer. */
+function formatsatzFeld(t, karte) {
+  const saetze = formatSaetze(ARBEIT_FORMAT, t.jahr);
+  if (!FORMATSATZ_DA || saetze.length < 2) return '';
+  const jetzt = satzVonTitel(t);
+  return '<div' + aendAttr(karte, 'stamm-formatsatz', 'feld') + '><label>Formatsatz</label>' +
+    '<select style="width:190px" onchange="stammSetzen(\'formatsatz\', this.selectedIndex === 0 ? \'\' : this.value)">' +
+    saetze.map(s => '<option value="' + esc(s) + '"' + (s === jetzt ? ' selected' : '') + '>' + esc(s) + '</option>').join('') +
+    '</select></div>';
+}
+
 function inhaltZeichnen() {
   const ziel = document.getElementById('inhalt');
   /* Waehrend gesucht wird, steht hier die Trefferliste. Der gewaehlte Titel geht
@@ -2395,6 +2526,7 @@ function inhaltZeichnen() {
     '<div' + aendAttr(karte, 'stamm-auflage', 'feld') + '><label>Auflage</label><input class="zahl" style="width:92px;text-align:right" value="' + esc(ganzText(t.auflage)) + '" onchange="stammSetzen(\'auflage\',this.value)"></div>' +
     '<div' + aendAttr(karte, 'stamm-fachbereich', 'feld') + '><label>Fachbereich</label><input style="width:150px" list="fachListe" value="' + esc(t.fachbereich) + '" onchange="stammSetzen(\'fachbereich\',this.value)"></div>' +
     '<datalist id="fachListe">' + [...new Set((ARBEIT || []).map(x => x.fachbereich).filter(Boolean))].map(f => '<option value="' + esc(f) + '">').join('') + '</datalist>' +
+    formatsatzFeld(t, karte) +
     /* Nur solange der Titel neu und ungespeichert ist. Ohne diesen Weg zurueck
        bliebe gegen einen versehentlich angelegten Titel allein „Verwerfen", und
        das naehme jede andere offene Aenderung mit. Gespeicherte Titel zu loeschen
@@ -2905,6 +3037,7 @@ const ERST_MIT_SPEICHERN = '<p>Die Änderung wird erst mit „Speichern“ wirks
 /* ── Ändern ───────────────────────────────────────────────────────────────── */
 function stammSetzen(feld, wert) {
   const t = titelVonId(gewTitel); if (!t) return;
+  if (feld === 'name') formatTitelUmbenennen(t.jahr, t.name, String(wert).trim());
   t[feld] = feld === 'auflage' ? (parseInt(String(wert).replace(/\D/g, ''), 10) || 0) : String(wert).trim();
   spaeterZeichnen();
 }
@@ -3034,6 +3167,7 @@ async function aenderungenVerwerfen() {
     'Verwerfen')) return;
   ARBEIT = JSON.parse(JSON.stringify(URSPRUNG));
   ARBEIT_STAFFEL = JSON.parse(JSON.stringify(URSPRUNG_STAFFEL));
+  ARBEIT_FORMAT = JSON.parse(JSON.stringify(URSPRUNG_FORMAT));
   staffelAngefangen = [];
   if (!titelVonId(gewTitel)) { const e = titelNachAnzeige()[0]; gewTitel = e ? e.id : null; }
   zeichnen();
@@ -3051,6 +3185,11 @@ function nurFelder(zeile, felder) {
   return o;
 }
 function istNeu(id) { return String(id).startsWith('neu-'); }
+/* Die Spalte „formatsatz" wird nur geschrieben, wenn es sie gibt. */
+function mitFormatsatz(o, wert) {
+  if (FORMATSATZ_DA) o.formatsatz = wert || '';
+  return o;
+}
 
 async function speichern() {
   const fehler = alleFehler();
@@ -3089,26 +3228,28 @@ async function speichern() {
          hier zuerst geschrieben; danach gilt er als Titel ohne alle Preis- und
          Terminzeilen, sodass zeilenSchreiben sie sammt und sonders anlegt. */
       if (!u && istNeu(t.id)) {
-        const angelegt = await schreiben('titel', 'POST',
+        const angelegt = await schreiben('titel', 'POST', mitFormatsatz(
           { jahr: t.jahr, reihenfolge: t.reihenfolge, name: t.name, auflage: t.auflage, fachbereich: t.fachbereich,
-            rubriken: t.rubriken || [] });
+            rubriken: t.rubriken || [] }, t.formatsatz));
         const alteKennung = t.id;
         t.id = angelegt[0].id;
         if (gewTitel === alteKennung) gewTitel = t.id;
-        u = { id: t.id, name: t.name, auflage: t.auflage, fachbereich: t.fachbereich, rubriken: t.rubriken || [], preis: [], termin: [] };
+        u = { id: t.id, name: t.name, auflage: t.auflage, fachbereich: t.fachbereich, rubriken: t.rubriken || [],
+              formatsatz: t.formatsatz || '', preis: [], termin: [] };
         n++;
       }
       if (!u) continue;
       if (u.name !== t.name || u.auflage !== t.auflage || u.fachbereich !== t.fachbereich ||
-          !gleich(u.rubriken || [], t.rubriken || [])) {
-        await schreiben('titel?id=eq.' + t.id, 'PATCH',
-          { name: t.name, auflage: t.auflage, fachbereich: t.fachbereich, rubriken: t.rubriken || [] });
+          (u.formatsatz || '') !== (t.formatsatz || '') || !gleich(u.rubriken || [], t.rubriken || [])) {
+        await schreiben('titel?id=eq.' + t.id, 'PATCH', mitFormatsatz(
+          { name: t.name, auflage: t.auflage, fachbereich: t.fachbereich, rubriken: t.rubriken || [] }, t.formatsatz));
         n++;
       }
       n += await zeilenSchreiben('preis',  t, u, 'preis',  PREIS_FELDER);
       n += await zeilenSchreiben('termin', t, u, 'termin', TERMIN_FELDER);
     }
     n += await staffelnSchreiben();
+    n += await formateSchreiben();
     await ladenAusDatenbank();
     if (!titelVonId(gewTitel)) { const e = titelNachAnzeige()[0]; gewTitel = e ? e.id : null; }
     zeichnen();
@@ -3460,6 +3601,7 @@ function titelAnlegenAusfuehren() {
       seiten_aequivalent: (p.seiten_aequivalent == null ? null : p.seiten_aequivalent)
     })),
     rubriken: v.vorbild ? rubrikenOrdnen(v.vorbild.rubriken) : [],
+    formatsatz: v.vorbild ? (v.vorbild.formatsatz || '') : '',
     termin: []
   };
   ARBEIT.push(neu);
@@ -4067,9 +4209,9 @@ async function jahrgangAnlegenAusfuehren() {
     if (!v.zielBesteht) await schreiben('jahrgang', 'POST', { jahr: v.ziel });
     let nA = 0;
     for (const q of v.fehlende) {
-      const angelegt = await schreiben('titel', 'POST',
+      const angelegt = await schreiben('titel', 'POST', mitFormatsatz(
         { jahr: v.ziel, reihenfolge: q.reihenfolge, name: q.name, auflage: q.auflage, fachbereich: q.fachbereich,
-          rubriken: rubrikenOrdnen(q.rubriken) });
+          rubriken: rubrikenOrdnen(q.rubriken) }, q.formatsatz));
       const tid = angelegt[0].id;
       /* Nur Heft und Monat wandern mit; alles Uebrige steht leer. */
       const termine = (q.termin || []).map((a, i) => ({
@@ -4106,19 +4248,24 @@ async function jahrgangAnlegenAusfuehren() {
 async function sicherungAnlegen(jahr, bezeichnung, still) {
   const titel = (ARBEIT || []).filter(t => t.jahr === jahr).map(t => ({
     reihenfolge: t.reihenfolge, name: t.name, auflage: t.auflage, fachbereich: t.fachbereich,
-    rubriken: t.rubriken || [],
+    rubriken: t.rubriken || [], formatsatz: t.formatsatz || '',
     preise: (t.preis || []).map(p => nurFelder(p, PREIS_FELDER)),
     termine: (t.termin || []).map(a => nurFelder(a, TERMIN_FELDER))
   }));
   const staffeln = staffelnDesJahres(ARBEIT_STAFFEL, jahr)
     .map(z => ({ fachbereich: z.fachbereich || '', art: z.art, ab: z.ab, prozent: z.prozent }));
-  await schreiben('sicherung', 'POST', { jahr: jahr, bezeichnung: bezeichnung || '', inhalt: { titel, staffeln } });
+  const inhalt = { titel, staffeln };
+  /* Formate nur, wenn es die Tabelle gibt: ein Sicherungspunkt ohne das Feld
+     laesst beim Zurueckspielen die heutigen Formate stehen. */
+  if (FORMAT_DA) inhalt.formate = formateDesJahres(ARBEIT_FORMAT, jahr).map(z => ({ satz: z.satz, art: z.art,
+    reihenfolge: z.reihenfolge, name: z.name, titel: z.titel || '', preisformate: z.preisformate || [], inhalt: z.inhalt || {} }));
+  await schreiben('sicherung', 'POST', { jahr: jahr, bezeichnung: bezeichnung || '', inhalt: inhalt });
   if (!still) meldung('Sicherungspunkt angelegt.');
 }
 
 async function sicherungenOeffnen() {
   dialogZeigen('<h3>Sicherungspunkte</h3><div class="erklaerung">Schnappschüsse des Jahrgangs ' + esc(gewJahr) +
-    '. Beim Zurückspielen werden Titel, Preise, Termine und Rabattstaffeln dieses Jahrgangs ersetzt.</div>' +
+    '. Beim Zurückspielen werden Titel, Preise, Termine, Rabattstaffeln sowie Formate und Maße dieses Jahrgangs ersetzt.</div>' +
     '<div class="dialog-liste" id="sichListe"><div class="dialog-zeile"><span>wird geladen …</span></div></div>' +
     '<div class="dialog-knoepfe">' +
       '<button class="btn" onclick="dialogSchliessen()">Schließen</button>' +
@@ -4164,7 +4311,7 @@ async function sicherungEntfernen(id) {
 async function sicherungZurueck(id, wann) {
   if (!await frage('Jahrgang zurücksetzen?',
     '<p>Der Jahrgang ' + esc(gewJahr) + ' wird auf den Stand vom ' + esc(wann) + ' zurückgesetzt.</p>' +
-    '<p>Titel, Preise, Termine und Rabattstaffeln dieses Jahrgangs werden ersetzt. Alles seither Geänderte geht verloren.</p>',
+    '<p>Titel, Preise, Termine, Rabattstaffeln sowie Formate und Maße dieses Jahrgangs werden ersetzt. Alles seither Geänderte geht verloren.</p>',
     'Zurücksetzen')) return;
   try {
     if (sitzung && sitzung.ablauf && sitzung.ablauf < Date.now() + 60000) await sitzungErneuern();
@@ -4175,9 +4322,9 @@ async function sicherungZurueck(id, wann) {
        gehen mit. Dann alles aus dem Schnappschuss neu anlegen. */
     await schreiben('titel?jahr=eq.' + encodeURIComponent(gewJahr), 'DELETE');
     for (const t of inhalt.titel) {
-      const angelegt = await schreiben('titel', 'POST',
+      const angelegt = await schreiben('titel', 'POST', mitFormatsatz(
         { jahr: gewJahr, reihenfolge: t.reihenfolge, name: t.name, auflage: t.auflage, fachbereich: t.fachbereich,
-          rubriken: rubrikenOrdnen(t.rubriken) });
+          rubriken: rubrikenOrdnen(t.rubriken) }, t.formatsatz));
       const tid = angelegt[0].id;
       const preise  = (t.preise  || []).map(p => Object.assign({ titel_id: tid }, p));
       const termine = (t.termine || []).map(a => Object.assign({ titel_id: tid }, a));
@@ -4194,6 +4341,16 @@ async function sicherungZurueck(id, wann) {
       await schreiben('staffel?jahr=eq.' + encodeURIComponent(gewJahr), 'DELETE', undefined, 0);
       const stufen = inhalt.staffeln.map(z => Object.assign({ jahr: String(gewJahr) }, z));
       if (stufen.length) await schreiben('staffel', 'POST', stufen, stufen.length);
+    }
+    /* Sicherungspunkte von vor dem 04.10.2026 kennen keine Formate; dann bleiben
+       die heutigen stehen. */
+    if (FORMAT_DA && Array.isArray(inhalt.formate)) {
+      await schreiben('format?jahr=eq.' + encodeURIComponent(gewJahr), 'DELETE', undefined, 0);
+      const formate = inhalt.formate.map(z => Object.assign({ jahr: String(gewJahr) }, z));
+      for (let i = 0; i < formate.length; i += 20) {
+        const teil = formate.slice(i, i + 20);
+        await schreiben('format', 'POST', teil, teil.length);
+      }
     }
     dialogSchliessen();
     await ladenAusDatenbank();
@@ -4375,6 +4532,626 @@ async function staffelUebernehmen(jahr) {
   zeilen.forEach(z => ARBEIT_STAFFEL.push({ id: neueKennung(), jahr: gewJahr,
     fachbereich: z.fachbereich || '', art: z.art, ab: z.ab, prozent: z.prozent }));
   staffelFensterZeichnen();
+}
+
+/* ── Formate und Maße pflegen (seit 04.10.2026) ───────────────────────────────
+   Das zweite Fenster, das am Jahrgang arbeitet statt am Titel. Fast alle Titel
+   haben das Heft 210 × 279 mm und damit dieselben Anzeigenformate; anders sind
+   nur die Zeitungen. Gepflegt wird deshalb je Formatsatz, nicht je Titel: ein
+   Satz traegt die Standardformate (Satzspiegel und Anschnitt) und die
+   Sonderwerbeformen (Beschreibung, Abbildung, Massangaben). Welcher Titel
+   welchen Satz hat, steht am Titel (Feld „Formatsatz"); leer heisst der erste
+   Satz des Jahrgangs.
+
+   Weicht ein Titel ab — etwa die Titelklappe der MMW —, bekommt er eine
+   Abweichung wie bei den Rabattstaffeln: eine eigene Zeile mit dem Titelnamen,
+   die fuer ihn an die Stelle des Standards tritt. Name, Beschreibung, Hinweis
+   und Preiszuordnung bleiben beim Standard; abweichen koennen die Masse und die
+   Abbildung.
+
+   Zu welchen Preiszeilen eine Sonderwerbeform gehoert, steht als Liste von
+   Formatnamen am Standard („preisformate"). Ueber den Namen, nicht ueber die
+   Kennung: dieselbe Zeile traegt in jedem Jahrgang eine andere Kennung, der
+   Name bleibt. MediaSheet gibt ein Datenblatt nur aus, wo der Titel eine dieser
+   Zeilen mit Preis fuehrt.
+
+   Eine Zeile: { id, jahr, satz, art: 'standard' | 'sonder', reihenfolge, name,
+   titel, preisformate: [], inhalt: {} }. Gespeichert wird wie bei den Staffeln
+   je geaendertem Jahrgang im Ganzen. Fehlt die Tabelle, bleibt die Liste leer
+   und das Fenster sagt es, statt ins Leere zu speichern. */
+let URSPRUNG_FORMAT = [];
+let ARBEIT_FORMAT   = [];
+let FORMAT_DA       = false;   // gibt es die Tabelle?
+let FORMATSATZ_DA   = false;   // gibt es die Spalte titel.formatsatz?
+let fmSatz = '';               // gewaehlter Formatsatz im Fenster
+let fmWahl = null;             // { art, name } des gewaehlten Eintrags
+const X_ZEICHEN = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>';
+const FM_ERSTER_SATZ = 'Zeitschrift 210 × 279';
+/* Ein Bild wird beim Hochladen verkleinert: die Skizzen der Mediadaten brauchen
+   auf dem A4-Blatt keine 1.400 Bildpunkte, und jedes Byte steht in der Datenbank
+   und in jedem Sicherungspunkt. */
+const FM_BILD_KANTE = 1400;
+const FM_BILD_HOECHSTENS = 350 * 1024;
+
+function formateDesJahres(liste, jahr) { return (liste || []).filter(z => z.jahr === jahr); }
+function formatNormal(liste) {
+  return (liste || []).map(z => JSON.stringify([z.jahr, z.satz, z.art, z.name, z.titel,
+    (z.preisformate || []).slice().sort(), z.reihenfolge, z.inhalt || {}])).sort();
+}
+function formateGeaendert() { return !gleich(formatNormal(URSPRUNG_FORMAT), formatNormal(ARBEIT_FORMAT)); }
+function formatJahre() {
+  return [...new Set(URSPRUNG_FORMAT.map(z => z.jahr).concat(ARBEIT_FORMAT.map(z => z.jahr)))];
+}
+/* Die Saetze eines Jahrgangs in ihrer Reihenfolge. Ein Satz besteht, solange
+   seine Standardzeile besteht. */
+function formatSaetze(liste, jahr) {
+  return formateDesJahres(liste, jahr).filter(z => z.art === 'standard' && !z.titel)
+    .sort((a, b) => (a.reihenfolge || 0) - (b.reihenfolge || 0)).map(z => z.satz);
+}
+function satzVonTitel(t) {
+  const saetze = formatSaetze(ARBEIT_FORMAT, t.jahr);
+  const s = (t.formatsatz || '').trim();
+  return s && saetze.includes(s) ? s : (s || saetze[0] || '');
+}
+function titelImSatz(jahr, satz) {
+  const erster = formatSaetze(ARBEIT_FORMAT, jahr)[0];
+  return titelNachAnzeige(jahr).filter(t => (t.formatsatz || '') === satz || (!t.formatsatz && satz === erster));
+}
+function fmZeile(liste, jahr, satz, art, name, titel) {
+  return formateDesJahres(liste, jahr).find(z => z.satz === satz && z.art === art &&
+    z.name === name && (z.titel || '') === (titel || '')) || null;
+}
+function fmSonderNamen(liste, jahr, satz) {
+  return formateDesJahres(liste, jahr).filter(z => z.satz === satz && z.art === 'sonder' && !z.titel)
+    .sort((a, b) => (a.reihenfolge || 0) - (b.reihenfolge || 0)).map(z => z.name);
+}
+function fmAbweichungen(liste, jahr, satz, art, name) {
+  return formateDesJahres(liste, jahr).filter(z => z.satz === satz && z.art === art && z.name === name && z.titel)
+    .sort((a, b) => a.titel.localeCompare(b.titel, 'de', { numeric: true, sensitivity: 'base' }));
+}
+function fmEintragText(art, name) { return art === 'standard' ? 'Standardformate' : name; }
+
+/* Gezaehlt wird je Eintrag und Titel: ein geaenderter Standard ist eine
+   Aenderung, eine geaenderte Abweichung eine weitere — wie bei den Staffeln je
+   Staffel, nicht je Feld. */
+function formatAenderungen(jahr) {
+  const schluessel = z => JSON.stringify([z.satz, z.art, z.name, z.titel || '']);
+  const alt = new Map(formateDesJahres(URSPRUNG_FORMAT, jahr).map(z => [schluessel(z), z]));
+  const neu = new Map(formateDesJahres(ARBEIT_FORMAT, jahr).map(z => [schluessel(z), z]));
+  const liste = [];
+  const basis = z => ({ jahr: jahr, titelId: 'format', titel: 'Formate und Maße', bereich: 'Formate',
+    wo: z.satz + ' · ' + fmEintragText(z.art, z.name) + (z.titel ? ' · ' + z.titel : ''),
+    format: true, formatSatz: z.satz, formatArt: z.art, formatName: z.name });
+  neu.forEach((z, k) => {
+    const a = alt.get(k);
+    if (!a) { liste.push(Object.assign(basis(z), { art: 'neu' })); return; }
+    if (!gleich(formatNormal([a]), formatNormal([z])))
+      liste.push(Object.assign(basis(z), { name: 'Angaben', alt: 'bisheriger Stand', neu: 'geändert' }));
+  });
+  alt.forEach((a, k) => { if (!neu.has(k)) liste.push(Object.assign(basis(a), { art: 'weg' })); });
+  return liste;
+}
+
+function formatFehler() {
+  const fehler = [];
+  formatJahre().forEach(jahr => {
+    const titelNamen = new Set(titelNachAnzeige(jahr).map(t => t.name));
+    formatSaetze(ARBEIT_FORMAT, jahr).forEach(satz => {
+      if (!String(satz).trim()) fehler.push(jahr + ': ein Formatsatz ohne Namen');
+      const namen = new Map();
+      fmSonderNamen(ARBEIT_FORMAT, jahr, satz).forEach(n => {
+        if (!String(n).trim()) fehler.push(jahr + ' · ' + satz + ': eine Sonderwerbeform ohne Namen');
+        else mitzaehlen(namen, n.toLowerCase(), n);
+      });
+      dublettenMelden(namen, d => jahr + ' · ' + satz + ': „' + d.wo + '“ steht ' + malText(d.n), fehler);
+    });
+    formateDesJahres(ARBEIT_FORMAT, jahr).filter(z => z.titel && !titelNamen.has(z.titel)).forEach(z =>
+      fehler.push(jahr + ' · ' + fmEintragText(z.art, z.name) + ': Abweichung für „' + z.titel +
+        '“, den es im Jahrgang nicht gibt'));
+  });
+  return fehler;
+}
+
+async function formateLaden() {
+  FORMAT_DA = false;
+  let zeilen = [];
+  try {
+    zeilen = await daten('format?select=id,jahr,satz,art,reihenfolge,name,titel,preisformate,inhalt&order=jahr.asc,reihenfolge.asc&limit=2000') || [];
+    FORMAT_DA = true;
+  } catch (e) { zeilen = []; }
+  URSPRUNG_FORMAT = zeilen.map(z => ({ id: z.id, jahr: String(z.jahr), satz: z.satz || '', art: z.art,
+    reihenfolge: z.reihenfolge || 0, name: z.name || '', titel: z.titel || '',
+    preisformate: Array.isArray(z.preisformate) ? z.preisformate : [], inhalt: z.inhalt || {} }));
+  ARBEIT_FORMAT = JSON.parse(JSON.stringify(URSPRUNG_FORMAT));
+}
+
+/* Je geaendertem Jahrgang im Ganzen ersetzt, wie die Staffeln. Die Reihenfolge
+   wird hier vergeben: Standards vor Sonderwerbeformen, je Satz in der Folge des
+   Fensters, Abweichungen hinter ihrem Standard. */
+async function formateSchreiben() {
+  let n = 0;
+  for (const jahr of formatJahre()) {
+    const offen = formatAenderungen(jahr).length;
+    if (!offen) continue;
+    await schreiben('format?jahr=eq.' + encodeURIComponent(jahr), 'DELETE', undefined, 0);
+    const neu = [];
+    let rf = 0;
+    formatSaetze(ARBEIT_FORMAT, jahr).forEach(satz => {
+      const reihe = [['standard', '']].concat(fmSonderNamen(ARBEIT_FORMAT, jahr, satz).map(n => ['sonder', n]));
+      reihe.forEach(([art, name]) => {
+        [fmZeile(ARBEIT_FORMAT, jahr, satz, art, name, '')].concat(fmAbweichungen(ARBEIT_FORMAT, jahr, satz, art, name))
+          .forEach(z => { if (z) neu.push({ jahr: String(jahr), satz: z.satz, art: z.art, reihenfolge: ++rf,
+            name: z.name, titel: z.titel || '', preisformate: z.preisformate || [], inhalt: z.inhalt || {} }); });
+      });
+    });
+    for (let i = 0; i < neu.length; i += 20) {
+      const teil = neu.slice(i, i + 20);
+      await schreiben('format', 'POST', teil, teil.length);
+    }
+    n += offen;
+  }
+  return n;
+}
+
+/* Ein umbenannter Titel nimmt seine Abweichungen mit. */
+function formatTitelUmbenennen(jahr, alt, neu) {
+  if (!alt || alt === neu) return;
+  ARBEIT_FORMAT.forEach(z => { if (z.jahr === jahr && z.titel === alt) z.titel = neu; });
+}
+
+/* ── Das Fenster ── */
+function formateOeffnen() {
+  const saetze = formatSaetze(ARBEIT_FORMAT, gewJahr);
+  if (!saetze.includes(fmSatz)) fmSatz = saetze[0] || '';
+  if (!fmWahl || (fmWahl.art === 'sonder' && !fmSonderNamen(ARBEIT_FORMAT, gewJahr, fmSatz).includes(fmWahl.name)))
+    fmWahl = { art: 'standard', name: '' };
+  formateZeichnen();
+}
+
+function formateZeichnen(fokusId) {
+  const altRoll = document.querySelector('#dialogPlatz .fm-edit');
+  const roll = altRoll ? altRoll.scrollTop : 0;
+  const saetze = formatSaetze(ARBEIT_FORMAT, gewJahr);
+  let html = '<h3>Formate und Maße ' + esc(gewJahr) + '</h3>' +
+    '<div class="erklaerung">Maße und Datenblätter gelten für alle Titel mit dem gewählten Formatsatz. ' +
+    'Welchen Formatsatz ein Titel hat, steht bei seinen Angaben über den Preisen und Terminen.</div>';
+  if (!FORMAT_DA) {
+    html += '<div class="dialog-summe">In der Datenbank fehlt noch die Tabelle für Formate und Maße. ' +
+      'Sie wird mit dem SQL-Entwurf vom 04.10.2026 angelegt; bis dahin lässt sich hier nichts pflegen.</div>' +
+      '<div class="dialog-knoepfe"><button class="btn btn-primär" onclick="dialogSchliessen()">Schließen</button></div>';
+    dialogZeigen(html);
+    document.querySelector('#dialogPlatz .dialog').classList.add('formate');
+    return;
+  }
+  if (!saetze.length) {
+    const vorbild = formatVorbildJahr();
+    html += '<div class="dialog-summe">Für ' + esc(gewJahr) + ' sind noch keine Formate gepflegt.' +
+      (vorbild ? ' Die Formate aus ' + esc(vorbild) + ' lassen sich übernehmen und dann anpassen.' : '') + '</div>' +
+      '<div class="dialog-knoepfe">' +
+      (vorbild ? '<button class="btn" onclick="formateUebernehmen(\'' + esc(vorbild) + '\')">Aus ' + esc(vorbild) + ' übernehmen</button>' : '') +
+      '<button class="btn" onclick="formatsatzAnlegen()">Formatsatz anlegen …</button>' +
+      '<button class="btn btn-primär" onclick="dialogSchliessen()">Schließen</button></div>';
+    dialogZeigen(html);
+    document.querySelector('#dialogPlatz .dialog').classList.add('formate');
+    knoepfeAuffrischen();
+    return;
+  }
+  const imSatz = titelImSatz(gewJahr, fmSatz).length;
+  html += '<div class="fm-satz"><label for="fmSatzWahl">Formatsatz</label>' +
+    '<select id="fmSatzWahl" onchange="fmSatzWaehlen(this.value)">' +
+    saetze.map(s => '<option' + (s === fmSatz ? ' selected' : '') + ' value="' + esc(s) + '">' + esc(s) + '</option>').join('') +
+    '</select><span>' + mehrzahl(imSatz, 'Titel', 'Titel') + '</span>' +
+    '<button class="fm-leise" onclick="formatsatzUmbenennen()">Umbenennen …</button>' +
+    '<button class="fm-leise" onclick="formatsatzAnlegen()">Formatsatz anlegen …</button>' +
+    (saetze.length > 1 ? '<button class="fm-leise fm-rot" onclick="formatsatzEntfernen()">Formatsatz entfernen …</button>' : '') +
+    '</div>';
+
+  const sonder = fmSonderNamen(ARBEIT_FORMAT, gewJahr, fmSatz);
+  const listeKnopf = (art, name, neben) => {
+    const an = fmWahl && fmWahl.art === art && fmWahl.name === name;
+    const abw = fmAbweichungen(ARBEIT_FORMAT, gewJahr, fmSatz, art, name).length;
+    return '<button class="' + (an ? 'an' : '') + '" onclick="fmWaehlen(\'' + art + '\',' + fmIndex(art, name) + ')">' +
+      '<span class="fm-name">' + esc(fmEintragText(art, name) || '(ohne Namen)') + '</span>' +
+      (abw ? '<span class="fm-abw-zahl">' + mehrzahl(abw, 'Abweichung', 'Abweichungen') + '</span>' : (neben || '')) + '</button>';
+  };
+  const std = fmZeile(ARBEIT_FORMAT, gewJahr, fmSatz, 'standard', '', '');
+  const nStd = ((std && std.inhalt && std.inhalt.zeilen) || []).length;
+  html += '<div class="fm-koerper"><div class="fm-liste">' +
+    '<div class="fm-grp">Anzeigen</div>' +
+    listeKnopf('standard', '', '<span class="fm-neben">' + mehrzahl(nStd, 'Format', 'Formate') + '</span>') +
+    '<div class="fm-grp">Sonderwerbeformen</div>' +
+    (sonder.length ? sonder.map(n => listeKnopf('sonder', n, fmPreisNeben(n))).join('')
+                   : '<div class="fm-leer">noch keine</div>') +
+    '</div><div class="fm-edit">' + (fmWahl.art === 'standard' ? fmStandardHtml() : fmSonderHtml()) + '</div></div>';
+  html += '<div class="dialog-summe">Die Änderung wird erst mit „Speichern“ wirksam. Bis dahin nimmt „Verwerfen“ sie zurück.</div>' +
+    '<div class="dialog-knoepfe">' +
+    '<button class="btn" style="margin-right:auto" onclick="sonderAnlegen()">Sonderwerbeform anlegen …</button>' +
+    (fmWahl.art === 'sonder' ? '<button class="btn btn-gefahr" onclick="sonderEntfernen()">Sonderwerbeform entfernen</button>' : '') +
+    '<button class="btn btn-primär" onclick="formateSchliessen()">Schließen</button></div>';
+  dialogZeigen(html);
+  document.querySelector('#dialogPlatz .dialog').classList.add('formate');
+  const neuRoll = document.querySelector('#dialogPlatz .fm-edit');
+  document.querySelectorAll('#dialogPlatz .fm-mtab textarea').forEach(hoeheAnpassen);
+  if (neuRoll) neuRoll.scrollTop = roll;
+  if (fokusId) { const f = document.getElementById(fokusId); if (f) { f.focus(); f.scrollIntoView({ block: 'nearest' }); } }
+  knoepfeAuffrischen();
+}
+function formateSchliessen() { dialogSchliessen(); zeichnen(); }
+
+/* Die Eintraege werden ueber ihren Platz angesprochen, nicht ueber den Namen,
+   der ein Hochkomma enthalten darf. */
+function fmIndex(art, name) { return art === 'standard' ? -1 : fmSonderNamen(ARBEIT_FORMAT, gewJahr, fmSatz).indexOf(name); }
+function fmWaehlen(art, i) {
+  fmWahl = { art: art, name: art === 'standard' ? '' : (fmSonderNamen(ARBEIT_FORMAT, gewJahr, fmSatz)[i] || '') };
+  formateZeichnen();
+  const e = document.querySelector('#dialogPlatz .fm-edit'); if (e) e.scrollTop = 0;
+}
+function fmSatzWaehlen(s) { fmSatz = s; fmWahl = { art: 'standard', name: '' }; formateZeichnen(); }
+
+/* Wie viele Titel des Satzes bekommen ein Datenblatt? Gezaehlt wird, wer eine
+   der zugeordneten Preiszeilen mit Preis fuehrt. */
+function fmDatenblattTitel(name) {
+  const z = fmZeile(ARBEIT_FORMAT, gewJahr, fmSatz, 'sonder', name, '');
+  const formate = new Set((z && z.preisformate) || []);
+  return titelImSatz(gewJahr, fmSatz).filter(t => (t.preis || []).some(p => formate.has(p.format) && p.preis != null && p.preis !== ''));
+}
+function fmPreisNeben(name) {
+  const n = fmDatenblattTitel(name).length;
+  return n ? '<span class="fm-neben">' + mehrzahl(n, 'Titel', 'Titel') + '</span>'
+           : '<span class="fm-neben fm-ohne">kein Preis</span>';
+}
+
+/* Die Formatnamen des Jahrgangs zum Zuordnen: zuerst die aus Kategorien, die
+   nach Sonderwerbeform klingen, dann alle uebrigen. */
+function fmPreisformatAuswahl() {
+  const sonder = new Set(), uebrig = new Set();
+  titelNachAnzeige(gewJahr).forEach(t => (t.preis || []).forEach(p => {
+    if (!p.format) return;
+    (/sonder/i.test(p.kategorie || '') ? sonder : uebrig).add(p.format);
+  }));
+  const ordnen = s => [...s].sort((a, b) => a.localeCompare(b, 'de', { numeric: true, sensitivity: 'base' }));
+  return ordnen(sonder).concat(ordnen(uebrig).filter(f => !sonder.has(f)));
+}
+
+/* ── Bausteine des Bearbeitungsfelds ── */
+function fmKennung(z) { return 'fm' + String(z.id).replace(/[^a-z0-9]/gi, ''); }
+function fmPaar(z, feld, b, h) {
+  return '<span class="m-paar"><input class="zahl" value="' + esc(b) + '" aria-label="Breite" onchange="fmZeileSetzen(\'' + z + '\',' + feld[0] + ',\'' + feld[1] + '\',this.value)">' +
+    '<span class="m-x">×</span><input class="zahl" value="' + esc(h) + '" aria-label="Höhe" onchange="fmZeileSetzen(\'' + z + '\',' + feld[0] + ',\'' + feld[2] + '\',this.value)">' +
+    '<span class="m-mm">mm</span></span>';
+}
+function fmMasseTabelle(z) {
+  const I = z.inhalt;
+  const zeilen = I.zeilen || [];
+  let h = '<div class="masse-heft"><span class="m-etikett">Heft</span>' +
+    '<div class="feld"><label>Heftformat (B × H)</label><span class="m-paar">' +
+      '<input class="zahl" value="' + esc(I.heftB || '') + '" aria-label="Heftbreite" onchange="fmInhaltSetzen(\'' + z.id + '\',\'heftB\',this.value)">' +
+      '<span class="m-x">×</span><input class="zahl" value="' + esc(I.heftH || '') + '" aria-label="Hefthöhe" onchange="fmInhaltSetzen(\'' + z.id + '\',\'heftH\',this.value)"><span class="m-mm">mm</span></span></div>' +
+    '<div class="feld"><label>Beschnittzugabe</label><span class="m-paar"><input class="zahl" style="width:44px" value="' + esc(I.beschnitt || '') + '" onchange="fmInhaltSetzen(\'' + z.id + '\',\'beschnitt\',this.value)"><span class="m-mm">mm je Rand</span></span></div>' +
+    '</div>';
+  h += '<table class="preis-tab masse-tab"><colgroup><col><col style="width:84px"><col style="width:170px"><col style="width:170px"><col style="width:76px"></colgroup>' +
+    '<tr><th>Format</th><th>Lage</th><th>Satzspiegel (B × H)</th><th>Im Anschnitt (B × H)</th><th></th></tr>';
+  zeilen.forEach((r, nr) => {
+    h += '<tr><td><input class="m-format" value="' + esc(r.format || '') + '" aria-label="Format" onchange="fmZeileSetzen(\'' + z.id + '\',' + nr + ',\'format\',this.value)"></td>' +
+      '<td><select aria-label="Lage" onchange="fmZeileSetzen(\'' + z.id + '\',' + nr + ',\'lage\',this.value)">' +
+        [['', '—'], ['hoch', 'hoch'], ['quer', 'quer']].map(([w, t]) => '<option value="' + w + '"' + ((r.lage || '') === w ? ' selected' : '') + '>' + t + '</option>').join('') + '</select></td>' +
+      '<td>' + fmPaar(z.id, [nr, 'sB', 'sH'], r.sB || '', r.sH || '') + '</td>' +
+      '<td>' + fmPaar(z.id, [nr, 'aB', 'aH'], r.aB || '', r.aH || '') + '</td>' +
+      '<td class="tat">' +
+        '<button class="zeilen-schub" title="Einen Platz nach oben"' + (nr === 0 ? ' disabled' : '') + ' onclick="fmZeileSchieben(\'' + z.id + '\',' + nr + ',-1)">&#9650;</button>' +
+        '<button class="zeilen-schub" title="Einen Platz nach unten"' + (nr === zeilen.length - 1 ? ' disabled' : '') + ' onclick="fmZeileSchieben(\'' + z.id + '\',' + nr + ',1)">&#9660;</button>' +
+        '<button class="zeilen-x" title="Format entfernen" aria-label="Format entfernen" onclick="fmZeileEntfernen(\'' + z.id + '\',' + nr + ')">' + X_ZEICHEN + '</button></td></tr>';
+  });
+  if (!zeilen.length) h += '<tr><td colspan="5" class="fm-leer">Noch keine Formate.</td></tr>';
+  h += '</table><button class="staffel-mehr" onclick="fmZeileAnlegen(\'' + z.id + '\')">+ Format</button>' +
+    '<div class="masse-sonst"><label>Weitere Angaben</label><textarea onchange="fmInhaltSetzen(\'' + z.id + '\',\'sonst\',this.value)">' + esc(I.sonst || '') + '</textarea>' +
+    '<div class="m-hinweis">Steht in MediaSheet klein unter der Tabelle, etwa für Einhefter und Beilagen.</div></div>';
+  return h;
+}
+function fmMasszeilen(z) {
+  const masse = (z.inhalt && z.inhalt.masse) || [];
+  let h = '<table class="fm-mtab"><tr><th>Bezeichnung</th><th>Wert</th><th></th></tr>';
+  masse.forEach((m, nr) => {
+    h += '<tr><td><input value="' + esc(m.bez || '') + '" aria-label="Bezeichnung" onchange="fmMassSetzen(\'' + z.id + '\',' + nr + ',\'bez\',this.value)"></td>' +
+      '<td><textarea rows="1" aria-label="Wert" oninput="hoeheAnpassen(this)" onchange="fmMassSetzen(\'' + z.id + '\',' + nr + ',\'wert\',this.value)">' + esc(m.wert || '') + '</textarea></td>' +
+      '<td class="tat">' +
+        '<button class="zeilen-schub" title="Einen Platz nach oben"' + (nr === 0 ? ' disabled' : '') + ' onclick="fmMassSchieben(\'' + z.id + '\',' + nr + ',-1)">&#9650;</button>' +
+        '<button class="zeilen-schub" title="Einen Platz nach unten"' + (nr === masse.length - 1 ? ' disabled' : '') + ' onclick="fmMassSchieben(\'' + z.id + '\',' + nr + ',1)">&#9660;</button>' +
+        '<button class="zeilen-x" title="Maßzeile entfernen" aria-label="Maßzeile entfernen" onclick="fmMassEntfernen(\'' + z.id + '\',' + nr + ')">' + X_ZEICHEN + '</button></td></tr>';
+  });
+  if (!masse.length) h += '<tr><td colspan="3" class="fm-leer">Noch keine Maßangaben.</td></tr>';
+  return h + '</table><button class="staffel-mehr" onclick="fmMassAnlegen(\'' + z.id + '\')">+ Maßzeile</button>';
+}
+function fmBildfeld(z, abweichung) {
+  const I = z.inhalt || {};
+  const k = fmKennung(z);
+  const datei = '<input type="file" id="' + k + '-datei" accept="image/png,image/jpeg,image/webp" style="display:none" onchange="fmBildGewaehlt(\'' + z.id + '\',this)">';
+  if (!I.bild) return '<div class="fm-bild fm-bild-leer">' + datei +
+    '<span>' + (abweichung ? 'Bild wie im Standard' : 'Noch keine Abbildung') + '</span>' +
+    '<button class="btn" onclick="document.getElementById(\'' + k + '-datei\').click()">' + (abweichung ? 'Eigenes Bild …' : 'Bild hochladen …') + '</button></div>';
+  return '<div class="fm-bild">' + datei + '<img src="' + esc(I.bild) + '" alt="Abbildung">' +
+    '<div class="fm-bild-knoepfe"><button class="btn" onclick="document.getElementById(\'' + k + '-datei\').click()">Bild ersetzen …</button>' +
+    '<button class="btn" onclick="fmBildEntfernen(\'' + z.id + '\')">Entfernen</button></div>' +
+    '<div class="fm-bild-info">' + esc(I.bildInfo || '') + '</div></div>';
+}
+function fmKopf(text, neben, entfernen) {
+  return '<div class="staffel-kopf"><b>' + esc(text) + '</b>' +
+    (entfernen ? '<button onclick="' + entfernen + '">Abweichung entfernen</button>' : '<span>' + esc(neben) + '</span>') + '</div>';
+}
+function fmAbwKnopf(art, name) {
+  const frei = fmFreieTitel(art, name).length;
+  return '<button class="btn fm-abw-knopf"' + (frei ? '' : ' disabled') +
+    ' onclick="fmAbweichungHinzufuegen(\'' + art + '\',' + fmIndex(art, name) + ')">Abweichung hinzufügen …</button>';
+}
+
+function fmStandardHtml() {
+  const z = fmZeile(ARBEIT_FORMAT, gewJahr, fmSatz, 'standard', '', '');
+  if (!z) return '';
+  let h = fmKopf('Standard', 'gilt für alle Titel des Formatsatzes ohne eigene Abweichung') + fmMasseTabelle(z);
+  fmAbweichungen(ARBEIT_FORMAT, gewJahr, fmSatz, 'standard', '').forEach(a => {
+    h += '<div class="fm-abw">' + fmKopf('Abweichung: ' + a.titel, '', 'fmAbweichungEntfernen(\'' + a.id + '\')') + fmMasseTabelle(a) + '</div>';
+  });
+  return h + fmAbwKnopf('standard', '');
+}
+
+function fmSonderHtml() {
+  const z = fmZeile(ARBEIT_FORMAT, gewJahr, fmSatz, 'sonder', fmWahl.name, '');
+  if (!z) return '';
+  const I = z.inhalt || {};
+  const pf = z.preisformate || [];
+  const frei = fmPreisformatAuswahl().filter(f => !pf.includes(f));
+  const blaetter = fmDatenblattTitel(z.name);
+  let h = '<div class="feld fm-feld"><label for="fmName">Name auf dem Datenblatt</label>' +
+      '<input id="fmName" value="' + esc(z.name) + '" onchange="sonderUmbenennen(this.value)"></div>' +
+    '<div class="feld fm-feld"><label>Beschreibung</label><textarea rows="3" onchange="fmInhaltSetzen(\'' + z.id + '\',\'text\',this.value)">' + esc(I.text || '') + '</textarea></div>' +
+    '<div class="feld fm-feld"><label>Preiszeilen</label><div class="fm-chips">' +
+      pf.map((f, i) => '<span class="fm-chip">' + esc(f) + '<button title="Zuordnung lösen" aria-label="Zuordnung lösen" onclick="fmPreisformatLoesen(' + i + ')">×</button></span>').join('') +
+      (frei.length ? '<select class="fm-chip-wahl" aria-label="Preiszeile zuordnen" onchange="fmPreisformatZuordnen(this.value)"><option value="">+ Preiszeile zuordnen …</option>' +
+        frei.map(f => '<option value="' + esc(f) + '">' + esc(f) + '</option>').join('') + '</select>' : '') +
+    '</div><div class="m-hinweis">' + (pf.length
+      ? (blaetter.length ? 'Ein Datenblatt bekommen ' + mehrzahl(blaetter.length, 'Titel', 'Titel') + ' mit Preis in dieser Zeile: ' +
+          esc(blaetter.slice(0, 4).map(t => t.name).join(', ')) + (blaetter.length > 4 ? ' und ' + (blaetter.length - 4) + ' weitere.' : '.')
+        : 'Kein Titel des Formatsatzes führt diese Zeile mit Preis, also gibt es noch kein Datenblatt.')
+      : 'Ohne zugeordnete Preiszeile gibt es kein Datenblatt.') + '</div></div>';
+  h += fmKopf('Standard', 'gilt für alle Titel des Formatsatzes ohne eigene Abweichung') +
+    '<div class="fm-zwei">' + fmBildfeld(z, false) + '<div>' + fmMasszeilen(z) + '</div></div>' +
+    '<div class="feld fm-feld" style="margin-top:12px"><label>Hinweis unter den Maßen</label>' +
+      '<input value="' + esc(I.hinweis || '') + '" onchange="fmInhaltSetzen(\'' + z.id + '\',\'hinweis\',this.value)"></div>';
+  fmAbweichungen(ARBEIT_FORMAT, gewJahr, fmSatz, 'sonder', z.name).forEach(a => {
+    h += '<div class="fm-abw">' + fmKopf('Abweichung: ' + a.titel, '', 'fmAbweichungEntfernen(\'' + a.id + '\')') +
+      '<div class="fm-zwei">' + fmBildfeld(a, true) + '<div>' + fmMasszeilen(a) + '</div></div></div>';
+  });
+  return h + fmAbwKnopf('sonder', z.name);
+}
+
+/* ── Aendern ── */
+function fmVonId(id) { return ARBEIT_FORMAT.find(z => z.id === id) || null; }
+function fmInhaltSetzen(id, feld, wert) {
+  const z = fmVonId(id); if (!z) return;
+  z.inhalt = Object.assign({}, z.inhalt, { [feld]: String(wert).trim() });
+  knoepfeAuffrischen();
+}
+function fmZeileSetzen(id, nr, feld, wert) {
+  const z = fmVonId(id); if (!z || !z.inhalt.zeilen || !z.inhalt.zeilen[nr]) return;
+  z.inhalt.zeilen[nr][feld] = String(wert).trim();
+  knoepfeAuffrischen();
+}
+function fmZeileAnlegen(id) {
+  const z = fmVonId(id); if (!z) return;
+  z.inhalt.zeilen = (z.inhalt.zeilen || []).concat([{ format: '', lage: '', sB: '', sH: '', aB: '', aH: '' }]);
+  formateZeichnen();
+  const felder = document.querySelectorAll('#dialogPlatz .masse-tab input.m-format');
+  if (felder.length) felder[felder.length - 1].focus();
+}
+function fmZeileEntfernen(id, nr) { const z = fmVonId(id); if (!z) return; z.inhalt.zeilen.splice(nr, 1); formateZeichnen(); }
+function fmZeileSchieben(id, nr, um) {
+  const z = fmVonId(id); if (!z) return;
+  const l = z.inhalt.zeilen, ziel = nr + um;
+  if (ziel < 0 || ziel >= l.length) return;
+  [l[nr], l[ziel]] = [l[ziel], l[nr]];
+  formateZeichnen();
+}
+function fmMassSetzen(id, nr, feld, wert) {
+  const z = fmVonId(id); if (!z || !z.inhalt.masse || !z.inhalt.masse[nr]) return;
+  z.inhalt.masse[nr][feld] = String(wert).trim();
+  knoepfeAuffrischen();
+}
+function fmMassAnlegen(id) {
+  const z = fmVonId(id); if (!z) return;
+  z.inhalt.masse = (z.inhalt.masse || []).concat([{ bez: '', wert: '' }]);
+  formateZeichnen();
+  const letzte = [...document.querySelectorAll('#dialogPlatz .fm-mtab input')]
+    .filter(f => (f.getAttribute('onchange') || '').includes("'" + id + "'"));
+  if (letzte.length) letzte[letzte.length - 1].focus();
+}
+function fmMassEntfernen(id, nr) { const z = fmVonId(id); if (!z) return; z.inhalt.masse.splice(nr, 1); formateZeichnen(); }
+function fmMassSchieben(id, nr, um) {
+  const z = fmVonId(id); if (!z) return;
+  const l = z.inhalt.masse, ziel = nr + um;
+  if (ziel < 0 || ziel >= l.length) return;
+  [l[nr], l[ziel]] = [l[ziel], l[nr]];
+  formateZeichnen();
+}
+function fmPreisformatZuordnen(f) {
+  const z = fmZeile(ARBEIT_FORMAT, gewJahr, fmSatz, 'sonder', fmWahl.name, '');
+  if (!z || !f) return;
+  z.preisformate = (z.preisformate || []).concat([f]);
+  formateZeichnen();
+}
+function fmPreisformatLoesen(i) {
+  const z = fmZeile(ARBEIT_FORMAT, gewJahr, fmSatz, 'sonder', fmWahl.name, '');
+  if (!z) return;
+  z.preisformate = (z.preisformate || []).filter((_, k) => k !== i);
+  formateZeichnen();
+}
+
+/* Das Bild wird im Browser verkleinert und als Daten-Adresse abgelegt. Bleibt es
+   als PNG zu gross (Fotos), wird es als JPEG mit sinkender Guete gespeichert. */
+function fmBildGewaehlt(id, feld) {
+  const datei = feld.files && feld.files[0];
+  feld.value = '';
+  if (!datei) return;
+  const leser = new FileReader();
+  leser.onload = () => {
+    const bild = new Image();
+    bild.onload = () => {
+      const mass = Math.min(1, FM_BILD_KANTE / Math.max(bild.width, bild.height));
+      const b = Math.max(1, Math.round(bild.width * mass)), h = Math.max(1, Math.round(bild.height * mass));
+      const lw = document.createElement('canvas'); lw.width = b; lw.height = h;
+      const cx = lw.getContext('2d');
+      cx.fillStyle = '#fff'; cx.fillRect(0, 0, b, h);
+      cx.drawImage(bild, 0, 0, b, h);
+      /* Skizzen mit Flaechen werden als PNG kleiner, Fotos als JPEG: genommen
+         wird das kleinere. */
+      let url = lw.toDataURL('image/png');
+      const jpg = lw.toDataURL('image/jpeg', 0.88);
+      if (jpg.length < url.length) url = jpg;
+      for (let q = 0.76; url.length * 0.75 > FM_BILD_HOECHSTENS && q >= 0.4; q -= 0.12) url = lw.toDataURL('image/jpeg', q);
+      if (url.length * 0.75 > FM_BILD_HOECHSTENS) { meldung('Das Bild ist auch verkleinert noch zu groß.', true); return; }
+      const z = fmVonId(id); if (!z) return;
+      /* Breite und Hoehe stehen dabei: MediaSheet misst den Umbruch, bevor das
+         Bild geladen ist, und braucht dafuer das Seitenverhaeltnis. */
+      z.inhalt = Object.assign({}, z.inhalt, { bild: url, bildB: b, bildH: h,
+        bildInfo: datei.name + ' · ' + b + ' × ' + h + ' px · ' + Math.round(url.length * 0.75 / 1024) + ' KB' });
+      formateZeichnen();
+    };
+    bild.onerror = () => meldung('Die Datei lässt sich nicht als Bild lesen.', true);
+    bild.src = leser.result;
+  };
+  leser.readAsDataURL(datei);
+}
+function fmBildEntfernen(id) {
+  const z = fmVonId(id); if (!z) return;
+  const I = Object.assign({}, z.inhalt); delete I.bild; delete I.bildInfo; delete I.bildB; delete I.bildH;
+  z.inhalt = I;
+  formateZeichnen();
+}
+
+/* ── Saetze, Eintraege, Abweichungen ── */
+function fmLeererStandard() { return { heftB: '210', heftH: '279', beschnitt: '3', zeilen: [], sonst: '' }; }
+async function formatsatzAnlegen() {
+  const saetze = formatSaetze(ARBEIT_FORMAT, gewJahr);
+  const name = await eingabe('Formatsatz anlegen', 'Ein Formatsatz trägt die Standardformate und Sonderwerbeformen ' +
+    'für alle Titel mit demselben Heft, etwa die Zeitschriften oder eine Zeitung.', 'Name',
+    saetze.length ? '' : FM_ERSTER_SATZ, 'Anlegen');
+  if (name === null) return;
+  const n = String(name).trim();
+  if (!n) { meldung('Ein Formatsatz braucht einen Namen.', true); return; }
+  if (saetze.includes(n)) { meldung('Den Formatsatz „' + n + '“ gibt es schon.', true); return; }
+  ARBEIT_FORMAT.push({ id: neueKennung(), jahr: gewJahr, satz: n, art: 'standard', reihenfolge: 1000 + saetze.length,
+    name: '', titel: '', preisformate: [], inhalt: saetze.length ? { heftB: '', heftH: '', beschnitt: '3', zeilen: [], sonst: '' } : fmLeererStandard() });
+  fmSatz = n; fmWahl = { art: 'standard', name: '' };
+  formateZeichnen();
+}
+async function formatsatzUmbenennen() {
+  const name = await eingabe('Formatsatz umbenennen', 'Die Titel mit diesem Formatsatz behalten ihn unter dem neuen Namen.',
+    'Name', fmSatz, 'Umbenennen');
+  if (name === null) return;
+  const n = String(name).trim();
+  if (!n || n === fmSatz) return;
+  if (formatSaetze(ARBEIT_FORMAT, gewJahr).includes(n)) { meldung('Den Formatsatz „' + n + '“ gibt es schon.', true); return; }
+  ARBEIT_FORMAT.forEach(z => { if (z.jahr === gewJahr && z.satz === fmSatz) z.satz = n; });
+  (ARBEIT || []).forEach(t => { if (t.jahr === gewJahr && t.formatsatz === fmSatz) t.formatsatz = n; });
+  fmSatz = n;
+  formateZeichnen();
+}
+async function formatsatzEntfernen() {
+  const saetze = formatSaetze(ARBEIT_FORMAT, gewJahr);
+  if (saetze.length < 2) return;
+  const titel = titelImSatz(gewJahr, fmSatz);
+  const ersatz = saetze.find(s => s !== fmSatz);
+  if (!await frage('Formatsatz entfernen?', '<p>„' + esc(fmSatz) + '“ wird mit allen Formaten, Sonderwerbeformen und Abweichungen entfernt.</p>' +
+    (titel.length ? '<p>' + mehrzahl(titel.length, 'Titel bekommt', 'Titel bekommen') + ' danach „' + esc(ersatz) + '“.</p>' : '') + ERST_MIT_SPEICHERN,
+    'Entfernen')) return;
+  const weg = fmSatz;
+  ARBEIT_FORMAT = ARBEIT_FORMAT.filter(z => !(z.jahr === gewJahr && z.satz === weg));
+  (ARBEIT || []).forEach(t => { if (t.jahr === gewJahr && t.formatsatz === weg) t.formatsatz = ''; });
+  fmSatz = formatSaetze(ARBEIT_FORMAT, gewJahr)[0] || '';
+  fmWahl = { art: 'standard', name: '' };
+  formateZeichnen();
+}
+async function sonderAnlegen() {
+  const name = await eingabe('Sonderwerbeform anlegen', 'Der Name steht so auf dem Datenblatt.', 'Name', '', 'Anlegen');
+  if (name === null) return;
+  const n = String(name).trim();
+  if (!n) { meldung('Eine Sonderwerbeform braucht einen Namen.', true); return; }
+  if (fmSonderNamen(ARBEIT_FORMAT, gewJahr, fmSatz).some(x => x.toLowerCase() === n.toLowerCase())) {
+    meldung('„' + n + '“ gibt es in diesem Formatsatz schon.', true); return;
+  }
+  /* Steht eine Preiszeile genau dieses Namens im Jahrgang, wird sie gleich zugeordnet. */
+  const passend = fmPreisformatAuswahl().filter(f => f.toLowerCase() === n.toLowerCase());
+  const hoechste = formateDesJahres(ARBEIT_FORMAT, gewJahr).reduce((m, z) => Math.max(m, z.reihenfolge || 0), 0);
+  ARBEIT_FORMAT.push({ id: neueKennung(), jahr: gewJahr, satz: fmSatz, art: 'sonder', reihenfolge: hoechste + 1,
+    name: n, titel: '', preisformate: passend, inhalt: { text: '', masse: [], hinweis: '' } });
+  fmWahl = { art: 'sonder', name: n };
+  formateZeichnen('fmName');
+}
+async function sonderUmbenennen(wert) {
+  const n = String(wert).trim();
+  const alt = fmWahl.name;
+  if (n === alt) return;
+  if (!n) { meldung('Eine Sonderwerbeform braucht einen Namen.', true); formateZeichnen(); return; }
+  if (fmSonderNamen(ARBEIT_FORMAT, gewJahr, fmSatz).some(x => x !== alt && x.toLowerCase() === n.toLowerCase())) {
+    meldung('„' + n + '“ gibt es in diesem Formatsatz schon.', true); formateZeichnen(); return;
+  }
+  ARBEIT_FORMAT.forEach(z => { if (z.jahr === gewJahr && z.satz === fmSatz && z.art === 'sonder' && z.name === alt) z.name = n; });
+  fmWahl = { art: 'sonder', name: n };
+  formateZeichnen();
+}
+async function sonderEntfernen() {
+  const name = fmWahl.name;
+  const abw = fmAbweichungen(ARBEIT_FORMAT, gewJahr, fmSatz, 'sonder', name).length;
+  if (!await frage('Sonderwerbeform entfernen?', '<p>„' + esc(name) + '“ wird' +
+    (abw ? ' samt ' + mehrzahl(abw, 'Abweichung', 'Abweichungen') : '') + ' aus dem Formatsatz entfernt. Die Preiszeilen bleiben unberührt.</p>' +
+    ERST_MIT_SPEICHERN, 'Entfernen')) return;
+  ARBEIT_FORMAT = ARBEIT_FORMAT.filter(z => !(z.jahr === gewJahr && z.satz === fmSatz && z.art === 'sonder' && z.name === name));
+  fmWahl = { art: 'standard', name: '' };
+  formateZeichnen();
+}
+function fmFreieTitel(art, name) {
+  const da = new Set(fmAbweichungen(ARBEIT_FORMAT, gewJahr, fmSatz, art, name).map(z => z.titel));
+  return titelImSatz(gewJahr, fmSatz).map(t => t.name).filter(n => n && !da.has(n));
+}
+async function fmAbweichungHinzufuegen(art, i) {
+  const name = art === 'standard' ? '' : (fmSonderNamen(ARBEIT_FORMAT, gewJahr, fmSatz)[i] || '');
+  const frei = fmFreieTitel(art, name);
+  if (!frei.length) return;
+  const titel = await auswahl('Abweichung hinzufügen', 'Für den gewählten Titel gelten danach eigene Maße. ' +
+    'Sie beginnen als Kopie des Standards.', 'Titel', frei, 'Hinzufügen');
+  if (!titel) return;
+  const std = fmZeile(ARBEIT_FORMAT, gewJahr, fmSatz, art, name, '');
+  const I = JSON.parse(JSON.stringify((std && std.inhalt) || {}));
+  /* Bei Sonderwerbeformen weicht nur ab, was abweichen kann: Masse und Bild.
+     Das Bild der Abweichung beginnt leer und heisst dann „wie im Standard". */
+  const inhalt = art === 'standard' ? I : { masse: I.masse || [] };
+  ARBEIT_FORMAT.push({ id: neueKennung(), jahr: gewJahr, satz: fmSatz, art: art, reihenfolge: (std && std.reihenfolge) || 0,
+    name: name, titel: titel, preisformate: [], inhalt: inhalt });
+  formateZeichnen();
+  const e = document.querySelector('#dialogPlatz .fm-edit'); if (e) e.scrollTop = e.scrollHeight;
+}
+async function fmAbweichungEntfernen(id) {
+  const z = fmVonId(id); if (!z) return;
+  if (!await frage('Abweichung entfernen?', '<p>Für „' + esc(z.titel) + '“ gilt danach wieder der Standard.</p>' + ERST_MIT_SPEICHERN,
+    'Entfernen')) return;
+  ARBEIT_FORMAT = ARBEIT_FORMAT.filter(x => x.id !== id);
+  formateZeichnen();
+}
+
+/* Starthilfe fuer einen Jahrgang ohne Formate, wie bei den Staffeln. Abweichungen
+   wandern nur mit, wo es den Titel im neuen Jahrgang gibt. */
+function formatVorbildJahr() {
+  const jahre = formatJahre().filter(j => j !== gewJahr && formateDesJahres(ARBEIT_FORMAT, j).length).sort();
+  const frueher = jahre.filter(j => j < gewJahr);
+  return frueher.length ? frueher[frueher.length - 1] : (jahre[0] || '');
+}
+function formateUebernehmen(jahr) {
+  const namen = new Set(titelNachAnzeige(gewJahr).map(t => t.name));
+  formateDesJahres(ARBEIT_FORMAT, jahr).filter(z => !z.titel || namen.has(z.titel)).forEach(z => {
+    ARBEIT_FORMAT.push(Object.assign(JSON.parse(JSON.stringify(z)), { id: neueKennung(), jahr: gewJahr }));
+  });
+  fmSatz = formatSaetze(ARBEIT_FORMAT, gewJahr)[0] || '';
+  fmWahl = { art: 'standard', name: '' };
+  formateZeichnen();
 }
 
 /* ── Excel: Aufbau der Mappe ──────────────────────────────────────────────────
@@ -4885,9 +5662,9 @@ async function excelUebernehmen() {
       for (const t of st.jahre[jahr].titel) {
         rf++;
         const bisher = (ARBEIT || []).find(x => x.jahr === jahr && x.name === t.name);
-        const angelegt = await schreiben('titel', 'POST',
+        const angelegt = await schreiben('titel', 'POST', mitFormatsatz(
           { jahr: jahr, reihenfolge: rf, name: t.name, auflage: t.auflage, fachbereich: t.fachbereich,
-            rubriken: rubrikenOrdnen(bisher && bisher.rubriken) });
+            rubriken: rubrikenOrdnen(bisher && bisher.rubriken) }, bisher && bisher.formatsatz));
         const tid = angelegt[0].id;
         for (let i = 0; i < t.preise.length; i += 250) {
           const teil = t.preise.slice(i, i + 250).map(p => Object.assign({ titel_id: tid }, p));

@@ -609,6 +609,41 @@ table.mit-marken td.zahl, table.mit-marken th.zahl{padding-right:15px}
 .kond-block > h2.abschnitt{margin-top:0}
 .koerper > .kond-block:first-child{padding-top:0}
 .kond-block .legende{margin-top:8px}
+
+/* Formate und Masse (04.10.2026): Tabelle hinter den Konditionen; hoch und
+   quer desselben Formats stehen ohne Strich untereinander. */
+.fk-schluessel{display:flex; flex-wrap:wrap; gap:4px 16px; font-size:10px; color:var(--grey-600); margin:2px 0 10px}
+.fk-beschnitt{font-size:10px; color:var(--grey-600); margin:-4px 0 12px}
+.fk-beschnitt b{color:var(--text)}
+.fk-schluessel span{display:inline-flex; align-items:center; gap:5px}
+.fk-schluessel i{display:inline-block; width:10px; height:10px}
+.fk-a{background:#f6c99b} .fk-s{background:#ee7d11; opacity:.85} .fk-h{border:1px solid #8a96aa; background:#fff}
+.fk-raster{display:grid; grid-template-columns:repeat(5, minmax(0,1fr)); gap:14px 12px}
+.fk-doppel{grid-column:span 2}
+.fk-bild{height:43mm; display:flex; align-items:flex-end; justify-content:flex-start}
+.fk-bild svg{display:block; height:100%; max-width:100%; overflow:visible}
+.fk-name{font-size:10.5px; font-weight:700; color:var(--navy); margin-top:5px; line-height:1.3}
+.fk-zusatz{display:block; font-weight:400; color:var(--grey-600)}
+.fk-mass{font-size:9.5px; line-height:1.35; font-variant-numeric:tabular-nums; white-space:nowrap}
+.fk-mass span{color:var(--grey-600); display:inline-block; min-width:52px}
+.fk-voll .fk-raster{grid-template-columns:repeat(4, minmax(0,1fr)); column-gap:22px}
+.fk-voll .fk-name{font-size:11.5px; margin-top:7px}
+.fk-voll .fk-mass{font-size:10.5px}
+.fk-voll .fk-mass span{min-width:60px}
+.fk-voll .fk-schluessel{font-size:10.5px; margin-bottom:16px}
+.fk-voll .fk-beschnitt{font-size:10.5px; margin:-8px 0 18px}
+/* Datenblatt je Sonderwerbeform: Name in der Titelschrift, Abbildung links. */
+.db-name{font-family:var(--font-title); font-weight:600; font-size:22px; line-height:1.15; color:var(--navy); margin:0 0 6px}
+.db-text{font-size:12px; line-height:1.55; margin:0 0 4px; max-width:68ch}
+.db-raster{display:grid; grid-template-columns:52mm minmax(0,1fr); gap:8mm; align-items:start; margin-top:14px}
+.db-raster > div > h2.abschnitt:first-child{margin-top:0}
+.db-raster > div:only-child{grid-column:1 / -1}
+.db-bild{margin:0; border:1px solid var(--linie); border-radius:4px; padding:8px; background:#fff}
+.db-bild img{display:block; width:100%; height:auto; max-height:80mm; object-fit:contain}
+.db-raster + h2.abschnitt{margin-top:18px}
+.db-termine tbody td{padding:3px 5px}
+table.db-masse td:first-child{width:36%; color:var(--grey-600)}
+.db-termine td .db-monat{color:var(--grey-600); margin-left:6px}
 table.kond th, table.kond td{text-align:right}
 table.kond th:first-child, table.kond td:first-child{text-align:left; width:34%}
 table.kond + table.kond{margin-top:8px}
@@ -879,6 +914,8 @@ table.kond + table.kond{margin-top:8px}
     <label id="sAEFeld"><input type="checkbox" id="sAE" checked> Spalte „AE-fähig“</label>
     <label id="sTerminFeld"><input type="checkbox" id="sTermin" checked> Spalte „Produktionstermin“</label>
     <label id="sKondFeld"><input type="checkbox" id="sKond" checked> Konditionen</label>
+    <label id="sMasseFeld"><input type="checkbox" id="sMasse"> Formate und Ma&szlig;e</label>
+    <label id="sBlattFeld"><input type="checkbox" id="sBlatt"> <span id="sBlattText">Datenbl&auml;tter Sonderwerbeformen</span></label>
   </div>
   <div class="o-grp" id="gTermin"><div class="o-kopf">Terminteil</div>
     <label id="sVerstrichenFeld"><input type="checkbox" id="sVerstrichen" checked> Verstrichene Ausgaben zeigen</label>
@@ -921,7 +958,7 @@ table.kond + table.kond{margin-top:8px}
    ═══════════════════════════════════════════════════════════════════════ */
 
 const DB_FELDER =
-  'jahr,name,auflage,fachbereich,reihenfolge,rubriken,' +
+  'jahr,name,auflage,fachbereich,reihenfolge,rubriken,formatsatz,' +
   'preis(reihenfolge,kategorie,format,preis,zuschlag_4c,rabattfaehig,ae_faehig,' +
   'termin_art,geaendert_am),' +
   'termin(reihenfolge,heft,monat,et,anzeigenschluss,du_schluss,eh_termin,' +
@@ -995,17 +1032,19 @@ async function ausDatenbank(){
   try{
     /* Fehlen die Staffeln, bleibt das Blatt ohne Konditionen - kein Grund,
        auf den Notweg zu gehen. */
-    const [titel, staffel] = await Promise.all([
+    const [titel, staffel, formate] = await Promise.all([
       dbHolen(
         'titel?select=' + encodeURIComponent(DB_FELDER) +
         '&order=jahr.asc,reihenfolge.asc&preis.order=reihenfolge.asc' +
         '&termin.order=reihenfolge.asc&limit=500'),
-      dbHolen('staffel?select=jahr,fachbereich,art,ab,prozent&limit=500').catch(() => [])
+      dbHolen('staffel?select=jahr,fachbereich,art,ab,prozent&limit=500').catch(() => []),
+      dbHolen('format?select=jahr,satz,art,reihenfolge,name,titel,preisformate,inhalt&order=jahr.asc,reihenfolge.asc&limit=2000').catch(() => [])
     ]);
     const B = datenbankZuBestand(titel);
     if(!B || !Object.keys(B).length) throw new Error('Keine Jahrgänge in der Datenbank.');
     BESTAND = B; HERKUNFT = 'Preisliste';
     STAFFELN = staffelnAusZeilen(staffel.map(z => ({ ...z, fach: z.fachbereich })));
+    FORMATE = formateAusZeilen(formate);
     kopieSichern();
     return true;
   }catch(e){
@@ -1024,6 +1063,10 @@ const KOPIE_SCHLUESSEL = 'mediaSheetPreisliste';
 function kopieSichern(){
   try{ localStorage.setItem(KOPIE_SCHLUESSEL, JSON.stringify(BESTAND));
        localStorage.setItem(KOPIE_SCHLUESSEL + 'Staffeln', JSON.stringify(STAFFELN)); }catch(e){}
+  /* Die Formate eigens: mit ihren Abbildungen koennen sie den Speicher des
+     Browsers sprengen, und das soll die Preisliste nicht mitreissen. */
+  try{ localStorage.setItem(KOPIE_SCHLUESSEL + 'Formate', JSON.stringify(FORMATE)); }
+  catch(e){ try{ localStorage.removeItem(KOPIE_SCHLUESSEL + 'Formate'); }catch(e2){} }
 }
 
 function kopieLaden(){
@@ -1032,6 +1075,7 @@ function kopieLaden(){
     if(B && typeof B === 'object' && Object.keys(B).length){
       BESTAND = B; HERKUNFT = 'Browser-Speicher';
       STAFFELN = JSON.parse(localStorage.getItem(KOPIE_SCHLUESSEL + 'Staffeln') || '{}') || {};
+      try{ FORMATE = JSON.parse(localStorage.getItem(KOPIE_SCHLUESSEL + 'Formate') || '{}') || {}; }catch(e){ FORMATE = {}; }
       return true;
     }
   }catch(e){}
@@ -1214,6 +1258,9 @@ function datenbankZuBestand(titel){
     };
     const rub = rubrikenLesen(t.rubriken);
     if(rub.length) B[jahr][name].rubriken = rub;
+    /* Wie die Rubriken: leer bleibt weg, damit Datenbank und Excel-Mappe
+       denselben Bestand ergeben. Leer heisst ohnehin der erste Formatsatz. */
+    if(t.formatsatz) B[jahr][name].formatsatz = t.formatsatz;
   });
   return B;
 }
@@ -1809,6 +1856,19 @@ function preisseitenBauen(L){
       koerper(blatt).insertAdjacentHTML('beforeend', kond);
     }
   }
+
+  /* Formate und Masse hinter den Konditionen, nach derselben Regel. */
+  const M = document.getElementById('sMasse').checked ? masseFuer(GEWAEHLT.jahr, GEWAEHLT.titel) : null;
+  if(M){
+    koerper(blatt).insertAdjacentHTML('beforeend', masseHtml(M));
+    kachelnOrdnen(koerper(blatt).querySelector('.fk-raster'));
+    if(laeuftUeber(blatt)){
+      koerper(blatt).querySelector('.masse-block').remove();
+      blatt = neuesBlatt('Anzeigenpreisliste · Fortsetzung', unter);
+      koerper(blatt).insertAdjacentHTML('beforeend', masseHtml(M));
+      masseVerteilen(blatt, M);
+    }
+  }
 }
 
 /* ── Konditionen ────────────────────────────────────────────────────────────
@@ -1846,6 +1906,294 @@ function konditionenHtml(L, zeigeRabatt){
   ].filter(Boolean).join(' ');
   return '<div class="kond-block"><h2 class="abschnitt">Konditionen</h2>' +
          tab + '<div class="legende">' + text + '</div></div>';
+}
+
+/* ── Formate und Maße (seit 04.10.2026) ─────────────────────────────────────
+   Gepflegt in der Datenpflege, Fenster „Formate und Maße“: je Jahrgang ein oder
+   mehrere Formatsaetze (Zeitschrift 210 × 279, Zeitungen), jeder mit den
+   Standardformaten und den Sonderwerbeformen. Ein Titel gehoert zum Satz in
+   seinem Feld „formatsatz“; leer heisst der erste Satz des Jahrgangs. Weicht ein
+   Titel ab, steht fuer ihn eine eigene Zeile mit seinem Namen, die an die
+   Stelle des Standards tritt.
+
+   Zwei Ausgaben, beide mit eigenem Haken im Preisteil, beide beim Oeffnen und
+   bei jedem Titelwechsel aus — sie verlaengern das Blatt:
+   - „Formate und Maße“: Tabelle mit Satzspiegel und Anschnitt hinter den
+     Konditionen; reicht der Platz nicht, auf einem eigenen Blatt.
+   - „Datenblätter“: je Sonderwerbeform ein eigenes Blatt, aber nur fuer die,
+     deren Preiszeile der Titel mit Preis fuehrt UND die in der Formatauswahl
+     steht (Variante C, 04.10.2026). Wer ein Datenblatt nicht will, nimmt die
+     Zeile in der Formatauswahl heraus — eine zweite Auswahl gibt es nicht.
+   Im Sammeldruck („Mehrere Titel …“) bleiben die Datenblaetter aussen vor: dort
+   gibt es keine Formatauswahl, und es kaemen je Titel bis zu 15 Blaetter dazu. */
+let FORMATE = {};        // { jahr: [ {satz, art, reihenfolge, name, titel, preisformate, inhalt} ] }
+
+function formateAusZeilen(zeilen){
+  const F = {};
+  (zeilen || []).forEach(z => {
+    const jahr = String(z.jahr || '');
+    if(!jahr || (z.art !== 'standard' && z.art !== 'sonder')) return;
+    (F[jahr] = F[jahr] || []).push({ satz: z.satz || '', art: z.art, reihenfolge: Number(z.reihenfolge) || 0,
+      name: z.name || '', titel: z.titel || '', preisformate: Array.isArray(z.preisformate) ? z.preisformate : [],
+      inhalt: z.inhalt || {} });
+  });
+  Object.values(F).forEach(l => l.sort((a, b) => a.reihenfolge - b.reihenfolge));
+  return F;
+}
+function satzFuer(jahr, titel){
+  const l = FORMATE[jahr] || [];
+  const saetze = l.filter(z => z.art === 'standard' && !z.titel).map(z => z.satz);
+  const eigen = ((BESTAND[jahr] || {})[titel] || {}).formatsatz || '';
+  return eigen && saetze.includes(eigen) ? eigen : (saetze[0] || '');
+}
+/* Der Eintrag, der fuer den Titel gilt: seine Abweichung, sonst der Standard. */
+function formatEintrag(jahr, titel, art, name){
+  const satz = satzFuer(jahr, titel);
+  const l = (FORMATE[jahr] || []).filter(z => z.satz === satz && z.art === art && z.name === name);
+  return { standard: l.find(z => !z.titel) || null, eigen: l.find(z => z.titel === titel) || null };
+}
+function masseFuer(jahr, titel){
+  const e = formatEintrag(jahr, titel, 'standard', '');
+  const I = (e.eigen || e.standard || {}).inhalt;
+  if(!I) return null;
+  const zeilen = (I.zeilen || []).filter(r => String(r.format || '').trim() || r.sB || r.aB);
+  return (zeilen.length || String(I.sonst || '').trim()) ? Object.assign({}, I, { zeilen: zeilen }) : null;
+}
+function massText(b, h){
+  b = String(b || '').trim(); h = String(h || '').trim();
+  return (b || h) ? esc(b || '–') + ' × ' + esc(h || '–') + ' mm' : '–';
+}
+function heftformatText(I){ return I && (I.heftB || I.heftH) ? massText(I.heftB, I.heftH) : ''; }
+
+/* Die Formate als Kacheln mit Skizze, nach dem Vorbild der Seite „Anzeigenformate“
+   in den Mediadaten (05.10.2026, Marcus' Wunsch): Heft weiss, Format im Anschnitt
+   hell, Format im Satzspiegel kraeftig. Die Skizze wird aus den Massen gezeichnet,
+   nicht hochgeladen — sie stimmt damit von selbst, auch fuer die Zeitungen.
+   Lage: quer sitzt unten, hoch am Aussenrand rechts, wie in den Mediadaten. */
+function massZahl(w){
+  const t = String(w || '').replace(',', '.');
+  const m = t.match(/^\s*2\s*[×x]\s*([\d.]+)\s*$/);
+  return m ? { doppel: true, n: Number(m[1]) } : { doppel: false, n: Number((t.match(/[\d.]+/) || [''])[0]) || 0 };
+}
+function formatSkizze(M, r, satzB, satzH){
+  const W = Number(String(M.heftB).replace(',', '.')) || 210, H = Number(String(M.heftH).replace(',', '.')) || 279;
+  const bz = Number(String(M.beschnitt || '').replace(',', '.')) || 3;
+  const sB = massZahl(r.sB), sH = massZahl(r.sH), aB = massZahl(r.aB), aH = massZahl(r.aH);
+  const doppel = sB.doppel || aB.doppel;
+  const seiten = doppel ? 2 : 1, rand = 8;
+  const VB = W * seiten + 2 * rand, VH = H + 2 * rand;
+  /* Die Zeichnung beginnt an der linken Heftkante, damit Name und Maße darunter
+     genau mit ihr fluchten (05.10.2026); Beschnitt und Strich ragen sichtbar
+     ueber den Rand. */
+  const x0 = (W - satzB) / 2, y0 = (H - satzH) / 2;
+  let g = '', linien = '';
+  /* Textspalten als graue Linien im Satzspiegel jeder Seite. Sie liegen
+     zuletzt obenauf und laufen durch die farbigen Felder, wie in den
+     Mediadaten (05.10.2026); „multiply“ toent sie dort orange ab. */
+  for(let s = 0; s < seiten; s++){
+    const ox = rand + s * W;
+    g += '<rect x="' + ox + '" y="' + rand + '" width="' + W + '" height="' + H + '" fill="#fff" stroke="#8a96aa" stroke-width="1.2"/>';
+    const sp = 3, lu = 6, bs = (satzB - (sp - 1) * lu) / sp;
+    for(let k = 0; k < sp; k++)
+      for(let y = y0 + 2; y < y0 + satzH; y += 5)
+        linien += '<line x1="' + (ox + x0 + k * (bs + lu)) + '" x2="' + (ox + x0 + k * (bs + lu) + bs) + '" y1="' + (rand + y) + '" y2="' + (rand + y) + '" stroke="#c9d0dc" stroke-width="1.4"/>';
+  }
+  /* Anschnitt: buendig am Aussenrand unten bzw. rechts; wo er die Heftkante
+     beruehrt, steht die Beschnittzugabe ueber. */
+  const ab = aB.n * (aB.doppel ? 2 : 1) || 0, ah = aH.n || 0;
+  if(ab && ah){
+    const GW = W * seiten;
+    let x = rand + GW - ab, y = rand + H - ah, w = ab, h = ah;
+    if(x <= rand + 0.5){ x -= bz; w += bz; }
+    if(y <= rand + 0.5){ y -= bz; h += bz; }
+    w += bz; h += bz;
+    g += '<rect x="' + x + '" y="' + y + '" width="' + w + '" height="' + h + '" fill="#f6c99b" fill-opacity=".75"/>';
+  }
+  const sb = sB.n * (sB.doppel ? 2 : 1) || 0, sh = sH.n || 0;
+  if(sb && sh){
+    /* Wie in den Mediadaten (S. 4, 05.10.2026): das Feld reicht von der
+       inneren Kante des Anschnittformats bis an den Rand des Satzspiegels,
+       innen buendig mit dem hellen Feld, aussen mit Abstand zur Heftkante.
+       Laeuft das Anschnittformat ueber die ganze Breite bzw. Hoehe, nimmt
+       das Feld dort den vollen Satzspiegel ein (Doppelseite ueber den Bund).
+       Ohne Anschnittmasse sitzt es aussen unten im Satzspiegel, in echter Groesse. */
+    const GW = W * seiten, rechts = rand + (seiten - 1) * W + x0 + satzB, unten = rand + y0 + satzH;
+    let x, w, y, h;
+    if(ab && ab < GW - 0.5){ x = rand + GW - ab; w = rechts - x; }
+    else if(ab || doppel){ x = rand + x0; w = rechts - x; }
+    else { x = rand + x0 + satzB - sb; w = sb; }
+    if(ah && ah < H - 0.5){ y = rand + H - ah; h = unten - y; }
+    else if(ah){ y = rand + y0; h = satzH; }
+    else { y = unten - sh; h = sh; }
+    g += '<rect x="' + x + '" y="' + y + '" width="' + w + '" height="' + h + '" fill="#ee7d11" fill-opacity=".72"/>';
+  }
+  g += '<g style="mix-blend-mode:multiply">' + linien + '</g>';
+  return { svg: '<svg viewBox="' + rand + ' 0 ' + (VB - rand) + ' ' + VH + '" preserveAspectRatio="xMidYMax meet" aria-hidden="true">' + g + '</svg>', doppel: doppel };
+}
+/* Steht der Block auf einem eigenen Blatt, fuellt er es (05.10.2026, Marcus'
+   Wunsch: nicht gedraengt, Seite moeglichst ganz ausgefuellt). Vier statt fuenf
+   Kacheln je Zeile; die Skizzen wachsen, bis die Seite voll ist oder die
+   Kachelbreite sie begrenzt; was dann noch frei ist, geht in den Zeilenabstand.
+   Gemessen wird wie beim Umbruch gegen die A4-Hoehe samt Reserve. */
+/* Hoch und quer desselben Formats stehen direkt nebeneinander (05.10.2026):
+   passt das Paar nicht mehr in die Zeile, beginnt es die naechste. Die
+   Spaltenzahl kommt aus dem Raster selbst (fuenf, auf eigenem Blatt vier). */
+function kachelnOrdnen(raster){
+  if(!raster) return;
+  const spalten = getComputedStyle(raster).gridTemplateColumns.split(' ').length;
+  const k = Array.from(raster.children);
+  let sp = 0;
+  k.forEach((el, i) => {
+    el.style.gridColumnStart = '';
+    const breit = el.classList.contains('fk-doppel') ? 2 : 1;
+    const partner = k[i + 1] && k[i + 1].dataset.format === el.dataset.format && (i === 0 || k[i - 1].dataset.format !== el.dataset.format) ? k[i + 1] : null;
+    if(sp + breit > spalten) sp = 0;
+    if(partner && sp > 0 && sp + breit + (partner.classList.contains('fk-doppel') ? 2 : 1) > spalten){ el.style.gridColumnStart = '1'; sp = 0; }
+    sp += breit;
+  });
+}
+function masseVerteilen(blatt, M){
+  const block = blatt.querySelector('.masse-block');
+  const raster = block && block.querySelector('.fk-raster');
+  if(!raster) return;
+  block.classList.add('fk-voll');
+  kachelnOrdnen(raster);
+  /* Vor dem Hinweis unten derselbe Abstand wie zwischen den Kachelzeilen
+     (05.10.2026, Marcus' Wunsch). */
+  const legende = block.querySelector('.legende');
+  const abstand = g => { raster.style.rowGap = g; if(legende) legende.style.marginTop = g || '14px'; };
+  abstand('');
+  const cs = getComputedStyle(blatt);
+  const innen = a4Hoehe() - parseFloat(cs.paddingTop) - parseFloat(cs.paddingBottom) - RESERVE;
+  const frei = () => { let b = 0; Array.from(blatt.children).forEach(k => { b += k.offsetHeight; }); return innen - b; };
+  const kacheln = Array.from(raster.children);
+  const zeilen = new Set(kacheln.map(k => k.offsetTop)).size;
+  const bilder = raster.querySelectorAll('.fk-bild');
+  const einfach = raster.querySelector('.fk:not(.fk-doppel)') || kacheln[0];
+  const W = Number(String(M.heftB).replace(',', '.')) || 210, H = Number(String(M.heftH).replace(',', '.')) || 279;
+  const hoechstens = einfach.offsetWidth * (H + 16) / (W + 16);
+  const jetzt = bilder[0].offsetHeight;
+  const neu = Math.max(jetzt, Math.min(hoechstens, jetzt + frei() / zeilen));
+  bilder.forEach(b => { b.style.height = neu + 'px'; });
+  const rest = frei();
+  if(rest > 0) abstand((14 + Math.min(48, rest / (zeilen - 1 + (legende ? 1 : 0) || 1))) + 'px');
+  /* Sicherheitsnetz: nie ueber die Seite hinaus. */
+  while(laeuftUeber(blatt) && parseFloat(bilder[0].style.height) > jetzt){
+    abstand('');
+    bilder.forEach(b => { b.style.height = (parseFloat(b.style.height) - 4) + 'px'; });
+  }
+}
+
+function masseHtml(M){
+  /* Der volle Satzspiegel ist der groesste einfache Satzspiegel der Liste. */
+  let satzB = 0, satzH = 0;
+  M.zeilen.forEach(r => { const b = massZahl(r.sB), h = massZahl(r.sH); if(!b.doppel){ satzB = Math.max(satzB, b.n); satzH = Math.max(satzH, h.n); } });
+  const W = Number(String(M.heftB).replace(',', '.')) || 210, H = Number(String(M.heftH).replace(',', '.')) || 279;
+  if(!satzB) satzB = W * 0.83; if(!satzH) satzH = H * 0.86;
+  const kacheln = M.zeilen.map(r => {
+    const sk = formatSkizze(M, r, satzB, satzH);
+    /* Ein Zusatz in Klammern (z. B. „auch Umschlagseiten …“) steht mager in
+       einer eigenen Zeile unter dem Namen. */
+    const f = String(r.format || '').trim(), k = f.indexOf(' (');
+    const name = esc(k > 0 ? f.slice(0, k) : f) + (r.lage ? ' ' + esc(r.lage) : '') +
+                 (k > 0 ? '<span class="fk-zusatz">' + esc(f.slice(k + 1)) + '</span>' : '');
+    return '<div class="fk' + (sk.doppel ? ' fk-doppel' : '') + '" data-format="' + esc(k > 0 ? f.slice(0, k) : f) + '"><div class="fk-bild">' + sk.svg + '</div>' +
+      '<div class="fk-name">' + name + '</div>' +
+      '<div class="fk-mass"><span>Satzspiegel</span>' + massText(r.sB, r.sH) + '</div>' +
+      '<div class="fk-mass"><span>Anschnitt</span>' + massText(r.aB, r.aH) + '</div></div>';
+  }).join('');
+  const schluessel = '<div class="fk-schluessel"><span><i class="fk-a"></i>Format im Anschnitt</span>' +
+    '<span><i class="fk-s"></i>Format im Satzspiegel</span><span><i class="fk-h"></i>Heftformat' +
+    (heftformatText(M) ? ' ' + heftformatText(M) : '') + '</span></div>' +
+    /* Die Beschnittzugabe steht fest oben unter dem Schluessel, wie in den
+       Mediadaten (05.10.2026), nicht mehr in der Fussnote. */
+    (String(M.beschnitt || '').trim() ? '<p class="fk-beschnitt">Anzeigen im Anschnitt brauchen <b>' + esc(M.beschnitt) +
+      ' mm Beschnittzugabe</b> je angeschnittenem Rand (auch im Bund).</p>' : '');
+  const legende = [
+    'Alle Maße Breite × Höhe.',
+    esc(String(M.sonst || '').trim())
+  ].filter(Boolean).join(' ');
+  return '<div class="kond-block masse-block"><h2 class="abschnitt">Formate und Maße</h2>' + schluessel +
+    (M.zeilen.length ? '<div class="fk-raster">' + kacheln + '</div>' : '') +
+    '<div class="legende">' + legende + '</div></div>';
+}
+
+/* Die Sonderwerbeformen mit Datenblatt fuer den Titel: zugeordnete Preiszeile
+   mit Preis, in der Reihenfolge des Formatsatzes. Mit auswahl werden die
+   Formate uebergangen, die in der Formatauswahl abgewaehlt sind. */
+function datenblaetterFuer(L, jahr, titel, auswahl){
+  const satz = satzFuer(jahr, titel);
+  return (FORMATE[jahr] || []).filter(z => z.satz === satz && z.art === 'sonder' && !z.titel).map(z => {
+    const pf = new Set(z.preisformate || []);
+    const preise = L.preise.filter(p => pf.has(p.format) && !(auswahl && auswahl.has(p.kategorie + ' § ' + p.format)));
+    return preise.length ? { name: z.name, standard: z, eigen: formatEintrag(jahr, titel, 'sonder', z.name).eigen, preise: preise } : null;
+  }).filter(Boolean);
+}
+function datenblaetterGewaehlt(L){
+  return !!(L && document.getElementById('sBlatt').checked && teileFuer(L, true).includes('P') && !document.querySelector('.sd-trenner'));
+}
+
+function datenblattBauen(L, d){
+  const zeigeRabatt = document.getElementById('sRabatt').checked && L.hatRabatt;
+  const zeigeAE = document.getElementById('sAE').checked && L.hatAE;
+  const zeigeTermin = document.getElementById('sTermin').checked && d.preise.some(p => p.terminart);
+  const einspaltig = !d.preise.some(p => p.zuschlag != null && p.zuschlag > 0);
+  const I = d.standard.inhalt || {}, E = (d.eigen && d.eigen.inhalt) || {};
+  const B = E.bild ? E : I;
+  const bild = B.bild || '';
+  /* Der Umbruch wird gemessen, bevor das Bild geladen ist. Mit bekanntem
+     Seitenverhaeltnis steht seine Hoehe trotzdem fest; ohne nimmt der Rahmen
+     die volle Hoehe ein, damit nichts nachtraeglich ueberlaeuft. */
+  const bildStil = (B.bildB > 0 && B.bildH > 0) ? 'aspect-ratio:' + B.bildB + ' / ' + B.bildH : 'height:80mm';
+  const masse = (d.eigen ? (E.masse || []) : (I.masse || [])).filter(m => String(m.bez || '').trim() || String(m.wert || '').trim());
+  const heft = heftformatText(masseFuer(GEWAEHLT.jahr, GEWAEHLT.titel));
+  const unter = 'Fachbereich ' + esc(L.fach) +
+                (L.auflage ? ' · Auflage <b>' + zahl(L.auflage) + '</b> Exemplare' : '') +
+                (L.termine.length ? ' · ' + L.termine.length + ' Ausgaben im Jahr' : '');
+
+  const preisTab = '<h2 class="abschnitt">Preis</h2><table>' + preisKopf(zeigeRabatt, zeigeAE, zeigeTermin, einspaltig) +
+    '<tbody>' + d.preise.map(p => preisZeile(p, zeigeRabatt, zeigeAE, zeigeTermin, einspaltig)).join('') + '</tbody></table>';
+  const masseTab = (heft || masse.length) ? '<h2 class="abschnitt">Formate und Maße</h2><table class="db-masse"><tbody>' +
+    (heft ? '<tr><td>Heftformat</td><td>' + heft + ' (B × H)</td></tr>' : '') +
+    masse.map(m => '<tr><td>' + esc(m.bez || '') + '</td><td>' + textZeilen(m.wert) + '</td></tr>').join('') +
+    '</tbody></table>' : '';
+
+  /* Die Termine der Ausgaben, mit dem Produktionstermin dieser Werbeform. */
+  const art = (d.preise.find(p => p.terminart) || {}).terminart || '';
+  const prod = art === 'EH' ? 'eh' : art === 'DU' ? 'du' : '';
+  const verstrichene = document.getElementById('sVerstrichen').checked;
+  const ausgaben = L.termine.filter(a => verstrichene || !a.verstrichen);
+  const spalten = [['et', 'Erscheinungstermin', L.hatET], ['as', 'Anzeigenschluss', L.hatAS],
+                   [prod, TERMIN_WORT[art] || '', !!prod && (prod === 'eh' ? L.hatEH : L.hatDU)]].filter(s => s[2]);
+  const termTab = (ausgaben.length && spalten.length) ? '<h2 class="abschnitt">Termine ' + esc(GEWAEHLT.jahr) + '</h2>' +
+    '<table class="termine db-termine"><thead><tr><th>Heft</th>' + spalten.map(s => '<th class="mitte">' + s[1] + '</th>').join('') +
+    '</tr></thead><tbody>' + ausgaben.map(a => '<tr><td><b>' + esc(a.heft) + '</b><span class="db-monat">' + esc(a.monat) + '</span></td>' +
+      spalten.map(s => '<td class="mitte">' + esc(a[s[0]] || '') + '</td>').join('') + '</tr>').join('') + '</tbody></table>' : '';
+
+  const legende = [
+    esc(String(I.hinweis || '').trim()),
+    zeigeTermin && art === 'DU' ? '<b>DU-Schluss</b>: letzter Termin für die Übermittlung der Druckunterlagen.' : '',
+    zeigeTermin && art === 'EH' ? '<b>Anlieferschluss</b>: letzter Termin für die Anlieferung der fertigen Werbemittel.' : '',
+    (zeigeRabatt || zeigeAE) ? '<b>✓</b>&nbsp;kennzeichnet ' + (zeigeRabatt && zeigeAE ? 'Rabatt- bzw. AE-Provisionsfähigkeit.' : zeigeRabatt ? 'Rabattfähigkeit.' : 'AE-Provisionsfähigkeit.') : '',
+    'Alle Preise verstehen sich zuzüglich der gesetzlichen Umsatzsteuer.'
+  ].filter(Boolean).join(' ');
+
+  let blatt = neuesBlatt('Sonderwerbeform', unter);
+  const kopf = '<p class="db-name">' + esc(d.name) + '</p>' +
+    (String(I.text || '').trim() ? '<p class="db-text">' + textZeilen(I.text) + '</p>' : '');
+  /* Abbildung und Masse nebeneinander, der Preis in voller Breite darunter:
+     mit fuenf Spalten waere er neben dem Bild zu eng. */
+  const raster = (bild
+    ? '<div class="db-raster"><figure class="db-bild"><img src="' + esc(bild) + '" alt="" style="' + bildStil + '"></figure><div>' + masseTab + '</div></div>'
+    : masseTab) + preisTab;
+  koerper(blatt).insertAdjacentHTML('beforeend', kopf + raster + termTab + '<div class="legende">' + legende + '</div>');
+  /* Laeuft das Blatt ueber, wandern die Termine auf ein Folgeblatt. */
+  if(termTab && laeuftUeber(blatt)){
+    const k = koerper(blatt);
+    k.innerHTML = kopf + raster + '<div class="legende">' + legende + '</div>';
+    blatt = neuesBlatt('Sonderwerbeform · Fortsetzung', unter);
+    koerper(blatt).insertAdjacentHTML('beforeend', '<p class="db-name">' + esc(d.name) + '</p>' + termTab);
+  }
 }
 
 /* ── Terminseiten ───────────────────────────────────────────────────────── */
@@ -2129,6 +2477,10 @@ function zeichnen(){
   const teile = teileFuer(L, true);
   if(teile.includes('P')) preisseitenBauen(L);
   if(teile.includes('T') || teile.includes('I')) terminseitenBauen(L, teile.includes('T'), teile.includes('I'));
+  /* Die Datenblaetter stehen hinten: jedes ist fuer sich vollstaendig und
+     laesst sich einzeln weitergeben. */
+  if(datenblaetterGewaehlt(L))
+    datenblaetterFuer(L, GEWAEHLT.jahr, GEWAEHLT.titel, AUSWAHL).forEach(d => datenblattBauen(L, d));
 
   /* Seitenzaehlung erst, wenn feststeht, wie viele es geworden sind. */
   const kopf = GEWAEHLT.titel + ' · Jahrgang ' + GEWAEHLT.jahr;
@@ -2637,6 +2989,16 @@ function fachZahlSetzen(){
   const weg = AUSWAHL ? L.preise.filter(p => AUSWAHL.has(p.kategorie + ' § ' + p.format)).length : 0;
   document.getElementById('fachZahl').textContent =
     'Formate (' + (ganz - weg) + ' von ' + ganz + ')';
+  blattZahlSetzen();
+}
+
+/* Die Zahl am Haken „Datenblätter“ folgt der Formatauswahl. */
+function blattZahlSetzen(){
+  const L = AKTUELL;
+  const alle = L ? datenblaetterFuer(L, GEWAEHLT.jahr, GEWAEHLT.titel, null).length : 0;
+  const gew = L ? datenblaetterFuer(L, GEWAEHLT.jahr, GEWAEHLT.titel, AUSWAHL).length : 0;
+  document.getElementById('sBlattText').textContent = 'Datenblätter Sonderwerbeformen' +
+    (alle ? ' (' + gew + (gew === alle ? '' : ' von ' + alle) + ')' : '');
 }
 
 /* ── Leiste nachfuehren ───────────────────────────────────────────────────
@@ -2653,6 +3015,11 @@ function leisteNachfuehren(){
   zeigen('sAEFeld',        !!(preisteil && L.hatAE));
   zeigen('sTerminFeld',    !!(preisteil && L.hatTerminart));
   zeigen('sKondFeld',      !!(preisteil && L.hatRabatt && staffelFuer(GEWAEHLT.jahr, L.fach)));
+  zeigen('sMasseFeld',     !!(preisteil && masseFuer(GEWAEHLT.jahr, GEWAEHLT.titel)));
+  /* Datenblaetter: der Haken erscheint, sobald der Titel eine Sonderwerbeform
+     mit Preis fuehrt; die Zahl nennt, wie viele die Formatauswahl durchlaesst. */
+  zeigen('sBlattFeld',     !!(preisteil && datenblaetterFuer(L, GEWAEHLT.jahr, GEWAEHLT.titel, null).length));
+  blattZahlSetzen();
   INTERN_SPALTEN.forEach(s => zeigen(s[2] + 'Feld', !!(terminteil && L[s[3]])));
   zeigen('sThemenFeld',    !!(inhaltsteil && L.hatThemen));
   zeigen('sKongFeld',      !!(inhaltsteil && L.hatKongresse));
@@ -2840,6 +3207,10 @@ function wechseln(){
   /* Die Konditionen werden je Titel abgeschaltet, etwa wenn sie ein Extrablatt
      kosten - beim naechsten Titel stehen sie wieder da. Deshalb nicht gemerkt. */
   document.getElementById('sKond').checked = true;
+  /* Masse und Datenblaetter verlaengern das Blatt; sie stehen bei jedem Titel
+     wieder aus, wie sie beim Oeffnen aus stehen. */
+  document.getElementById('sMasse').checked = false;
+  document.getElementById('sBlatt').checked = false;
   /* Aenderungsmarken und Merken gelten nur fuer das offene Blatt, damit keines
      davon unbemerkt auf dem naechsten Kundenblatt landet. */
   document.getElementById('sAend').checked = false;
@@ -2954,7 +3325,7 @@ async function starten(){
   document.querySelectorAll('#gUmfang input').forEach(b => {
     b.addEventListener('change', () => teilUmschalten(b.dataset.teil));
   });
-  ['sRabatt','sAE','sTermin','sKond','sThemen','sKong','sRub','sVerstrichen','sHST','sFREI','sTV','sVorl','sAend'].forEach(id => {
+  ['sRabatt','sAE','sTermin','sKond','sMasse','sBlatt','sThemen','sKong','sRub','sVerstrichen','sHST','sFREI','sTV','sVorl','sAend'].forEach(id => {
     document.getElementById(id).addEventListener('change', () => {
       einstellungenMerken(id);
       zeichnen();
