@@ -2004,6 +2004,15 @@ function formatSkizze(M, r, satzB, satzH){
   if(ab && ah){
     const GW = W * seiten;
     let x = rand + GW - ab, y = rand + H - ah, w = ab, h = ah;
+    /* Reicht das Satzspiegelformat weiter nach innen als das Anschnittformat
+       (1/2 und 1/4 hoch: 85 mm Satz, aber 100 mm Anschnitt), beginnt das helle
+       Feld an der Satzkante. So sitzt die Kante wie in den Mediadaten in der
+       Spaltenmitte und nichts steht ueber (05.10.2026); das helle Feld ist dann
+       innen etwas breiter gezeichnet als genau. */
+    const sbA = sB.n * (sB.doppel ? 2 : 1) || 0, shA = sH.n || 0;
+    const satzL = rand + (seiten - 1) * W + x0 + satzB - sbA, satzO = rand + y0 + satzH - shA;
+    if(sbA && ab < GW - 0.5 && satzL < x){ w += x - satzL; x = satzL; }
+    if(shA && ah < H - 0.5 && satzO < y){ h += y - satzO; y = satzO; }
     if(x <= rand + 0.5){ x -= bz; w += bz; }
     if(y <= rand + 0.5){ y -= bz; h += bz; }
     w += bz; h += bz;
@@ -2019,10 +2028,10 @@ function formatSkizze(M, r, satzB, satzH){
        Ohne Anschnittmasse sitzt es aussen unten im Satzspiegel, in echter Groesse. */
     const GW = W * seiten, rechts = rand + (seiten - 1) * W + x0 + satzB, unten = rand + y0 + satzH;
     let x, w, y, h;
-    if(ab && ab < GW - 0.5){ x = rand + GW - ab; w = rechts - x; }
+    if(ab && ab < GW - 0.5){ x = Math.min(rand + GW - ab, rechts - sb); w = rechts - x; }
     else if(ab || doppel){ x = rand + x0; w = rechts - x; }
     else { x = rand + x0 + satzB - sb; w = sb; }
-    if(ah && ah < H - 0.5){ y = rand + H - ah; h = unten - y; }
+    if(ah && ah < H - 0.5){ y = Math.min(rand + H - ah, unten - sh); h = unten - y; }
     else if(ah){ y = rand + y0; h = satzH; }
     else { y = unten - sh; h = sh; }
     g += '<rect x="' + x + '" y="' + y + '" width="' + w + '" height="' + h + '" fill="#ee7d11" fill-opacity=".72"/>';
@@ -2106,16 +2115,15 @@ function masseHtml(M){
     '<span><i class="fk-s"></i>Format im Satzspiegel</span><span><i class="fk-h"></i>Heftformat' +
     (heftformatText(M) ? ' ' + heftformatText(M) : '') + '</span></div>' +
     /* Die Beschnittzugabe steht fest oben unter dem Schluessel, wie in den
-       Mediadaten (05.10.2026), nicht mehr in der Fussnote. */
-    (String(M.beschnitt || '').trim() ? '<p class="fk-beschnitt">Anzeigen im Anschnitt brauchen <b>' + esc(M.beschnitt) +
-      ' mm Beschnittzugabe</b> je angeschnittenem Rand (auch im Bund).</p>' : '');
-  const legende = [
-    'Alle Maße Breite × Höhe.',
-    esc(String(M.sonst || '').trim())
-  ].filter(Boolean).join(' ');
+       Mediadaten (05.10.2026), nicht mehr in der Fussnote; davor, ebenfalls
+       oben, der Hinweis „Breite × Höhe“ (05.10.2026, Marcus). */
+    '<p class="fk-beschnitt">Alle Maße Breite × Höhe.' + (String(M.beschnitt || '').trim() ?
+      ' Anzeigen im Anschnitt benötigen <b>' + esc(M.beschnitt) +
+      ' mm Beschnittzugabe</b> je angeschnittenem Rand (auch im Bund).' : '') + '</p>';
+  const legende = esc(String(M.sonst || '').trim());
   return '<div class="kond-block masse-block"><h2 class="abschnitt">Formate und Maße</h2>' + schluessel +
     (M.zeilen.length ? '<div class="fk-raster">' + kacheln + '</div>' : '') +
-    '<div class="legende">' + legende + '</div></div>';
+    (legende ? '<div class="legende">' + legende + '</div>' : '') + '</div>';
 }
 
 /* Die Sonderwerbeformen mit Datenblatt fuer den Titel: zugeordnete Preiszeile
