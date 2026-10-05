@@ -1989,7 +1989,9 @@ function formatSkizze(M, r, satzB, satzH){
   for(let s = 0; s < seiten; s++){
     const ox = rand + s * W;
     g += '<rect x="' + ox + '" y="' + rand + '" width="' + W + '" height="' + H + '" fill="#fff" stroke="#8a96aa" stroke-width="1.2"/>';
-    const sp = 3, lu = 6, bs = (satzB - (sp - 1) * lu) / sp;
+    /* Spaltenzahl aus der Satzbreite (05.10.2026): Zeitschrift 174 mm = 3,
+       Zeitung 291 mm = 5 Spalten wie in den Mediadaten. */
+    const sp = Math.max(2, Math.round(satzB / 57)), lu = 6, bs = (satzB - (sp - 1) * lu) / sp;
     for(let k = 0; k < sp; k++)
       for(let y = y0 + 2; y < y0 + satzH; y += 5)
         linien += '<line x1="' + (ox + x0 + k * (bs + lu)) + '" x2="' + (ox + x0 + k * (bs + lu) + bs) + '" y1="' + (rand + y) + '" y2="' + (rand + y) + '" stroke="#c9d0dc" stroke-width="1.4"/>';
@@ -2026,9 +2028,16 @@ function formatSkizze(M, r, satzB, satzH){
     let x, w, y, h;
     if(ab && ab < GW - 0.5){ x = Math.min(rand + GW - ab, rechts - sb); w = rechts - x; }
     else if(ab || doppel){ x = rand + x0; w = rechts - x; }
+    else if(/insel|tunnel|fuß|fuss/i.test(r.format || '')){
+      /* Mittig, aber buendig an einer Spaltenkante (Marcus, 05.10.2026):
+         die Insel steht genau in zwei Spalten, nicht ueber drei. */
+      const sp = Math.max(2, Math.round(satzB / 57)), schritt = (satzB + 6) / sp;
+      x = rand + x0 + Math.min(satzB - sb, Math.max(0, Math.floor((satzB - sb) / 2 / schritt + 0.4) * schritt)); w = sb;
+    }
     else { x = rand + x0 + satzB - sb; w = sb; }
     if(ah && ah < H - 0.5){ y = Math.min(rand + H - ah, unten - sh); h = unten - y; }
     else if(ah){ y = rand + y0; h = satzH; }
+    else if(/insel/i.test(r.format || '')){ y = rand + y0 + (satzH - sh) / 2; h = sh; }
     else { y = unten - sh; h = sh; }
     g += '<rect x="' + x + '" y="' + y + '" width="' + w + '" height="' + h + '" fill="#ee7d11" fill-opacity=".72"/>';
   }
@@ -2095,6 +2104,9 @@ function masseHtml(M){
   M.zeilen.forEach(r => { const b = massZahl(r.sB), h = massZahl(r.sH); if(!b.doppel){ satzB = Math.max(satzB, b.n); satzH = Math.max(satzH, h.n); } });
   const W = Number(String(M.heftB).replace(',', '.')) || 210, H = Number(String(M.heftH).replace(',', '.')) || 279;
   if(!satzB) satzB = W * 0.83; if(!satzH) satzH = H * 0.86;
+  /* Hat kein Format ein Anschnittmass (Zeitung), entfallen Schluessel und
+     Zeile „Anschnitt“ (05.10.2026). */
+  const mitA = M.zeilen.some(r => String(r.aB || '').trim() || String(r.aH || '').trim());
   const kacheln = M.zeilen.map(r => {
     const sk = formatSkizze(M, r, satzB, satzH);
     /* Ein Zusatz in Klammern (z. B. „auch Umschlagseiten …“) steht mager in
@@ -2105,9 +2117,9 @@ function masseHtml(M){
     return '<div class="fk' + (sk.doppel ? ' fk-doppel' : '') + '" data-format="' + esc(k > 0 ? f.slice(0, k) : f) + '"><div class="fk-bild">' + sk.svg + '</div>' +
       '<div class="fk-name">' + name + '</div>' +
       '<div class="fk-mass"><span>Satzspiegel</span>' + massText(r.sB, r.sH) + '</div>' +
-      '<div class="fk-mass"><span>Anschnitt</span>' + massText(r.aB, r.aH) + '</div></div>';
+      (mitA ? '<div class="fk-mass"><span>Anschnitt</span>' + massText(r.aB, r.aH) + '</div>' : '') + '</div>';
   }).join('');
-  const schluessel = '<div class="fk-schluessel"><span><i class="fk-a"></i>Format im Anschnitt</span>' +
+  const schluessel = '<div class="fk-schluessel">' + (mitA ? '<span><i class="fk-a"></i>Format im Anschnitt</span>' : '') +
     '<span><i class="fk-s"></i>Format im Satzspiegel</span><span><i class="fk-h"></i>Heftformat' +
     (heftformatText(M) ? ' ' + heftformatText(M) : '') + '</span></div>' +
     /* Die Beschnittzugabe steht fest oben unter dem Schluessel, wie in den
