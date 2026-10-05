@@ -209,7 +209,7 @@ select:disabled{opacity:.5; cursor:not-allowed}
    kein Zeichen ▼ hat und sonst die Systemschrift einen schmaleren Pfeil zeichnet.
    Bei offenem Fach zeigt er nach oben. */
 .pfeil{font-family:Arial,Helvetica,sans-serif}
-#fachKnopf[aria-expanded="true"] .pfeil{transform:rotate(180deg)}
+#fachKnopf[aria-expanded="true"] .pfeil, #blattKnopf[aria-expanded="true"] .pfeil{transform:rotate(180deg)}
 
 /* Klappfach fuer die Formatauswahl. Aufbau wie das Kongressmenue in OpenSlots
    (.kg-menu): weisse Flaeche, feiner Rand, 6 px rund, mittlerer Schatten. Es
@@ -326,7 +326,7 @@ select:disabled{opacity:.5; cursor:not-allowed}
 
 /* ── Blattinhalt ──────────────────────────────────────────────────────────
    Was auf dem Blatt erscheint, wird in einer Karte gewaehlt, gegliedert nach den
-   Teilen des Blattes: Umfang, Preisteil, Terminteil, Inhaltsteil, Kennzeichnung. Karte und
+   Teilen des Blattes: Umfang, Preisteil, Terminteil, Inhaltsteil, Formatteil, Kennzeichnung. Karte und
    Haekchen wie .options-panel und .tog in OpenSlots (12,5 px normal, 9 px
    Abstand). Ein Schalter erscheint nur, wenn der Titel auch etwas zu schalten
    hat; bleibt in einem Abschnitt keiner uebrig, entfaellt der Abschnitt, und
@@ -388,7 +388,7 @@ select:disabled{opacity:.5; cursor:not-allowed}
 .einst{grid-area:einst; min-width:0; margin:0 20px 16px}
 .einst .schalter{flex-direction:row; flex-wrap:wrap; gap:0 2rem; padding:.2rem 1.25rem}
 .einst .o-grp{border-top:none}
-/* Steht die Karte ueber dem Blatt, liegen die drei Haken des Umfangs
+/* Steht die Karte ueber dem Blatt, liegen die Haken des Umfangs
    nebeneinander; untereinander blieb die breite Karte fast leer. */
 .einst .umfang-karte .o-grp{flex-direction:row; flex-wrap:wrap; column-gap:2rem}
 .einst .umfang-karte .o-kopf, .einst .umfang-karte .o-hinweis{flex-basis:100%}
@@ -896,6 +896,7 @@ table.kond + table.kond{margin-top:8px}
     <label id="uPreiseFeld"><input type="checkbox" id="uPreise" data-teil="P" checked> Preise</label>
     <label id="uTermineFeld"><input type="checkbox" id="uTermine" data-teil="T" checked> Termine</label>
     <label id="uInhalteFeld"><input type="checkbox" id="uInhalte" data-teil="I" checked> Inhalte</label>
+    <label id="uFormateFeld"><input type="checkbox" id="uFormate" data-teil="F"> Formate</label>
     <div class="o-hinweis">Bestimmt, welche Abschnitte darunter erscheinen.</div>
   </div>
 </div>
@@ -914,8 +915,6 @@ table.kond + table.kond{margin-top:8px}
     <label id="sAEFeld"><input type="checkbox" id="sAE" checked> Spalte „AE-fähig“</label>
     <label id="sTerminFeld"><input type="checkbox" id="sTermin" checked> Spalte „Produktionstermin“</label>
     <label id="sKondFeld"><input type="checkbox" id="sKond" checked> Konditionen</label>
-    <label id="sMasseFeld"><input type="checkbox" id="sMasse"> Formate und Ma&szlig;e</label>
-    <label id="sBlattFeld"><input type="checkbox" id="sBlatt"> <span id="sBlattText">Datenbl&auml;tter Sonderwerbeformen</span></label>
   </div>
   <div class="o-grp" id="gTermin"><div class="o-kopf">Terminteil</div>
     <label id="sVerstrichenFeld"><input type="checkbox" id="sVerstrichen" checked> Verstrichene Ausgaben zeigen</label>
@@ -927,6 +926,21 @@ table.kond + table.kond{margin-top:8px}
     <label id="sThemenFeld"><input type="checkbox" id="sThemen" checked> Themenschwerpunkte</label>
     <label id="sKongFeld"><input type="checkbox" id="sKong" checked> Kongresse</label>
     <label id="sRubFeld"><input type="checkbox" id="sRub" checked> Weitere Rubriken</label>
+  </div>
+  <!-- Formatteil (seit 05.10.2026, Variante A): Masse und Datenblaetter ohne
+       Preisliste verschickbar. Die Datenblaetter haben eine eigene Auswahl,
+       unabhaengig von der Formatauswahl im Preisteil. -->
+  <div class="o-grp" id="gFormat"><div class="o-kopf">Formatteil</div>
+    <label id="sMasseFeld"><input type="checkbox" id="sMasse" checked> Anzeigenformate</label>
+    <span class="fach" id="blattFeld">
+      <button type="button" class="knopf" id="blattKnopf" aria-haspopup="true" aria-expanded="false"
+              title="Je Sonderwerbeform ein Datenblatt mit Abbildung, Maßen und Preis">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>
+        <span id="blattZahl">Sonderwerbeformen</span>
+        <span class="pfeil" aria-hidden="true">&#9660;</span>
+      </button>
+      <div class="fach-liste" id="blattListe" hidden></div>
+    </span>
   </div>
   <div class="o-grp" id="gKenn"><div class="o-kopf">Kennzeichnung</div>
     <label id="sVorlFeld"><input type="checkbox" id="sVorl"> Vermerk &bdquo;vorl&auml;ufig&ldquo;</label>
@@ -968,6 +982,7 @@ const DB_FELDER =
 let BESTAND = {};        // { jahr: { titel: {auflage, fach, preise:[], termine:[], stand} } }
 let HERKUNFT = '';       // woher die Zahlen stammen — steht in der Statuszeile („geladen: …“)
 let AUSWAHL = null;      // abgewaehlte Formate des offenen Blattes (Set), sonst null
+let BLATT_AUS = null;    // abgewaehlte Datenblaetter des offenen Blattes (Set der Namen), sonst null
 /* Rabattstaffeln je Jahrgang, wie PreisWerk sie rechnet:
    { jahr: { standard:{mal:[[ab,prozent]], menge:[…]}, fach:{ Name:{mal,menge} } } }.
    Ein Jahrgang ohne Staffeln fehlt hier; sein Blatt hat dann keine Konditionen. */
@@ -1558,7 +1573,14 @@ function heuteOhneZeit(){
 }
 
 function lage(jahr, titel){
-  return lageRechnen((BESTAND[jahr] || {})[titel], jahr, heuteOhneZeit());
+  const L = lageRechnen((BESTAND[jahr] || {})[titel], jahr, heuteOhneZeit());
+  /* Formatteil: Masse des Formatsatzes und Sonderwerbeformen mit Datenblatt. */
+  if(L){
+    L.masse = masseFuer(jahr, titel);
+    L.datenblaetter = datenblaetterFuer(L, jahr, titel, null);
+    L.hatFormate = !!L.masse || L.datenblaetter.length > 0;
+  }
+  return L;
 }
 
 /* ── Gemerkter Versand je Titel und Jahrgang (siehe versandVergleich) ──────
@@ -1857,14 +1879,26 @@ function preisseitenBauen(L){
     }
   }
 
-  /* Formate und Masse stehen immer auf einem eigenen Blatt hinter den
-     Konditionen (05.10.2026, Marcus), nie mehr verkleinert darunter. */
-  const M = document.getElementById('sMasse').checked ? masseFuer(GEWAEHLT.jahr, GEWAEHLT.titel) : null;
+}
+
+/* ── Formatteil (seit 05.10.2026, Variante A) ──────────────────────────────
+   Eigener Teil im Umfang, damit Masse und Datenblaetter auch ohne Preisliste
+   hinausgehen. Die Masse stehen auf einem eigenen Blatt „Anzeigenformate“ (bis
+   dahin als Fortsetzung der Preisliste hinter den Konditionen), dahinter die
+   gewaehlten Datenblaetter. Diese tragen ihren Preis immer, auch ohne Preisteil
+   (Marcus, 05.10.2026). Im Sammeldruck nur die Masse, siehe sammelZeichnen. */
+function formatseitenBauen(L, mitBlaettern){
+  const unter = 'Fachbereich ' + esc(L.fach) +
+                (L.auflage ? ' · Auflage <b>' + zahl(L.auflage) + '</b> Exemplare' : '') +
+                (L.termine.length ? ' · ' + L.termine.length + ' Ausgaben im Jahr' : '');
+  const M = document.getElementById('sMasse').checked ? L.masse : null;
   if(M){
-    blatt = neuesBlatt('Anzeigenpreisliste · Fortsetzung', unter);
+    const blatt = neuesBlatt('Anzeigenformate', unter);
     koerper(blatt).insertAdjacentHTML('beforeend', masseHtml(M));
     masseVerteilen(blatt, M);
   }
+  if(mitBlaettern)
+    datenblaetterFuer(L, GEWAEHLT.jahr, GEWAEHLT.titel, BLATT_AUS).forEach(d => datenblattBauen(L, d));
 }
 
 /* ── Konditionen ────────────────────────────────────────────────────────────
@@ -1912,16 +1946,17 @@ function konditionenHtml(L, zeigeRabatt){
    Titel ab, steht fuer ihn eine eigene Zeile mit seinem Namen, die an die
    Stelle des Standards tritt.
 
-   Zwei Ausgaben, beide mit eigenem Haken im Preisteil, beide beim Oeffnen und
-   bei jedem Titelwechsel aus — sie verlaengern das Blatt:
-   - „Formate und Maße“: Tabelle mit Satzspiegel und Anschnitt hinter den
-     Konditionen; reicht der Platz nicht, auf einem eigenen Blatt.
+   Zwei Ausgaben im Formatteil, seit 05.10.2026 ein eigener Teil des Umfangs
+   (Variante A; vorher zwei Haken im Preisteil, siehe formatseitenBauen):
+   - „Formate und Maße“: Kacheln mit Satzspiegel und Anschnitt auf einem
+     eigenen Blatt „Anzeigenformate“.
    - „Datenblätter“: je Sonderwerbeform ein eigenes Blatt, aber nur fuer die,
-     deren Preiszeile der Titel mit Preis fuehrt UND die in der Formatauswahl
-     steht (Variante C, 04.10.2026). Wer ein Datenblatt nicht will, nimmt die
-     Zeile in der Formatauswahl heraus — eine zweite Auswahl gibt es nicht.
+     deren Preiszeile der Titel mit Preis fuehrt UND die in der eigenen
+     Datenblattauswahl steht. Bis 05.10.2026 lief das ueber die Formatauswahl
+     des Preisteils (Variante C, 04.10.2026); getrennt, seit die Datenblaetter
+     auch ohne Preisliste hinausgehen.
    Im Sammeldruck („Mehrere Titel …“) bleiben die Datenblaetter aussen vor: dort
-   gibt es keine Formatauswahl, und es kaemen je Titel bis zu 15 Blaetter dazu. */
+   gibt es keine Auswahl, und es kaemen je Titel bis zu 15 Blaetter dazu. */
 let FORMATE = {};        // { jahr: [ {satz, art, reihenfolge, name, titel, preisformate, inhalt} ] }
 
 function formateAusZeilen(zeilen){
@@ -2135,18 +2170,16 @@ function masseHtml(M){
 }
 
 /* Die Sonderwerbeformen mit Datenblatt fuer den Titel: zugeordnete Preiszeile
-   mit Preis, in der Reihenfolge des Formatsatzes. Mit auswahl werden die
-   Formate uebergangen, die in der Formatauswahl abgewaehlt sind. */
-function datenblaetterFuer(L, jahr, titel, auswahl){
+   mit Preis, in der Reihenfolge des Formatsatzes. Mit aus (Set der Namen)
+   werden die uebergangen, die in der Datenblattauswahl abgewaehlt sind; die
+   Formatauswahl des Preisteils wirkt seit 05.10.2026 nicht mehr hinein. */
+function datenblaetterFuer(L, jahr, titel, aus){
   const satz = satzFuer(jahr, titel);
-  return (FORMATE[jahr] || []).filter(z => z.satz === satz && z.art === 'sonder' && !z.titel).map(z => {
+  return (FORMATE[jahr] || []).filter(z => z.satz === satz && z.art === 'sonder' && !z.titel && !(aus && aus.has(z.name))).map(z => {
     const pf = new Set(z.preisformate || []);
-    const preise = L.preise.filter(p => pf.has(p.format) && !(auswahl && auswahl.has(p.kategorie + ' § ' + p.format)));
+    const preise = L.preise.filter(p => pf.has(p.format));
     return preise.length ? { name: z.name, standard: z, eigen: formatEintrag(jahr, titel, 'sonder', z.name).eigen, preise: preise } : null;
   }).filter(Boolean);
-}
-function datenblaetterGewaehlt(L){
-  return !!(L && document.getElementById('sBlatt').checked && teileFuer(L, true).includes('P') && !document.querySelector('.sd-trenner'));
 }
 
 function datenblattBauen(L, d){
@@ -2442,18 +2475,25 @@ let AKTUELL = null;
 const KONTAKT_SCHLUESSEL  = 'mediaSheetKontakt';    /* abgeloest, wird beim Start geraeumt */
 const KONTAKTE_SCHLUESSEL = 'mediaSheetKontakte';   /* je Titel */
 
-/* Umfang (seit 28.09.2026): gewaehlte Teile P(reise), T(ermine), I(nhalte).
+/* Umfang (seit 28.09.2026): gewaehlte Teile P(reise), T(ermine), I(nhalte),
+   seit 05.10.2026 auch F(ormate).
    Gezeichnet wird die Schnittmenge mit dem, was der Titel hergibt. Bliebe
    davon nichts, zeigt das offene Blatt alles, was da ist — die Wahl selbst
    bleibt dabei stehen und gilt fuer den naechsten Titel wieder. */
-const TEILE = ['P', 'T', 'I'];
-const TEIL_NAME = { P:'Preise', T:'Termine', I:'Inhalte' };
-let WAHL = new Set(TEILE);
-function verfuegbar(L){ return { P: !!(L && L.hatPreise), T: hatTermine(L), I: hatInhalte(L) }; }
+const TEILE = ['P', 'T', 'I', 'F'];
+const TEIL_NAME = { P:'Preise', T:'Termine', I:'Inhalte', F:'Formate' };
+/* F(ormate) seit 05.10.2026; beim ersten Oeffnen und mit „Standard“ aus, weil
+   er das Blatt um mehrere Seiten verlaengert. */
+const TEILE_STANDARD = ['P', 'T', 'I'];
+let WAHL = new Set(TEILE_STANDARD);
+function verfuegbar(L){ return { P: !!(L && L.hatPreise), T: hatTermine(L), I: hatInhalte(L), F: !!(L && L.hatFormate) }; }
 function teileFuer(L, mitErsatz){
   const v = verfuegbar(L);
   const t = TEILE.filter(k => WAHL.has(k) && v[k]);
-  return (t.length || !mitErsatz) ? t : TEILE.filter(k => v[k]);
+  if(t.length || !mitErsatz) return t;
+  /* Ersatz ohne den Formatteil, solange es etwas anderes gibt. */
+  const e = TEILE_STANDARD.filter(k => v[k]);
+  return e.length ? e : TEILE.filter(k => v[k]);
 }
 /* „Preise“, „Preise und Termine“, „Preise, Termine und Inhalte“ */
 function teilText(t){
@@ -2479,6 +2519,9 @@ function leerGrund(L, teile){
   if(teile.includes('I') && !inhaltGewaehlt)
     return 'Im Inhaltsteil ist nichts angehakt. Für ein Blatt muss dort mindestens ' +
            'ein Punkt gewählt sein.';
+  if(teile.includes('F'))
+    return 'Im Formatteil ist nichts gewählt. Für ein Blatt müssen dort die Formate und Maße ' +
+           'oder mindestens ein Datenblatt gewählt sein.';
   return 'Zur gewählten Auswahl ist ' + (ohneAlte ? 'in den anstehenden Ausgaben ' : '') +
          'nichts eingetragen. Gepflegt werden die Inhalte in der ' + pflege + '.';
 }
@@ -2493,10 +2536,9 @@ function zeichnen(){
   const teile = teileFuer(L, true);
   if(teile.includes('P')) preisseitenBauen(L);
   if(teile.includes('T') || teile.includes('I')) terminseitenBauen(L, teile.includes('T'), teile.includes('I'));
-  /* Die Datenblaetter stehen hinten: jedes ist fuer sich vollstaendig und
-     laesst sich einzeln weitergeben. */
-  if(datenblaetterGewaehlt(L))
-    datenblaetterFuer(L, GEWAEHLT.jahr, GEWAEHLT.titel, AUSWAHL).forEach(d => datenblattBauen(L, d));
+  /* Der Formatteil steht hinten, die Datenblaetter zuletzt: jedes ist fuer
+     sich vollstaendig und laesst sich einzeln weitergeben. */
+  if(teile.includes('F')) formatseitenBauen(L, true);
 
   /* Seitenzaehlung erst, wenn feststeht, wie viele es geworden sind. */
   const kopf = GEWAEHLT.titel + ' · Jahrgang ' + GEWAEHLT.jahr;
@@ -2817,7 +2859,8 @@ function sammelFenster(){
       ' · Blattinhalt wie eingestellt</div>' +
     '<div class="sd-liste">' + h + '</div>' +
     '<div class="sd-fuss">Jeder Titel beginnt auf einer neuen Seite und trägt seinen eigenen Stand, ' +
-      'seinen Ansprechpartner und seine eigene Seitenzählung. Alle Formate stehen auf dem Blatt.</div>' +
+      'seinen Ansprechpartner und seine eigene Seitenzählung. Alle Formate stehen auf dem Blatt.' +
+      (WAHL.has('F') ? ' Die Datenblätter der Sonderwerbeformen gibt es nur im Einzeldruck.' : '') + '</div>' +
     '<label class="sd-merk"><input type="checkbox" id="sdMerk"' +
       (document.getElementById('sMerk').checked ? ' checked' : '') + '> Beim Drucken als versendet merken</label>' +
     '<div class="dlg-row"><button type="button" class="dlg-btn sekundaer" id="sdAbbr">Abbrechen</button>' +
@@ -2860,6 +2903,7 @@ function sammelZeichnen(titel){
     const teile = teileFuer(L, false);
     if(teile.includes('P')) preisseitenBauen(L);
     if(teile.includes('T') || teile.includes('I')) terminseitenBauen(L, teile.includes('T'), teile.includes('I'));
+    if(teile.includes('F')) formatseitenBauen(L, false);
     const kopf = t + ' · Jahrgang ' + GEWAEHLT.jahr;
     SEITEN.forEach((b, i) => {
       b.querySelector('.seite').textContent = kopf + ' · Seite ' + (i+1) + ' von ' + SEITEN.length;
@@ -3008,13 +3052,48 @@ function fachZahlSetzen(){
   blattZahlSetzen();
 }
 
-/* Die Zahl am Haken „Datenblätter“ folgt der Formatauswahl. */
+/* ── Datenblattauswahl (seit 05.10.2026) ───────────────────────────────────
+   Klappfach wie die Formatauswahl, aber eigenstaendig: Was hier abgewaehlt
+   wird, bleibt in der Preisliste stehen und umgekehrt. Gilt wie jene nur fuer
+   das offene Blatt. „Keine“ laesst nur die Masse uebrig. */
+function blattAufbauen(){
+  const L = AKTUELL;
+  const liste = document.getElementById('blattListe');
+  const alle = L ? L.datenblaetter : [];
+  if(!alle.length){ liste.hidden = true; liste.innerHTML = ''; blattZahlSetzen(); return; }
+  let h = '<div class="kopf"><button type="button" id="blattAlle" title="Alle Datenblätter wählen">Alle</button>' +
+          '<button type="button" id="blattKeins" title="Alle Datenblätter abwählen">Keine</button></div>' +
+          '<div class="gruppe">Je ein Datenblatt</div>';
+  alle.forEach(d => {
+    const an = !(BLATT_AUS && BLATT_AUS.has(d.name));
+    h += '<label><input type="checkbox" data-b="' + esc(d.name) + '"' + (an ? ' checked' : '') +
+         '> <span>' + esc(d.name) + '</span></label>';
+  });
+  liste.innerHTML = h;
+  liste.querySelectorAll('input[data-b]').forEach(el => {
+    el.addEventListener('change', () => {
+      if(!BLATT_AUS) BLATT_AUS = new Set();
+      if(el.checked) BLATT_AUS.delete(el.dataset.b); else BLATT_AUS.add(el.dataset.b);
+      blattZahlSetzen();
+      zeichnen();
+    });
+  });
+  document.getElementById('blattAlle').addEventListener('click', () => {
+    BLATT_AUS = null; blattAufbauen(); zeichnen();
+  });
+  document.getElementById('blattKeins').addEventListener('click', () => {
+    BLATT_AUS = new Set(alle.map(d => d.name)); blattAufbauen(); zeichnen();
+  });
+  blattZahlSetzen();
+}
+
 function blattZahlSetzen(){
   const L = AKTUELL;
-  const alle = L ? datenblaetterFuer(L, GEWAEHLT.jahr, GEWAEHLT.titel, null).length : 0;
-  const gew = L ? datenblaetterFuer(L, GEWAEHLT.jahr, GEWAEHLT.titel, AUSWAHL).length : 0;
-  document.getElementById('sBlattText').textContent = 'Datenblätter Sonderwerbeformen' +
-    (alle ? ' (' + gew + (gew === alle ? '' : ' von ' + alle) + ')' : '');
+  const alle = L ? L.datenblaetter.length : 0;
+  const gew = L ? datenblaetterFuer(L, GEWAEHLT.jahr, GEWAEHLT.titel, BLATT_AUS).length : 0;
+  /* Beschriftung wie die Blaetter selbst (05.10.2026): „Anzeigenformate“ fuer
+     die Standardformate, „Sonderwerbeformen“ fuer die Datenblaetter. */
+  document.getElementById('blattZahl').textContent = 'Sonderwerbeformen (' + gew + ' von ' + alle + ')';
 }
 
 /* ── Leiste nachfuehren ───────────────────────────────────────────────────
@@ -3031,11 +3110,11 @@ function leisteNachfuehren(){
   zeigen('sAEFeld',        !!(preisteil && L.hatAE));
   zeigen('sTerminFeld',    !!(preisteil && L.hatTerminart));
   zeigen('sKondFeld',      !!(preisteil && L.hatRabatt && staffelFuer(GEWAEHLT.jahr, L.fach)));
-  zeigen('sMasseFeld',     !!(preisteil && masseFuer(GEWAEHLT.jahr, GEWAEHLT.titel)));
-  /* Datenblaetter: der Haken erscheint, sobald der Titel eine Sonderwerbeform
-     mit Preis fuehrt; die Zahl nennt, wie viele die Formatauswahl durchlaesst. */
-  zeigen('sBlattFeld',     !!(preisteil && datenblaetterFuer(L, GEWAEHLT.jahr, GEWAEHLT.titel, null).length));
-  blattZahlSetzen();
+  /* Formatteil: Masse, sobald der Formatsatz welche hat; Datenblaetter, sobald
+     der Titel eine Sonderwerbeform mit Preis fuehrt (siehe blattAufbauen). */
+  const formatteil = teile.includes('F');
+  zeigen('sMasseFeld',     !!(formatteil && L.masse));
+  document.getElementById('blattFeld').hidden = !(formatteil && L.datenblaetter.length);
   INTERN_SPALTEN.forEach(s => zeigen(s[2] + 'Feld', !!(terminteil && L[s[3]])));
   zeigen('sThemenFeld',    !!(inhaltsteil && L.hatThemen));
   zeigen('sKongFeld',      !!(inhaltsteil && L.hatKongresse));
@@ -3223,10 +3302,10 @@ function wechseln(){
   /* Die Konditionen werden je Titel abgeschaltet, etwa wenn sie ein Extrablatt
      kosten - beim naechsten Titel stehen sie wieder da. Deshalb nicht gemerkt. */
   document.getElementById('sKond').checked = true;
-  /* Masse und Datenblaetter verlaengern das Blatt; sie stehen bei jedem Titel
-     wieder aus, wie sie beim Oeffnen aus stehen. */
-  document.getElementById('sMasse').checked = false;
-  document.getElementById('sBlatt').checked = false;
+  /* Ob Masse und Datenblaetter kommen, entscheidet seit 05.10.2026 der Umfang
+     (Teil „Formate“); innerhalb des Teils sind bei jedem Titel wieder alle da. */
+  document.getElementById('sMasse').checked = true;
+  BLATT_AUS = null;
   /* Aenderungsmarken und Merken gelten nur fuer das offene Blatt, damit keines
      davon unbemerkt auf dem naechsten Kundenblatt landet. */
   document.getElementById('sAend').checked = false;
@@ -3234,6 +3313,7 @@ function wechseln(){
   AKTUELL = lage(GEWAEHLT.jahr, GEWAEHLT.titel);
   leisteNachfuehren();
   fachAufbauen();
+  blattAufbauen();
   zeichnen();
   try{ localStorage.setItem('mediaSheetTitel', GEWAEHLT.titel);
        localStorage.setItem('mediaSheetJahr', GEWAEHLT.jahr); }catch(e){}
@@ -3283,17 +3363,18 @@ function einstellungenLesen(){
 const STANDARD = { sRabatt:true, sAE:true, sTermin:true, sKond:true,
                    sVerstrichen:true, sHST:false, sFREI:false, sTV:false,
                    sThemen:true, sKong:true, sRub:true,
-                   sVorl:false, sAend:false, sMerk:false };
+                   sMasse:true, sVorl:false, sAend:false, sMerk:false };
 function standardSetzen(){
   Object.keys(STANDARD).forEach(id => {
     document.getElementById(id).checked = STANDARD[id];
     einstellungenMerken(id);
   });
-  WAHL = new Set(TEILE);
-  try{ localStorage.setItem('mediaSheetTeile', TEILE.join('')); }catch(e){}
-  AUSWAHL = null;
+  WAHL = new Set(TEILE_STANDARD);
+  try{ localStorage.setItem('mediaSheetTeile', TEILE_STANDARD.join('')); }catch(e){}
+  AUSWAHL = null; BLATT_AUS = null;
   leisteNachfuehren();
   fachAufbauen();
+  blattAufbauen();
   zeichnen();
 }
 
@@ -3341,7 +3422,7 @@ async function starten(){
   document.querySelectorAll('#gUmfang input').forEach(b => {
     b.addEventListener('change', () => teilUmschalten(b.dataset.teil));
   });
-  ['sRabatt','sAE','sTermin','sKond','sMasse','sBlatt','sThemen','sKong','sRub','sVerstrichen','sHST','sFREI','sTV','sVorl','sAend'].forEach(id => {
+  ['sRabatt','sAE','sTermin','sKond','sMasse','sThemen','sKong','sRub','sVerstrichen','sHST','sFREI','sTV','sVorl','sAend'].forEach(id => {
     document.getElementById(id).addEventListener('change', () => {
       einstellungenMerken(id);
       zeichnen();
@@ -3367,23 +3448,25 @@ async function starten(){
     }else if(document.querySelector('.sd-trenner')) zeichnen();
   });
 
-  /* Klappfach: oeffnet und schliesst am Knopf, schliesst beim Klick daneben
-     und mit Escape. */
-  const knopf = document.getElementById('fachKnopf'), liste = document.getElementById('fachListe');
-  knopf.addEventListener('click', () => {
-    const auf = !liste.hidden;
-    liste.hidden = auf;
-    knopf.setAttribute('aria-expanded', String(!auf));
-  });
-  document.addEventListener('click', e => {
-    if(!liste.hidden && !liste.contains(e.target) && e.target !== knopf && !knopf.contains(e.target)){
-      liste.hidden = true; knopf.setAttribute('aria-expanded', 'false');
-    }
-  });
-  document.addEventListener('keydown', e => {
-    if(e.key === 'Escape' && !liste.hidden){
-      liste.hidden = true; knopf.setAttribute('aria-expanded', 'false');
-    }
+  /* Klappfaecher (Formate, Datenblaetter): oeffnen und schliessen am Knopf,
+     schliessen beim Klick daneben und mit Escape. */
+  [['fachKnopf', 'fachListe'], ['blattKnopf', 'blattListe']].forEach(([k, l]) => {
+    const knopf = document.getElementById(k), liste = document.getElementById(l);
+    knopf.addEventListener('click', () => {
+      const auf = !liste.hidden;
+      liste.hidden = auf;
+      knopf.setAttribute('aria-expanded', String(!auf));
+    });
+    document.addEventListener('click', e => {
+      if(!liste.hidden && !liste.contains(e.target) && e.target !== knopf && !knopf.contains(e.target)){
+        liste.hidden = true; knopf.setAttribute('aria-expanded', 'false');
+      }
+    });
+    document.addEventListener('keydown', e => {
+      if(e.key === 'Escape' && !liste.hidden){
+        liste.hidden = true; knopf.setAttribute('aria-expanded', 'false');
+      }
+    });
   });
 
   /* Ob eine Gruppe mit Trennstrich eine neue Zeile beginnt, laesst sich in CSS
