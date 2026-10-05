@@ -394,8 +394,11 @@ select:disabled{opacity:.5; cursor:not-allowed}
 .einst .umfang-karte .o-kopf, .einst .umfang-karte .o-hinweis{flex-basis:100%}
 /* Seit dem vierten Teil „Formate“ (05.10.2026) stehen die Haken des Umfangs
    in allen Breiten 2 × 2: Preise | Termine, Inhalte | Formate (Marcus). */
-#gUmfang{display:grid; grid-template-columns:repeat(2, max-content); column-gap:2rem; row-gap:8px; align-items:center}
+#gUmfang{display:grid; align-self:stretch; flex:1 1 auto; grid-template-columns:max-content 1fr; justify-items:start; column-gap:2rem; row-gap:8px; align-items:center}
 #gUmfang > .o-kopf, #gUmfang > .o-hinweis{grid-column:1 / -1}
+/* Der Hinweis darf die Spalten nicht verbreitern: sonst laeuft er einzeilig
+   bis in den Innenrand der Karte (05.10.2026). Er bricht in der Kartenbreite um. */
+#gUmfang > .o-hinweis{width:0; min-width:100%}
 @media screen and (min-width:1400px){
   .arbeit{grid-template-columns:244px minmax(0,1fr) 250px; grid-template-areas:"tl haupt einst"}
   .titelleiste{grid-row:auto}
