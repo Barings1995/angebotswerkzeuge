@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>MediaSheet &ndash; Titeldatenbl&auml;tter</title>
+<title>MediaSheet &ndash; Titelinfobl&auml;tter</title>
 <meta name="theme-color" content="#00285A">
 <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='7' fill='%2300285a'/><rect x='7' y='5' width='18' height='22' rx='2' fill='%23ffffff'/><rect x='9.5' y='8.5' width='13' height='1.6' rx='.8' fill='%2300285a'/><rect x='9.5' y='13' width='7' height='1.5' rx='.75' fill='%23b9c6d8'/><rect x='18' y='13' width='4.5' height='1.5' rx='.75' fill='%23ee7d11'/><rect x='9.5' y='16.8' width='7' height='1.5' rx='.75' fill='%23b9c6d8'/><rect x='18' y='16.8' width='4.5' height='1.5' rx='.75' fill='%23ee7d11'/><rect x='9.5' y='20.6' width='7' height='1.5' rx='.75' fill='%23b9c6d8'/><rect x='18' y='20.6' width='4.5' height='1.5' rx='.75' fill='%23ee7d11'/></svg>">
 <link rel="apple-touch-icon" href="icon-180.png">
@@ -12,7 +12,7 @@
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700&family=Source+Sans+3:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
 /* ---------------------------------------------------------------------------
-   MediaSheet — Titeldatenblätter (Preise, Termine, Themenplan je Titel)
+   MediaSheet — Titelinfoblätter (Preise, Termine, Themenplan je Titel)
 
    Die vier uebrigen Werkzeuge rechnen; dieses gibt aus. Was hier entsteht, ist
    ein Blatt zum Weitergeben: an die Dispo, und vor Erscheinen der Mediadaten
@@ -828,7 +828,7 @@ table.kond + table.kond{margin-top:8px}
       <div class="sm-hero-div"></div>
       <div>
         <h1>Media<span class="sm-hero-mark">Sheet</span></h1>
-        <div class="sm-hero-sub">Titeldatenbl&auml;tter</div>
+        <div class="sm-hero-sub">Titelinfobl&auml;tter</div>
       </div>
       <a class="hero-zurueck" href="index.html" title="Zur &Uuml;bersicht der Angebotswerkzeuge">
         <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 12H5"/><path d="m12 19-7-7 7-7"/></svg>
@@ -903,7 +903,7 @@ table.kond + table.kond{margin-top:8px}
     <label id="uPreiseFeld"><input type="checkbox" id="uPreise" data-teil="P" checked> Preise</label>
     <label id="uTermineFeld"><input type="checkbox" id="uTermine" data-teil="T" checked> Termine</label>
     <label id="uInhalteFeld"><input type="checkbox" id="uInhalte" data-teil="I" checked> Inhalte</label>
-    <label id="uFormateFeld"><input type="checkbox" id="uFormate" data-teil="F"> Formate</label>
+    <label id="uFormateFeld"><input type="checkbox" id="uFormate" data-teil="F" checked> Formate</label>
     <div class="o-hinweis">Bestimmt, welche Abschnitte darunter erscheinen.</div>
   </div>
 </div>
@@ -2489,9 +2489,11 @@ const KONTAKTE_SCHLUESSEL = 'mediaSheetKontakte';   /* je Titel */
    bleibt dabei stehen und gilt fuer den naechsten Titel wieder. */
 const TEILE = ['P', 'T', 'I', 'F'];
 const TEIL_NAME = { P:'Preise', T:'Termine', I:'Inhalte', F:'Formate' };
-/* F(ormate) seit 05.10.2026; beim ersten Oeffnen und mit „Standard“ aus, weil
-   er das Blatt um mehrere Seiten verlaengert. */
-const TEILE_STANDARD = ['P', 'T', 'I'];
+/* F(ormate) seit 05.10.2026; ebenfalls vorangehakt (Marcus, 05.10.2026; bis
+   dahin beim ersten Oeffnen und mit „Standard“ aus). Als Ersatz, wenn von der
+   Wahl nichts verfuegbar ist, zaehlt der Formatteil nur, wenn sonst nichts da ist. */
+const TEILE_STANDARD = TEILE;
+const TEILE_ERSATZ = ['P', 'T', 'I'];
 let WAHL = new Set(TEILE_STANDARD);
 function verfuegbar(L){ return { P: !!(L && L.hatPreise), T: hatTermine(L), I: hatInhalte(L), F: !!(L && L.hatFormate) }; }
 function teileFuer(L, mitErsatz){
@@ -2499,7 +2501,7 @@ function teileFuer(L, mitErsatz){
   const t = TEILE.filter(k => WAHL.has(k) && v[k]);
   if(t.length || !mitErsatz) return t;
   /* Ersatz ohne den Formatteil, solange es etwas anderes gibt. */
-  const e = TEILE_STANDARD.filter(k => v[k]);
+  const e = TEILE_ERSATZ.filter(k => v[k]);
   return e.length ? e : TEILE.filter(k => v[k]);
 }
 /* „Preise“, „Preise und Termine“, „Preise, Termine und Inhalte“ */
@@ -3358,6 +3360,12 @@ function einstellungenLesen(){
     const alt = { uBeides:'PTI', uPreise:'P', uTermine:'TI' }[localStorage.getItem('mediaSheetUmfang')];
     if(alt){ localStorage.setItem('mediaSheetTeile', alt); localStorage.removeItem('mediaSheetUmfang'); }
     const u = String(localStorage.getItem('mediaSheetTeile') || '').split('').filter(k => TEILE.includes(k));
+    /* Seit 05.10.2026 ist „Formate“ vorangehakt. Eine davor gemerkte Wahl ohne
+       ihn bekommt ihn einmal dazu; wer ihn danach abwaehlt, behaelt das. */
+    if(u.length && !u.includes('F') && !localStorage.getItem('mediaSheetFormateAn')){
+      u.push('F'); localStorage.setItem('mediaSheetTeile', TEILE.filter(k => u.includes(k)).join(''));
+    }
+    localStorage.setItem('mediaSheetFormateAn', '1');
     if(u.length) WAHL = new Set(u);
     const t = localStorage.getItem('mediaSheetTitel'); if(t) GEWAEHLT.titel = t;
     const j = localStorage.getItem('mediaSheetJahr');  if(j) GEWAEHLT.jahr = j;
