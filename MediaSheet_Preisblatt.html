@@ -1857,17 +1857,13 @@ function preisseitenBauen(L){
     }
   }
 
-  /* Formate und Masse hinter den Konditionen, nach derselben Regel. */
+  /* Formate und Masse stehen immer auf einem eigenen Blatt hinter den
+     Konditionen (05.10.2026, Marcus), nie mehr verkleinert darunter. */
   const M = document.getElementById('sMasse').checked ? masseFuer(GEWAEHLT.jahr, GEWAEHLT.titel) : null;
   if(M){
+    blatt = neuesBlatt('Anzeigenpreisliste · Fortsetzung', unter);
     koerper(blatt).insertAdjacentHTML('beforeend', masseHtml(M));
-    kachelnOrdnen(koerper(blatt).querySelector('.fk-raster'));
-    if(laeuftUeber(blatt)){
-      koerper(blatt).querySelector('.masse-block').remove();
-      blatt = neuesBlatt('Anzeigenpreisliste · Fortsetzung', unter);
-      koerper(blatt).insertAdjacentHTML('beforeend', masseHtml(M));
-      masseVerteilen(blatt, M);
-    }
+    masseVerteilen(blatt, M);
   }
 }
 
