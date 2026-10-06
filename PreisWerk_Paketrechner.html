@@ -232,12 +232,24 @@ button, input, select, textarea { font-family: inherit; }
   .btn-add:hover { background: var(--navy-hover); }
 
   /* ── Options bar ── */
-  .options-bar { display: flex; align-items: center; gap: 20px; background: var(--white); border-radius: var(--radius-lg); border: 1px solid var(--border); padding: 12px 24px; margin-bottom: 20px; flex-wrap: wrap; box-shadow: var(--shadow-sm); }
+  .options-bar { display: flex; align-items: center; gap: 20px 42px; background: var(--white); border-radius: var(--radius-lg); border: 1px solid var(--border); padding: 12px 24px; margin-bottom: 20px; flex-wrap: wrap; box-shadow: var(--shadow-sm); }
   .opt-group { display: flex; align-items: center; gap: 8px; }
   .opt-group label { font-size: 13px; font-weight: 500; color: var(--navy); cursor: pointer; display: flex; align-items: center; gap: 7px; }
   .opt-group .tag { font-size: 11px; color: var(--grey-600); font-weight: 400; }
-  /* Trenner der Optionsleiste wie .bar-grp::before (24.09.2026). */
-  .sep { width: 2px; height: 16px; transform: scaleX(.5); transform-origin: left center; background: #aeb8cc; }
+  /* Trenner der Optionsleiste wie .bar-grp::before (24.09.2026). Seit 06.10.2026 nicht mehr
+     als eigenes Element zwischen den Gruppen, sondern als Strich vor der Gruppe - wie in
+     der Datenleiste. Anlass (Marcus): mit dem Budgetfeld bricht die Leiste frueher um, und
+     dann stand ein Strich vorn in der zweiten Zeile. Der Strich steht im Spalt vor der
+     Gruppe (Spalt 42 px = 20 + 2 px Strich + 20, wie vorher mit dem eigenen Element);
+     am Zeilenanfang gibt es keinen Spalt, dort entfaellt er (.opt-neuzeile, gemessen im
+     Skript am Ende der Datei). Die Klasse aendert nur die Sichtbarkeit des Strichs, nicht
+     das Layout - die Leiste kann also nicht zwischen zwei Zustaenden springen, und anders
+     als mit dem transform der Datenleiste bleiben alle Abstaende gleich. */
+  .opt-trenn { position: relative; }
+  .opt-trenn::before { content: ""; position: absolute; left: -22px; top: 50%; margin-top: -8px; width: 2px; height: 16px;
+    transform: scaleX(.5); transform-origin: left center; background: #aeb8cc; }
+  /* Eigener Name: .zeilenanfang der Datenleiste schiebt per transform um 10 px. */
+  .opt-trenn.opt-neuzeile::before { display: none; }
   /* Budget (06.10.2026): Feld in der Optionsleiste, Hinweis unter „Position hinzufügen",
      Zeile unter dem Gesamtpaket. Bewusst nicht blau - Blau gehoert allein der Ersparnis;
      Rot nur, wenn das Budget ueberschritten ist. */
@@ -532,15 +544,13 @@ button, input, select, textarea { font-family: inherit; }
         AE-Provision 10 % <span class="tag">(Agenturbuchung)</span>
       </label>
     </div>
-    <div class="sep"></div>
-    <div class="opt-group">
+    <div class="opt-group opt-trenn">
       <label>
         <span class="switch"><input type="checkbox" id="optGemein" onchange="render(); saveStand();"><span class="slider"></span></span>
         Gemeinschaftsangebot <span class="tag">(Staffel über Fachbereiche hinweg)</span>
       </label>
     </div>
-    <div class="sep"></div>
-    <div class="opt-group">
+    <div class="opt-group opt-trenn">
       <label for="optBudget">
         Budget
         <input type="text" id="optBudget" class="budget-inp" inputmode="decimal" autocomplete="off" placeholder="–"
@@ -548,8 +558,7 @@ button, input, select, textarea { font-family: inherit; }
         €
       </label>
     </div>
-    <div class="sep"></div>
-    <div style="font-size:12px; color:var(--grey-600);">
+    <div class="opt-trenn" style="font-size:12px; color:var(--grey-600);">
       nur Normal-, Vorzugs- und Festplatzierungen
     </div>
   </div>
@@ -1745,6 +1754,24 @@ ladePreislisteAusDatenbank().then(ok=>{ if(!ok) ladePreislisteVonServer(); });
      loest nichts aus (nur „style" wird beobachtet, nicht „class"). */
   new MutationObserver(pruefen).observe(leiste,
     { subtree:true, childList:true, characterData:true, attributes:true, attributeFilter:['style'] });
+  pruefen();
+})();
+/* Umbruch der Optionsleiste: dieselbe Messung wie oben fuer die Datenleiste - eine
+   Gruppe mit Strich, die eine neue Zeile beginnt, bekommt .opt-neuzeile. */
+(function(){
+  const leiste = document.querySelector('.options-bar');
+  if(!leiste || !window.ResizeObserver) return;
+  const pruefen = () => {
+    leiste.querySelectorAll(':scope > .opt-trenn').forEach(g => {
+      let v = g.previousElementSibling;
+      while(v && !v.getClientRects().length) v = v.previousElementSibling;
+      g.classList.toggle('opt-neuzeile',
+        !v || g.getBoundingClientRect().top >= v.getBoundingClientRect().bottom - 1);
+    });
+  };
+  const ro = new ResizeObserver(pruefen);
+  ro.observe(leiste);
+  Array.from(leiste.children).forEach(k => ro.observe(k));
   pruefen();
 })();
 /* Die Quittung „Hinzugefuegt" ist laenger als die Beschriftung „Hinzufuegen", weshalb der
