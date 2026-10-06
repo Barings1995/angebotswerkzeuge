@@ -417,10 +417,36 @@ button, input, select, textarea { font-family: inherit; }
   /* ══ ENDE BAUSTEIN fenster.css ══ */
 
   @media (max-width: 760px) {
-    .add-row { flex-direction: column; }
+    /* Felder buendig untereinander in voller Breite; ohne stretch rueckten sie
+       wegen align-items:flex-end als Treppe nach rechts (06.10.2026). */
+    .add-row { flex-direction: column; align-items: stretch; }
     .add-field { flex: 1 1 100% !important; }
     .staffel-bar { flex-direction: column; }
     .staffel-item { border-right: none; border-bottom: 1px solid rgba(255,255,255,0.1); }
+
+    /* Paket am Handy als Karten (Variante B, 06.10.2026): je Position Titel, darunter
+       Format und Anzahl, darunter die Betraege mit ihrer Spaltenbeschriftung (data-l).
+       „Nach Rabatt" entfaellt - ohne AE gleich dem Netto. Am Rechner bleibt die Tabelle. */
+    .tbl-wrap { overflow: visible; }
+    .basket-wrap table, .basket-wrap tbody, .basket-wrap tfoot { display: block; }
+    .basket-wrap thead { display: none; }
+    .basket-wrap tbody tr:not(.fach-row), .basket-wrap tfoot tr.sub-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px 12px; padding: 14px 16px; border-bottom: 1px solid var(--border); position: relative; }
+    .basket-wrap tbody tr.fach-row, .basket-wrap tbody tr.fach-row td { display: block; }
+    .basket-wrap tbody td, .basket-wrap tfoot tr.sub-row td { border: none; padding: 0; background: none; }
+    .basket-wrap td.journal { grid-column: 1 / -1; white-space: normal; font-size: 13px; padding-right: 36px; }
+    .basket-wrap td.format-cell { grid-column: 1 / 3; max-width: none; align-self: center; }
+    .basket-wrap td.anz-cell { grid-column: 3; justify-self: end; display: flex; align-items: center; gap: 8px; }
+    .basket-wrap td.nach-rabatt { display: none; }
+    .basket-wrap td.netto-cell { grid-column: 3; }
+    .basket-wrap td.r[data-l]::before, .basket-wrap td.anz-cell::before { content: attr(data-l); display: block; font-size: 10px; font-weight: 700; letter-spacing: .4px; text-transform: uppercase; color: var(--grey-500); margin-bottom: 2px; text-align: right; }
+    .basket-wrap td.anz-cell::before { margin-bottom: 0; }
+    .basket-wrap td.rm-cell { position: absolute; top: 8px; right: 8px; }
+    .basket-wrap tfoot tr.sub-row { background: var(--bg); }
+    .basket-wrap tfoot tr.sub-row td:first-child { grid-column: 1 / -1; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .4px; color: var(--grey-600); }
+    .basket-wrap tfoot tr.total-row, .basket-wrap tfoot tr.budget-row { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; }
+    .basket-wrap tfoot tr.total-row { background: var(--navy); }
+    .basket-wrap tfoot tr td:empty { display: none; }
+    .basket-wrap tfoot tr.budget-row td { text-align: left; }
   }
 
 /* Umbruch der Datenleiste, dieselben Regeln wie in MediaSheet:
@@ -1260,45 +1286,45 @@ function render() {
       const nrTag = !it.rabatt
         ? '<span class="tag-nr">nicht rabattfähig</span>' : '';
       const rabDisp = (it.rabatt && g.applied > 0)
-        ? `<td class="r save">–${euro(rabEuro)}<br><span style="font-size:10px;color:var(--grey-500);">(${Math.round(g.applied*100)} %)</span></td>`
-        : `<td class="r" style="color:var(--grey-500);">–</td>`;
+        ? `<td class="r save" data-l="Staffelrabatt">–${euro(rabEuro)}<br><span style="font-size:10px;color:var(--grey-500);">(${Math.round(g.applied*100)} %)</span></td>`
+        : `<td class="r" data-l="Staffelrabatt" style="color:var(--grey-500);">–</td>`;
       const aeDisp = !useAE ? ''
-        : it.ae === false ? `<td class="r" style="color:var(--grey-500);">–</td>`
-        : `<td class="r orange">–${euro(aeEuro)}</td>`;
+        : it.ae === false ? `<td class="r" data-l="AE 10 %" style="color:var(--grey-500);">–</td>`
+        : `<td class="r orange" data-l="AE 10 %">–${euro(aeEuro)}</td>`;
       let swDisp = '';
       if (zeige4c) {
         const sw = it.base * it.count;
         const z4 = it.use4c ? (it.s4c || 0) * it.count : 0;
         sumSw += sw; sum4c += z4;
-        swDisp = `<td class="r">${euro(sw)}</td>` + (z4 > 0
-          ? `<td class="r">${euro(z4)}</td>`
-          : `<td class="r" style="color:var(--grey-500);">–</td>`);
+        swDisp = `<td class="r" data-l="s/w-Preis">${euro(sw)}</td>` + (z4 > 0
+          ? `<td class="r" data-l="4c-Zuschlag">${euro(z4)}</td>`
+          : `<td class="r" data-l="4c-Zuschlag" style="color:var(--grey-500);">–</td>`);
       }
 
       rows += `<tr>
         <td class="journal">${it.journal}</td>
         <td class="format-cell">${it.fn}${colorTag}${nrTag}</td>
-        <td><input class="count-inp" type="number" min="1" max="99" value="${it.count}"
+        <td class="anz-cell" data-l="Anzahl"><input class="count-inp" type="number" min="1" max="99" value="${it.count}"
           onchange="updateAnz(${it.id},this.value)"></td>
         ${swDisp}
-        <td class="r">${euro(list)}</td>
+        <td class="r" data-l="Listenpreis">${euro(list)}</td>
         ${rabDisp}
-        <td class="r">${euro(after)}</td>
+        <td class="r nach-rabatt" data-l="Nach Rabatt">${euro(after)}</td>
         ${aeDisp}
-        <td class="r navy">${euro(net)}</td>
-        <td><button class="btn-rm" onclick="removeItem(${it.id})" title="Entfernen"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button></td>
+        <td class="r navy netto-cell" data-l="Netto gesamt">${euro(net)}</td>
+        <td class="rm-cell"><button class="btn-rm" onclick="removeItem(${it.id})" title="Entfernen"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button></td>
       </tr>`;
     });
   });
 
   const aeHeader = useAE ? '<th class="r">AE 10 %</th>' : '';
   // Ein Abzug von null wird als Platzhalter gezeigt, nicht als „–0,00 €".
-  const abzug = (betrag, farbe) => betrag > 0
-    ? `<td class="r" style="color:${farbe};">–${euro(betrag)}</td>`
-    : '<td class="r" style="color:var(--grey-500);">–</td>';
-  const aeSub    = useAE ? abzug(sumAE, 'var(--orange-dark)') : '';
+  const abzug = (betrag, farbe, l) => betrag > 0
+    ? `<td class="r" data-l="${l}" style="color:${farbe};">–${euro(betrag)}</td>`
+    : `<td class="r" data-l="${l}" style="color:var(--grey-500);">–</td>`;
+  const aeSub    = useAE ? abzug(sumAE, 'var(--orange-dark)', 'AE 10 %') : '';
   const swHeader = zeige4c ? '<th class="r">s/w-Preis</th><th class="r">4c-Zuschlag</th>' : '';
-  const swSub    = zeige4c ? `<td class="r">${euro(sumSw)}</td><td class="r">${euro(sum4c)}</td>` : '';
+  const swSub    = zeige4c ? `<td class="r" data-l="s/w-Preis">${euro(sumSw)}</td><td class="r" data-l="4c-Zuschlag">${euro(sum4c)}</td>` : '';
 
   document.getElementById('basketContent').innerHTML = `
     <div class="tbl-wrap">
@@ -1316,11 +1342,11 @@ function render() {
           <tr class="sub-row">
             <td colspan="3">Zwischensumme</td>
             ${swSub}
-            <td class="r">${euro(sumList)}</td>
-            ${abzug(sumRabatt, 'var(--blue)')}
-            <td class="r">${euro(sumAfter)}</td>
+            <td class="r" data-l="Listenpreis">${euro(sumList)}</td>
+            ${abzug(sumRabatt, 'var(--blue)', 'Staffelrabatt')}
+            <td class="r nach-rabatt" data-l="Nach Rabatt">${euro(sumAfter)}</td>
             ${aeSub}
-            <td class="r bold">${euro(sumNet)}</td>
+            <td class="r bold netto-cell" data-l="Netto gesamt">${euro(sumNet)}</td>
             <td></td>
           </tr>
           <tr class="total-row">
