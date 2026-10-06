@@ -23,6 +23,7 @@
     --orange: #ee7d11;        /* Springer Logo Orange · einziger Akzent · Gesamtsumme */
     --orange-dark: #c0630a;   /* dunkleres Orange · AE-Provision */
     --red: #c0392b;           /* funktional · Entfernen/Warnung; dasselbe Rot wie in OpenSlots und MediaQuote */
+    --red-bg: #fdeaea;        /* Grund eines fehlerhaften Feldes, Wert wie in der Datenpflege (06.10.2026) */
     --dlg-gefahr: var(--red); /* Rückfragen (Baustein fenster.css): wie „Alles zurücksetzen" */
     --dlg-gefahr-dunkel: #9c2e22;
     --white: #ffffff;
@@ -243,6 +244,16 @@ button, input, select, textarea { font-family: inherit; }
   .opt-group .budget-inp { width: 96px; padding: 6px 8px; font-size: 13px; text-align: right; font-variant-numeric: tabular-nums;
     border: 1px solid var(--border); border-radius: var(--radius-sm); color: var(--text); background: var(--white); outline: none; }
   .opt-group .budget-inp:focus { border-color: var(--navy); box-shadow: 0 0 0 2px rgba(0,40,90,.08); }
+  /* Unlesbarer Betrag (06.10.2026): roter Rahmen und ein Satz an der Stelle des
+     Budget-Hinweises, sonst verschwaenden Zeile und Hinweis still und das Budget gaelte
+     unbemerkt nicht. Der Satz steht bewusst nicht in der Optionsleiste: dort liesse er
+     die Leiste umbrechen. Aussehen wie ein fehlerhaftes Feld in der Datenpflege
+     (td input.fehler, .fehlertext): roter Rahmen, zartroter Grund, Satz in normaler
+     Staerke. Der Schein beim Anklicken bleibt navy wie ueberall - nur der Rahmen bleibt
+     rot, damit der Fehler beim Bearbeiten sichtbar bleibt. */
+  .opt-group .budget-inp.unlesbar,
+  .opt-group .budget-inp.unlesbar:focus { border-color: var(--red); background: var(--red-bg); }
+  .budget-tipp.fehler { color: var(--red); }
   .budget-tipp { margin-top: 10px; font-size: 12.5px; color: var(--grey-600); }
   .budget-tipp b { color: var(--navy); font-weight: 700; }
   tr.budget-row td { padding: 8px 14px; font-size: 13px; color: var(--grey-600); border-bottom: none; background: var(--white); text-align: right; }
@@ -533,7 +544,7 @@ button, input, select, textarea { font-family: inherit; }
       <label for="optBudget">
         Budget
         <input type="text" id="optBudget" class="budget-inp" inputmode="decimal" autocomplete="off" placeholder="–"
-          oninput="render(); saveStand();" onchange="budgetFormatieren()">
+          aria-describedby="budgetTipp" oninput="budgetGeprueft(false); render(); saveStand();" onchange="budgetFormatieren()">
         €
       </label>
     </div>
@@ -1329,6 +1340,20 @@ function budgetWert() {
 function budgetFormatieren() {
   const el = document.getElementById('optBudget'), b = budgetWert();
   if (el && b != null) el.value = b.toLocaleString('de-DE', { maximumFractionDigits: 2 });
+  budgetGeprueft(true);
+}
+/* Ein Feld mit Inhalt, der sich nicht lesen laesst, wird rot umrandet; der Satz dazu
+   steht im Budget-Hinweis (budgetHinweis). Gemeldet wird erst beim Verlassen des Feldes (melden = true),
+   nicht schon waehrend des Tippens - „30." ist auf dem Weg zu „30.000" kein Fehler.
+   Beim Tippen wird ein gemeldeter Fehler nur zurueckgenommen, sobald der Betrag passt. */
+function budgetGeprueft(melden) {
+  const el = document.getElementById('optBudget');
+  if (!el) return;
+  const fehler = el.value.trim() !== '' && budgetAus(el.value) == null;
+  if (fehler && !melden) return;
+  el.classList.toggle('unlesbar', fehler);
+  if (fehler) el.setAttribute('aria-invalid', 'true'); else el.removeAttribute('aria-invalid');
+  budgetHinweis();
 }
 function budgetZeileHtml(netto, spalten) {
   const b = budgetWert();
@@ -1345,6 +1370,13 @@ function budgetZeileHtml(netto, spalten) {
 function budgetHinweis() {
   const box = document.getElementById('budgetTipp');
   if (!box) return;
+  const feld = document.getElementById('optBudget');
+  box.classList.toggle('fehler', !!(feld && feld.classList.contains('unlesbar')));
+  if (box.classList.contains('fehler')) {
+    box.textContent = 'Budget nicht lesbar – bitte z. B. 30.000 oder 30.000,50 eingeben';
+    box.hidden = false;
+    return;
+  }
   const b = budgetWert();
   const j = document.getElementById('aJournal').value, c = document.getElementById('aCat').value,
         f = document.getElementById('aFormat').value;
@@ -1494,7 +1526,7 @@ function restoreStand(){
     const raw=localStorage.getItem(STAND_KEY);if(!raw)return;
     const st=JSON.parse(raw);
     /* Das Budget kommt auch ohne Positionen zurueck: es steht neben den Schaltern. */
-    const bu=document.getElementById('optBudget');if(bu&&st&&typeof st.budget==='string')bu.value=st.budget;
+    const bu=document.getElementById('optBudget');if(bu&&st&&typeof st.budget==='string'){bu.value=st.budget;budgetGeprueft(true);}
     if(!st||!Array.isArray(st.posten)||!st.posten.length){budgetHinweis();return;}
     if(!Object.keys(DATASET).length)return;            // ohne Preisliste keine Positionen
     if(st.jahr&&st.jahr!==currentYear)return;          // das Paket gehört zu seinem Jahrgang
