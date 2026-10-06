@@ -237,6 +237,17 @@ button, input, select, textarea { font-family: inherit; }
   .opt-group .tag { font-size: 11px; color: var(--grey-600); font-weight: 400; }
   /* Trenner der Optionsleiste wie .bar-grp::before (24.09.2026). */
   .sep { width: 2px; height: 16px; transform: scaleX(.5); transform-origin: left center; background: #aeb8cc; }
+  /* Budget (06.10.2026): Feld in der Optionsleiste, Hinweis unter „Position hinzufügen",
+     Zeile unter dem Gesamtpaket. Bewusst nicht blau - Blau gehoert allein der Ersparnis;
+     Rot nur, wenn das Budget ueberschritten ist. */
+  .opt-group .budget-inp { width: 96px; padding: 6px 8px; font-size: 13px; text-align: right; font-variant-numeric: tabular-nums;
+    border: 1px solid var(--border); border-radius: var(--radius-sm); color: var(--text); background: var(--white); outline: none; }
+  .opt-group .budget-inp:focus { border-color: var(--navy); box-shadow: 0 0 0 2px rgba(0,40,90,.08); }
+  .budget-tipp { margin-top: 10px; font-size: 12.5px; color: var(--grey-600); }
+  .budget-tipp b { color: var(--navy); font-weight: 700; }
+  tr.budget-row td { padding: 8px 14px; font-size: 13px; color: var(--grey-600); border-bottom: none; background: var(--white); text-align: right; }
+  tr.budget-row td.r { color: var(--navy); font-weight: 700; }
+  tr.budget-row.over td.r { color: var(--red); }
   .btn-clear { display: inline-flex; align-items: center; gap: 6px; background: var(--red); border: 1.5px solid var(--red); color: var(--white); padding: 5px 12px; border-radius: var(--radius-md); font-size: 12px; font-weight: 600; cursor: pointer; transition: all .15s; }
   .btn-clear:hover { background: #9c2e22; border-color: #9c2e22; }
   .btn-data:active, .btn-add:active, .btn-clear:active { transform: translateY(1px); }
@@ -487,7 +498,7 @@ button, input, select, textarea { font-family: inherit; }
         <label style="opacity:0;font-size:11px;">​</label>
         <label class="toggle-inline">
           <span class="switch">
-            <input type="checkbox" id="a4c">
+            <input type="checkbox" id="a4c" onchange="budgetHinweis()">
             <span class="slider"></span>
           </span>
           4c
@@ -499,6 +510,7 @@ button, input, select, textarea { font-family: inherit; }
       </div>
       <button class="btn-add" onclick="addItem()"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>Hinzufügen</button>
     </div>
+    <div class="budget-tipp" id="budgetTipp" aria-live="polite" hidden></div>
   </div>
 
   <!-- ── Optionen ── -->
@@ -514,6 +526,15 @@ button, input, select, textarea { font-family: inherit; }
       <label>
         <span class="switch"><input type="checkbox" id="optGemein" onchange="render(); saveStand();"><span class="slider"></span></span>
         Gemeinschaftsangebot <span class="tag">(Staffel über Fachbereiche hinweg)</span>
+      </label>
+    </div>
+    <div class="sep"></div>
+    <div class="opt-group">
+      <label for="optBudget">
+        Budget
+        <input type="text" id="optBudget" class="budget-inp" inputmode="decimal" autocomplete="off" placeholder="–"
+          oninput="render(); saveStand();" onchange="budgetFormatieren()">
+        €
       </label>
     </div>
     <div class="sep"></div>
@@ -895,6 +916,31 @@ function paketRechnen(items, gemein, fachVon, useAE, staffeln) {
   });
   return { gruppen, summe };
 }
+/* Budget (06.10.2026, Marcus): verglichen wird mit dem Gesamtpaket netto, also nach
+   Staffelrabatt und - bei Agenturbuchung - nach AE. Eingabe deutsch geschrieben:
+   „30.000", „30000", „30.000,50", auch mit Leerzeichen und €. Leer oder unlesbar
+   heisst: kein Budget. Punkte nur als Tausendertrenner in Dreiergruppen, Komma mit
+   hoechstens zwei Stellen - „30,000.00" (englisch) gilt als unlesbar, statt still als
+   30 € gelesen zu werden. */
+function budgetAus(text) {
+  const roh = String(text == null ? '' : text).replace(/[\s€]/g, '');
+  if (!/^(\d{1,3}(\.\d{3})+|\d+)(,\d{1,2})?$/.test(roh)) return null;
+  const n = parseFloat(roh.replace(/\./g, '').replace(',', '.'));
+  return n > 0 ? n : null;
+}
+/* Wie oft passt die Position neu (count wird ueberschrieben) noch ins Budget? Gezaehlt
+   wird bis 99 wie im Anzahlfeld, und zwar ohne beim ersten Ueberschreiten aufzuhoeren:
+   reisst eine weitere Belegung die naechste Staffelstufe, gilt der hoehere Satz fuer das
+   ganze Paket, und das Netto kann sinken. Zurueck kommt die hoechste Anzahl, die passt. */
+function passtNoch(items, neu, budget, gemein, fachVon, useAE, staffeln) {
+  if (!(budget > 0) || !neu) return null;
+  let n = 0;
+  for (let k = 1; k <= 99; k++) {
+    const t = items.concat([Object.assign({}, neu, { count: k })]);
+    if (paketRechnen(t, gemein, fachVon, useAE, staffeln).summe.net <= budget + 0.005) n = k;
+  }
+  return n;
+}
 /* ══ ENDE RECHNUNG ═════════════════════════════════════════════════════════════ */
 
 /* Fachbereiche: Titel ohne Angabe (oder eine Preisliste ohne die Spalte) landen
@@ -1073,6 +1119,7 @@ function onFormatChange() {
   const has4c = fmt && fmt.s4c !== null && fmt.s4c > 0;
   document.getElementById('field4c').style.display = has4c ? 'flex' : 'none';
   if (!has4c) document.getElementById('a4c').checked = false;
+  budgetHinweis();
 }
 
 // ─── ADD ITEM ─────────────────────────────────────────────────────────────────
@@ -1124,6 +1171,7 @@ async function clearAll() {
 // ─── RENDER ───────────────────────────────────────────────────────────────────
 function render() {
   const useAE = document.getElementById('optAE').checked;
+  budgetHinweis();
 
   // Staffel: je Fachgruppe getrennt, gezählt werden nur rabattfähige Positionen
   const gemein  = gemeinsameStaffel();
@@ -1259,7 +1307,7 @@ function render() {
             <td class="total-label" colspan="${spalten - 2}">Gesamtpaket netto (zzgl. MwSt.)</td>
             <td class="total-num">${euro(sumNet)}</td>
             <td></td>
-          </tr>
+          </tr>${budgetZeileHtml(sumNet, spalten)}
         </tfoot>
       </table>
     </div>
@@ -1267,6 +1315,50 @@ function render() {
       Preise ${currentYear} · Staffelrabatt ${gemein ? 'titel- und fachbereichsübergreifend (Gemeinschaftsangebot)' : 'titelübergreifend innerhalb eines Fachbereichs'} · nur Normal-, Vorzugs- und Festplatzierungen zählen für die Staffelschwelle ·
       Seiten-Äquivalente aus der Preisliste, sonst aus dem Format: 1/1 = 1,0 · 1/2 = 0,5 · 1/3 ≈ 0,33 · 1/4 = 0,25 · 2/1 = 2,0 · A5 = 0,5 · Insel/Tunnel klein = 0,25 · sonst 1,0
     </div>`;
+}
+
+/* ── BUDGET (06.10.2026) ──
+   Das Budget steht in der Optionsleiste neben den beiden Schaltern und bleibt wie diese
+   beim „Alles zurücksetzen" stehen. Verglichen wird mit dem Gesamtpaket netto (nach AE,
+   Marcus' Wahl). Leeres Feld: keine Zeile, kein Hinweis - die Seite sieht aus wie zuvor. */
+function budgetWert() {
+  const el = document.getElementById('optBudget');
+  return el ? budgetAus(el.value) : null;
+}
+/* Beim Verlassen des Feldes wird die Zahl deutsch gesetzt („30000" -> „30.000"). */
+function budgetFormatieren() {
+  const el = document.getElementById('optBudget'), b = budgetWert();
+  if (el && b != null) el.value = b.toLocaleString('de-DE', { maximumFractionDigits: 2 });
+}
+function budgetZeileHtml(netto, spalten) {
+  const b = budgetWert();
+  if (b == null) return '';
+  const frei = round2(b - netto);
+  return `<tr class="budget-row${frei < 0 ? ' over' : ''}">
+            <td colspan="${spalten - 2}">Budget ${euro(b)} · ${frei < 0 ? 'überschritten um' : 'noch frei'}</td>
+            <td class="r">${euro(Math.abs(frei))}</td>
+            <td></td>
+          </tr>`;
+}
+/* Hinweis unter „Position hinzufügen": wie oft das gewaehlte Format (mit der gewaehlten
+   Farbigkeit) noch ins Budget passt, Staffel eingerechnet - siehe passtNoch(). */
+function budgetHinweis() {
+  const box = document.getElementById('budgetTipp');
+  if (!box) return;
+  const b = budgetWert();
+  const j = document.getElementById('aJournal').value, c = document.getElementById('aCat').value,
+        f = document.getElementById('aFormat').value;
+  const fmt = b != null && DATA[j] && DATA[j].categories[c] && DATA[j].categories[c][f];
+  if (!fmt) { box.hidden = true; box.innerHTML = ''; return; }
+  const has4c = fmt.s4c !== null && fmt.s4c > 0;
+  const neu = { id: 0, journal: j, cat: c, fn: f, base: fmt.base, s4c: fmt.s4c,
+    use4c: has4c && document.getElementById('a4c').checked, rabatt: fmt.rabatt, ae: fmt.ae,
+    eq: (fmt.eq != null ? fmt.eq : null), count: 1 };
+  const n = passtNoch(items, neu, b, gemeinsameStaffel(), fachVon,
+    document.getElementById('optAE').checked, staffelnJahr);
+  box.innerHTML = n > 0 ? 'Ins Budget passen noch <b>' + n + ' ×</b> dieses Format'
+                        : 'Dieses Format passt nicht mehr ins Budget';
+  box.hidden = false;
 }
 
 /* Welche Regel gerade gilt, sagt der Satz in der Kopfleiste - er stünde sonst im
@@ -1372,6 +1464,7 @@ function saveStand(){
         jahr:currentYear,
         ae:!!(ae&&ae.checked),
         gemein:!!(gm&&gm.checked),
+        budget:(document.getElementById('optBudget')||{}).value||'',
         posten:items.map(function(it){return {journal:it.journal,cat:it.cat,fn:it.fn,use4c:!!it.use4c,count:it.count};})
       }));
     }catch(e){}
@@ -1400,7 +1493,9 @@ function restoreStand(){
   try{
     const raw=localStorage.getItem(STAND_KEY);if(!raw)return;
     const st=JSON.parse(raw);
-    if(!st||!Array.isArray(st.posten)||!st.posten.length)return;
+    /* Das Budget kommt auch ohne Positionen zurueck: es steht neben den Schaltern. */
+    const bu=document.getElementById('optBudget');if(bu&&st&&typeof st.budget==='string')bu.value=st.budget;
+    if(!st||!Array.isArray(st.posten)||!st.posten.length){budgetHinweis();return;}
     if(!Object.keys(DATASET).length)return;            // ohne Preisliste keine Positionen
     if(st.jahr&&st.jahr!==currentYear)return;          // das Paket gehört zu seinem Jahrgang
     const fehlend=[],neu=[];
