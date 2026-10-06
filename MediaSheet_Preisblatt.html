@@ -543,6 +543,7 @@ td.zahl.stark{font-weight:700; color:var(--navy)}
 td.mitte{text-align:center}
 td.klein{font-size:10px}
 .haken{font-size:11px; color:var(--navy)}
+.kreuz{font-size:11px; color:var(--grey-600)}
 td.grau{color:var(--grey-600)}
 td.fmt{width:44%}
 .leer{color:var(--grey-500)}
@@ -1731,9 +1732,12 @@ function preisKopf(zeigeRabatt, zeigeAE, zeigeTermin, einspaltig){
 }
 
 /* Ausgeschrieben statt DU/EH, damit die Zelle ohne Legende verstaendlich ist;
-   ein Haken statt R/AE, weil die Ueberschrift schon sagt, wofuer er steht. */
+   ein Haken statt R/AE, weil die Ueberschrift schon sagt, wofuer er steht.
+   Seit 06.10.2026 steht bei „nein“ ein graues Kreuz statt einer leeren Zelle
+   (Marcus); grau, damit der Blick auf den Haken geht. */
 const TERMIN_WORT = {DU:'DU-Schluss', EH:'Anlieferschluss'};
 const HAKEN = '<span class="haken">✓</span>';
+const KREUZ = '<span class="kreuz">✗</span>';
 
 function preisZeile(p, zeigeRabatt, zeigeAE, zeigeTermin, einspaltig){
   /* Aenderungsmarken: ein neues Format einmal am Namen, sonst je Wert. */
@@ -1750,8 +1754,8 @@ function preisZeile(p, zeigeRabatt, zeigeAE, zeigeTermin, einspaltig){
          '<td class="zahl stark">' + markiert(vier, hat('preis') || hat('zuschlag')) + '</td>';
   }
   if(zeigeTermin) h += '<td class="mitte klein">' + markiert(esc(TERMIN_WORT[p.terminart] || p.terminart || ''), hat('terminart')) + '</td>';
-  if(zeigeRabatt) h += '<td class="mitte klein">' + markiert(p.rabatt ? HAKEN : '', hat('rabatt')) + '</td>';
-  if(zeigeAE) h += '<td class="mitte klein">' + markiert(p.ae ? HAKEN : '', hat('ae')) + '</td>';
+  if(zeigeRabatt) h += '<td class="mitte klein">' + markiert(p.rabatt ? HAKEN : KREUZ, hat('rabatt')) + '</td>';
+  if(zeigeAE) h += '<td class="mitte klein">' + markiert(p.ae ? HAKEN : KREUZ, hat('ae')) + '</td>';
   return h + '</tr>';
 }
 
@@ -1769,7 +1773,7 @@ function preisLegende(L, zeigeRabatt, zeigeAE, zeigeTermin, einspaltig, versand)
   /* Eigene AE-Spalte neben der Rabatt-Spalte, nicht mit ihr zusammengelegt.
      Ohne Spalte bleibt der Pauschalsatz, aber nur, wenn er fuer den Titel stimmt. */
   if(zeigeRabatt || zeigeAE) teile.push('<b>✓</b>&nbsp;kennzeichnet ' +
-    (zeigeRabatt && zeigeAE ? 'rabatt- bzw. AE-provisionsfähige' : zeigeRabatt ? 'rabattfähige' : 'AE-provisionsfähige') + ' Formate.');
+    (zeigeRabatt && zeigeAE ? 'rabatt- bzw. AE-provisionsfähige' : zeigeRabatt ? 'rabattfähige' : 'AE-provisionsfähige') + ' Formate, <b>✗</b>&nbsp;die übrigen.');
   if(!zeigeAE && L.alleAE) teile.push('Alle Formate sind AE-provisionsfähig.');
   teile.push('Alle Preise verstehen sich zuzüglich der gesetzlichen Umsatzsteuer.');
   return '<div class="legende">' + teile.join(' ') + '</div>';
@@ -2233,7 +2237,7 @@ function datenblattBauen(L, d){
     esc(String(I.hinweis || '').trim()),
     zeigeTermin && art === 'DU' ? '<b>DU-Schluss</b>: letzter Termin für die Übermittlung der Druckunterlagen.' : '',
     zeigeTermin && art === 'EH' ? '<b>Anlieferschluss</b>: letzter Termin für die Anlieferung der fertigen Werbemittel.' : '',
-    (zeigeRabatt || zeigeAE) ? '<b>✓</b>&nbsp;kennzeichnet ' + (zeigeRabatt && zeigeAE ? 'Rabatt- bzw. AE-Provisionsfähigkeit.' : zeigeRabatt ? 'Rabattfähigkeit.' : 'AE-Provisionsfähigkeit.') : '',
+    (zeigeRabatt || zeigeAE) ? '<b>✓</b>&nbsp;kennzeichnet ' + (zeigeRabatt && zeigeAE ? 'Rabatt- bzw. AE-Provisionsfähigkeit.' : zeigeRabatt ? 'Rabattfähigkeit' : 'AE-Provisionsfähigkeit') + ', <b>✗</b>&nbsp;ihr Fehlen.' : '',
     'Alle Preise verstehen sich zuzüglich der gesetzlichen Umsatzsteuer.'
   ].filter(Boolean).join(' ');
 
