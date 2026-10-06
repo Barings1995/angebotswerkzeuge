@@ -641,7 +641,10 @@ table.mit-marken td.zahl, table.mit-marken th.zahl{padding-right:15px}
 .fk-voll .fk-beschnitt{font-size:10.5px; margin:-8px 0 18px}
 /* Datenblatt je Sonderwerbeform: Name in der Titelschrift, Abbildung links. */
 .db-name{font-family:var(--font-title); font-weight:600; font-size:22px; line-height:1.15; color:var(--navy); margin:0 0 6px}
-.db-text{font-size:12px; line-height:1.55; margin:0 0 4px; max-width:68ch}
+/* Beschreibung in voller Breite bis zum Rand der Masstabelle (seit 06.10.2026,
+   vorher 68ch): die Texte sind kurze Produktbeschreibungen, kein Fliesstext,
+   und mit der Begrenzung blieb rechts oben eine Luecke. */
+.db-text{font-size:12px; line-height:1.55; margin:0 0 4px}
 .db-raster{display:grid; grid-template-columns:52mm minmax(0,1fr); gap:8mm; align-items:start; margin-top:14px}
 .db-raster > div > h2.abschnitt:first-child{margin-top:0}
 .db-raster > div:only-child{grid-column:1 / -1}
