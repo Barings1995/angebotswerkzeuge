@@ -148,6 +148,17 @@ a:focus-visible, button:focus-visible, label:focus-visible, [tabindex]:focus-vis
   padding: 5px 11px; text-decoration: none; white-space: nowrap; flex: none;
 }
 .hero-zurueck:hover { background: rgba(255,255,255,.12); }
+/* Am Handy (unter 520 px) steht der Name des Werkzeugs immer unter dem Logo, und der
+   Trennstrich liegt waagerecht dazwischen, so breit wie das Logo. Vorher rutschte der
+   Name je nach Länge irgendwo zwischen 375 px (OpenSlots) und 520 px (Datenpflege)
+   unter das Logo, und der senkrechte Strich blieb allein neben dem Logo stehen.
+   Variante B vom 07.10.2026; A (Strich weglassen) verworfen. Der Selektor nimmt nur
+   den Block direkt hinter dem Strich, nicht das Konto der Datenpflege. */
+@media (max-width: 520px) {
+  .sm-hero-head { row-gap: 10px; }
+  .sm-hero-div { flex-basis: 100%; max-width: 168px; height: 1px; align-self: auto; }
+  .sm-hero-div + div { flex-basis: 100%; }
+}
 /* ══ ENDE BAUSTEIN kopfleiste.css ══ */
 
 /* ── Datenleiste ──────────────────────────────────────────────────────────
