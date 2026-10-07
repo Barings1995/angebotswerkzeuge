@@ -194,7 +194,9 @@ button, input, select, textarea { font-family: inherit; }
      der leichte bleibt den Leisten (Datenleiste, Optionsleiste). Bis zum 23.09.2026
      stand hier der leichte - die Boxen wirkten neben OpenSlots flacher. */
   .add-card { background: var(--white); border-radius: var(--radius-lg); border: 1px solid var(--border); padding: 20px 24px; margin-bottom: 20px; box-shadow: var(--shadow-md); }
-  .add-card h2 { font-family: var(--font-display); font-size: 11px; font-weight: 700; color: var(--navy); text-transform: uppercase; letter-spacing: 0.7px; margin-bottom: 14px; padding-bottom: 9px; border-bottom: 2px solid var(--navy); }
+  /* Abschnittsüberschrift über der Karte wie „Ausgaben“/„Optionen“ in OpenSlots (07.10.2026);
+     vorher stand sie in Navy mit dickem Strich innerhalb der Karte. */
+  .sec-label { font-family: var(--font-display); font-size: 10px; font-weight: 700; color: var(--grey-600); text-transform: uppercase; letter-spacing: .1em; margin: 0 0 .6rem; padding-bottom: 5px; border-bottom: 1px solid var(--border); }
 
   .add-row { display: flex; gap: 10px; align-items: flex-end; flex-wrap: wrap; }
   .add-field { display: flex; flex-direction: column; gap: 5px; }
@@ -546,8 +548,8 @@ button, input, select, textarea { font-family: inherit; }
 <main class="wrap">
 
   <!-- ── Position hinzufügen ── -->
+  <h2 class="sec-label">Position hinzufügen</h2>
   <div class="add-card">
-    <h2>Position hinzufügen</h2>
     <div class="add-row">
       <div class="add-field f-journal">
         <label for="aJournal">Titel</label>
