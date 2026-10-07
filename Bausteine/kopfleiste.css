@@ -64,3 +64,10 @@
   .sm-hero-div { flex-basis: 100%; max-width: 168px; height: 1px; align-self: auto; }
   .sm-hero-div + div { flex-basis: 100%; }
 }
+
+/* Safari auf dem iPhone (und damit jeder Browser dort) vergrößert im Querformat
+   eigenmächtig Text, den es für Fließtext hält – nur einzelne Blöcke, etwa
+   Hinweissätze und Fachgruppenbänder (bemerkt 07.10.2026). Die Regel steht hier,
+   weil dieser Baustein in allen Werkzeugen steckt; mit der Kopfleiste selbst hat
+   sie nichts zu tun. Das Zoomen mit zwei Fingern bleibt davon unberührt. */
+html { -webkit-text-size-adjust: 100%; text-size-adjust: 100%; }
