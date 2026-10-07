@@ -963,6 +963,20 @@ button, input, select, textarea { font-family: inherit; }
     .spalte-inhalt .tab-roll { overflow-x: auto; }
     .spalte-inhalt th { position: static; box-shadow: none;
       border-bottom: 1px solid var(--border); }
+    /* Am Handy (07.10.2026): Das Titelfeld passt sich der Karte an, und die
+       Preistabellen rollen seitlich wie die Termine. 760 px halten Formatnamen
+       und Preise lesbar; die übrigen Spalten erreicht man durch Wischen. */
+    .feld-titel { min-width: 0; flex-basis: 100%; }
+    .tab-roll > .preis-tab { min-width: 760px; }
+  }
+  /* Unter 520 px steht jede Kachel der Knopfleiste in einer eigenen Zeile, ihre
+     zwei Knöpfe teilen sich die Breite. Reicht sie nicht (unter rund 370 px),
+     stellen sich die Knöpfe untereinander, statt über den Rand zu ragen. */
+  @media (max-width: 520px) {
+    .aktionen { gap: 8px; }
+    .aktionen > .gruppe { flex: 1 1 100%; margin-left: 0; gap: 0; flex-wrap: wrap; }
+    .aktionen > .gruppe .btn { flex: 1 1 0; justify-content: center; white-space: nowrap;
+      padding-left: 3px; padding-right: 3px; gap: 3px; font-size: 12px; }
   }
 
   .verborgen { display: none !important; }
@@ -2594,7 +2608,7 @@ function preiseZeichnen(t, karte) {
       '<span class="kat-schub">' + katSchubKnopf(i, -1, i === 0) + katSchubKnopf(i, 1, i === nachKat.length - 1) + '</span>' +
       '<button class="kat-tat kat-weg" title="Diese Kategorie mit allen ihren Formaten entfernen" onclick="kategorieEntfernen(' + i + ')">Entfernen</button>' +
       '</div>';
-    html += '<table class="preis-tab"><colgroup><col style="width:34%"><col style="width:13%"><col style="width:13%"><col style="width:9%"><col style="width:9%"><col style="width:9%"><col style="width:10%"><col style="width:84px"></colgroup>' +
+    html += '<div class="tab-roll"><table class="preis-tab"><colgroup><col style="width:34%"><col style="width:13%"><col style="width:13%"><col style="width:9%"><col style="width:9%"><col style="width:9%"><col style="width:10%"><col style="width:84px"></colgroup>' +
       '<tr><th>Format</th><th class="r">Preis €</th><th class="r">4c-Zuschlag €</th><th>Rabattfähig</th><th>AE-fähig</th><th title="Produktionstermin">Prod.-Termin</th><th class="r">Seiten-Äqu.</th><th></th></tr>';
     g.zeilen.forEach((p, nr) => {
       /* Jedes geaenderte Feld wird markiert, eine neu angelegte Zeile als Ganzes
@@ -2620,7 +2634,7 @@ function preiseZeichnen(t, karte) {
     });
     html += '<tr class="neu-format"><td colspan="8">' +
       '<button title="Ein Format in dieser Kategorie anlegen" onclick="formatAnlegen(' + i + ')"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>Format</button>' +
-      '</td></tr></table>';
+      '</td></tr></table></div>';
   });
   return html;
 }
