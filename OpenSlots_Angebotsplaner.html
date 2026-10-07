@@ -1113,6 +1113,40 @@ tr.pl-row.alt td:not(.pl-cell) {
   color: var(--sm-text);
   padding: 1rem 1.25rem;
 }
+/* Vorschau am Handy als Karten (07.10.2026), Aufbau siehe buildKarten(). Arial wie die
+   Kopiervorlage, damit die Vorschau weiter nach der Mail aussieht. Am Computer bleibt
+   #pv-karten unsichtbar; unter 760 px tauschen die beiden Plaetze. */
+#pv-karten { display: none; padding: 1rem 16px; font-family: Arial, sans-serif; font-size: 12.5px; line-height: 1.45; color: #1a2340; font-variant-numeric: tabular-nums; }
+#pv-karten .pk-titel { font-weight: 700; font-size: 13px; color: #00285a; margin: 0 0 6px; border-left: 3px solid #ee7d11; padding-left: 8px; }
+#pv-karten .pk-aufl { font-weight: 400; color: #6b7899; white-space: nowrap; }
+#pv-karten .pk-liste { margin-bottom: 14px; }
+#pv-karten .pk-heft { border: 1px solid #e4e7ef; border-bottom: none; padding: 10px 12px; }
+#pv-karten .pk-heft:nth-child(even) { background: #fafbfd; }
+#pv-karten .pk-liste > .pk-heft:last-of-type { border-bottom: 1px solid #e4e7ef; }
+#pv-karten .pk-aus { font-weight: 700; font-size: 13px; color: #00285a; }
+#pv-karten .pk-termine { color: #6b7899; font-size: 12px; margin: 1px 0 6px; }
+#pv-karten .pk-lbl { font-size: 10px; font-weight: 700; letter-spacing: .4px; text-transform: uppercase; color: #6b7899; margin-bottom: 1px; }
+#pv-karten .pk-zus { margin: 0 0 6px; font-size: 12px; }
+#pv-karten .pk-pos { padding: 5px 0; border-top: 1px dashed #e4e7ef; }
+#pv-karten .pk-name { font-weight: 600; }
+#pv-karten .pk-du { color: #6b7899; font-size: 11.5px; }
+#pv-karten .pk-preis { text-align: right; }
+#pv-karten .pk-abz { text-align: right; color: #6b7899; font-size: 11.5px; white-space: nowrap; }
+#pv-karten .pk-leer { color: #9aa3b8; font-size: 12px; }
+#pv-karten .pk-summe { border: 1px solid #d6dbe8; border-top: 2px solid #00285a; background: #f2f4f8; padding: 6px 12px; color: #00285a; }
+#pv-karten .pk-summe .pk-lbl { color: #00285a; }
+#pv-karten .pk-zeile, #pv-karten .pk-gesamt, #pv-karten .pk-alle { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; }
+#pv-karten .pk-zeile span { color: #6b7899; font-weight: 600; }
+#pv-karten .pk-zeile b, #pv-karten .pk-gesamt b, #pv-karten .pk-alle b { white-space: nowrap; }
+#pv-karten .pk-gesamt { border: 1px solid #d6dbe8; border-top: none; background: #eaf0f7; padding: 7px 12px; color: #00285a; font-weight: 700; }
+#pv-karten .pk-alle { border: 1px solid #d6dbe8; border-top: 3px solid #ee7d11; background: #eaf0f7; padding: 8px 12px; color: #00285a; font-weight: 700; margin: 2px 0 12px; }
+#pv-karten .pk-alle b { font-size: 14px; }
+#pv-karten .pk-hinweis { font-size: 12px; color: #6b7899; margin: 4px 0; }
+#pv-karten .pk-resv { font-size: 12px; color: #c0392b; font-weight: 600; margin: 6px 0 0; }
+@media (max-width: 760px) {
+  #pv-wrap { display: none; }
+  #pv-karten { display: block; }
+}
 
 /* ── TITELSUCHE ── */
 .title-search-wrap { position: relative; margin: 0 0 .6rem; }
@@ -1396,6 +1430,7 @@ Bitte reservieren Sie nur budget- und planungsrelevante Platzierungen.</textarea
     </div>
     <p class="copy-hint">&bdquo;Als Tabelle kopieren&ldquo; &rarr; direkt in Outlook einf&uuml;gen. &nbsp;&bdquo;Nur Text&ldquo; f&uuml;r einfache Mails ohne Formatierung.</p>
     <div id="pv-wrap"></div>
+    <div id="pv-karten"></div>
   </div>
   </div>
   </div>
@@ -3112,6 +3147,67 @@ function buildHtml(o=angebotsOptionen()){
   return h;
 }
 
+/* Vorschau am Handy als Karten (Variante B, 07.10.2026). Die Tabelle aus buildHtml ist
+   rund 620 px breit, mit Themen und Kongressen ueber 1.300 px; am Handy schnitt der
+   Kasten Platzierungen und Preise einfach ab. Unter 760 px zeigt die Seite deshalb statt
+   #pv-wrap diese Karten: je Heft Name, ET/AS, Themen, Kongresse, darunter jede
+   Platzierung mit ihrem Preis und - eine Zeile tiefer - Rabatt und AE. Inhalt und
+   Rechnung sind dieselben wie in buildHtml, nur anders angeordnet. Kopiert wird
+   weiterhin ausschliesslich buildHtml/buildTxt; die Karten gehen nie in die Mail.
+   Leere Themen und Kongresse fallen in der Karte weg, statt als „–" zu stehen. */
+function buildKarten(o=angebotsOptionen()){
+  const act=J.map((j,ji)=>({ji,j,iss:ST[ji].issues.filter(s=>heftZeile(ji,s))})).filter(({iss})=>iss.length);
+  if(!act.length)return '';
+  const {discOn,aeOn,pct,tsOn,kgOn,duOn,showRabatt,showResv,resvTxt}=o;
+  const negH=v=>v>0?'&#8722;'+fmt(v):'&ndash;';
+  const zusatz=(l,v)=>v&&v.trim()?`<div class="pk-zus"><div class="pk-lbl">${l}</div>${escNl(v)}</div>`:'';
+  let h='';
+  act.forEach(({ji,j,iss})=>{
+    h+=`<p class="pk-titel">${esc(j.n)}${j.a>0?` <span class="pk-aufl">&middot; Auflage ${nf(j.a)} Expl.</span>`:''}</p><div class="pk-liste">`;
+    iss.forEach(s=>{
+      const t=heftDaten(ji,s);
+      const names=nachPreis(ji,s.sel);
+      h+=`<div class="pk-heft"><div class="pk-aus">${esc(t.ausgabe)||'&ndash;'}</div>`;
+      h+=`<div class="pk-termine">ET ${esc(t.et)||'&ndash;'} &middot; AS ${esc(t.ds)||'&ndash;'}</div>`;
+      if(tsOn)h+=zusatz('Themenschwerpunkte',t.themen);
+      if(kgOn)h+=zusatz('Kongresse',kgOnList(t.kongress));
+      if(!names.length)h+=`<div class="pk-leer">keine Platzierung</div>`;
+      names.forEach(n=>{
+        const e=entryOf(ji,n),c=e?posCalc(e,discOn,aeOn,pct):null,p=pOf(ji,n);
+        h+=`<div class="pk-pos"><div class="pk-name">${esc(n)}</div>`;
+        if(duOn){
+          const art=terminArt(ji,n),d=(art==='EH')?t.eh:((art==='DU')?t.du:'');
+          if(d)h+=`<div class="pk-du">${art==='EH'?'Anlieferung':'DU'} ${esc(d)}</div>`;
+        }
+        h+=`<div class="pk-preis">${p!=null?fmtP(p):'&ndash;'}</div>`;
+        const abz=[];
+        if(discOn)abz.push('Rabatt '+(c?negH(c.rabatt):'&ndash;'));
+        if(aeOn)abz.push('AE '+(c?negH(c.ae):'&ndash;'));
+        if(abz.length)h+=`<div class="pk-abz">${abz.join(' &middot; ')}</div>`;
+        h+=`</div>`;
+      });
+      h+=`</div>`;
+    });
+    if(discOn||aeOn){
+      const T=sumTitle(ji,iss,discOn,aeOn,pct);
+      if(T.preis>0){
+        h+=`<div class="pk-summe"><div class="pk-lbl">Summe</div><div class="pk-zeile"><span>Preise</span><b>${fmt(T.preis)}</b></div>`;
+        if(discOn)h+=`<div class="pk-zeile"><span>Rabatt ${nf(pct)}&thinsp;%</span><b>${negH(T.rabatt)}</b></div>`;
+        if(aeOn)h+=`<div class="pk-zeile"><span>AE 10&thinsp;%</span><b>${negH(T.ae)}</b></div>`;
+        h+=`</div><div class="pk-gesamt"><span>Gesamt (netto, zzgl. MwSt.)</span><b>${fmt(T.netto)}</b></div>`;
+      }
+    }
+    h+='</div>';
+  });
+  if(discOn||aeOn){
+    const gTot=act.map(({ji,iss})=>sumTitle(ji,iss,discOn,aeOn,pct)).filter(T=>T.preis>0);
+    if(gTot.length>1)h+=`<div class="pk-alle"><span>Gesamt über alle Titel (netto, zzgl. MwSt.)</span><b>${fmt(gTot.reduce((a,T)=>a+T.netto,0))}</b></div>`;
+  }
+  if(showRabatt)h+=`<p class="pk-hinweis">Rabatt gem. Mediadaten / AE: 10 % / zzgl. MwSt.</p>`;
+  if(showResv&&resvTxt)h+=`<p class="pk-resv">${esc(resvTxt)}</p>`;
+  return h;
+}
+
 function buildTxt(o=angebotsOptionen()){
   const act=J.map((j,ji)=>({ji,j,iss:ST[ji].issues.filter(s=>heftZeile(ji,s))})).filter(({iss})=>iss.length);
   if(!act.length)return '';
@@ -3196,7 +3292,9 @@ function render(){
   updCatBadges();
   if(onlyFilledOn())applyVisibility();
   const html=buildHtml();
-  document.getElementById('pv-wrap').innerHTML=html||'<p style="color:var(--sm-muted-l);font-size:12.5px;margin:0">Sobald Platzierungen angekreuzt sind, erscheint hier die Angebotsvorschau zum Kopieren.</p>';
+  const leer='<p style="color:var(--sm-muted-l);font-size:12.5px;margin:0">Sobald Platzierungen angekreuzt sind, erscheint hier die Angebotsvorschau zum Kopieren.</p>';
+  document.getElementById('pv-wrap').innerHTML=html||leer;
+  document.getElementById('pv-karten').innerHTML=html?buildKarten():leer;
   saveState();
 }
 
