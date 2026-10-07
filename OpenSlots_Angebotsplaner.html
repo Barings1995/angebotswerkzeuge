@@ -925,6 +925,15 @@ tr.pl-row.alt td:not(.pl-cell) {
   .iss-lang, .iss-jahr { display: none; }
   .iss-termine { align-self: center; font-size: 10.5px; }
   .iss-termine b { width: 18px; font-size: 9px; }
+  /* Heftauswahl am Handy (Variante A, 07.10.2026): „Alle | Keine“ oben in einer Zeile,
+     die Hefte darunter über die volle Breite. Vorher standen sie in einer 137 px
+     schmalen Spalte untereinander, daneben zwei hohe Felder - bei der MMW über 1.000 px.
+     heftRaster() verteilt die Knöpfe wie sonst nach der verfügbaren Breite.
+     Variante B (eine wischbare Reihe) wurde gezeigt und verworfen. */
+  .heft-row { flex-direction: column; }
+  .heft-alle { order: -1; display: flex; padding: 0 0 10px; border-left: none; border-bottom: 1px solid var(--sm-border); }
+  .heft-alle .mx-tool-btn { flex: 1; min-height: 36px; }
+  .heft-chip { min-height: 44px; }
 }
 .empty-st {
   padding: 2.5rem;
