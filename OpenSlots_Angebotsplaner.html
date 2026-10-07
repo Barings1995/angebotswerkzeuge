@@ -202,6 +202,10 @@ a:focus-visible, button:focus-visible, label:focus-visible, [tabindex]:focus-vis
   .sidebar .tabs { flex-direction: row; flex-wrap: wrap; overflow: visible; }
   .sidebar .tab { width: auto; }
   .sidebar .tabgrp { flex-basis: 100%; }
+  /* Untereinander klebte „Ausgaben“ 2 px unter dem letzten Fachbereich, weil die
+     Ueberschrift als erstes Kind von .main oben keinen Rand hat. 20 px wie zwischen
+     Belegungstabelle und „Optionen“. (07.10.2026) */
+  .main > .sec-label:first-child { margin-top: 20px; }
 }
 
 /* ── DATA BAR (Excel-Import) ── */
@@ -900,6 +904,27 @@ tr.pl-row.alt td:not(.pl-cell) {
 #mx tr.row-hl td.col-hl {
   background: var(--sm-orange-l);
   box-shadow: inset 0 0 0 1px var(--sm-orange);
+}
+/* Belegungstabelle am Handy (Variante A, 07.10.2026). Die feste Platzierungsspalte nahm
+   mit Preisen 263 von 340 px ein, daneben passte nur ein Heft. Jetzt 132 px: Namen brechen
+   um, Preis und „Alle“ stehen darunter. Heftköpfe ohne Monat und ohne Jahr (Spans aus
+   rMx), Spalten ab 66 px - so stehen drei Hefte nebeneinander. Variante B (ein Heft auf
+   einmal mit Heftknöpfen) wurde gezeigt und verworfen. */
+@media (max-width: 760px) {
+  th.pl-hd, td.pl-cell,
+  body.preise-an th.pl-hd, body.preise-an td.pl-cell { width: 132px; min-width: 132px; }
+  th.pl-hd { padding: 7px 8px; font-size: 10px; }
+  .pl-inner { flex-wrap: wrap; gap: 2px 6px; padding: 5px 6px 5px 10px; }
+  /* Zeilenhoehe in ganzen Pixeln: Mit 12 px x 1,3 = 15,6 px wurden die Zeilen krumm
+     hoch, und die klebende Platzierungsspalte setzte ihre Linien sichtbar 1-2 px neben
+     die der Heftspalten. */
+  .pl-nm { flex: 1 1 100%; font-size: 12px; line-height: 16px; }
+  .pr-tag { font-size: 11px; line-height: 16px; }
+  th.iss-th { min-width: 66px; }
+  .iss-head { padding: 6px 4px 5px; align-items: center; }
+  .iss-lang, .iss-jahr { display: none; }
+  .iss-termine { align-self: center; font-size: 10.5px; }
+  .iss-termine b { width: 18px; font-size: 9px; }
 }
 .empty-st {
   padding: 2.5rem;
@@ -2979,8 +3004,13 @@ function rMx(){
     /* Name und Termine kommen bei jeder Anzeige aus der geladenen Preisliste */
     const t=heftDaten(ji,s);
     h+=`<th class="iss-th" data-col="${ci}"><div class="iss-head">`;
-    h+=`<div class="iss-name" title="${esc(t.ausgabe)}">${esc(t.ausgabe)}</div>`;
-    h+=`<div class="iss-termine"><span><b>ET</b>${esc(t.et||'–')}</span><span><b>AS</b>${esc(t.ds||'–')}</span></div>`;
+    /* Monatsnamen und Jahreszahl in eigenen Spans: Am Handy blendet die Seite sie aus
+       („Heft 1“, „11.02.“), damit drei Hefte nebeneinander passen. Am Computer
+       erscheint alles wie zuvor. (07.10.2026) */
+    const [kurz,...lang]=(t.ausgabe||'').split(' – ');
+    const jahrAb=d=>esc(d).replace(/^(\d{1,2}\.\d{1,2}\.)(\d{4})$/,'$1<span class="iss-jahr">$2</span>');
+    h+=`<div class="iss-name" title="${esc(t.ausgabe)}">${esc(kurz)}${lang.length?`<span class="iss-lang"> – ${esc(lang.join(' – '))}</span>`:''}</div>`;
+    h+=`<div class="iss-termine"><span><b>ET</b>${jahrAb(t.et||'–')}</span><span><b>AS</b>${jahrAb(t.ds||'–')}</span></div>`;
     h+=`</div></th>`;
   });
   h+='</tr></thead><tbody>';
