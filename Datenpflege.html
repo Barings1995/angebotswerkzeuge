@@ -858,6 +858,7 @@ button, input, select, textarea { font-family: inherit; }
   .staffel-leer { font-size: 12.5px; color: var(--grey-600); padding: 3px 0; }
   .staffel-mehr { background: none; border: none; cursor: pointer; padding: 4px 0 0;
     font-size: 12px; font-family: inherit; color: var(--navy); font-weight: 600; }
+  .staffel-mehr svg { vertical-align: -2px; margin-right: 5px; }
   .staffel-mehr:hover { text-decoration: underline; }
   .staffel-warnung { font-size: 12.5px; color: var(--red); background: var(--red-bg);
     border: 1px solid var(--red-border); border-radius: var(--radius-md); padding: 7px 10px; margin-top: 8px; }
@@ -4469,7 +4470,7 @@ function staffelBlockHtml(fach) {
         '<button class="weg" title="Stufe entfernen" aria-label="Stufe entfernen" ' +
           'onclick="staffelStufeEntfernen(\'' + esc(z.id) + '\')">' + xZeichen(13) + '</button></div>';
     });
-    html += '<button class="staffel-mehr" onclick="staffelStufeAnlegen(\'' + esc(fach) + '\',\'' + art + '\')">+ Stufe</button></div>';
+    html += '<button class="staffel-mehr" onclick="staffelStufeAnlegen(\'' + esc(fach) + '\',\'' + art + '\')">' + plusZeichen(12) + 'Stufe</button></div>';
   });
   html += '</div>';
   /* Ein leerer Standard neben gepflegten Abweichungen ist der eine Fall, der
@@ -4602,6 +4603,7 @@ let fmSatz = '';               // gewaehlter Formatsatz im Fenster
 let fmWahl = null;             // { art, name } des gewaehlten Eintrags
 const xZeichen = px => '<svg width="' + px + '" height="' + px + '" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>';
 const X_ZEICHEN = xZeichen(14);
+const plusZeichen = px => '<svg width="' + px + '" height="' + px + '" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>';
 const FM_ERSTER_SATZ = 'Zeitschrift 210 × 279';
 /* Ein Bild wird beim Hochladen verkleinert: die Skizzen der Mediadaten brauchen
    auf dem A4-Blatt keine 1.400 Bildpunkte, und jedes Byte steht in der Datenbank
@@ -4924,7 +4926,7 @@ function fmMasseTabelle(z) {
         '<button class="zeilen-x" title="Format entfernen" aria-label="Format entfernen" onclick="fmZeileEntfernen(\'' + z.id + '\',' + nr + ')">' + X_ZEICHEN + '</button></td></tr>';
   });
   if (!zeilen.length) h += '<tr><td colspan="5" class="fm-leer">Noch keine Formate.</td></tr>';
-  h += '</table><button class="staffel-mehr" onclick="fmZeileAnlegen(\'' + z.id + '\')">+ Format</button>' +
+  h += '</table><button class="staffel-mehr" onclick="fmZeileAnlegen(\'' + z.id + '\')">' + plusZeichen(12) + 'Format</button>' +
     '<div class="masse-sonst"><label>Weitere Angaben</label><textarea onchange="fmInhaltSetzen(\'' + z.id + '\',\'sonst\',this.value)">' + esc(I.sonst || '') + '</textarea>' +
     '<div class="m-hinweis">Steht in MediaSheet klein unter der Tabelle, etwa für Einhefter und Beilagen.</div></div>';
   return h;
@@ -4941,7 +4943,7 @@ function fmMasszeilen(z) {
         '<button class="zeilen-x" title="Maßzeile entfernen" aria-label="Maßzeile entfernen" onclick="fmMassEntfernen(\'' + z.id + '\',' + nr + ')">' + X_ZEICHEN + '</button></td></tr>';
   });
   if (!masse.length) h += '<tr><td colspan="3" class="fm-leer">Noch keine Maßangaben.</td></tr>';
-  return h + '</table><button class="staffel-mehr" onclick="fmMassAnlegen(\'' + z.id + '\')">+ Maßzeile</button>';
+  return h + '</table><button class="staffel-mehr" onclick="fmMassAnlegen(\'' + z.id + '\')">' + plusZeichen(12) + 'Maßzeile</button>';
 }
 function fmBildfeld(z, abweichung) {
   const I = z.inhalt || {};
