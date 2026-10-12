@@ -728,7 +728,7 @@ button, input, select, textarea { font-family: inherit; }
   .rubrik-chip button { border: none; background: none; font-family: var(--font-body); cursor: pointer; border-radius: 10px; }
   .rubrik-chip .chip-name { font-size: 12.5px; font-weight: 600; color: var(--navy); padding: 3px 6px; }
   .rubrik-chip .chip-knopf { color: var(--grey-500); font-size: 15px; line-height: 1; width: 20px; height: 22px; padding: 0; }
-  .rubrik-chip .chip-x { font-size: 16px; }
+  .rubrik-chip .chip-x { display: inline-flex; align-items: center; justify-content: center; }
   .rubrik-chip button:hover { background: #e3f1fb; color: var(--navy); }
   .rubrik-knopf { height: 28px; font-size: 12.5px; padding: 0 10px; gap: 5px; }
   .rubrik-feld { height: 28px; width: 230px; font-size: 12.5px; padding: 0 8px; font-family: var(--font-body);
@@ -853,7 +853,7 @@ button, input, select, textarea { font-family: inherit; }
     border-radius: var(--radius-sm); font-size: 13px; font-family: var(--font-body); color: var(--text); background: var(--white); }
   .staffel-stufe input:focus { outline: none; border-color: var(--navy); box-shadow: 0 0 0 2px rgba(0,40,90,.08); }
   .staffel-stufe .weg { margin-left: 4px; background: none; border: none; cursor: pointer; padding: 0 2px;
-    color: var(--grey-500); font-size: 15px; line-height: 1; }
+    color: var(--grey-500); display: inline-flex; align-items: center; justify-content: center; width: 17px; height: 15px; }
   .staffel-stufe .weg:hover { color: var(--red); }
   .staffel-leer { font-size: 12.5px; color: var(--grey-600); padding: 3px 0; }
   .staffel-mehr { background: none; border: none; cursor: pointer; padding: 4px 0 0;
@@ -902,7 +902,7 @@ button, input, select, textarea { font-family: inherit; }
   .fm-chips { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
   .fm-chip { display: inline-flex; align-items: center; gap: 4px; font-size: 12.5px; background: #eef4fa;
     border: 1px solid var(--border); border-radius: 999px; padding: 2px 4px 2px 10px; color: var(--navy); }
-  .fm-chip button { border: none; background: none; cursor: pointer; color: var(--grey-500); font-size: 14px; line-height: 1; padding: 0 4px; }
+  .fm-chip button { border: none; background: none; cursor: pointer; color: var(--grey-500); display: inline-flex; align-items: center; justify-content: center; width: 16px; height: 14px; padding: 0; }
   .fm-chip button:hover { color: var(--red); }
   .fm-chip-wahl { padding: 3px 6px; border: 1px solid var(--border); border-radius: var(--radius-sm); font-size: 12.5px;
     font-family: var(--font-body); color: var(--navy); background: var(--white); max-width: 260px; }
@@ -2874,7 +2874,7 @@ function rubrikLeiste(t, karte) {
       (links ? '<button class="chip-knopf" title="nach links" aria-label="' + esc(x.name) + ' nach links" onclick="rubrikSchieben(' + i + ',-1)">‹</button>' : '') +
       '<button class="chip-name" title="' + (frei ? 'Umbenennen' : 'Feste Rubrik – umbenennen') + '" onclick="rubrikUmbenennen(' + i + ')">' + esc(x.name) + '</button>' +
       (rechts ? '<button class="chip-knopf" title="nach rechts" aria-label="' + esc(x.name) + ' nach rechts" onclick="rubrikSchieben(' + i + ',1)">›</button>' : '') +
-      (frei ? '<button class="chip-knopf chip-x" title="Rubrik entfernen" aria-label="' + esc(x.name) + ' entfernen" onclick="rubrikEntfernen(' + i + ')">×</button>' : '') +
+      (frei ? '<button class="chip-knopf chip-x" title="Rubrik entfernen" aria-label="' + esc(x.name) + ' entfernen" onclick="rubrikEntfernen(' + i + ')">' + xZeichen(13) + '</button>' : '') +
       '</span>';
   });
   if (rubrikEingabe === null) {
@@ -4467,7 +4467,7 @@ function staffelBlockHtml(fach) {
           'aria-label="Satz in Prozent" oninput="staffelSetzen(\'' + esc(z.id) + '\',\'prozent\',this.value)">' +
         '<span>%</span>' +
         '<button class="weg" title="Stufe entfernen" aria-label="Stufe entfernen" ' +
-          'onclick="staffelStufeEntfernen(\'' + esc(z.id) + '\')">×</button></div>';
+          'onclick="staffelStufeEntfernen(\'' + esc(z.id) + '\')">' + xZeichen(13) + '</button></div>';
     });
     html += '<button class="staffel-mehr" onclick="staffelStufeAnlegen(\'' + esc(fach) + '\',\'' + art + '\')">+ Stufe</button></div>';
   });
@@ -4600,7 +4600,8 @@ let FORMAT_DA       = false;   // gibt es die Tabelle?
 let FORMATSATZ_DA   = false;   // gibt es die Spalte titel.formatsatz?
 let fmSatz = '';               // gewaehlter Formatsatz im Fenster
 let fmWahl = null;             // { art, name } des gewaehlten Eintrags
-const X_ZEICHEN = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>';
+const xZeichen = px => '<svg width="' + px + '" height="' + px + '" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>';
+const X_ZEICHEN = xZeichen(14);
 const FM_ERSTER_SATZ = 'Zeitschrift 210 × 279';
 /* Ein Bild wird beim Hochladen verkleinert: die Skizzen der Mediadaten brauchen
    auf dem A4-Blatt keine 1.400 Bildpunkte, und jedes Byte steht in der Datenbank
@@ -4997,7 +4998,7 @@ function fmSonderHtml() {
       '<input id="fmName" value="' + esc(z.name) + '" onchange="sonderUmbenennen(this.value)"></div>' +
     '<div class="feld fm-feld"><label>Beschreibung</label><textarea rows="3" onchange="fmInhaltSetzen(\'' + z.id + '\',\'text\',this.value)">' + esc(I.text || '') + '</textarea></div>' +
     '<div class="feld fm-feld"><label>Preiszeilen</label><div class="fm-chips">' +
-      pf.map((f, i) => '<span class="fm-chip">' + esc(f) + '<button title="Zuordnung lösen" aria-label="Zuordnung lösen" onclick="fmPreisformatLoesen(' + i + ')">×</button></span>').join('') +
+      pf.map((f, i) => '<span class="fm-chip">' + esc(f) + '<button title="Zuordnung lösen" aria-label="Zuordnung lösen" onclick="fmPreisformatLoesen(' + i + ')">' + xZeichen(12) + '</button></span>').join('') +
       (frei.length ? '<select class="fm-chip-wahl" aria-label="Preiszeile zuordnen" onchange="fmPreisformatZuordnen(this.value)"><option value="">+ Preiszeile zuordnen …</option>' +
         frei.map(f => '<option value="' + esc(f) + '">' + esc(f) + '</option>').join('') + '</select>' : '') +
     '</div><div class="m-hinweis">' + (pf.length
