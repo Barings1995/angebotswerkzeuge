@@ -10,7 +10,7 @@
      wird nicht gedruckt, und die Überschrift „Angebot" steht bewusst in Georgia. -->
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700&family=Source+Sans+3:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=EB+Garamond:wght@600&family=Source+Sans+3:wght@400;500;600;700&display=swap" rel="stylesheet">
 <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='7' fill='%2300285a'/><path d='M11 7h7l4 4v14a1 1 0 01-1 1H11a1 1 0 01-1-1V8a1 1 0 011-1z' fill='%23ffffff'/><path d='M18 7l4 4h-4V7z' fill='%23ece7e0'/><rect x='12.5' y='14' width='9' height='1.6' rx='0.8' fill='%23ee7d11'/><rect x='12.5' y='17.5' width='9' height='1.6' rx='0.8' fill='%2300285a' opacity='0.35'/><rect x='12.5' y='21' width='6' height='1.6' rx='0.8' fill='%2300285a' opacity='0.35'/></svg>">
 <style>
   :root {
@@ -199,8 +199,11 @@ button, input, select, textarea { font-family: inherit; }
   .sm-hero-head svg { flex: none; }
   .sm-hero-div { width: 1px; align-self: stretch; background: rgba(255,255,255,.28); flex: none; }
   .sm-hero h1 {
-    font-family: 'Playfair Display', Georgia, 'Times New Roman', serif;
-    font-size: 25px; font-weight: 700; color: #fff;
+    /* EB Garamond ist der Web-Ersatz der Hausschrift Minion Pro. Bei gleicher Pixelzahl
+       läuft sie kleiner als die frühere Playfair Display; 28 px entsprechen in der
+       Wortbreite den früheren 25 px. Halbfett wie die Titel auf den Blättern. (21.10.2026) */
+    font-family: 'EB Garamond', 'Minion Pro', Georgia, 'Times New Roman', serif;
+    font-size: 28px; font-weight: 600; color: #fff;
     line-height: 1.2; margin-bottom: 2px; letter-spacing: -.01em;
   }
   .sm-hero h1 .sm-hero-mark { color: #ee7d11; }
@@ -269,7 +272,7 @@ button, input, select, textarea { font-family: inherit; }
     text-align: right;
   }
   .doc-title {
-    /* Bewusst Georgia und nicht die Playfair aus der Kopfleiste: die Überschrift steht
+    /* Bewusst Georgia und nicht die EB Garamond aus der Kopfleiste: die Überschrift steht
        auf dem gedruckten Angebot. Georgia ist auf dem Rechner vorhanden, damit sieht das
        Angebot ohne Netz genauso aus wie mit. */
     font-family: 'Georgia Pro', Georgia, serif;

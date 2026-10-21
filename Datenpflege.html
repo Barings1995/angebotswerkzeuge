@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700&family=Source+Sans+3:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=EB+Garamond:wght@600&family=Source+Sans+3:wght@400;500;600;700&display=swap" rel="stylesheet">
 <title>Datenpflege – Preise, Termine und Inhalte · Springer Medizin</title>
 <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%2300285a'/%3E%3Cpath d='M9 22.5l3.2-1 9-9a2.1 2.1 0 00-3-3l-9 9-1 3.2z' fill='%23e6eaf0'/%3E%3Cpath d='M8 25.5h16' stroke='%23ee7d11' stroke-width='2' stroke-linecap='round'/%3E%3C/svg%3E">
 <style>
@@ -40,7 +40,7 @@
     --radius-lg: 8px;
     --radius-xl: 10px;
     --font-body: 'Source Sans 3', system-ui, Arial, Helvetica, sans-serif;
-    --font-title: 'Playfair Display', Georgia, 'Times New Roman', serif;
+    --font-title: 'EB Garamond', 'Minion Pro', Georgia, 'Times New Roman', serif;
   }
 
   /* Hintergrund am Wurzelelement, nicht per min-height am body. */
@@ -88,8 +88,11 @@ button, input, select, textarea { font-family: inherit; }
   .sm-hero-head svg { flex: none; }
   .sm-hero-div { width: 1px; align-self: stretch; background: rgba(255,255,255,.28); flex: none; }
   .sm-hero h1 {
-    font-family: 'Playfair Display', Georgia, 'Times New Roman', serif;
-    font-size: 25px; font-weight: 700; color: #fff;
+    /* EB Garamond ist der Web-Ersatz der Hausschrift Minion Pro. Bei gleicher Pixelzahl
+       läuft sie kleiner als die frühere Playfair Display; 28 px entsprechen in der
+       Wortbreite den früheren 25 px. Halbfett wie die Titel auf den Blättern. (21.10.2026) */
+    font-family: 'EB Garamond', 'Minion Pro', Georgia, 'Times New Roman', serif;
+    font-size: 28px; font-weight: 600; color: #fff;
     line-height: 1.2; margin-bottom: 2px; letter-spacing: -.01em;
   }
   .sm-hero h1 .sm-hero-mark { color: #ee7d11; }
@@ -167,7 +170,7 @@ button, input, select, textarea { font-family: inherit; }
 
   /* ── Anmeldung ── */
   .anmeldung { max-width: 400px; margin: 60px auto; background: var(--white); border: 1px solid var(--border); border-radius: var(--radius-xl); box-shadow: var(--shadow-md); padding: 26px 28px 24px; }
-  .anmeldung h2 { font-family: var(--font-title); font-size: 21px; color: var(--navy); margin-bottom: 6px; }
+  .anmeldung h2 { font-family: var(--font-title); font-size: 23.5px; font-weight: 600; color: var(--navy); margin-bottom: 6px; }
   .anmeldung p { font-size: 12.5px; color: var(--grey-600); margin-bottom: 18px; }
   .anmeldung label { display: block; font-size: 11px; font-weight: 700; color: var(--navy); text-transform: uppercase; letter-spacing: .4px; margin-bottom: 5px; }
   .anmeldung input { width: 100%; padding: 8px 10px; border: 1px solid var(--border); border-radius: var(--radius-sm); font-size: 13.5px; font-family: var(--font-body); color: var(--text); margin-bottom: 14px; }
@@ -783,7 +786,7 @@ button, input, select, textarea { font-family: inherit; }
   .dialog { background: var(--white); border-radius: var(--radius-xl); box-shadow: var(--shadow-lg); width: 100%; max-width: 460px; overflow: hidden auto; display: flex; flex-direction: column; max-height: 100%; }
   .dialog > * { flex: none; }
   .dialog > .dialog-liste { flex: 0 1 auto; min-height: 96px; }
-  .dialog h3 { font-family: var(--font-title); font-size: 18px; color: var(--navy); padding: 16px 20px 3px; }
+  .dialog h3 { font-family: var(--font-title); font-size: 20px; font-weight: 600; color: var(--navy); padding: 16px 20px 3px; }
   .dialog .erklaerung { font-size: 12.5px; color: var(--grey-600); padding: 0 20px 12px; }
   .dialog-zeile { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 7px 20px; border-top: 1px solid #eef1f5; font-size: 13px; }
   .dialog-zeile > span { color: var(--grey-600); }

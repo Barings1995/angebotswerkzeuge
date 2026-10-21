@@ -27,8 +27,11 @@
 .sm-hero-head svg { flex: none; }
 .sm-hero-div { width: 1px; align-self: stretch; background: rgba(255,255,255,.28); flex: none; }
 .sm-hero h1 {
-  font-family: 'Playfair Display', Georgia, 'Times New Roman', serif;
-  font-size: 25px; font-weight: 700; color: #fff;
+  /* EB Garamond ist der Web-Ersatz der Hausschrift Minion Pro. Bei gleicher Pixelzahl
+     läuft sie kleiner als die frühere Playfair Display; 28 px entsprechen in der
+     Wortbreite den früheren 25 px. Halbfett wie die Titel auf den Blättern. (21.10.2026) */
+  font-family: 'EB Garamond', 'Minion Pro', Georgia, 'Times New Roman', serif;
+  font-size: 28px; font-weight: 600; color: #fff;
   line-height: 1.2; margin-bottom: 2px; letter-spacing: -.01em;
 }
 .sm-hero h1 .sm-hero-mark { color: #ee7d11; }

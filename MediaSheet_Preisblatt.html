@@ -9,7 +9,7 @@
 <link rel="apple-touch-icon" href="icon-180.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700&family=Source+Sans+3:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=EB+Garamond:wght@600&family=Source+Sans+3:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
 /* ---------------------------------------------------------------------------
    MediaSheet — Titelinfoblätter (Preise, Termine, Themenplan je Titel)
@@ -58,7 +58,7 @@
      lg = Karten, xl bleibt fuer Fenster frei. */
   --radius-sm:4px; --radius-md:6px; --radius-lg:8px; --radius-xl:10px;
   --font-body:'Source Sans 3',system-ui,Arial,Helvetica,sans-serif;
-  --font-title:'Playfair Display',Georgia,'Times New Roman',serif;
+  --font-title:'EB Garamond','Minion Pro',Georgia,'Times New Roman',serif;
   /* Haarlinie zwischen den Zeilen des Blattes. Heller als --border, damit die
      Preisliste auf dem Papier nicht als Gitter erscheint. */
   --linie:#eef1f6;
@@ -122,8 +122,11 @@ a:focus-visible, button:focus-visible, label:focus-visible, [tabindex]:focus-vis
 .sm-hero-head svg { flex: none; }
 .sm-hero-div { width: 1px; align-self: stretch; background: rgba(255,255,255,.28); flex: none; }
 .sm-hero h1 {
-  font-family: 'Playfair Display', Georgia, 'Times New Roman', serif;
-  font-size: 25px; font-weight: 700; color: #fff;
+  /* EB Garamond ist der Web-Ersatz der Hausschrift Minion Pro. Bei gleicher Pixelzahl
+     läuft sie kleiner als die frühere Playfair Display; 28 px entsprechen in der
+     Wortbreite den früheren 25 px. Halbfett wie die Titel auf den Blättern. (21.10.2026) */
+  font-family: 'EB Garamond', 'Minion Pro', Georgia, 'Times New Roman', serif;
+  font-size: 28px; font-weight: 600; color: #fff;
   line-height: 1.2; margin-bottom: 2px; letter-spacing: -.01em;
 }
 .sm-hero h1 .sm-hero-mark { color: #ee7d11; }
@@ -505,22 +508,23 @@ select:disabled{opacity:.5; cursor:not-allowed}
 }
 .blattkopf h1{
   font-family:var(--font-title); font-weight:600;
-  font-size:27px; line-height:1.1; margin:0; color:var(--navy);
+  font-size:30px; line-height:1.1; margin:0; color:var(--navy);
 }
 .blattkopf .unter{font-size:13px; color:var(--grey-600); margin-top:3px}
 .blattkopf .unter b{color:var(--text); font-weight:600}
 /* Rechts oben das Logo, rechts unten der Jahrgang auf der Grundlinie der
    Unterzeile — so stehen links und rechts auf denselben zwei Linien. Der
    Jahrgang ist so gross wie der Titel, damit er beim Durchblaettern auffaellt,
-   aber nicht groesser. Die Verschiebung um -3,1 px gleicht die Grundlinie der
-   Jahreszahl an die der Unterzeile an; gemessen in Chrome am 15.09.2026. */
+   aber nicht groesser. Die Verschiebung um -1,15 px gleicht die Grundlinie der
+   Jahreszahl an die der Unterzeile an; mit EB Garamond 30 px neu gemessen in Edge
+   am 21.10.2026 (vorher -3,1 px bei Playfair Display 27 px). */
 .blattkopf .rechts{
   flex:none; text-align:right; padding-top:2px;
   display:flex; flex-direction:column; justify-content:space-between; align-items:flex-end;
 }
 .blattkopf .jahrgang{
-  font-family:var(--font-title); font-size:27px;
-  color:var(--navy); line-height:1; position:relative; top:-3.1px;
+  font-family:var(--font-title); font-size:30px; font-weight:600;
+  color:var(--navy); line-height:1; position:relative; top:-1.15px;
 }
 .stand{
   display:flex; align-items:center; gap:9px; flex-wrap:wrap;
@@ -659,7 +663,7 @@ table.mit-marken td.zahl, table.mit-marken th.zahl{padding-right:15px}
 .fk-voll .fk-schluessel{font-size:10.5px; margin-bottom:16px}
 .fk-voll .fk-beschnitt{font-size:10.5px; margin:-8px 0 18px}
 /* Datenblatt je Sonderwerbeform: Name in der Titelschrift, Abbildung links. */
-.db-name{font-family:var(--font-title); font-weight:600; font-size:22px; line-height:1.15; color:var(--navy); margin:0 0 6px}
+.db-name{font-family:var(--font-title); font-weight:600; font-size:24px; line-height:1.15; color:var(--navy); margin:0 0 6px}
 /* Beschreibung in voller Breite bis zum Rand der Masstabelle (seit 06.10.2026,
    vorher 68ch): die Texte sind kurze Produktbeschreibungen, kein Fliesstext,
    und mit der Begrenzung blieb rechts oben eine Luecke. */
