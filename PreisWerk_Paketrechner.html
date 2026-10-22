@@ -355,7 +355,9 @@ button, input, select, textarea { font-family: inherit; }
   .staffel-item { flex: 1; padding: 14px 20px; border-right: 1px solid rgba(255,255,255,0.1); }
   .staffel-item:last-child { border-right: none; }
   .staffel-item .s-label { font-size: 10px; font-weight: 700; color: rgba(255,255,255,0.5); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 4px; }
-  .staffel-item .s-val { font-family: var(--font-display); font-size: 18px; font-weight: 800; color: var(--white); font-variant-numeric: tabular-nums; }
+  /* 700, nicht 800: Google lieferte Source Sans 3 nur bis 700, zu sehen war also immer 700.
+     Die eingebaute variable Schrift zeigt 800 echt (22.10.2026). Gilt auch für .total-num. */
+  .staffel-item .s-val { font-family: var(--font-display); font-size: 18px; font-weight: 700; color: var(--white); font-variant-numeric: tabular-nums; }
   .staffel-item .s-note { font-size: 11px; color: rgba(255,255,255,0.55); margin-top: 3px; }
   .staffel-item .s-note.active { color: var(--blue-light); font-weight: 600; }
   .staffel-item.highlight { background: rgba(238,125,17,0.15); }
@@ -414,7 +416,7 @@ button, input, select, textarea { font-family: inherit; }
   /* Total row */
   tfoot tr.total-row td { background: var(--navy); color: var(--white); padding: 13px 14px; border: none; }
   tfoot tr.total-row td.total-label { font-size: 13px; color: rgba(255,255,255,0.65); }
-  tfoot tr.total-row td.total-num { font-family: var(--font-display); font-size: 20px; font-weight: 800; color: var(--orange); text-align: right; font-variant-numeric: tabular-nums; }
+  tfoot tr.total-row td.total-num { font-family: var(--font-display); font-size: 20px; font-weight: 700; color: var(--orange); text-align: right; font-variant-numeric: tabular-nums; }
 
   .basket-foot-note { padding: 10px 20px; font-size: 11px; color: var(--grey-500); border-top: 1px solid var(--border); }
 
