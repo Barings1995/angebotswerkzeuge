@@ -57,7 +57,7 @@
 .hero-info-btn:hover, .hero-info.offen .hero-info-btn { background: rgba(255,255,255,.12); color: #fff; }
 .hero-info-text {
   display: none; position: absolute; left: -12px; top: calc(100% + 10px); z-index: 50;
-  width: 360px; max-width: calc(100vw - 32px);
+  width: 420px; max-width: calc(100vw - 32px);
   background: #fff; color: #1f2a44; border: 1px solid #d6dbe8; border-radius: 8px;
   box-shadow: 0 6px 20px rgba(0,30,70,.18); padding: 12px 14px;
   font-size: 13px; font-weight: 400; line-height: 1.45; letter-spacing: 0;
@@ -69,6 +69,13 @@
   transform: rotate(45deg);
 }
 .hero-info-text strong { color: #002050; font-weight: 600; }
+/* Ausführliche Fassung (23.10.2026): oben der Ablauf, darunter die Regeln als Punkte.
+   Ränder und Aufzählung hier fest, weil die Werkzeuge p und ul unterschiedlich setzen. */
+.hero-info-text .hero-info-ablauf { margin: 0 0 8px; font-weight: 600; color: #002050; }
+.hero-info-text ul { margin: 0; padding: 0 0 0 18px; list-style: disc; }
+.hero-info-text li { margin: 4px 0 0; padding: 0; }
+.hero-info-text li:first-child { margin-top: 0; }
+.hero-info-text li::marker { color: #8a94a8; }
 .hero-info.offen .hero-info-text { display: block; }
 /* Rückweg zur Startseite: weißer Rand auf Blau, gefüllt erst beim Überfahren,
    wie „Abmelden" in der Datenpflege. Er trägt vor allem beim Wechsel von einem

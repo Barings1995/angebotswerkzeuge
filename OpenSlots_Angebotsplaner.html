@@ -172,7 +172,7 @@ a:focus-visible, button:focus-visible, label:focus-visible, [tabindex]:focus-vis
 .hero-info-btn:hover, .hero-info.offen .hero-info-btn { background: rgba(255,255,255,.12); color: #fff; }
 .hero-info-text {
   display: none; position: absolute; left: -12px; top: calc(100% + 10px); z-index: 50;
-  width: 360px; max-width: calc(100vw - 32px);
+  width: 420px; max-width: calc(100vw - 32px);
   background: #fff; color: #1f2a44; border: 1px solid #d6dbe8; border-radius: 8px;
   box-shadow: 0 6px 20px rgba(0,30,70,.18); padding: 12px 14px;
   font-size: 13px; font-weight: 400; line-height: 1.45; letter-spacing: 0;
@@ -184,6 +184,13 @@ a:focus-visible, button:focus-visible, label:focus-visible, [tabindex]:focus-vis
   transform: rotate(45deg);
 }
 .hero-info-text strong { color: #002050; font-weight: 600; }
+/* Ausführliche Fassung (23.10.2026): oben der Ablauf, darunter die Regeln als Punkte.
+   Ränder und Aufzählung hier fest, weil die Werkzeuge p und ul unterschiedlich setzen. */
+.hero-info-text .hero-info-ablauf { margin: 0 0 8px; font-weight: 600; color: #002050; }
+.hero-info-text ul { margin: 0; padding: 0 0 0 18px; list-style: disc; }
+.hero-info-text li { margin: 4px 0 0; padding: 0; }
+.hero-info-text li:first-child { margin-top: 0; }
+.hero-info-text li::marker { color: #8a94a8; }
 .hero-info.offen .hero-info-text { display: block; }
 /* Rückweg zur Startseite: weißer Rand auf Blau, gefüllt erst beim Überfahren,
    wie „Abmelden" in der Datenpflege. Er trägt vor allem beim Wechsel von einem
@@ -1372,7 +1379,7 @@ tr.pl-row.alt td:not(.pl-cell) {
       <button class="hero-info-btn" type="button" title="Kurz erklärt" aria-label="Kurz erklärt" aria-expanded="false" aria-controls="heroInfoText">
         <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><line x1="12" y1="11" x2="12" y2="18"/><circle cx="12" cy="6.5" r="0.6" fill="currentColor"/></svg>
       </button>
-      <div class="hero-info-text" id="heroInfoText">Titel-Tab w&auml;hlen &rarr; Hefte w&auml;hlen &rarr; Platzierungen ankreuzen. <strong>&bdquo;Alle&ldquo;</strong> &uuml;bertr&auml;gt eine Zeile auf alle Ausgaben des Titels.</div>
+      <div class="hero-info-text" id="heroInfoText"><p class="hero-info-ablauf">Titel-Tab w&auml;hlen &rarr; Hefte w&auml;hlen &rarr; Platzierungen ankreuzen.</p><ul><li><strong>&bdquo;Alle&ldquo;</strong> &uuml;bertr&auml;gt eine Zeile auf alle Ausgaben des Titels. <strong>&bdquo;Keine&ldquo;</strong> w&auml;hlt alle Hefte ab; gesetzte Haken bleiben gemerkt.</li><li><strong>&bdquo;Nach Kongress&ldquo;</strong> legt die Ausgaben eines Kongresses f&uuml;r alle Titel auf einmal an.</li><li>Das fertige Angebot l&auml;sst sich als <strong>Tabelle f&uuml;r Outlook</strong> oder als <strong>einfacher Text</strong> kopieren.</li><li><strong>&bdquo;Angebot speichern&ldquo;</strong> legt eine Datei an, die sich sp&auml;ter wieder &ouml;ffnen l&auml;sst.</li></ul></div>
     </div>
     <a class="hero-zurueck" href="index.html" title="Zur Übersicht der Angebotswerkzeuge">
       <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 12H5"/><path d="m12 19-7-7 7-7"/></svg>
@@ -1749,9 +1756,9 @@ function ensureExcelJS() {
    Das Info-Zeichen neben dem Namen des Werkzeugs in der Kopfleiste. Ein Klick
    öffnet die Kurzerklärung, ein zweiter Klick, ein Klick daneben oder Escape
    schließt sie; ein Klick in den Text selbst lässt sie offen. Bis zum 22.10.2026
-   stand derselbe Text als feste Zeile unter dem Namen; so ist die Kopfleiste
-   17,5 px flacher, und die Regeln darin bleiben erreichbar. Aussehen im
-   Baustein kopfleiste.css. */
+   stand eine Kurzfassung als feste Zeile unter dem Namen; so ist die Kopfleiste
+   flacher, und seit dem 23.10.2026 hat die Erklärung Platz für Ablauf und Regeln.
+   Aussehen im Baustein kopfleiste.css. */
 function kopfinfoSchliessen(ausser) {
   document.querySelectorAll('.hero-info.offen').forEach(box => {
     if (box === ausser) return;

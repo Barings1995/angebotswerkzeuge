@@ -2,9 +2,9 @@
    Das Info-Zeichen neben dem Namen des Werkzeugs in der Kopfleiste. Ein Klick
    öffnet die Kurzerklärung, ein zweiter Klick, ein Klick daneben oder Escape
    schließt sie; ein Klick in den Text selbst lässt sie offen. Bis zum 22.10.2026
-   stand derselbe Text als feste Zeile unter dem Namen; so ist die Kopfleiste
-   17,5 px flacher, und die Regeln darin bleiben erreichbar. Aussehen im
-   Baustein kopfleiste.css. */
+   stand eine Kurzfassung als feste Zeile unter dem Namen; so ist die Kopfleiste
+   flacher, und seit dem 23.10.2026 hat die Erklärung Platz für Ablauf und Regeln.
+   Aussehen im Baustein kopfleiste.css. */
 function kopfinfoSchliessen(ausser) {
   document.querySelectorAll('.hero-info.offen').forEach(box => {
     if (box === ausser) return;
