@@ -285,15 +285,19 @@ button, input, select, textarea { font-family: inherit; }
     text-align: right;
   }
   .doc-title {
-    /* Bewusst Georgia und nicht die EB Garamond aus der Kopfleiste: die Überschrift steht
-       auf dem gedruckten Angebot. Georgia ist auf dem Rechner vorhanden, damit sieht das
-       Angebot ohne Netz genauso aus wie mit. */
-    font-family: 'Georgia Pro', Georgia, serif;
-    font-size: 26px;
-    font-weight: 700;
+    /* EB Garamond Halbfett wie die übrigen Überschriften. Die Schrift ist fest eingebaut
+       (Baustein schriften.css), das gedruckte Angebot sieht daher auch ohne Netz gleich aus.
+       30 px geben die x-Höhe der früheren Georgia 26 px. Die feste Zeilenhöhe von 22 px ist
+       8 px kleiner als die Zeile der Georgia; der Abstand darunter ist um diese 8 px größer
+       (16 statt 8 px, im Druck 12 statt 4 px). So bleibt der Kopf so hoch wie vorher und der
+       Abstand vom tiefen „g“ zum Farbbalken wie bei Georgia. Gemessen in Edge am 22.10.2026. */
+    font-family: 'EB Garamond', 'Minion Pro', Georgia, serif;
+    font-size: 30px;
+    font-weight: 600;
+    line-height: 22px;
     color: var(--navy);
     letter-spacing: 0.5px;
-    margin-bottom: 8px;
+    margin-bottom: 16px;
   }
   .orange-bar {
     display: flex;
@@ -1061,7 +1065,7 @@ button, input, select, textarea { font-family: inherit; }
 
     /* Verdichtetes Layout fuer mehr Positionen pro Seite (nur Druck/PDF, Bildschirm unveraendert) */
     .header { margin-bottom: 12px; padding-bottom: 8px; }
-    .doc-title { margin-bottom: 4px; }
+    .doc-title { margin-bottom: 12px; }
     .orange-bar { margin-bottom: 6px; }
     .field-line { margin-bottom: 2px; }
     .adress-block { margin-bottom: 10px; }
