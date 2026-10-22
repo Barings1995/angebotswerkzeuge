@@ -14,7 +14,7 @@
    und die Datenpflege. Bei üblicher Fensterbreite ändert sich nichts. */
 
 /* Die Schrift wird gesetzt, nicht geerbt: in MediaQuote erbte die Leiste sonst die
-   Aptos des Angebotsblatts. Deren Zeilenhöhe fällt bei „normal" niedriger aus;
+   Arial des Angebotsblatts. Deren Zeilenhöhe fällt bei „normal" niedriger aus;
    die Unterzeile wäre 14 statt 17,5 px hoch und die ganze Leiste 3,5 px flacher. */
 .sm-hero {
   font-family: 'Source Sans 3', system-ui, sans-serif;

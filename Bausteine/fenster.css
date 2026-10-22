@@ -14,7 +14,7 @@
   padding: 20px;
 }
 /* Die Schrift wird gesetzt, nicht geerbt: in MediaQuote erbte das Fenster sonst
-   die Aptos des Angebotsblatts. Die Fenster gehören zum Werkzeug, nicht zum Blatt. */
+   die Arial des Angebotsblatts. Die Fenster gehören zum Werkzeug, nicht zum Blatt. */
 .dlg-box {
   font-family: 'Source Sans 3', system-ui, sans-serif;
   background: #fff;

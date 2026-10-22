@@ -93,7 +93,7 @@
     padding: 20px;
   }
   /* Die Schrift wird gesetzt, nicht geerbt: in MediaQuote erbte das Fenster sonst
-     die Aptos des Angebotsblatts. Die Fenster gehören zum Werkzeug, nicht zum Blatt. */
+     die Arial des Angebotsblatts. Die Fenster gehören zum Werkzeug, nicht zum Blatt. */
   .dlg-box {
     font-family: 'Source Sans 3', system-ui, sans-serif;
     background: #fff;
@@ -147,7 +147,10 @@
   html { background: var(--grund); }
 
   body {
-    font-family: 'Aptos', 'Segoe UI', Arial, sans-serif;
+    /* Fest Arial (22.10.2026): vorher stand hier zuerst Aptos, dann Segoe UI. Aptos gibt es
+       nur unter Windows mit aktuellem Office, und so fiel das Angebot je nach Rechner
+       anders aus, auf dem Mac in Arial. Arial ist auf Mac und Windows vorhanden. */
+    font-family: Arial, sans-serif;
     font-size: 13px;
     color: var(--text);
     background: var(--grund);
@@ -171,7 +174,7 @@ button, input, select, textarea { font-family: inherit; }
      umgestellt; diese Regel zieht die uebrigen Stuecke nach, die dabei
      uebrigblieben. Die Auswahl ist nicht geraten: es sind dieselben Selektoren,
      die weiter unten im @media print auf display:none stehen. Das Angebot
-     selbst bleibt bei Aptos. */
+     selbst bleibt bei Arial. */
   .data-bar, .btn-add, .btn-del {
     font-family: 'Source Sans 3', system-ui, sans-serif;
   }
@@ -204,7 +207,7 @@ button, input, select, textarea { font-family: inherit; }
      und die Datenpflege. Bei üblicher Fensterbreite ändert sich nichts. */
 
   /* Die Schrift wird gesetzt, nicht geerbt: in MediaQuote erbte die Leiste sonst die
-     Aptos des Angebotsblatts. Deren Zeilenhöhe fällt bei „normal" niedriger aus;
+     Arial des Angebotsblatts. Deren Zeilenhöhe fällt bei „normal" niedriger aus;
      die Unterzeile wäre 14 statt 17,5 px hoch und die ganze Leiste 3,5 px flacher. */
   .sm-hero {
     font-family: 'Source Sans 3', system-ui, sans-serif;
@@ -292,8 +295,9 @@ button, input, select, textarea { font-family: inherit; }
   .doc-title {
     /* Bewusst Georgia und nicht die EB Garamond aus der Kopfleiste: die Überschrift steht
        auf dem gedruckten Angebot. Georgia ist auf dem Rechner vorhanden, damit sieht das
-       Angebot ohne Netz genauso aus wie mit. */
-    font-family: 'Georgia Pro', Georgia, serif;
+       Angebot ohne Netz genauso aus wie mit. Ohne Georgia Pro davor (22.10.2026): die gibt
+       es nur mit aktuellem Office unter Windows, Georgia dagegen auf Mac und Windows. */
+    font-family: Georgia, serif;
     font-size: 26px;
     font-weight: 700;
     color: var(--navy);
