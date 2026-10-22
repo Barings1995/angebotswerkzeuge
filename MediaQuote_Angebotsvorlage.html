@@ -192,7 +192,7 @@ button, input, select, textarea { font-family: inherit; }
   /* ── Kopfleiste (nur am Bildschirm) ── */
   /* ══ BAUSTEIN kopfleiste.css ══ Nicht hier ändern: gepflegt in Bausteine/kopfleiste.css, eingesetzt mit „node Bausteine/einsetzen.mjs". */
   /* Kopfleiste (Hero-Streifen) mit Logo, Name des Werkzeugs, Unterzeile, Rückweg
-     zur Startseite und einer Zeile Anleitung. Dieselbe Leiste in allen Werkzeugen
+     zur Startseite und dem Info-Zeichen mit der Kurzerklärung. Dieselbe Leiste in allen Werkzeugen
      und der Datenpflege, damit sie als Familie zu erkennen sind.
      Farben und Maße stehen hier fest und nicht über die Tokens der Werkzeuge: sie
      sind die der Marke und in allen Dateien gleich, die Tokens aber heißen nicht
@@ -202,7 +202,7 @@ button, input, select, textarea { font-family: inherit; }
      MediaQuote, das Ausblenden im Druck.
      Im schmalen Fenster bricht die Leiste um: der Rückweg (und in der Datenpflege
      das Konto) rutscht in eine zweite Zeile, statt über den rechten Rand zu laufen,
-     und die Anleitungszeile bricht ausgewogen um, ohne ein einzelnes Wort in der
+     und die Kurzerklärung bricht ausgewogen um, ohne ein einzelnes Wort in der
      letzten Zeile. So entschieden am 19.09.2026; bis dahin taten das nur MediaSheet
      und die Datenpflege. Bei üblicher Fensterbreite ändert sich nichts. */
 
@@ -216,7 +216,7 @@ button, input, select, textarea { font-family: inherit; }
     border-bottom: 3px solid #ee7d11;
   }
   .sm-hero-inner { padding: 0 1.5rem; }
-  .sm-hero-head { display: flex; flex-wrap: wrap; align-items: center; gap: 1rem; margin-bottom: 8px; }
+  .sm-hero-head { display: flex; flex-wrap: wrap; align-items: center; gap: 1rem; }
   .sm-hero-head svg { flex: none; }
   .sm-hero-div { width: 1px; align-self: stretch; background: rgba(255,255,255,.28); flex: none; }
   .sm-hero h1 {
@@ -237,8 +237,32 @@ button, input, select, textarea { font-family: inherit; }
     line-height: 17.5px; font-size: 12px; font-weight: 600; color: rgba(255,255,255,.72);
     letter-spacing: .16em; text-transform: uppercase; margin-bottom: 0;
   }
-  .sm-hero p { font-size: 12.5px; color: rgba(255,255,255,.72); font-weight: 400; line-height: 1.4; text-wrap: pretty; }
-  .sm-hero p strong { color: rgba(255,255,255,.9); font-weight: 600; }
+  /* Info-Zeichen mit Kurzerklärung (22.10.2026, vorher eine feste Zeile unter dem
+     Namen). Kreis im Stil des Rückwegs; der Text klappt als weißes Kästchen darunter
+     auf und legt sich über die Seite, ohne etwas zu verschieben. Öffnen und
+     Schließen im Baustein kopfinfo.js. */
+  .hero-info { position: relative; align-self: center; flex: none; }
+  .hero-info-btn {
+    display: inline-flex; align-items: center; justify-content: center;
+    width: 22px; height: 22px; padding: 0; border-radius: 50%; cursor: pointer;
+    background: none; border: 1px solid rgba(255,255,255,.4); color: rgba(255,255,255,.8);
+  }
+  .hero-info-btn:hover, .hero-info.offen .hero-info-btn { background: rgba(255,255,255,.12); color: #fff; }
+  .hero-info-text {
+    display: none; position: absolute; left: -12px; top: calc(100% + 10px); z-index: 50;
+    width: 360px; max-width: calc(100vw - 32px);
+    background: #fff; color: #1f2a44; border: 1px solid #d6dbe8; border-radius: 8px;
+    box-shadow: 0 6px 20px rgba(0,30,70,.18); padding: 12px 14px;
+    font-size: 13px; font-weight: 400; line-height: 1.45; letter-spacing: 0;
+    text-transform: none; text-align: left; text-wrap: pretty;
+  }
+  .hero-info-text::before {
+    content: ""; position: absolute; left: 18px; top: -6px; width: 10px; height: 10px;
+    background: #fff; border-left: 1px solid #d6dbe8; border-top: 1px solid #d6dbe8;
+    transform: rotate(45deg);
+  }
+  .hero-info-text strong { color: #002050; font-weight: 600; }
+  .hero-info.offen .hero-info-text { display: block; }
   /* Rückweg zur Startseite: weißer Rand auf Blau, gefüllt erst beim Überfahren,
      wie „Abmelden" in der Datenpflege. Er trägt vor allem beim Wechsel von einem
      Werkzeug ins nächste. */
@@ -1132,12 +1156,17 @@ button, input, select, textarea { font-family: inherit; }
         <h1>Media<span class="sm-hero-mark">Quote</span></h1>
         <div class="sm-hero-sub">Angebotsvorlage</div>
       </div>
+      <div class="hero-info">
+        <button class="hero-info-btn" type="button" title="Kurz erklärt" aria-label="Kurz erklärt" aria-expanded="false" aria-controls="heroInfoText">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><line x1="12" y1="11" x2="12" y2="18"/><circle cx="12" cy="6.5" r="0.6" fill="currentColor"/></svg>
+        </button>
+        <div class="hero-info-text" id="heroInfoText">Empf&auml;nger und Kampagne eintragen &rarr; Positionen anlegen &rarr; als PDF drucken. <strong>Rabatt und AE</strong> gelten f&uuml;r alle Positionen, die daf&uuml;r vorgesehen sind.</div>
+      </div>
       <a class="hero-zurueck" href="index.html" title="Zur Übersicht der Angebotswerkzeuge">
         <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 12H5"/><path d="m12 19-7-7 7-7"/></svg>
         Angebotswerkzeuge
       </a>
     </div>
-    <p>Empf&auml;nger und Kampagne eintragen &rarr; Positionen anlegen &rarr; als PDF drucken. <strong>Rabatt und AE</strong> gelten f&uuml;r alle Positionen, die daf&uuml;r vorgesehen sind.</p>
   </div>
 </div>
 
@@ -1755,6 +1784,33 @@ function ensureExcelJS() {
   });
 }
 /* ══ ENDE BAUSTEIN excel-laden.js ══ */
+
+/* ══ BAUSTEIN kopfinfo.js ══ Nicht hier ändern: gepflegt in Bausteine/kopfinfo.js, eingesetzt mit „node Bausteine/einsetzen.mjs". */
+/* ── KURZ ERKLÄRT ────────────────────────────────────────────────────────────
+   Das Info-Zeichen neben dem Namen des Werkzeugs in der Kopfleiste. Ein Klick
+   öffnet die Kurzerklärung, ein zweiter Klick, ein Klick daneben oder Escape
+   schließt sie; ein Klick in den Text selbst lässt sie offen. Bis zum 22.10.2026
+   stand derselbe Text als feste Zeile unter dem Namen; so ist die Kopfleiste
+   17,5 px flacher, und die Regeln darin bleiben erreichbar. Aussehen im
+   Baustein kopfleiste.css. */
+function kopfinfoSchliessen(ausser) {
+  document.querySelectorAll('.hero-info.offen').forEach(box => {
+    if (box === ausser) return;
+    box.classList.remove('offen');
+    box.querySelector('.hero-info-btn')?.setAttribute('aria-expanded', 'false');
+  });
+}
+document.addEventListener('click', e => {
+  if (e.target.closest('.hero-info-text')) return;
+  const knopf = e.target.closest('.hero-info-btn');
+  const box = knopf?.closest('.hero-info');
+  kopfinfoSchliessen(box);
+  if (box) knopf.setAttribute('aria-expanded', String(box.classList.toggle('offen')));
+});
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape') kopfinfoSchliessen(null);
+});
+/* ══ ENDE BAUSTEIN kopfinfo.js ══ */
 
 // Zellwert robust als Text bzw. Zahl lesen (ExcelJS liefert teils Objekte)
 function cellStr(cell) {
