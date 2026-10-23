@@ -49,9 +49,10 @@
        Polster. Die dunkle Leiste selbst laeuft weiter ueber die volle Breite. */
     padding-left:max(26px, calc((100% - 1160px) / 2 + 26px));
     padding-right:max(26px, calc((100% - 1160px) / 2 + 26px));
-    /* Feste Mindesthoehe: am schmalen Handy ist das Logo 24 px hoch, die Pille
-       aber 26 px - ohne diese Zeile wuechse die Leiste beim Erscheinen um 2 px. */
-    min-height:56px; box-sizing:border-box;
+    /* Feste Hoehe 60 px (seit 23.10.2026, vorher 56): die Pille ist 32 px hoch,
+       das Logo nur 28 (am schmalen Handy 24). Ohne diese Zeile wuechse die Leiste
+       beim Erscheinen des Stands und schoebe die Seite nach unten. */
+    min-height:60px; box-sizing:border-box;
   }
   /* Das Logo behaelt seine Groesse; ohne flex:none drueckte die Pille es am
      Handy zusammen (375 px: 143 statt 167 px breit, 320 px: 88 px). */
@@ -77,11 +78,12 @@
   .intro{margin:0 0 30px; color:var(--sm-muted); max-width:62ch}
   /* Stand der Preisliste rechts in der Kopfleiste (seit 23.10.2026). Vorher stand
      er unter der Einleitung und schob die Karten beim spaeten Erscheinen um 76 px
-     nach unten. Die Kopfleiste bleibt mit ihm 56 px hoch (line-height 16px). */
+     nach unten. Groesse wie damals (13 px, 32 px hoch); die Kopfleiste ist dafuer
+     fest 60 statt 56 px hoch (Marcus, 23.10.2026). */
   .stand{
     display:inline-flex; align-items:center; gap:8px; margin:0 0 0 auto;
-    padding:4px 11px; border:1px solid rgba(255,255,255,.35); border-radius:999px;
-    font-size:12px; line-height:16px; color:rgba(255,255,255,.8); white-space:nowrap;
+    padding:5px 12px; border:1px solid rgba(255,255,255,.35); border-radius:999px;
+    font-size:13px; line-height:20px; color:rgba(255,255,255,.8); white-space:nowrap;
   }
   /* Ohne diese Zeile schlaegt display:inline-flex das hidden-Attribut: die Pille
      stuende leer da, bis der Stand geladen ist (lokal als Datei: dauerhaft). */
@@ -146,6 +148,9 @@
      wird das Logo zusaetzlich 24 statt 28 px hoch (seit 23.10.2026). */
   @media (max-width:560px){ .stand-wort{display:none} }
   @media (max-width:359px){ #sm-logo-svg{height:24px !important} }
+  /* Mit der 13-px-Pille fehlen bei 320 px sonst 8 px: Abstand und Innenrand
+     etwas knapper, damit die Pille buendig mit den Karten endet. */
+  @media (max-width:359px){ header{gap:8px} .stand{padding-left:9px; padding-right:9px} }
 </style>
 </head>
 <body>
