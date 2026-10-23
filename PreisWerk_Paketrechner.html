@@ -180,10 +180,16 @@ button, input, select, textarea { font-family: inherit; }
      Name je nach Länge irgendwo zwischen 375 px (OpenSlots) und 520 px (Datenpflege)
      unter das Logo, und der senkrechte Strich blieb allein neben dem Logo stehen.
      Variante B vom 07.10.2026; A (Strich weglassen) verworfen. Der Selektor nimmt nur
-     den Block direkt hinter dem Strich, nicht das Konto der Datenpflege. */
+     den Block direkt hinter dem Strich, nicht das Konto der Datenpflege.
+     Der Strich nimmt die ganze Zeile ein und zeichnet nur die ersten 168 px. Bis
+     23.10.2026 war er selbst auf 168 px begrenzt; dann passte er zwischen 415 und
+     520 px Fensterbreite noch neben das Logo und stand dort waagerecht daneben. */
   @media (max-width: 520px) {
     .sm-hero-head { row-gap: 10px; }
-    .sm-hero-div { flex-basis: 100%; max-width: 168px; height: 1px; align-self: auto; }
+    .sm-hero-div {
+      flex-basis: 100%; height: 1px; align-self: auto;
+      background: linear-gradient(rgba(255,255,255,.28), rgba(255,255,255,.28)) 0 0 / 168px 100% no-repeat;
+    }
     .sm-hero-div + div { flex-basis: 100%; }
   }
 
@@ -568,7 +574,7 @@ button, input, select, textarea { font-family: inherit; }
         <button class="hero-info-btn" type="button" title="Kurz erklärt" aria-label="Kurz erklärt" aria-expanded="false" aria-controls="heroInfoText">
           <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><line x1="12" y1="11" x2="12" y2="18"/><circle cx="12" cy="6.5" r="0.6" fill="currentColor"/></svg>
         </button>
-        <div class="hero-info-text" id="heroInfoText"><p class="hero-info-ablauf">Titel, Kategorie und Format w&auml;hlen &rarr; Positionen ins Paket legen.</p><ul><li>Der <strong>Staffelrabatt</strong> gilt <span id="heroRegel">titel&uuml;bergreifend, aber nur innerhalb eines Fachbereichs</span>. Umgeschaltet wird mit &bdquo;Gemeinschaftsangebot&ldquo;.</li><li>F&uuml;r die Staffelschwelle z&auml;hlen nur <strong>Normal-, Vorzugs- und Festplatzierungen</strong>.</li><li>Die <strong>AE-Provision</strong> wird nur auf AE-f&auml;hige Positionen gerechnet.</li><li>Ist ein <strong>Budget</strong> eingetragen, zeigt das Werkzeug, wie oft das gew&auml;hlte Format noch hineinpasst. Rot bedeutet: Budget &uuml;berschritten.</li></ul></div>
+        <div class="hero-info-text" id="heroInfoText"><p class="hero-info-ablauf">Titel, Kategorie und Format w&auml;hlen &rarr; Positionen ins Paket legen.</p><ul><li>Der <strong>Staffelrabatt</strong> gilt <span id="heroRegel">titel&uuml;bergreifend, aber nur innerhalb eines Fachbereichs</span>. Umgeschaltet wird mit &bdquo;Gemeinschaftsangebot&ldquo;.</li><li>F&uuml;r die Staffelschwelle z&auml;hlen nur <strong>Normal-, Vorzugs- und Festplatzierungen</strong>.</li><li>Die <strong>AE-Provision</strong> wird nur auf AE-f&auml;hige Positionen gerechnet.</li><li>Ist ein <strong>Budget</strong> eingetragen, zeigt das Werkzeug, wie oft das gew&auml;hlte Format noch hineinpasst. Rot bedeutet: Budget &uuml;berschritten.</li><li>Das Paket bleibt samt Schaltern und Budget im Browser erhalten, f&uuml;r jeden Jahrgang getrennt. <strong>&bdquo;Alles zur&uuml;cksetzen&ldquo;</strong> leert das Paket.</li></ul></div>
       </div>
       <a class="hero-zurueck" href="index.html" title="Zur Übersicht der Angebotswerkzeuge">
         <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 12H5"/><path d="m12 19-7-7 7-7"/></svg>
@@ -927,6 +933,7 @@ function syncDataUI(){
 }
 
 function applyYear(year){
+  standNachholen();   // was noch auf das Schreiben wartet, gehört zum bisherigen Jahrgang
   const ys=years();
   if(ys.length){
     if(!DATASET[year])year=ys.includes(currentYear)?currentYear:ys[0];
@@ -941,8 +948,10 @@ function applyYear(year){
   initDropdowns();
   items = [];   // Datensatzwechsel (Jahrgang/neuer Import): Paket zurücksetzen – keine gemischten Jahrgänge/Preise
   render();
-  saveStand();  // beim echten Jahrgangswechsel: leeres Paket zum neuen Jahrgang merken.
-                // Während des Aufbaus greift der Aufruf nicht (siehe standAktiv).
+  /* Beim echten Jahrgangswechsel steht danach das gemerkte Paket des neuen Jahrgangs da;
+     das bisherige bleibt unter seinem Jahrgang gespeichert. Während des Aufbaus greift
+     das nicht (siehe standAktiv) - dort ruft der Aufbau restoreStand() selbst auf. */
+  if (standAktiv) { schliesseStandHinweis(); restoreStand(); }
 }
 
 // ─── HELPERS ──────────────────────────────────────────────────────────────────
@@ -1621,31 +1630,59 @@ function renderProgress(elId, val, stufen) {
 /* ===== ARBEITSSTAND MERKEN =====
    Wie in OpenSlots und den MediaQuote-Vorlagen: das Paket überlebt das Neuladen der Seite
    und das versehentliche Schließen des Fensters. Gemerkt wird nur die Auswahl - Titel,
-   Kategorie, Format, Anzahl, Farbschalter, dazu der Jahrgang und der AE-Schalter. Die
-   Preise stehen bewusst NICHT im Stand: sie werden beim Aufbau frisch aus der Preisliste
-   geholt, sonst rechnete ein Tage alter Stand mit Tage alten Preisen weiter.
+   Kategorie, Format, Anzahl, Farbschalter, dazu AE-Schalter, Gemeinschaftsangebot und
+   Budget. Die Preise stehen bewusst NICHT im Stand: sie werden beim Aufbau frisch aus der
+   Preisliste geholt, sonst rechnete ein Tage alter Stand mit Tage alten Preisen weiter.
+   Seit 23.10.2026 wie in OpenSlots je Jahrgang getrennt: ein Jahrgangswechsel verwirft
+   das Paket nicht mehr, beim Zurückwechseln steht es wieder da. Gespeichert wird
+   {jahre:{'2026':{…},'2027':{…}}}; der frühere Stand mit nur einem Paket (Feld „jahr")
+   wird beim ersten Lesen in diese Form übernommen.
    Eigener Schlüssel, getrennt von den Preisdaten unter CACHE_KEY. */
 const STAND_KEY='preiswerk_stand_v1';
 let standAktiv=false;   // während des Aufbaus nicht schreiben, sonst überschreibt der leere Anfangszustand den gemerkten Stand
 let standTimer=null;
+let standOffen=null;    // {jahr, stand}: noch nicht geschrieben
+function standAlle(){
+  try{
+    const o=JSON.parse(localStorage.getItem(STAND_KEY)||'null');
+    if(!o||typeof o!=='object')return {};
+    if(o.jahre&&typeof o.jahre==='object')return o.jahre;
+    /* Früherer Stand: ein Paket für einen Jahrgang. Ohne Feld „jahr" galt es für den
+       gerade gewählten Jahrgang - so bleibt es auch hier. */
+    const jahr=o.jahr||currentYear;
+    if(!jahr)return {};
+    const alle={}; alle[jahr]=o;
+    localStorage.setItem(STAND_KEY,JSON.stringify({jahre:alle}));
+    return alle;
+  }catch(e){return {};}
+}
 function saveStand(){
-  if(!standAktiv)return;
+  if(!standAktiv||!currentYear)return;
+  /* Der Stand wird sofort festgehalten, geschrieben wird kurz gebündelt: beim Tippen in
+     der Anzahl-Spalte liefe sonst je Anschlag ein Schreibvorgang. Weil Jahrgang und
+     Inhalt jetzt schon feststehen, landet auch ein Wechsel innerhalb der Wartezeit
+     nicht im falschen Jahrgang. */
+  const ae=document.getElementById('optAE');
+  const gm=document.getElementById('optGemein');
+  standOffen={jahr:currentYear, stand:{
+    ae:!!(ae&&ae.checked),
+    gemein:!!(gm&&gm.checked),
+    budget:(document.getElementById('optBudget')||{}).value||'',
+    posten:items.map(function(it){return {journal:it.journal,cat:it.cat,fn:it.fn,use4c:!!it.use4c,count:it.count};})
+  }};
   if(standTimer)clearTimeout(standTimer);
-  /* Kurz gebündelt: beim Tippen in der Anzahl-Spalte läuft sonst je Anschlag ein Schreibvorgang. */
-  standTimer=setTimeout(function(){
-    standTimer=null;
-    try{
-      const ae=document.getElementById('optAE');
-      const gm=document.getElementById('optGemein');
-      localStorage.setItem(STAND_KEY,JSON.stringify({
-        jahr:currentYear,
-        ae:!!(ae&&ae.checked),
-        gemein:!!(gm&&gm.checked),
-        budget:(document.getElementById('optBudget')||{}).value||'',
-        posten:items.map(function(it){return {journal:it.journal,cat:it.cat,fn:it.fn,use4c:!!it.use4c,count:it.count};})
-      }));
-    }catch(e){}
-  },400);
+  standTimer=setTimeout(standNachholen,400);
+}
+/* Schreibt, was noch auf die Wartezeit wartet. Läuft auch vor jedem Lesen und vor jedem
+   Jahrgangswechsel, damit nichts verloren geht. */
+function standNachholen(){
+  if(standTimer){clearTimeout(standTimer);standTimer=null;}
+  if(!standOffen)return;
+  const o=standOffen; standOffen=null;
+  try{
+    const alle=standAlle(); alle[o.jahr]=o.stand;
+    localStorage.setItem(STAND_KEY,JSON.stringify({jahre:alle}));
+  }catch(e){}
 }
 /* Die Fundliste überlebt den zweiten Aufbau: beim Start läuft restoreStand() zweimal -
    einmal aus dem Zwischenspeicher, danach noch einmal, wenn die Preisliste von der Adresse
@@ -1666,17 +1703,23 @@ function schliesseStandHinweis(){
   const box=document.getElementById('standNote');
   if(box)box.style.display='none';
 }
+/* Baut den Stand des gewählten Jahrgangs auf. Hat der Jahrgang noch keinen, gilt die
+   Grundstellung: leeres Paket, beide Schalter aus, kein Budget. */
 function restoreStand(){
+  standNachholen();
   try{
-    const raw=localStorage.getItem(STAND_KEY);if(!raw)return;
-    const st=JSON.parse(raw);
-    /* Das Budget kommt auch ohne Positionen zurueck: es steht neben den Schaltern. */
-    const bu=document.getElementById('optBudget');if(bu&&st&&typeof st.budget==='string'){bu.value=st.budget;budgetGeprueft(true);}
-    if(!st||!Array.isArray(st.posten)||!st.posten.length){budgetHinweis();return;}
-    if(!Object.keys(DATASET).length)return;            // ohne Preisliste keine Positionen
-    if(st.jahr&&st.jahr!==currentYear)return;          // das Paket gehört zu seinem Jahrgang
+    if(!currentYear)return;
+    const st=standAlle()[currentYear]||{};
+    const bu=document.getElementById('optBudget');
+    if(bu){bu.value=typeof st.budget==='string'?st.budget:'';budgetGeprueft(true);}
+    const ae=document.getElementById('optAE');if(ae)ae.checked=!!st.ae;
+    /* Muss vor render() stehen: der Schalter entscheidet mit, wie gerechnet wird.
+       Ältere gemerkte Stände kennen das Feld nicht - dann bleibt es bei der Regel
+       »je Fachbereich«, also beim bisherigen Verhalten. */
+    const gm=document.getElementById('optGemein');if(gm)gm.checked=!!st.gemein;
+    if(!Object.keys(DATASET).length){render();return;}   // ohne Preisliste keine Positionen
     const fehlend=[],neu=[];
-    st.posten.forEach(function(p){
+    (Array.isArray(st.posten)?st.posten:[]).forEach(function(p){
       const t=DATA[p.journal], c=t&&t.categories&&t.categories[p.cat], fmt=c&&c[p.fn];
       if(!fmt){fehlend.push(p.journal+' · '+p.cat+' · '+p.fn);return;}
       const has4c=fmt.s4c!==null&&fmt.s4c>0;
@@ -1686,13 +1729,7 @@ function restoreStand(){
                 use4c:has4c&&!!p.use4c,
                 count:Math.min(99,Math.max(1,parseInt(p.count)||1))});
     });
-    if(!neu.length&&!fehlend.length)return;
     items=neu;
-    const ae=document.getElementById('optAE');if(ae)ae.checked=!!st.ae;
-    /* Muss vor render() stehen: der Schalter entscheidet mit, wie gerechnet wird.
-       Ältere gemerkte Stände kennen das Feld nicht - dann bleibt es bei der Regel
-       »je Fachbereich«, also beim bisherigen Verhalten. */
-    const gm=document.getElementById('optGemein');if(gm)gm.checked=!!st.gemein;
     render();
     if(fehlend.length){
       standFehlend=fehlend;
@@ -1711,8 +1748,8 @@ function restoreStand(){
    der Browser das Lesen von Nachbardateien; dann bleibt es bei der Dateiauswahl wie
    bisher. Ein Fehlschlag ist deshalb kein Fehler, sondern der zweite vorgesehene Weg -
    gemeldet wird er nur in der Statuszeile.
-   Dass applyYear() dabei das Paket leert, fällt nicht ins Gewicht: items wird nicht
-   gespeichert, beim Seitenstart ist das Paket ohnehin leer. */
+   Dass applyYear() dabei das Paket leert, fällt nicht ins Gewicht: danach baut
+   restoreStand() den gemerkten Stand des Jahrgangs wieder auf. */
 /* ===== PREISLISTE AUS DER DATENBANK =====
    Erste Bezugsquelle. Gelingt sie nicht, wird wie bisher die Angebotsdaten.xlsx von der
    Adresse geholt; gelingt auch das nicht, bleibt der gemerkte Stand aus dem Zwischen-

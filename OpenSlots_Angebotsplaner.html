@@ -209,10 +209,16 @@ a:focus-visible, button:focus-visible, label:focus-visible, [tabindex]:focus-vis
    Name je nach Länge irgendwo zwischen 375 px (OpenSlots) und 520 px (Datenpflege)
    unter das Logo, und der senkrechte Strich blieb allein neben dem Logo stehen.
    Variante B vom 07.10.2026; A (Strich weglassen) verworfen. Der Selektor nimmt nur
-   den Block direkt hinter dem Strich, nicht das Konto der Datenpflege. */
+   den Block direkt hinter dem Strich, nicht das Konto der Datenpflege.
+   Der Strich nimmt die ganze Zeile ein und zeichnet nur die ersten 168 px. Bis
+   23.10.2026 war er selbst auf 168 px begrenzt; dann passte er zwischen 415 und
+   520 px Fensterbreite noch neben das Logo und stand dort waagerecht daneben. */
 @media (max-width: 520px) {
   .sm-hero-head { row-gap: 10px; }
-  .sm-hero-div { flex-basis: 100%; max-width: 168px; height: 1px; align-self: auto; }
+  .sm-hero-div {
+    flex-basis: 100%; height: 1px; align-self: auto;
+    background: linear-gradient(rgba(255,255,255,.28), rgba(255,255,255,.28)) 0 0 / 168px 100% no-repeat;
+  }
   .sm-hero-div + div { flex-basis: 100%; }
 }
 
@@ -1385,7 +1391,7 @@ tr.pl-row.alt td:not(.pl-cell) {
       <button class="hero-info-btn" type="button" title="Kurz erklärt" aria-label="Kurz erklärt" aria-expanded="false" aria-controls="heroInfoText">
         <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><line x1="12" y1="11" x2="12" y2="18"/><circle cx="12" cy="6.5" r="0.6" fill="currentColor"/></svg>
       </button>
-      <div class="hero-info-text" id="heroInfoText"><p class="hero-info-ablauf">Titel-Tab w&auml;hlen &rarr; Hefte w&auml;hlen &rarr; Platzierungen ankreuzen.</p><ul><li><strong>&bdquo;Alle&ldquo;</strong> &uuml;bertr&auml;gt eine Zeile auf alle Ausgaben des Titels. <strong>&bdquo;Keine&ldquo;</strong> w&auml;hlt alle Hefte ab; gesetzte Haken bleiben gemerkt.</li><li><strong>&bdquo;Nach Kongress&ldquo;</strong> legt die Ausgaben eines Kongresses f&uuml;r alle Titel auf einmal an.</li><li>Das fertige Angebot l&auml;sst sich als <strong>Tabelle f&uuml;r Outlook</strong> oder als <strong>einfacher Text</strong> kopieren.</li><li><strong>&bdquo;Angebot speichern&ldquo;</strong> legt eine Datei an, die sich sp&auml;ter wieder &ouml;ffnen l&auml;sst.</li></ul></div>
+      <div class="hero-info-text" id="heroInfoText"><p class="hero-info-ablauf">Titel-Tab w&auml;hlen &rarr; Hefte w&auml;hlen &rarr; Platzierungen ankreuzen.</p><ul><li><strong>&bdquo;Alle&ldquo;</strong> &uuml;bertr&auml;gt eine Zeile auf alle Ausgaben des Titels. <strong>&bdquo;Keine&ldquo;</strong> w&auml;hlt alle Hefte ab; gesetzte Haken bleiben gemerkt.</li><li><strong>&bdquo;Nach Kongress&ldquo;</strong> legt die Ausgaben eines Kongresses f&uuml;r alle Titel auf einmal an.</li><li>Das fertige Angebot l&auml;sst sich als <strong>Tabelle f&uuml;r Outlook</strong> oder als <strong>einfacher Text</strong> kopieren.</li><li>Angekreuzte Platzierungen bleiben im Browser erhalten, f&uuml;r jeden Jahrgang getrennt, bis &bdquo;Alles zur&uuml;cksetzen&ldquo; gew&auml;hlt wird. <strong>&bdquo;Angebot speichern&ldquo;</strong> legt eine Datei an, die sich sp&auml;ter wieder &ouml;ffnen l&auml;sst.</li></ul></div>
     </div>
     <a class="hero-zurueck" href="index.html" title="Zur Übersicht der Angebotswerkzeuge">
       <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 12H5"/><path d="m12 19-7-7 7-7"/></svg>

@@ -94,10 +94,16 @@
    Name je nach Länge irgendwo zwischen 375 px (OpenSlots) und 520 px (Datenpflege)
    unter das Logo, und der senkrechte Strich blieb allein neben dem Logo stehen.
    Variante B vom 07.10.2026; A (Strich weglassen) verworfen. Der Selektor nimmt nur
-   den Block direkt hinter dem Strich, nicht das Konto der Datenpflege. */
+   den Block direkt hinter dem Strich, nicht das Konto der Datenpflege.
+   Der Strich nimmt die ganze Zeile ein und zeichnet nur die ersten 168 px. Bis
+   23.10.2026 war er selbst auf 168 px begrenzt; dann passte er zwischen 415 und
+   520 px Fensterbreite noch neben das Logo und stand dort waagerecht daneben. */
 @media (max-width: 520px) {
   .sm-hero-head { row-gap: 10px; }
-  .sm-hero-div { flex-basis: 100%; max-width: 168px; height: 1px; align-self: auto; }
+  .sm-hero-div {
+    flex-basis: 100%; height: 1px; align-self: auto;
+    background: linear-gradient(rgba(255,255,255,.28), rgba(255,255,255,.28)) 0 0 / 168px 100% no-repeat;
+  }
   .sm-hero-div + div { flex-basis: 100%; }
 }
 
