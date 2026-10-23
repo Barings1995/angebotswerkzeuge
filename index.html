@@ -88,6 +88,13 @@
     border-top-color:var(--sm-orange); box-shadow:0 4px 16px rgba(0,40,90,.10);
     transform:translateY(-2px);
   }
+  /* Druckpunkt (seit 23.10.2026): aus der angehobenen Lage 1 px zurueck, wie alle
+     Knoepfe der Werkzeuge, Schatten etwas kleiner. Sofort, ohne die 0,15 s des
+     Anhebens - sonst ist die Seite gewechselt, bevor man es sieht. */
+  a.karte:active{
+    transform:translateY(-1px); box-shadow:0 2px 8px rgba(0,40,90,.10);
+    transition-duration:0s;
+  }
   /* Kopf der Karte wie die Kopfleiste des jeweiligen Werkzeugs: Name gross, Aufgabe
      klein und gesperrt darunter. Vorher stand beides in einer Zeile - „MediaQuote –
      Angebotsvorlage 4C" war damit 10 px zu breit fuer die Karte, sodass „4C" allein
@@ -114,6 +121,9 @@
   .hinweise p{margin:0 0 10px}
   .hinweise a{color:var(--sm-blue); text-decoration:none; border-bottom:1px solid rgba(1,118,195,.35)}
   .hinweise a:hover{color:var(--sm-orange); border-bottom-color:rgba(238,125,17,.5)}
+  /* Druckpunkt (seit 23.10.2026). Der Link steht im Fliesstext, dort greift transform
+     nicht; position:relative verschiebt ihn, ohne die Zeile zu veraendern. */
+  .hinweise a:active{position:relative; top:1px}
   @media (max-width:560px){ main{padding:26px 18px 44px} h1{font-size:27px} }
 </style>
 </head>

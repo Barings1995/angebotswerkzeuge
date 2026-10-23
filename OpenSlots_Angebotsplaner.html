@@ -202,6 +202,8 @@ a:focus-visible, button:focus-visible, label:focus-visible, [tabindex]:focus-vis
   padding: 5px 11px; text-decoration: none; white-space: nowrap; flex: none;
 }
 .hero-zurueck:hover { background: rgba(255,255,255,.12); }
+/* Druckpunkt wie bei allen Knöpfen der Werkzeuge (seit 23.10.2026). */
+.hero-info-btn:active, .hero-zurueck:active { transform: translateY(1px); }
 /* Am Handy (unter 520 px) steht der Name des Werkzeugs immer unter dem Logo, und der
    Trennstrich liegt waagerecht dazwischen, so breit wie das Logo. Vorher rutschte der
    Name je nach Länge irgendwo zwischen 375 px (OpenSlots) und 520 px (Datenpflege)
@@ -555,6 +557,9 @@ html { -webkit-text-size-adjust: 100%; text-size-adjust: 100%; }
 }
 .such-x[hidden] { display: none; }
 .such-x:hover { color: var(--sm-navy); background: var(--sm-navy-05); }
+/* Druckpunkt wie beim ✕ der Suche in der Datenpflege (seit 23.10.2026); die
+   Mittelung (-50 %) bleibt erhalten, darauf kommt der eine Pixel. */
+.such-x:active { transform: translateY(calc(-50% + 1px)); }
 .kg-empty { font-size: 12px; color: var(--sm-muted-l); padding: 10px 12px; }
 .kg-item {
   display: flex;
@@ -573,6 +578,7 @@ html { -webkit-text-size-adjust: 100%; text-size-adjust: 100%; }
   cursor: pointer;
 }
 .kg-item:hover { background: var(--sm-navy-10); }
+.kg-item:active { transform: translateY(1px); }
 .kg-item .kg-cnt { font-size: 11px; font-weight: 400; color: var(--sm-muted); white-space: nowrap; }
 
 /* ── SECTION LABEL ── */

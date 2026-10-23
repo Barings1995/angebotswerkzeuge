@@ -280,6 +280,8 @@ button, input, select, textarea { font-family: inherit; }
     padding: 5px 11px; text-decoration: none; white-space: nowrap; flex: none;
   }
   .hero-zurueck:hover { background: rgba(255,255,255,.12); }
+  /* Druckpunkt wie bei allen Knöpfen der Werkzeuge (seit 23.10.2026). */
+  .hero-info-btn:active, .hero-zurueck:active { transform: translateY(1px); }
   /* Am Handy (unter 520 px) steht der Name des Werkzeugs immer unter dem Logo, und der
      Trennstrich liegt waagerecht dazwischen, so breit wie das Logo. Vorher rutschte der
      Name je nach Länge irgendwo zwischen 375 px (OpenSlots) und 520 px (Datenpflege)
@@ -704,6 +706,8 @@ button, input, select, textarea { font-family: inherit; }
     transition: background 0.15s;
   }
   .btn-del:hover { background: #fdecea; }
+  /* Druckpunkt auch für das Löschkreuz (seit 23.10.2026). */
+  .btn-del:active { transform: translateY(1px); }
 
   /* Preis als dauerhaft erkennbares Eingabefeld (wie die Dropdowns), von Hand überschreibbar */
   .price-input {

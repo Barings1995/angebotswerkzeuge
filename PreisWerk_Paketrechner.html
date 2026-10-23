@@ -173,6 +173,8 @@ button, input, select, textarea { font-family: inherit; }
     padding: 5px 11px; text-decoration: none; white-space: nowrap; flex: none;
   }
   .hero-zurueck:hover { background: rgba(255,255,255,.12); }
+  /* Druckpunkt wie bei allen Knöpfen der Werkzeuge (seit 23.10.2026). */
+  .hero-info-btn:active, .hero-zurueck:active { transform: translateY(1px); }
   /* Am Handy (unter 520 px) steht der Name des Werkzeugs immer unter dem Logo, und der
      Trennstrich liegt waagerecht dazwischen, so breit wie das Logo. Vorher rutschte der
      Name je nach Länge irgendwo zwischen 375 px (OpenSlots) und 520 px (Datenpflege)
@@ -415,6 +417,8 @@ button, input, select, textarea { font-family: inherit; }
   .count-inp { width: 56px; padding: 5px 8px; font-size: 13px; text-align: center; border: 1px solid var(--border); border-radius: var(--radius-sm); font-variant-numeric: tabular-nums; }
   .btn-rm { background: none; border: none; color: var(--grey-500); cursor: pointer; display: inline-flex; align-items: center; font-size: 15px; padding: 4px 7px; border-radius: var(--radius-sm); transition: color .15s; }
   .btn-rm:hover { color: var(--red); background: #fdeaea; }
+  /* Druckpunkt auch für das Löschkreuz und das ✕ des Hinweises (seit 23.10.2026). */
+  .btn-rm:active, .note-x:active { transform: translateY(1px); }
 
   /* Subtotal row */
   tfoot tr.sub-row td { background: var(--bg); font-size: 12px; color: var(--grey-600); padding: 8px 14px; border-bottom: 1px solid var(--border); }

@@ -166,6 +166,8 @@ button, input, select, textarea { font-family: inherit; }
     padding: 5px 11px; text-decoration: none; white-space: nowrap; flex: none;
   }
   .hero-zurueck:hover { background: rgba(255,255,255,.12); }
+  /* Druckpunkt wie bei allen Knöpfen der Werkzeuge (seit 23.10.2026). */
+  .hero-info-btn:active, .hero-zurueck:active { transform: translateY(1px); }
   /* Am Handy (unter 520 px) steht der Name des Werkzeugs immer unter dem Logo, und der
      Trennstrich liegt waagerecht dazwischen, so breit wie das Logo. Vorher rutschte der
      Name je nach Länge irgendwo zwischen 375 px (OpenSlots) und 520 px (Datenpflege)
@@ -898,6 +900,14 @@ button, input, select, textarea { font-family: inherit; }
   .staffel-kopf button { background: none; border: none; cursor: pointer; padding: 0 2px;
     font-size: 11.5px; font-family: inherit; color: var(--red); }
   .staffel-kopf button:hover { text-decoration: underline; }
+  /* Druckpunkt auch für die leisen Textknöpfe (seit 23.10.2026): „Abweichung
+     entfernen", „Titel ändern …", „+ Stufe", „+ Format", „+ Maßzeile" und die
+     Knöpfe am Formatsatz geben wie alle übrigen Knöpfe 1 px nach. */
+  .staffel-kopf button:active, .staffel-mehr:active, .fm-leise:active { transform: translateY(1px); }
+  /* Ebenso „Abmelden", das ✕ der Zeilen und der Staffelstufen, die Knöpfe der
+     Rubrik-Chips und der „+"-Chip (seit 23.10.2026). */
+  .hero-konto button:active, .zeilen-x:active, .staffel-stufe .weg:active,
+  .rubrik-chip button:active, .vs-chip:active { transform: translateY(1px); }
   .staffel-paar { display: grid; grid-template-columns: 1fr 1fr; gap: 0 20px; }
   .staffel-art h4 { font-size: 10.5px; font-weight: 700; text-transform: uppercase; letter-spacing: .07em;
     color: var(--grey-600); margin: 10px 0 2px; }

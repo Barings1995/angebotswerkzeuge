@@ -200,6 +200,8 @@ a:focus-visible, button:focus-visible, label:focus-visible, [tabindex]:focus-vis
   padding: 5px 11px; text-decoration: none; white-space: nowrap; flex: none;
 }
 .hero-zurueck:hover { background: rgba(255,255,255,.12); }
+/* Druckpunkt wie bei allen Knöpfen der Werkzeuge (seit 23.10.2026). */
+.hero-info-btn:active, .hero-zurueck:active { transform: translateY(1px); }
 /* Am Handy (unter 520 px) steht der Name des Werkzeugs immer unter dem Logo, und der
    Trennstrich liegt waagerecht dazwischen, so breit wie das Logo. Vorher rutschte der
    Name je nach Länge irgendwo zwischen 375 px (OpenSlots) und 520 px (Datenpflege)
@@ -301,6 +303,8 @@ select:disabled{opacity:.5; cursor:not-allowed}
   color:var(--blue); cursor:pointer; text-decoration:underline;
 }
 .fach-liste .kopf button:hover{color:var(--navy)}
+/* „Alle" / „Keine" geben nach wie alle Knoepfe (seit 23.10.2026). */
+.fach-liste .kopf button:active{transform:translateY(1px)}
 .fach-liste .gruppe{
   font-size:10px; font-weight:700; letter-spacing:.1em; text-transform:uppercase;
   color:var(--navy); padding:9px 14px 3px;
@@ -389,6 +393,8 @@ select:disabled{opacity:.5; cursor:not-allowed}
   color:var(--navy); opacity:.75; transition:opacity .15s;
 }
 .std-knopf:hover{opacity:1; text-decoration:underline}
+/* Druckpunkt auch fuer die leisen Textknoepfe (seit 23.10.2026). */
+.std-knopf:active{transform:translateY(1px)}
 .std-knopf:focus-visible{opacity:1; outline:2px solid var(--navy); outline-offset:2px; border-radius:3px}
 /* Pfeilspitze ragt links etwas ueber die viewBox hinaus (seit 02.10.2026: Bogen
    mit frei stehender Spitze, vorher wirkte der Kreis geschlossen). */
@@ -494,6 +500,9 @@ select:disabled{opacity:.5; cursor:not-allowed}
   border-radius:var(--radius-sm); transition:color .12s, background .12s;
 }
 .such-x:hover{color:var(--navy); background:var(--surface-hover)}
+/* Druckpunkt wie beim X der Suche in der Datenpflege (seit 23.10.2026); die
+   Mittelung (-50 %) bleibt erhalten, darauf kommt der eine Pixel. */
+.such-x:active{transform:translateY(calc(-50% + 1px))}
 .tl-liste{display:flex; flex-direction:column; gap:4px; flex:1 1 auto; min-height:0; overflow-y:auto;
   /* 4 px Luft ringsum fuer den Fokus-Ring, den die rollbare Liste sonst abschneidet; die
      negativen Raender heben sie wieder auf (seit 26.09.2026, vorher nur padding-right:2px). */
