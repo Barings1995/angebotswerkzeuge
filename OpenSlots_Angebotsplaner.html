@@ -1229,10 +1229,12 @@ tr.pl-row.alt td:not(.pl-cell) {
   color: var(--sm-text);
   padding: 1rem 1.25rem;
 }
-/* Vorschau am Handy als Karten (07.10.2026), Aufbau siehe buildKarten(). Arial wie die
-   Kopiervorlage, damit die Vorschau weiter nach der Mail aussieht. Am Computer bleibt
+/* Vorschau am Handy als Karten (07.10.2026), Aufbau siehe buildKarten(). Schrift wie die
+   Kopiervorlage, damit die Vorschau weiter nach der Mail aussieht: Aptos, die Grundschrift
+   von Outlook, sonst Arial (seit 26.10.2026; vorher nur Arial). Aptos kommt mit Office und
+   steht dem Browser meist nicht zur Verfügung; dort zeigt die Vorschau Arial. Am Computer bleibt
    #pv-karten unsichtbar; unter 760 px tauschen die beiden Plaetze. */
-#pv-karten { display: none; padding: 1rem 16px; font-family: Arial, sans-serif; font-size: 12.5px; line-height: 1.45; color: #1a2340; font-variant-numeric: tabular-nums; }
+#pv-karten { display: none; padding: 1rem 16px; font-family: Aptos, Arial, sans-serif; font-size: 12.5px; line-height: 1.45; color: #1a2340; font-variant-numeric: tabular-nums; }
 #pv-karten .pk-titel { font-weight: 700; font-size: 13px; color: #00285a; margin: 0 0 6px; border-left: 3px solid #ee7d11; padding-left: 8px; }
 #pv-karten .pk-aufl { font-weight: 400; color: #6b7899; white-space: nowrap; }
 #pv-karten .pk-liste { margin-bottom: 14px; }
@@ -3212,13 +3214,15 @@ function angebotsOptionen(){
     resvTxt:(document.getElementById('rv-t').value||'').trim()
   };
 }
+/* Schrift der Kopiervorlage: Aptos, die Grundschrift von Outlook, damit das Angebot
+   im Text der Mail nicht absticht; wo Aptos fehlt (ohne Office), Arial wie bis 26.10.2026. */
 function buildHtml(o=angebotsOptionen()){
   const act=J.map((j,ji)=>({ji,j,iss:ST[ji].issues.filter(s=>heftZeile(ji,s))})).filter(({iss})=>iss.length);
   if(!act.length)return '';
-  const thS='background:#f2f4f8;font-weight:600;text-align:left;padding:6px 10px;border:1px solid #d6dbe8;font-size:12px;color:#00285a;font-family:Arial,sans-serif';
-  const tdS='padding:5px 9px;border:1px solid #e4e7ef;vertical-align:top;font-size:12px;font-family:Arial,sans-serif;color:#1a2340';
+  const thS='background:#f2f4f8;font-weight:600;text-align:left;padding:6px 10px;border:1px solid #d6dbe8;font-size:12px;color:#00285a;font-family:Aptos,Arial,sans-serif';
+  const tdS='padding:5px 9px;border:1px solid #e4e7ef;vertical-align:top;font-size:12px;font-family:Aptos,Arial,sans-serif;color:#1a2340';
   const tdAltS=tdS+';background:#fafbfd';
-  const tableS='border-collapse:collapse;width:100%;margin-bottom:8px;font-family:Arial,sans-serif';
+  const tableS='border-collapse:collapse;width:100%;margin-bottom:8px;font-family:Aptos,Arial,sans-serif';
   const {discOn,aeOn,pct,tsOn,kgOn,duOn,showRabatt,showResv,resvTxt}=o;
   const negH=v=>v>0?'&#8722;'+fmt(v):'&ndash;';
   let h='';
@@ -3226,10 +3230,10 @@ function buildHtml(o=angebotsOptionen()){
     /* Auflage an die Titelzeile anhängen – normal gewichtet und gedämpft, damit der
        Titel selbst die Betonung behält. Sie ist titelbezogen und steht daher nur hier. */
     const auflH=j.a>0?` <span style="font-weight:400;color:#6b7899;white-space:nowrap">&middot; Auflage ${nf(j.a)} Expl.</span>`:'';
-    h+=`<p style="font-weight:700;font-size:13px;color:#00285a;margin:0 0 6px;font-family:Arial,sans-serif;border-left:3px solid #ee7d11;padding-left:8px">${esc(j.n)}${auflH}</p>`;
+    h+=`<p style="font-weight:700;font-size:13px;color:#00285a;margin:0 0 6px;font-family:Aptos,Arial,sans-serif;border-left:3px solid #ee7d11;padding-left:8px">${esc(j.n)}${auflH}</p>`;
     h+=`<table style="${tableS}"><thead><tr>`;
-    const thR='background:#f2f4f8;font-weight:600;text-align:right;padding:6px 10px;border:1px solid #d6dbe8;font-size:12px;color:#00285a;font-family:Arial,sans-serif';
-    const tdR='padding:5px 9px;border:1px solid #e4e7ef;vertical-align:top;font-size:12px;font-family:Arial,sans-serif;color:#1a2340;text-align:right;white-space:nowrap';
+    const thR='background:#f2f4f8;font-weight:600;text-align:right;padding:6px 10px;border:1px solid #d6dbe8;font-size:12px;color:#00285a;font-family:Aptos,Arial,sans-serif';
+    const tdR='padding:5px 9px;border:1px solid #e4e7ef;vertical-align:top;font-size:12px;font-family:Aptos,Arial,sans-serif;color:#1a2340;text-align:right;white-space:nowrap';
     const tdRalt=tdR+';background:#fafbfd';
     h+=`<th style="${thS}">Ausgabe</th>`;
     if(tsOn)h+=`<th style="${thS}">Themenschwerpunkte</th>`;
@@ -3274,12 +3278,12 @@ function buildHtml(o=angebotsOptionen()){
       const T=sumTitle(ji,iss,discOn,aeOn,pct);
       if(T.preis>0){
         const cols=5+(tsOn?1:0)+(kgOn?1:0)+(duOn?1:0)+(discOn?1:0)+(aeOn?1:0);
-        const sumC='padding:6px 10px;border:1px solid #d6dbe8;border-top:2px solid #00285a;font-size:12px;font-family:Arial,sans-serif;color:#00285a;font-weight:700;text-align:right;white-space:nowrap;background:#f2f4f8';
+        const sumC='padding:6px 10px;border:1px solid #d6dbe8;border-top:2px solid #00285a;font-size:12px;font-family:Aptos,Arial,sans-serif;color:#00285a;font-weight:700;text-align:right;white-space:nowrap;background:#f2f4f8';
         h+=`<tr><td style="${sumC}" colspan="${4+(tsOn?1:0)+(kgOn?1:0)+(duOn?1:0)}">Summe</td><td style="${sumC}">${fmt(T.preis)}</td>`;
         if(discOn)h+=`<td style="${sumC}">${negH(T.rabatt)}</td>`;
         if(aeOn)h+=`<td style="${sumC}">${negH(T.ae)}</td>`;
         h+=`</tr>`;
-        const totC='padding:7px 10px;border:1px solid #d6dbe8;font-size:12.5px;font-family:Arial,sans-serif;color:#00285a;font-weight:700;text-align:right;background:#eaf0f7';
+        const totC='padding:7px 10px;border:1px solid #d6dbe8;font-size:12.5px;font-family:Aptos,Arial,sans-serif;color:#00285a;font-weight:700;text-align:right;background:#eaf0f7';
         h+=`<tr><td style="${totC}" colspan="${cols}">Gesamt (netto, zzgl. MwSt.):&ensp;${fmt(T.netto)}</td></tr>`;
       }
     }
@@ -3290,13 +3294,13 @@ function buildHtml(o=angebotsOptionen()){
     const gTot=act.map(({ji,iss})=>sumTitle(ji,iss,discOn,aeOn,pct)).filter(T=>T.preis>0);
     if(gTot.length>1){
       const gNetto=gTot.reduce((a,T)=>a+T.netto,0);
-      const gLbl='padding:8px 12px;border:1px solid #d6dbe8;border-top:3px solid #ee7d11;background:#eaf0f7;color:#00285a;font-size:13px;font-weight:700;font-family:Arial,sans-serif';
-      const gAmt='padding:8px 12px;border:1px solid #d6dbe8;border-top:3px solid #ee7d11;background:#eaf0f7;color:#00285a;font-size:14px;font-weight:700;text-align:right;white-space:nowrap;font-family:Arial,sans-serif';
-      h+=`<table style="border-collapse:collapse;width:100%;margin:2px 0 12px;font-family:Arial,sans-serif"><tr><td style="${gLbl}">Gesamt über alle Titel (netto, zzgl. MwSt.)</td><td style="${gAmt}">${fmt(gNetto)}</td></tr></table>`;
+      const gLbl='padding:8px 12px;border:1px solid #d6dbe8;border-top:3px solid #ee7d11;background:#eaf0f7;color:#00285a;font-size:13px;font-weight:700;font-family:Aptos,Arial,sans-serif';
+      const gAmt='padding:8px 12px;border:1px solid #d6dbe8;border-top:3px solid #ee7d11;background:#eaf0f7;color:#00285a;font-size:14px;font-weight:700;text-align:right;white-space:nowrap;font-family:Aptos,Arial,sans-serif';
+      h+=`<table style="border-collapse:collapse;width:100%;margin:2px 0 12px;font-family:Aptos,Arial,sans-serif"><tr><td style="${gLbl}">Gesamt über alle Titel (netto, zzgl. MwSt.)</td><td style="${gAmt}">${fmt(gNetto)}</td></tr></table>`;
     }
   }
-  if(showRabatt)h+=`<p style="font-size:12px;color:#6b7899;margin:4px 0;font-family:Arial,sans-serif">Rabatt gem. Mediadaten\u202f/\u202fAE:\u202f10\u202f%\u202f/\u202fzzgl.\u202fMwSt.</p>`;
-  if(showResv&&resvTxt)h+=`<p style="font-size:12px;color:#c0392b;font-weight:600;margin:6px 0 0;font-family:Arial,sans-serif">${esc(resvTxt)}</p>`;
+  if(showRabatt)h+=`<p style="font-size:12px;color:#6b7899;margin:4px 0;font-family:Aptos,Arial,sans-serif">Rabatt gem. Mediadaten\u202f/\u202fAE:\u202f10\u202f%\u202f/\u202fzzgl.\u202fMwSt.</p>`;
+  if(showResv&&resvTxt)h+=`<p style="font-size:12px;color:#c0392b;font-weight:600;margin:6px 0 0;font-family:Aptos,Arial,sans-serif">${esc(resvTxt)}</p>`;
   return h;
 }
 
