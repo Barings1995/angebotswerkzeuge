@@ -726,8 +726,11 @@ table.mit-marken td.zahl, table.mit-marken th.zahl{padding-right:15px}
 .fk-voll .fk-mass span{min-width:60px}
 .fk-voll .fk-schluessel{font-size:10.5px; margin-bottom:16px}
 .fk-voll .fk-beschnitt{font-size:10.5px; margin:-8px 0 18px}
-/* Datenblatt je Sonderwerbeform: Name in der Titelschrift, Abbildung links. */
-.db-name{font-family:var(--font-title); font-weight:600; font-size:24px; line-height:1.15; color:var(--navy); margin:0 0 6px}
+/* Datenblatt je Sonderwerbeform: Abbildung links. Der Name in Source Sans 3, 20 px
+   halbfett (31.10.2026, vorher 24 px EB Garamond): die Brand Guidelines sehen die
+   Serifenschrift erst ab 21 pt (28 px) vor, und so steht der Name klar unter dem
+   Titelnamen des Blatts. */
+.db-name{font-family:var(--font-body); font-weight:600; font-size:20px; line-height:1.15; color:var(--navy); margin:0 0 6px}
 /* Beschreibung in voller Breite bis zum Rand der Masstabelle (seit 06.10.2026,
    vorher 68ch): die Texte sind kurze Produktbeschreibungen, kein Fliesstext,
    und mit der Begrenzung blieb rechts oben eine Luecke. */

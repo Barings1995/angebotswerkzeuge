@@ -227,7 +227,10 @@ button, input, select, textarea { font-family: inherit; }
 
   /* ── Anmeldung ── */
   .anmeldung { max-width: 400px; margin: 60px auto; background: var(--white); border: 1px solid var(--border); border-radius: var(--radius-xl); box-shadow: var(--shadow-md); padding: 26px 28px 24px; }
-  .anmeldung h2 { font-family: var(--font-title); font-size: 23.5px; font-weight: 600; color: var(--navy); margin-bottom: 6px; }
+  /* Überschrift in Source Sans 3, nicht in EB Garamond (31.10.2026): die Brand Guidelines sehen
+     die Serifenschrift erst ab 21 pt (28 px) vor, kleinere Überschriften serifenlos. Vorher
+     23,5 px EB Garamond. */
+  .anmeldung h2 { font-family: var(--font-body); font-size: 22px; font-weight: 600; color: var(--navy); margin-bottom: 6px; }
   .anmeldung p { font-size: 12.5px; color: var(--grey-600); margin-bottom: 18px; }
   .anmeldung label { display: block; font-size: 11px; font-weight: 700; color: var(--navy); text-transform: uppercase; letter-spacing: .4px; margin-bottom: 5px; }
   .anmeldung input { width: 100%; padding: 8px 10px; border: 1px solid var(--border); border-radius: var(--radius-sm); font-size: 13.5px; font-family: var(--font-body); color: var(--text); margin-bottom: 14px; }
@@ -843,7 +846,9 @@ button, input, select, textarea { font-family: inherit; }
   .dialog { background: var(--white); border-radius: var(--radius-xl); box-shadow: var(--shadow-lg); width: 100%; max-width: 460px; overflow: hidden auto; display: flex; flex-direction: column; max-height: 100%; }
   .dialog > * { flex: none; }
   .dialog > .dialog-liste { flex: 0 1 auto; min-height: 96px; }
-  .dialog h3 { font-family: var(--font-title); font-size: 20px; font-weight: 600; color: var(--navy); padding: 16px 20px 3px; }
+  /* Fenstertitel in Source Sans 3 statt EB Garamond (31.10.2026), wie „Anmelden“: die Serifenschrift
+     erst ab 28 px. Größe 20 px wie vorher, eine Stufe unter den 22 px der Anmeldekarte. */
+  .dialog h3 { font-family: var(--font-body); font-size: 20px; font-weight: 600; color: var(--navy); padding: 16px 20px 3px; }
   .dialog .erklaerung { font-size: 12.5px; color: var(--grey-600); padding: 0 20px 12px; }
   .dialog-zeile { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 7px 20px; border-top: 1px solid #eef1f5; font-size: 13px; }
   .dialog-zeile > span { color: var(--grey-600); }
