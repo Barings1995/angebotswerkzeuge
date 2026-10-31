@@ -351,17 +351,13 @@ button, input, select, textarea { font-family: inherit; }
     gap: 4px;
     margin-bottom: 10px;
   }
+  /* Eine rechtwinklige orange Linie (31.10.2026). Vorher eine lange orange und eine
+     kurze blaue, beide an den Enden schräg: die Marke arbeitet mit rechtwinkligen
+     Flächen, schräge Formen kommen in den Brand Guidelines nicht vor. */
   .bar-orange {
     flex: 1;
     height: 5px;
     background: var(--orange);
-    clip-path: polygon(4px 0, 100% 0, calc(100% - 4px) 100%, 0 100%);
-  }
-  .bar-blue {
-    width: 26px;
-    height: 5px;
-    background: var(--springer-blue);
-    clip-path: polygon(4px 0, 100% 0, calc(100% - 4px) 100%, 0 100%);
   }
 
   /* ── Editable fields ── */
@@ -1276,7 +1272,6 @@ button, input, select, textarea { font-family: inherit; }
       <div class="doc-title">Angebot</div>
       <div class="orange-bar">
         <span class="bar-orange"></span>
-        <span class="bar-blue"></span>
       </div>
       <div class="field-line">
         <label>Datum:</label>
